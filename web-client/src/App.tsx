@@ -236,8 +236,8 @@ function App() {
                   </a>
                 </li>
                 <li>
-                  <a href="https://user.disroot.org/register" target="_blank" rel="noopener noreferrer">
-                    https://user.disroot.org/register
+                  <a href="https://trashserver.net/" target="_blank" rel="noopener noreferrer">
+                    https://trashserver.net/
                   </a>
                 </li>
               </ul>
