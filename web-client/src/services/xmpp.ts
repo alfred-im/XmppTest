@@ -228,6 +228,10 @@ const runFlow = (client: Agent, intent: Intent): Promise<XmppResult> => {
       // Check if it's a connection error (before authentication)
       if (!settled && (error?.condition === 'connection-timeout' || error?.condition === 'host-unknown' || error?.condition === 'remote-connection-failed')) {
         handleConnectionError()
+      } else if (!settled && error?.condition === 'policy-violation' && intent === 'register') {
+        // Policy violation after registration attempt usually means registration was rejected
+        // The register:error event should have been emitted, but if not, handle it here
+        fail('Registrazione rifiutata dal server.', error?.text || 'Il server ha rifiutato la richiesta di registrazione.')
       } else {
         fail('Il server ha chiuso lo stream.', error?.text || error?.condition)
       }
@@ -326,8 +330,12 @@ const runFlow = (client: Agent, intent: Intent): Promise<XmppResult> => {
     client.once('stream:error', handleStreamError)
     client.once('disconnected', handleDisconnectedWithError)
     addCustomListener(client, 'register:completed', handleRegisterCompleted)
+    // Use once: true for error/unsupported to ensure they're only handled once
     addCustomListener(client, 'register:error', handleRegisterError, true)
     addCustomListener(client, 'register:unsupported', handleRegisterUnsupported, true)
+    
+    // Also listen for stream:error that might occur after registration failure
+    // This can happen when server closes stream after rejecting registration
 
     // Start connection
     try {
