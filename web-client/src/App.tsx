@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import type { ChangeEvent, FormEvent } from 'react'
 import './App.css'
-import { DEFAULT_XMPP_DOMAIN, DEFAULT_XMPP_WEBSOCKET, UI } from './config/constants'
+import { DEFAULT_XMPP_DOMAIN, UI } from './config/constants'
 import { login, registerAccount } from './services/xmpp'
 
 const MIN_PASSWORD_LENGTH = 6
@@ -21,7 +21,7 @@ const sanitizeWebsocket = (value: string) => value.trim()
 
 function App() {
   const [domain, setDomain] = useState(DEFAULT_XMPP_DOMAIN)
-  const [websocketUrl, setWebsocketUrl] = useState(DEFAULT_XMPP_WEBSOCKET)
+  const [websocketUrl, setWebsocketUrl] = useState('')
 
   const [registerForm, setRegisterForm] = useState({ username: '', password: '', confirm: '' })
   const [loginForm, setLoginForm] = useState({ username: '', password: '' })
@@ -153,14 +153,19 @@ function App() {
         </div>
         <div className="server-card">
           <h2>Server XMPP</h2>
-          <p className="muted">Personalizza dominio e WebSocket endpoint prima dei test.</p>
+          <p className="muted">Inserisci il dominio del server. Il WebSocket URL verrà dedotto automaticamente secondo XEP-0156.</p>
           <label className="field">
             <span>Dominio</span>
             <input value={domain} onChange={(event) => setDomain(event.target.value)} autoComplete="off" />
           </label>
           <label className="field">
-            <span>WebSocket URL</span>
-            <input value={websocketUrl} onChange={(event) => setWebsocketUrl(event.target.value)} autoComplete="off" />
+            <span>WebSocket URL <span style={{ fontSize: '0.85em', fontWeight: 'normal', opacity: 0.7 }}>(opzionale)</span></span>
+            <input 
+              value={websocketUrl} 
+              onChange={(event) => setWebsocketUrl(event.target.value)} 
+              autoComplete="off"
+              placeholder="Lascia vuoto per auto-discovery"
+            />
           </label>
           <p className="server-summary">
             Connessione attuale: <strong>{serverSummary.domain}</strong> →{' '}

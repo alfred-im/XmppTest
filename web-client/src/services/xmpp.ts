@@ -10,6 +10,42 @@ export type XmppConnectionSettings = {
   resource?: string
 }
 
+/**
+ * Discovers WebSocket URL from domain using XEP-0156 (host-meta discovery)
+ * Falls back to standard port 5281 with /xmpp-websocket path if discovery fails
+ */
+const discoverWebSocketUrl = async (domain: string): Promise<string> => {
+  // Try XEP-0156 discovery via .well-known/host-meta
+  try {
+    const hostMetaUrl = `https://${domain}/.well-known/host-meta`
+    const response = await fetch(hostMetaUrl, {
+      method: 'GET',
+      headers: { Accept: 'application/xrd+xml, application/xml, text/xml' },
+    })
+
+    if (response.ok) {
+      const text = await response.text()
+      // Parse XRD XML to find WebSocket link
+      const parser = new DOMParser()
+      const doc = parser.parseFromString(text, 'text/xml')
+      const links = doc.querySelectorAll('Link[rel="urn:xmpp:alt-connections:websocket"]')
+      
+      if (links.length > 0) {
+        const href = links[0].getAttribute('href')
+        if (href) {
+          return href
+        }
+      }
+    }
+  } catch (error) {
+    // Discovery failed, fall through to default
+    console.debug('host-meta discovery failed, using default WebSocket URL', error)
+  }
+
+  // Fallback to standard WebSocket URL (port 5281, path /xmpp-websocket)
+  return `wss://${domain}:5281/xmpp-websocket`
+}
+
 export type XmppResult = {
   success: boolean
   message: string
@@ -50,9 +86,19 @@ const emitCustomEvent = (client: Agent, event: string, ...args: unknown[]) => {
   emitter.emit(event, ...args)
 }
 
-const buildClient = (settings: XmppConnectionSettings): Agent => {
+const buildClient = async (settings: XmppConnectionSettings): Promise<Agent> => {
   const { domain, websocketUrl, username, password, resource = DEFAULT_RESOURCE } = settings
   const trimmedWs = websocketUrl?.trim()
+  
+  // Auto-discover WebSocket URL if not provided
+  let finalWebSocketUrl: string | true = true
+  if (trimmedWs && trimmedWs.length > 0) {
+    finalWebSocketUrl = trimmedWs
+  } else {
+    // Discover WebSocket URL from domain
+    finalWebSocketUrl = await discoverWebSocketUrl(domain)
+  }
+  
   const jid = `${username}@${domain}`
 
   return createClient({
@@ -68,7 +114,7 @@ const buildClient = (settings: XmppConnectionSettings): Agent => {
       password,
     },
     transports: {
-      websocket: trimmedWs && trimmedWs.length > 0 ? trimmedWs : true,
+      websocket: finalWebSocketUrl,
       bosh: false,
     },
   })
@@ -194,7 +240,7 @@ const runFlow = (client: Agent, intent: Intent): Promise<XmppResult> => {
 }
 
 const connectWithIntent = async (settings: XmppConnectionSettings, intent: Intent) => {
-  const client = buildClient(settings)
+  const client = await buildClient(settings)
 
   if (intent === 'register') {
     enableInBandRegistration(client, {
