@@ -153,13 +153,15 @@ const enableInBandRegistration = (client: Agent, payload: RegistrationPayload) =
     attempted = true
 
     if (!features.inbandRegistration) {
+      console.debug('Server does not support in-band registration')
       emitCustomEvent(client, 'register:unsupported')
       done()
       return
     }
 
     try {
-      await client.sendIQ({
+      console.debug('Sending registration IQ for:', payload.username)
+      const result = await client.sendIQ({
         account: {
           username: payload.username,
           password: payload.password,
@@ -167,8 +169,10 @@ const enableInBandRegistration = (client: Agent, payload: RegistrationPayload) =
         to: payload.domain,
         type: 'set',
       })
+      console.debug('Registration IQ result:', result)
       emitCustomEvent(client, 'register:completed')
     } catch (error) {
+      console.error('Registration IQ error:', error)
       emitCustomEvent(client, 'register:error', error)
     }
 
@@ -184,6 +188,7 @@ const runFlow = (client: Agent, intent: Intent): Promise<XmppResult> => {
   return new Promise((resolve) => {
     // Define handlers first
     const handleSessionStarted = () => {
+      console.debug('Session started event received, JID:', client.jid)
       const baseMessage =
         intent === 'register'
           ? registerMessage
@@ -216,14 +221,19 @@ const runFlow = (client: Agent, intent: Intent): Promise<XmppResult> => {
     }
 
     const handleRegisterCompleted = () => {
+      console.debug('Registration completed event received')
       registerMessage = 'Account registrato e sessione aperta.'
+      // Registration completed, but we still need to wait for session:started
+      // The client should continue with authentication automatically
     }
 
     const handleRegisterError = (error: any) => {
+      console.error('Registration error event received:', error)
       fail('Registrazione fallita.', error?.message || 'Verifica che il server consenta la registrazione in-band.')
     }
 
     const handleRegisterUnsupported = () => {
+      console.debug('Registration unsupported event received')
       fail('Il server non supporta la registrazione in-band (XEP-0077).')
     }
 
