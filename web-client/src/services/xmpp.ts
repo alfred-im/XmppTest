@@ -174,18 +174,22 @@ const enableInBandRegistration = (client: Agent, payload: RegistrationPayload) =
       // After successful registration, the client should automatically authenticate
       // with the newly created credentials. The client stanza library should handle
       // the SASL authentication flow automatically after registration.
-      // We mark registration as completed, but don't call done() yet - let the
-      // authentication flow complete first.
       emitCustomEvent(client, 'register:completed')
-      
-      // Call done() to allow the feature negotiation to continue
-      // The client will then proceed with SASL authentication using the credentials
       done()
     } catch (error: any) {
       console.error('Registration IQ error:', error)
-      // Check if it's a conflict (user already exists) or other error
-      if (error?.condition === 'conflict') {
-        emitCustomEvent(client, 'register:error', new Error('Username già esistente'))
+      
+      // Handle specific error conditions
+      if (error?.type === 'error') {
+        const condition = error?.error?.condition || error?.condition
+        if (condition === 'conflict') {
+          emitCustomEvent(client, 'register:error', new Error('Username già esistente'))
+        } else if (condition === 'not-allowed') {
+          emitCustomEvent(client, 'register:error', new Error('Il server non permette la registrazione in-band. La funzionalità è disabilitata.'))
+        } else {
+          const errorMsg = error?.error?.text || error?.text || error?.message || 'Errore durante la registrazione'
+          emitCustomEvent(client, 'register:error', new Error(errorMsg))
+        }
       } else {
         emitCustomEvent(client, 'register:error', error)
       }
