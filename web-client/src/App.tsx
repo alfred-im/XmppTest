@@ -227,16 +227,20 @@ function App() {
                 ℹ️ La maggior parte dei server pubblici ha disabilitato la registrazione in-band per policy anti-spam.
               </p>
               <p style={{ margin: '0 0 0.5rem 0' }}>
-                Per questi server è necessario registrarsi tramite i loro siti web:
+                Per questi server è necessario registrarsi tramite i loro siti web. Esempi:
               </p>
-              <p style={{ margin: 0 }}>
-                <a href="https://account.conversations.im/register/" target="_blank" rel="noopener noreferrer" style={{ marginRight: '1rem' }}>
-                  conversations.im
-                </a>
-                <a href="https://account.trashserver.net/register/" target="_blank" rel="noopener noreferrer">
-                  trashserver.net
-                </a>
-              </p>
+              <ul style={{ margin: '0', paddingLeft: '1.5rem', fontSize: '0.9rem' }}>
+                <li>
+                  <a href="https://account.conversations.im/register/" target="_blank" rel="noopener noreferrer">
+                    https://account.conversations.im/register/
+                  </a>
+                </li>
+                <li>
+                  <a href="https://user.disroot.org/register" target="_blank" rel="noopener noreferrer">
+                    https://user.disroot.org/register
+                  </a>
+                </li>
+              </ul>
             </div>
             <p>Se il tuo server supporta la registrazione in-band (XEP-0077), usa il form qui sotto:</p>
           </div>
