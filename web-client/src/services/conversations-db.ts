@@ -117,6 +117,26 @@ export async function saveMetadata(metadata: { lastSync: Date; lastRSMToken?: st
   await tx.done
 }
 
+export async function removeConversation(jid: string): Promise<void> {
+  const db = await getDB()
+  const tx = db.transaction('conversations', 'readwrite')
+  await tx.store.delete(jid)
+  await tx.done
+}
+
+export async function removeConversations(jids: string[]): Promise<void> {
+  if (jids.length === 0) return
+  
+  const db = await getDB()
+  const tx = db.transaction('conversations', 'readwrite')
+  
+  for (const jid of jids) {
+    await tx.store.delete(jid)
+  }
+  
+  await tx.done
+}
+
 export async function clearDatabase(): Promise<void> {
   const db = await getDB()
   const tx = db.transaction(['conversations', 'metadata'], 'readwrite')

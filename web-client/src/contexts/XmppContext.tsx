@@ -9,7 +9,7 @@ import {
   enrichWithRoster,
   updateConversationOnNewMessage,
 } from '../services/conversations'
-import { getConversations, type Conversation } from '../services/conversations-db'
+import { getConversations, getMetadata, type Conversation } from '../services/conversations-db'
 
 interface XmppContextType {
   client: Agent | null
@@ -101,11 +101,12 @@ export function XmppProvider({ children }: { children: ReactNode }) {
       setIsConnected(true)
       setJid(result.jid || jid)
 
-      // Carica conversazioni dal server (incrementale se c'è cache)
-      const hasCache = conversations.length > 0
+      // Carica conversazioni dal server
+      // IMPORTANTE: Prima query sempre completa (non incrementale) per evitare di perdere conversazioni
       const loaded = await loadConversations(result.client, {
-        incremental: hasCache, // Se c'è cache, carica solo aggiornamenti
+        incremental: false, // Sempre completa al primo login per avere lista completa
         limit: 20, // Prime 20 conversazioni
+        removeMissing: true, // Rimuovi conversazioni non più presenti
       })
 
       // Arricchisci con dati roster
@@ -148,23 +149,40 @@ export function XmppProvider({ children }: { children: ReactNode }) {
     setIsLoading(true)
     try {
       // Carica aggiornamenti incrementali (solo messaggi dopo lastSync)
+      // Per refresh manuale, usiamo incrementale per efficienza
       const loaded = await loadConversations(client, {
         incremental: true, // Solo aggiornamenti dopo lastSync
+        removeMissing: false, // Non rimuovere durante refresh incrementale
       })
 
       // Arricchisci con dati roster
       const enriched = await enrichWithRoster(client, loaded.conversations)
       
-      // Merge con conversazioni esistenti (evita duplicati)
-      const existingJids = new Set(conversations.map((c) => c.jid))
-      const newConversations = enriched.filter((c) => !existingJids.has(c.jid))
+      // Merge intelligente: aggiorna conversazioni esistenti o aggiungi nuove
+      const conversationMap = new Map(conversations.map((c) => [c.jid, c]))
       
-      // Aggiorna conversazioni esistenti con nuovi dati
-      const updatedMap = new Map(enriched.map((c) => [c.jid, c]))
-      const merged = conversations.map((c) => updatedMap.get(c.jid) || c)
+      for (const newConv of enriched) {
+        const existing = conversationMap.get(newConv.jid)
+        if (!existing) {
+          // Nuova conversazione
+          conversationMap.set(newConv.jid, newConv)
+        } else {
+          // Conversazione esistente: aggiorna solo se nuovo messaggio è più recente
+          const newTimestamp = newConv.lastMessage.timestamp.getTime()
+          const oldTimestamp = existing.lastMessage.timestamp.getTime()
+          
+          if (newTimestamp > oldTimestamp) {
+            // Aggiorna mantenendo unreadCount esistente
+            conversationMap.set(newConv.jid, {
+              ...newConv,
+              unreadCount: existing.unreadCount,
+            })
+          }
+        }
+      }
       
-      // Combina e riordina
-      const combined = [...merged, ...newConversations].sort(
+      // Converti in array e riordina
+      const combined = Array.from(conversationMap.values()).sort(
         (a, b) => b.lastMessage.timestamp.getTime() - a.lastMessage.timestamp.getTime()
       )
       
@@ -183,34 +201,54 @@ export function XmppProvider({ children }: { children: ReactNode }) {
     }
 
     // Se non c'è token, prova a caricare dal database
-    if (!lastRSMToken) {
-      const { getMetadata } = await import('../services/conversations-db')
+    let tokenToUse = lastRSMToken
+    if (!tokenToUse) {
       const metadata = await getMetadata()
       if (!metadata?.lastRSMToken) {
         setHasMore(false)
         return
       }
-      setLastRSMToken(metadata.lastRSMToken)
+      tokenToUse = metadata.lastRSMToken
+      setLastRSMToken(tokenToUse)
     }
 
     setIsLoadingMore(true)
     try {
-      if (!lastRSMToken) {
+      if (!tokenToUse) {
         setHasMore(false)
         setIsLoadingMore(false)
         return
       }
-      const result = await loadMoreConversations(client, lastRSMToken, 20)
+      const result = await loadMoreConversations(client, tokenToUse, 20)
 
       // Arricchisci con dati roster
       const enriched = await enrichWithRoster(client, result.conversations)
 
-      // Merge con conversazioni esistenti (evita duplicati)
-      const existingJids = new Set(conversations.map((c) => c.jid))
-      const newConversations = enriched.filter((c) => !existingJids.has(c.jid))
+      // Merge intelligente: aggiorna conversazioni esistenti o aggiungi nuove
+      const conversationMap = new Map(conversations.map((c) => [c.jid, c]))
       
-      // Combina e riordina per timestamp
-      const combined = [...conversations, ...newConversations].sort(
+      for (const newConv of enriched) {
+        const existing = conversationMap.get(newConv.jid)
+        if (!existing) {
+          // Nuova conversazione
+          conversationMap.set(newConv.jid, newConv)
+        } else {
+          // Conversazione esistente: aggiorna solo se nuovo messaggio è più recente
+          const newTimestamp = newConv.lastMessage.timestamp.getTime()
+          const oldTimestamp = existing.lastMessage.timestamp.getTime()
+          
+          if (newTimestamp > oldTimestamp) {
+            // Aggiorna mantenendo unreadCount esistente
+            conversationMap.set(newConv.jid, {
+              ...newConv,
+              unreadCount: existing.unreadCount,
+            })
+          }
+        }
+      }
+      
+      // Converti in array e riordina
+      const combined = Array.from(conversationMap.values()).sort(
         (a, b) => b.lastMessage.timestamp.getTime() - a.lastMessage.timestamp.getTime()
       )
       
