@@ -17,47 +17,45 @@ type FormStatus = {
 const initialStatus: FormStatus = { state: 'idle' }
 
 /**
- * Valida e normalizza un JID secondo RFC 6122
- * Un JID valido ha formato: [local@]domain[/resource]
+ * Valida e normalizza un username completo (formato: username@server.com)
  */
 const validateAndNormalizeJid = (input: string): { valid: boolean; jid?: string; error?: string } => {
   const trimmed = input.trim()
   
   if (!trimmed) {
-    return { valid: false, error: 'Il JID non può essere vuoto.' }
+    return { valid: false, error: 'Inserisci il tuo username completo.' }
   }
 
-  // Controlla formato base: deve contenere almeno un @ per separare local da domain
+  // Controlla formato base: deve contenere almeno un @ per separare username da server
   if (!trimmed.includes('@')) {
-    return { valid: false, error: 'Il JID deve essere completo (formato: username@domain.com).' }
+    return { valid: false, error: 'Inserisci il tuo username completo nel formato: username@server.com' }
   }
 
   const parts = trimmed.split('@')
   if (parts.length !== 2) {
-    return { valid: false, error: 'Il JID non può contenere più di un simbolo @.' }
+    return { valid: false, error: 'Formato non valido. Usa: username@server.com' }
   }
 
   const [local, domainPart] = parts
   const [domain, resource] = domainPart.split('/')
 
-  // Valida local part (se presente)
+  // Valida username
   if (local && local.length > 0) {
-    // Local part non può essere vuoto se c'è @
     if (local.length > 1023) {
-      return { valid: false, error: 'La parte locale del JID è troppo lunga (max 1023 caratteri).' }
+      return { valid: false, error: 'Lo username è troppo lungo.' }
     }
   }
 
-  // Valida domain
+  // Valida server
   if (!domain || domain.length === 0) {
-    return { valid: false, error: 'Il dominio del JID non può essere vuoto.' }
+    return { valid: false, error: 'Inserisci anche il server (esempio: username@server.com).' }
   }
 
   if (domain.length > 1023) {
-    return { valid: false, error: 'Il dominio del JID è troppo lungo (max 1023 caratteri).' }
+    return { valid: false, error: 'Il nome del server è troppo lungo.' }
   }
 
-  // Normalizza: lowercase per domain, preserva case per local
+  // Normalizza: lowercase per server, preserva case per username
   const normalizedDomain = domain.toLowerCase()
   const normalizedJid = local ? `${local}@${normalizedDomain}${resource ? `/${resource}` : ''}` : normalizedDomain
 
@@ -89,7 +87,7 @@ function App() {
 
     const jidValidation = validateAndNormalizeJid(registerForm.jid)
     if (!jidValidation.valid) {
-      setRegisterStatus({ state: 'error', message: jidValidation.error || 'JID non valido.' })
+      setRegisterStatus({ state: 'error', message: jidValidation.error || 'Username non valido.' })
       return
     }
 
@@ -139,7 +137,7 @@ function App() {
 
     const jidValidation = validateAndNormalizeJid(loginForm.jid)
     if (!jidValidation.valid) {
-      setLoginStatus({ state: 'error', message: jidValidation.error || 'JID non valido.' })
+      setLoginStatus({ state: 'error', message: jidValidation.error || 'Username non valido.' })
       return
     }
 
@@ -180,10 +178,9 @@ function App() {
           <h1>{UI.appName}</h1>
           <p className="tagline">{UI.tagline}</p>
           <ul className="checklist">
-            <li>Registrazione XEP-0077 senza backend.</li>
-            <li>Login e verifica presenza via WebSocket sicuro.</li>
-            <li>Discovery automatico server secondo standard XMPP (SRV, XEP-0156).</li>
-            <li>Pronto per deploy statico (GitHub Pages/Netlify).</li>
+            <li>Registrazione e accesso direttamente dal browser.</li>
+            <li>Connessione sicura e crittografata.</li>
+            <li>Configurazione automatica del server.</li>
           </ul>
         </div>
       </header>
@@ -192,17 +189,17 @@ function App() {
         <section className="auth-card">
           <div className="auth-card__header">
             <h3>Accedi</h3>
-            <p>Inserisci il tuo JID completo (formato: username@domain.com)</p>
+            <p>Inserisci il tuo username completo con il server</p>
           </div>
           <form className="auth-form" onSubmit={handleLoginSubmit}>
             <div className="form-grid">
               <label className="field">
-                <span>JID</span>
+                <span>Username</span>
                 <input
                   autoComplete="username"
                   value={loginForm.jid}
                   onChange={handleLoginChange('jid')}
-                  placeholder="es. mario@example.com"
+                  placeholder="mario@example.com"
                 />
               </label>
               <label className="field">
@@ -221,7 +218,7 @@ function App() {
               </button>
             </div>
           </form>
-          <StatusBanner status={loginStatus} successHint="Sessione pronta: puoi passare al roster/chat." />
+          <StatusBanner status={loginStatus} successHint="Accesso completato con successo!" />
         </section>
 
         <section className="auth-card">
@@ -236,35 +233,35 @@ function App() {
               fontSize: '0.9rem'
             }}>
               <p style={{ margin: '0 0 0.5rem 0', fontWeight: '500' }}>
-                ℹ️ La maggior parte dei server pubblici ha disabilitato la registrazione in-band per policy anti-spam.
+                ℹ️ La maggior parte dei server pubblici richiede la registrazione tramite il loro sito web.
               </p>
               <p style={{ margin: '0 0 0.5rem 0' }}>
-                Per questi server è necessario registrarsi tramite i loro siti web. Esempi:
+                Alcuni esempi di server dove puoi registrarti:
               </p>
               <ul style={{ margin: '0', paddingLeft: '1.5rem', fontSize: '0.9rem' }}>
                 <li>
                   <a href="https://account.conversations.im/register/" target="_blank" rel="noopener noreferrer">
-                    https://account.conversations.im/register/
+                    Conversations.im
                   </a>
                 </li>
                 <li>
                   <a href="https://trashserver.net/en/register/" target="_blank" rel="noopener noreferrer">
-                    https://trashserver.net/en/register/
+                    Trashserver.net
                   </a>
                 </li>
               </ul>
             </div>
-            <p>Se il tuo server supporta la registrazione in-band (XEP-0077), usa il form qui sotto:</p>
+            <p>Se il tuo server lo permette, puoi registrarti direttamente qui:</p>
           </div>
           <form className="auth-form" onSubmit={handleRegisterSubmit}>
             <div className="form-grid">
               <label className="field">
-                <span>JID</span>
+                <span>Username</span>
                 <input
                   autoComplete="username"
                   value={registerForm.jid}
                   onChange={handleRegisterChange('jid')}
-                  placeholder="es. nomeutente@example.com"
+                  placeholder="nomeutente@example.com"
                 />
               </label>
               <label className="field">
@@ -293,21 +290,17 @@ function App() {
               </button>
             </div>
           </form>
-          <StatusBanner status={registerStatus} successHint="Copiati subito il JID, ti servirà per il login." />
+          <StatusBanner status={registerStatus} successHint="Account creato! Puoi ora accedere con le tue credenziali." />
         </section>
       </main>
 
       <section className="notes">
-        <h4>Come testare rapidamente</h4>
+        <h4>Come iniziare</h4>
         <ol>
-          <li>Registra un account usando il server pubblico suggerito o il tuo.</li>
-          <li>Una volta creato, ripeti il login per confermare che la sessione parte.</li>
-          <li>Successivamente estenderemo l'interfaccia con roster e conversazioni.</li>
+          <li>Registra un account su uno dei server suggeriti o usa un server che già conosci.</li>
+          <li>Una volta registrato, accedi qui con il tuo username completo (formato: username@server.com) e la password.</li>
+          <li>Dopo l'accesso potrai iniziare a chattare.</li>
         </ol>
-        <p className="muted">
-          Deployment: esegui <code>npm run build</code> e pubblica la cartella <code>dist/</code> su GitHub Pages o qualsiasi hosting
-          statico.
-        </p>
       </section>
     </div>
   )
