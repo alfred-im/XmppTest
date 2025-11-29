@@ -56,27 +56,32 @@ export function XmppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!hasAttemptedReconnect.current) {
       hasAttemptedReconnect.current = true
-      setIsInitializing(true)
       
       const attemptAutoReconnect = async () => {
-        const saved = loadCredentials()
-        if (saved) {
-          console.log('Credenziali trovate, tentativo di riconnessione automatica...')
-          try {
-            await connect(saved.jid, saved.password)
-            console.log('Riconnessione automatica completata con successo')
-          } catch (error) {
-            console.error('Riconnessione automatica fallita:', error)
-            // Se la riconnessione fallisce, cancella le credenziali salvate
-            clearCredentials()
-            setError(error instanceof Error ? error.message : 'Riconnessione automatica fallita')
+        setIsInitializing(true)
+        try {
+          const saved = loadCredentials()
+          if (saved) {
+            console.log('Credenziali trovate, tentativo di riconnessione automatica...')
+            try {
+              await connect(saved.jid, saved.password)
+              console.log('Riconnessione automatica completata con successo')
+              // Aspetta un attimo per assicurarsi che tutto sia pronto
+              await new Promise(resolve => setTimeout(resolve, 200))
+            } catch (error) {
+              console.error('Riconnessione automatica fallita:', error)
+              // Se la riconnessione fallisce, cancella le credenziali salvate
+              clearCredentials()
+              setError(error instanceof Error ? error.message : 'Riconnessione automatica fallita')
+            }
+          } else {
+            // Nessuna credenziale salvata, aspetta un attimo per mostrare lo spinner
+            await new Promise(resolve => setTimeout(resolve, 300))
           }
-        } else {
-          // Nessuna credenziale salvata, aspetta un attimo per mostrare lo spinner
-          await new Promise(resolve => setTimeout(resolve, 300))
+        } finally {
+          // Finito il tentativo di riconnessione, mostra l'interfaccia
+          setIsInitializing(false)
         }
-        // Finito il tentativo di riconnessione, mostra l'interfaccia
-        setIsInitializing(false)
       }
       
       attemptAutoReconnect()
