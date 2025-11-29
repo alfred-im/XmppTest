@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom'
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { XmppProvider, useXmpp } from './contexts/XmppContext'
 import { LoginPage } from './pages/LoginPage'
 import { ConversationsPage } from './pages/ConversationsPage'
@@ -9,13 +9,17 @@ import './App.css'
 function RedirectHandler() {
   const location = useLocation()
   const navigate = useNavigate()
+  const hasRedirected = useRef(false)
 
   useEffect(() => {
     // Check if we have a redirect query parameter (from 404.html)
+    // The 404.html creates URLs like /?/XmppTest/conversations
     const searchParams = new URLSearchParams(location.search)
     const redirectPath = searchParams.get('/')
     
-    if (redirectPath) {
+    if (redirectPath && !hasRedirected.current) {
+      hasRedirected.current = true
+      
       // Replace ~and~ with & in the path
       let path = redirectPath.replace(/~and~/g, '&')
       
@@ -32,16 +36,15 @@ function RedirectHandler() {
       // Build target path: empty string for root, or /path for sub-routes
       const targetPath = path === '' ? '/' : '/' + path
       
-      // Only navigate if the path is different from current location
-      // Use setTimeout to avoid navigation during render
-      const timer = setTimeout(() => {
-        if (location.pathname !== targetPath) {
-          navigate(targetPath, { replace: true })
-        }
-      }, 0)
-      return () => clearTimeout(timer)
+      // Navigate immediately to clean up the URL
+      navigate(targetPath, { replace: true })
     }
-  }, [location.search, location.pathname, navigate])
+    
+    // Reset the flag when search params change
+    if (!location.search) {
+      hasRedirected.current = false
+    }
+  }, [location.search, navigate])
 
   return null
 }
