@@ -17,6 +17,7 @@ interface XmppContextType {
   jid: string | null
   conversations: Conversation[]
   isLoading: boolean
+  isInitializing: boolean
   error: string | null
   connect: (jid: string, password: string) => Promise<void>
   disconnect: () => void
@@ -31,47 +32,79 @@ export function XmppProvider({ children }: { children: ReactNode }) {
   const [jid, setJid] = useState<string | null>(null)
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  const [isInitializing, setIsInitializing] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const hasAttemptedReconnect = useRef(false)
+  const hasInitialized = useRef(false)
 
-  // Carica conversazioni dal database locale all'avvio (solo se non connesso)
+  // Inizializzazione al caricamento: controlla credenziali e tenta login
   useEffect(() => {
-    if (!isConnected) {
-      const loadCachedConversations = async () => {
+    if (hasInitialized.current) return
+    hasInitialized.current = true
+
+    const initialize = async () => {
+      setIsInitializing(true)
+      setError(null)
+
+      // Controlla se ci sono credenziali salvate
+      const saved = loadCredentials()
+      
+      if (saved) {
+        // Ci sono credenziali: tenta il login
         try {
-          const cached = await getConversations()
-          setConversations(cached)
-        } catch (err) {
-          console.error('Errore nel caricamento cache:', err)
-        }
-      }
-      loadCachedConversations()
-    }
-  }, [isConnected])
+          setIsLoading(true)
+          const result: XmppResult = await login({ jid: saved.jid, password: saved.password })
 
-  // Tentativo di riconnessione automatica all'avvio se ci sono credenziali salvate
-  useEffect(() => {
-    if (!hasAttemptedReconnect.current && !isConnected && !isLoading) {
-      hasAttemptedReconnect.current = true
-      const attemptAutoReconnect = async () => {
-        const saved = loadCredentials()
-        if (saved) {
-          console.log('Credenziali trovate, tentativo di riconnessione automatica...')
-          try {
-            await connect(saved.jid, saved.password)
-            console.log('Riconnessione automatica completata con successo')
-          } catch (error) {
-            console.error('Riconnessione automatica fallita:', error)
-            // Se la riconnessione fallisce, cancella le credenziali salvate
-            clearCredentials()
-            setError(error instanceof Error ? error.message : 'Riconnessione automatica fallita')
+          if (!result.success || !result.client) {
+            throw new Error(result.message || 'Login fallito')
           }
+
+          // Login riuscito
+          const xmppClient = result.client
+          setClient(xmppClient)
+          setIsConnected(true)
+          setJid(result.jid || saved.jid)
+
+          // Carica conversazioni dalla cache locale
+          const cachedConversations = await getConversations()
+          if (cachedConversations.length > 0) {
+            const enrichedCached = await enrichWithRoster(xmppClient, cachedConversations)
+            setConversations(enrichedCached)
+          }
+
+          // Carica conversazioni dal server in background
+          void (async () => {
+            try {
+              setIsLoading(true)
+              const loaded = await loadAllConversations(xmppClient)
+              const enriched = await enrichWithRoster(xmppClient, loaded)
+              setConversations(enriched)
+            } catch (err) {
+              console.error('Errore nel caricamento conversazioni:', err)
+              setError(err instanceof Error ? err.message : 'Errore nel caricamento')
+            } finally {
+              setIsLoading(false)
+            }
+          })()
+        } catch (err) {
+          // Login fallito: cancella credenziali e vai a login page
+          console.error('Login automatico fallito:', err)
+          clearCredentials()
+          setError(err instanceof Error ? err.message : 'Login fallito')
+          setIsConnected(false)
+        } finally {
+          setIsLoading(false)
         }
+      } else {
+        // Nessuna credenziale: vai a login page
+        setIsConnected(false)
       }
-      attemptAutoReconnect()
+
+      // Fine inizializzazione
+      setIsInitializing(false)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []) // Esegui solo all'avvio
+
+    initialize()
+  }, [])
 
   // Gestione eventi real-time quando client è connesso
   useEffect(() => {
@@ -82,12 +115,7 @@ export function XmppProvider({ children }: { children: ReactNode }) {
     const handleMessage = async (message: ReceivedMessage) => {
       if (!jid) return
 
-      // Aggiorna conversazione nel database
-      if (jid) {
-        await updateConversationOnNewMessage(message, jid)
-      }
-
-      // Ricarica conversazioni dal database
+      await updateConversationOnNewMessage(message, jid)
       const updated = await getConversations()
       setConversations(updated)
     }
@@ -123,29 +151,27 @@ export function XmppProvider({ children }: { children: ReactNode }) {
       setIsConnected(true)
       setJid(result.jid || jid)
 
-      // Salva le credenziali per la riconnessione automatica dopo refresh
+      // Salva le credenziali
       saveCredentials(jid, password)
 
-      // Mostra SUBITO le conversazioni dalla cache locale
+      // Carica conversazioni dalla cache locale
       const cachedConversations = await getConversations()
       if (cachedConversations.length > 0) {
-        // Arricchisci con dati roster dalla cache
         const enrichedCached = await enrichWithRoster(xmppClient, cachedConversations)
         setConversations(enrichedCached)
       }
 
-      // Poi in background carica e aggiorna dal server (asincrono)
+      setIsLoading(false)
+
+      // Carica conversazioni dal server in background
       void (async () => {
         try {
           setIsLoading(true)
-          // Carica TUTTE le conversazioni dal server (storico completo)
           const loaded = await loadAllConversations(xmppClient)
-
-          // Arricchisci con dati roster
           const enriched = await enrichWithRoster(xmppClient, loaded)
           setConversations(enriched)
         } catch (err) {
-          console.error('Errore nel caricamento conversazioni dal server:', err)
+          console.error('Errore nel caricamento conversazioni:', err)
           setError(err instanceof Error ? err.message : 'Errore nel caricamento')
         } finally {
           setIsLoading(false)
@@ -154,11 +180,9 @@ export function XmppProvider({ children }: { children: ReactNode }) {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Errore di connessione'
       setError(errorMessage)
-      // Se il login fallisce, cancella le credenziali salvate
       clearCredentials()
-      throw err
-    } finally {
       setIsLoading(false)
+      throw err
     }
   }
 
@@ -170,7 +194,6 @@ export function XmppProvider({ children }: { children: ReactNode }) {
     setIsConnected(false)
     setJid(null)
     setConversations([])
-    // Cancella le credenziali salvate quando si fa logout
     clearCredentials()
   }
 
@@ -181,12 +204,8 @@ export function XmppProvider({ children }: { children: ReactNode }) {
 
     setIsLoading(true)
     try {
-      // Ricarica TUTTE le conversazioni dal server (storico completo)
       const loaded = await loadAllConversations(client)
-
-      // Arricchisci con dati roster
       const enriched = await enrichWithRoster(client, loaded)
-      
       setConversations(enriched)
     } catch (err) {
       console.error('Errore nel refresh conversazioni:', err)
@@ -204,6 +223,7 @@ export function XmppProvider({ children }: { children: ReactNode }) {
         jid,
         conversations,
         isLoading,
+        isInitializing,
         error,
         connect,
         disconnect,
