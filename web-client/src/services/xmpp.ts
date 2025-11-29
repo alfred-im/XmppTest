@@ -32,8 +32,15 @@ const discoverWebSocketUrl = async (domain: string): Promise<string> => {
       // Check for parsing errors
       const parserError = doc.querySelector('parsererror')
       if (parserError) {
-        console.error('XML parsing error:', parserError.textContent)
-        throw new Error('Failed to parse host-meta XML')
+        console.warn('XML parsing error:', parserError.textContent)
+        // PATCH: Try regex extraction as fallback for malformed XML (e.g., trashserver.net)
+        const wsMatch = text.match(/rel=["']urn:xmpp:alt-connections:websocket["'][^>]*href=["']([^"']+)["']+/i)
+        if (wsMatch && wsMatch[1]) {
+          const cleanedHref = wsMatch[1].trim().replace(/["']+$/g, '').replace(/^["']+/g, '')
+          console.debug('Extracted WebSocket URL via regex fallback:', cleanedHref)
+          return cleanedHref
+        }
+        throw new Error('Failed to parse host-meta XML and regex extraction failed')
       }
       
       // Use getElementsByTagName to avoid namespace issues with querySelector
@@ -45,8 +52,9 @@ const discoverWebSocketUrl = async (domain: string): Promise<string> => {
         if (rel === 'urn:xmpp:alt-connections:websocket') {
           const href = link.getAttribute('href')
           if (href) {
-            // Clean up any extra quotes that might be in the XML (handle cases like href="url"")
-            const cleanedHref = href.replace(/["']+$/g, '').replace(/^["']+/g, '').trim()
+            // PATCH: Clean up malformed XML attributes (e.g., trashserver.net has href="url"")
+            // Trim whitespace and remove extra quotes from both ends
+            const cleanedHref = href.trim().replace(/["']+$/g, '').replace(/^["']+/g, '')
             console.debug('Discovered WebSocket URL:', cleanedHref)
             return cleanedHref
           }
