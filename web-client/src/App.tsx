@@ -1,7 +1,7 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import type { ChangeEvent, FormEvent } from 'react'
 import './App.css'
-import { DEFAULT_XMPP_DOMAIN, UI } from './config/constants'
+import { UI } from './config/constants'
 import { login, registerAccount } from './services/xmpp'
 
 const MIN_PASSWORD_LENGTH = 6
@@ -16,31 +16,66 @@ type FormStatus = {
 
 const initialStatus: FormStatus = { state: 'idle' }
 
-const sanitizeDomain = (value: string) => value.trim().toLowerCase()
+/**
+ * Valida e normalizza un username completo (formato: username@server.com)
+ */
+const validateAndNormalizeJid = (input: string): { valid: boolean; jid?: string; error?: string } => {
+  const trimmed = input.trim()
+  
+  if (!trimmed) {
+    return { valid: false, error: 'Inserisci il tuo username completo.' }
+  }
+
+  // Controlla formato base: deve contenere almeno un @ per separare username da server
+  if (!trimmed.includes('@')) {
+    return { valid: false, error: 'Inserisci il tuo username completo nel formato: username@server.com' }
+  }
+
+  const parts = trimmed.split('@')
+  if (parts.length !== 2) {
+    return { valid: false, error: 'Formato non valido. Usa: username@server.com' }
+  }
+
+  const [local, domainPart] = parts
+  const [domain, resource] = domainPart.split('/')
+
+  // Valida username
+  if (local && local.length > 0) {
+    if (local.length > 1023) {
+      return { valid: false, error: 'Lo username è troppo lungo.' }
+    }
+  }
+
+  // Valida server
+  if (!domain || domain.length === 0) {
+    return { valid: false, error: 'Inserisci anche il server (esempio: username@server.com).' }
+  }
+
+  if (domain.length > 1023) {
+    return { valid: false, error: 'Il nome del server è troppo lungo.' }
+  }
+
+  // Normalizza: lowercase per server, preserva case per username
+  const normalizedDomain = domain.toLowerCase()
+  const normalizedJid = local ? `${local}@${normalizedDomain}${resource ? `/${resource}` : ''}` : normalizedDomain
+
+  return { valid: true, jid: normalizedJid }
+}
 
 function App() {
-  const [domain, setDomain] = useState(DEFAULT_XMPP_DOMAIN)
-  const [websocketUrl, setWebsocketUrl] = useState('')
-
-  const [registerForm, setRegisterForm] = useState({ username: '', password: '', confirm: '' })
-  const [loginForm, setLoginForm] = useState({ username: '', password: '' })
+  const [showRegister, setShowRegister] = useState(false)
+  const [registerForm, setRegisterForm] = useState({ jid: '', password: '', confirm: '' })
+  const [loginForm, setLoginForm] = useState({ jid: '', password: '' })
 
   const [registerStatus, setRegisterStatus] = useState<FormStatus>(initialStatus)
   const [loginStatus, setLoginStatus] = useState<FormStatus>(initialStatus)
 
-  const serverSummary = useMemo(() => {
-    const cleanDomain = sanitizeDomain(domain) || DEFAULT_XMPP_DOMAIN
-    return {
-      domain: cleanDomain,
-    }
-  }, [domain])
-
-  const handleRegisterChange = (field: 'username' | 'password' | 'confirm') => (event: ChangeEvent<HTMLInputElement>) => {
+  const handleRegisterChange = (field: 'jid' | 'password' | 'confirm') => (event: ChangeEvent<HTMLInputElement>) => {
     setRegisterForm((prev) => ({ ...prev, [field]: event.target.value }))
     setRegisterStatus(initialStatus)
   }
 
-  const handleLoginChange = (field: 'username' | 'password') => (event: ChangeEvent<HTMLInputElement>) => {
+  const handleLoginChange = (field: 'jid' | 'password') => (event: ChangeEvent<HTMLInputElement>) => {
     setLoginForm((prev) => ({ ...prev, [field]: event.target.value }))
     setLoginStatus(initialStatus)
   }
@@ -51,14 +86,14 @@ function App() {
       return
     }
 
-    const username = registerForm.username.trim()
-    const password = registerForm.password
-    const confirm = registerForm.confirm
-
-    if (!username) {
-      setRegisterStatus({ state: 'error', message: 'Inserisci un username.' })
+    const jidValidation = validateAndNormalizeJid(registerForm.jid)
+    if (!jidValidation.valid) {
+      setRegisterStatus({ state: 'error', message: jidValidation.error || 'Username non valido.' })
       return
     }
+
+    const password = registerForm.password
+    const confirm = registerForm.confirm
 
     if (password.length < MIN_PASSWORD_LENGTH) {
       setRegisterStatus({
@@ -77,9 +112,7 @@ function App() {
 
     try {
       const result = await registerAccount({
-        domain: sanitizeDomain(domain) || DEFAULT_XMPP_DOMAIN,
-        websocketUrl: websocketUrl.trim() || undefined,
-        username,
+        jid: jidValidation.jid!,
         password,
       })
 
@@ -103,11 +136,16 @@ function App() {
       return
     }
 
-    const username = loginForm.username.trim()
+    const jidValidation = validateAndNormalizeJid(loginForm.jid)
+    if (!jidValidation.valid) {
+      setLoginStatus({ state: 'error', message: jidValidation.error || 'Username non valido.' })
+      return
+    }
+
     const password = loginForm.password
 
-    if (!username || !password) {
-      setLoginStatus({ state: 'error', message: 'Inserisci username e password per continuare.' })
+    if (!password) {
+      setLoginStatus({ state: 'error', message: 'Inserisci la password per continuare.' })
       return
     }
 
@@ -115,9 +153,7 @@ function App() {
 
     try {
       const result = await login({
-        domain: sanitizeDomain(domain) || DEFAULT_XMPP_DOMAIN,
-        websocketUrl: websocketUrl.trim() || undefined,
-        username,
+        jid: jidValidation.jid!,
         password,
       })
 
@@ -139,164 +175,138 @@ function App() {
     <div className="app-shell">
       <header className="hero">
         <div className="hero__copy">
-          <p className="eyebrow">Proof-of-concept</p>
           <h1>{UI.appName}</h1>
-          <p className="tagline">{UI.tagline}</p>
-          <ul className="checklist">
-            <li>Registrazione XEP-0077 senza backend.</li>
-            <li>Login e verifica presenza via WebSocket sicuro.</li>
-            <li>Pronto per deploy statico (GitHub Pages/Netlify).</li>
-          </ul>
-        </div>
-        <div className="server-card">
-          <h2>Server XMPP</h2>
-          <p className="muted">Inserisci il dominio del server. Il WebSocket URL verrà dedotto automaticamente secondo XEP-0156.</p>
-          <label className="field">
-            <span>Dominio</span>
-            <input value={domain} onChange={(event) => setDomain(event.target.value)} autoComplete="off" />
-          </label>
-          <details>
-            <summary style={{ cursor: 'pointer', marginTop: '0.5rem' }}>WebSocket URL manuale (opzionale)</summary>
-            <p className="muted" style={{ fontSize: '0.875rem', marginTop: '0.5rem' }}>
-              Specifica un WebSocket URL personalizzato se il discovery automatico fallisce. <br/>
-              <strong>Esempio per trashserver.net:</strong> wss://xmpp.trashserver.net/ws
-            </p>
-            <label className="field" style={{ marginTop: '0.5rem' }}>
-              <span>WebSocket URL</span>
-              <input 
-                value={websocketUrl} 
-                onChange={(event) => setWebsocketUrl(event.target.value)} 
-                placeholder="es. wss://xmpp.trashserver.net/ws"
-                autoComplete="off" 
-              />
-            </label>
-          </details>
-          <p className="server-summary">
-            Connessione: <strong>{serverSummary.domain}</strong>
-          </p>
         </div>
       </header>
 
       <main className="panels">
-        <section className="auth-card">
-          <div className="auth-card__header">
-            <h3>Accedi</h3>
-            <p>Usa un JID già esistente sullo stesso dominio.</p>
-          </div>
-          <form className="auth-form" onSubmit={handleLoginSubmit}>
-            <div className="form-grid">
-              <label className="field">
-                <span>Username</span>
-                <input
-                  autoComplete="username"
-                  value={loginForm.username}
-                  onChange={handleLoginChange('username')}
-                />
-              </label>
-              <label className="field">
-                <span>Password</span>
-                <input
-                  type="password"
-                  autoComplete="current-password"
-                  value={loginForm.password}
-                  onChange={handleLoginChange('password')}
-                />
-              </label>
+        {!showRegister ? (
+          <section className="auth-card">
+            <div className="auth-card__header">
+              <h3>Accedi</h3>
             </div>
-            <div className="actions">
-              <button type="submit" disabled={loginStatus.state === 'pending'}>
-                {loginStatus.state === 'pending' ? 'Connessione in corso...' : 'Collegati'}
-              </button>
-            </div>
-          </form>
-          <StatusBanner status={loginStatus} successHint="Sessione pronta: puoi passare al roster/chat." />
-        </section>
-
-        <section className="auth-card">
-          <div className="auth-card__header">
-            <h3>Crea account</h3>
-            <div className="info-box" style={{ 
-              background: '#fff3cd', 
-              border: '1px solid #ffc107', 
-              borderRadius: '4px', 
-              padding: '0.75rem', 
-              marginBottom: '1rem',
-              fontSize: '0.9rem'
-            }}>
-              <p style={{ margin: '0 0 0.5rem 0', fontWeight: '500' }}>
-                ℹ️ La maggior parte dei server pubblici ha disabilitato la registrazione in-band per policy anti-spam.
+            <form className="auth-form" onSubmit={handleLoginSubmit}>
+              <div className="form-grid">
+                <label className="field">
+                  <span>Username</span>
+                  <input
+                    autoComplete="username"
+                    value={loginForm.jid}
+                    onChange={handleLoginChange('jid')}
+                    placeholder="mario@example.com"
+                  />
+                </label>
+                <label className="field">
+                  <span>Password</span>
+                  <input
+                    type="password"
+                    autoComplete="current-password"
+                    value={loginForm.password}
+                    onChange={handleLoginChange('password')}
+                  />
+                </label>
+              </div>
+              <div className="actions">
+                <button type="submit" disabled={loginStatus.state === 'pending'}>
+                  {loginStatus.state === 'pending' ? 'Connessione in corso...' : 'Collegati'}
+                </button>
+              </div>
+            </form>
+            <StatusBanner status={loginStatus} successHint="Accesso completato con successo!" />
+            <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>
+              <p className="muted" style={{ margin: 0 }}>
+                Non hai un account?{' '}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowRegister(true)
+                    setLoginStatus(initialStatus)
+                  }}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#6cb1ff',
+                    cursor: 'pointer',
+                    textDecoration: 'underline',
+                    padding: 0,
+                    font: 'inherit',
+                  }}
+                >
+                  Clicca qui per registrarti
+                </button>
               </p>
-              <p style={{ margin: '0 0 0.5rem 0' }}>
-                Per questi server è necessario registrarsi tramite i loro siti web. Esempi:
+            </div>
+          </section>
+        ) : (
+          <section className="auth-card">
+            <div className="auth-card__header">
+              <h3>Crea account</h3>
+            </div>
+            <form className="auth-form" onSubmit={handleRegisterSubmit}>
+              <div className="form-grid">
+                <label className="field">
+                  <span>Username</span>
+                  <input
+                    autoComplete="username"
+                    value={registerForm.jid}
+                    onChange={handleRegisterChange('jid')}
+                    placeholder="nomeutente@example.com"
+                  />
+                </label>
+                <label className="field">
+                  <span>Password</span>
+                  <input
+                    type="password"
+                    autoComplete="new-password"
+                    value={registerForm.password}
+                    onChange={handleRegisterChange('password')}
+                    placeholder="Minimo 6 caratteri"
+                  />
+                </label>
+                <label className="field">
+                  <span>Conferma</span>
+                  <input
+                    type="password"
+                    autoComplete="new-password"
+                    value={registerForm.confirm}
+                    onChange={handleRegisterChange('confirm')}
+                  />
+                </label>
+              </div>
+              <div className="actions">
+                <button type="submit" disabled={registerStatus.state === 'pending'}>
+                  {registerStatus.state === 'pending' ? 'Attendere...' : 'Registra e collega'}
+                </button>
+              </div>
+            </form>
+            <StatusBanner status={registerStatus} successHint="Account creato! Puoi ora accedere con le tue credenziali." />
+            <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>
+              <p className="muted" style={{ margin: 0 }}>
+                Hai già un account?{' '}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowRegister(false)
+                    setRegisterStatus(initialStatus)
+                  }}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#6cb1ff',
+                    cursor: 'pointer',
+                    textDecoration: 'underline',
+                    padding: 0,
+                    font: 'inherit',
+                  }}
+                >
+                  Torna al login
+                </button>
               </p>
-              <ul style={{ margin: '0', paddingLeft: '1.5rem', fontSize: '0.9rem' }}>
-                <li>
-                  <a href="https://account.conversations.im/register/" target="_blank" rel="noopener noreferrer">
-                    https://account.conversations.im/register/
-                  </a>
-                </li>
-                <li>
-                  <a href="https://trashserver.net/en/register/" target="_blank" rel="noopener noreferrer">
-                    https://trashserver.net/en/register/
-                  </a>
-                </li>
-              </ul>
             </div>
-            <p>Se il tuo server supporta la registrazione in-band (XEP-0077), usa il form qui sotto:</p>
-          </div>
-          <form className="auth-form" onSubmit={handleRegisterSubmit}>
-            <div className="form-grid">
-              <label className="field">
-                <span>Username</span>
-                <input
-                  autoComplete="username"
-                  value={registerForm.username}
-                  onChange={handleRegisterChange('username')}
-                  placeholder="es. nomeutente"
-                />
-              </label>
-              <label className="field">
-                <span>Password</span>
-                <input
-                  type="password"
-                  autoComplete="new-password"
-                  value={registerForm.password}
-                  onChange={handleRegisterChange('password')}
-                  placeholder="Minimo 6 caratteri"
-                />
-              </label>
-              <label className="field">
-                <span>Conferma</span>
-                <input
-                  type="password"
-                  autoComplete="new-password"
-                  value={registerForm.confirm}
-                  onChange={handleRegisterChange('confirm')}
-                />
-              </label>
-            </div>
-            <div className="actions">
-              <button type="submit" disabled={registerStatus.state === 'pending'}>
-                {registerStatus.state === 'pending' ? 'Attendere...' : 'Registra e collega'}
-              </button>
-            </div>
-          </form>
-          <StatusBanner status={registerStatus} successHint="Copiati subito il JID, ti servirà per il login." />
-        </section>
+          </section>
+        )}
       </main>
 
-      <section className="notes">
-        <h4>Come testare rapidamente</h4>
-        <ol>
-          <li>Registra un account usando il server pubblico suggerito o il tuo.</li>
-          <li>Una volta creato, ripeti il login per confermare che la sessione parte.</li>
-          <li>Successivamente estenderemo l'interfaccia con roster e conversazioni.</li>
-        </ol>
-        <p className="muted">
-          Deployment: esegui <code>npm run build</code> e pubblica la cartella <code>dist/</code> su GitHub Pages o qualsiasi hosting
-          statico.
-        </p>
-      </section>
     </div>
   )
 }
