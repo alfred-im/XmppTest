@@ -1,6 +1,6 @@
 import type { Agent } from 'stanza'
 import type { MAMResult, ReceivedMessage } from 'stanza/protocol'
-import { saveConversations, updateConversation, getMetadata, saveMetadata, getConversations, removeConversations, type Conversation } from './conversations-db'
+import { saveConversations, updateConversation, getMetadata, saveMetadata, getConversations, type Conversation } from './conversations-db'
 
 // Re-export per comodità
 export type { Conversation } from './conversations-db'
@@ -163,17 +163,15 @@ export async function loadConversationsFromServer(
 
 /**
  * Carica conversazioni con supporto per aggiornamenti incrementali basati su data
- * IMPORTANTE: Rimuove conversazioni che non sono più presenti nei risultati del server
  */
 export async function loadConversations(
   client: Agent,
   options: {
     incremental?: boolean // Se true, carica solo messaggi dopo lastSync
     limit?: number // Limite conversazioni da caricare
-    removeMissing?: boolean // Se true, rimuove conversazioni non più presenti nei risultati
   } = {}
 ): Promise<{ conversations: Conversation[]; nextToken?: string }> {
-  const { incremental = false, limit, removeMissing = true } = options
+  const { incremental = false, limit } = options
 
   let startDate: Date | undefined
   let endDate = new Date()
@@ -186,10 +184,6 @@ export async function loadConversations(
     }
   }
 
-  // Carica conversazioni esistenti dal database
-  const existingConversations = await getConversations()
-  const existingJids = new Set(existingConversations.map((c) => c.jid))
-
   // Carica dal server
   const result = await loadConversationsFromServer(client, {
     startDate,
@@ -197,60 +191,9 @@ export async function loadConversations(
     maxResults: limit ? limit * 3 : 100, // Carica più messaggi per avere conversazioni complete
   })
 
-  // JID trovati nella query corrente
-  const foundJids = new Set(result.conversations.map((c) => c.jid))
-
-  // Se removeMissing è true e non è incrementale, rimuovi conversazioni non più presenti
-  if (removeMissing && !incremental) {
-    const jidsToRemove = Array.from(existingJids).filter((jid) => !foundJids.has(jid))
-    if (jidsToRemove.length > 0) {
-      console.debug(`Rimozione ${jidsToRemove.length} conversazioni non più presenti nel server`)
-      await removeConversations(jidsToRemove)
-    }
-  }
-
-  // Merge intelligente: aggiorna conversazioni esistenti o aggiungi nuove
-  const conversationMap = new Map<string, Conversation>()
-  
-  // Prima aggiungi quelle esistenti (per mantenere unreadCount)
-  for (const conv of existingConversations) {
-    conversationMap.set(conv.jid, conv)
-  }
-  
-  // Poi aggiorna/aggiungi con quelle dal server (sovrascrive se timestamp più recente)
-  for (const newConv of result.conversations) {
-    const existing = conversationMap.get(newConv.jid)
-    if (!existing) {
-      // Nuova conversazione
-      conversationMap.set(newConv.jid, newConv)
-    } else {
-      // Conversazione esistente: aggiorna solo se nuovo messaggio è più recente
-      const newTimestamp = newConv.lastMessage.timestamp.getTime()
-      const oldTimestamp = existing.lastMessage.timestamp.getTime()
-      
-      if (newTimestamp > oldTimestamp) {
-        // Aggiorna mantenendo unreadCount esistente (a meno che non sia un nuovo messaggio ricevuto)
-        conversationMap.set(newConv.jid, {
-          ...newConv,
-          unreadCount: existing.unreadCount, // Mantieni unreadCount esistente
-        })
-      }
-    }
-  }
-
-  // Filtra: se removeMissing e non incrementale, rimuovi quelle non trovate
-  const finalConversations = removeMissing && !incremental
-    ? Array.from(conversationMap.values()).filter((c) => foundJids.has(c.jid))
-    : Array.from(conversationMap.values())
-
-  // Ordina per timestamp (più recenti prima)
-  finalConversations.sort(
-    (a, b) => b.lastMessage.timestamp.getTime() - a.lastMessage.timestamp.getTime()
-  )
-
   // Salva in database locale
-  if (finalConversations.length > 0) {
-    await saveConversations(finalConversations)
+  if (result.conversations.length > 0) {
+    await saveConversations(result.conversations)
   }
 
   // Aggiorna metadata
@@ -259,8 +202,11 @@ export async function loadConversations(
     lastRSMToken: result.nextToken,
   })
 
+  // Carica dal database (per avere unreadCount corretto e merge con cache)
+  const allConversations = await getConversations()
+
   // Se c'è un limite, applica
-  const limitedConversations = limit ? finalConversations.slice(0, limit) : finalConversations
+  const limitedConversations = limit ? allConversations.slice(0, limit) : allConversations
 
   return {
     conversations: limitedConversations,

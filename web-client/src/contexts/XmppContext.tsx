@@ -102,11 +102,10 @@ export function XmppProvider({ children }: { children: ReactNode }) {
       setJid(result.jid || jid)
 
       // Carica conversazioni dal server
-      // IMPORTANTE: Prima query sempre completa (non incrementale) per evitare di perdere conversazioni
+      // Prima query sempre completa (non incrementale) per avere lista completa
       const loaded = await loadConversations(result.client, {
-        incremental: false, // Sempre completa al primo login per avere lista completa
+        incremental: false, // Sempre completa al primo login
         limit: 20, // Prime 20 conversazioni
-        removeMissing: true, // Rimuovi conversazioni non più presenti
       })
 
       // Arricchisci con dati roster
@@ -149,10 +148,8 @@ export function XmppProvider({ children }: { children: ReactNode }) {
     setIsLoading(true)
     try {
       // Carica aggiornamenti incrementali (solo messaggi dopo lastSync)
-      // Per refresh manuale, usiamo incrementale per efficienza
       const loaded = await loadConversations(client, {
         incremental: true, // Solo aggiornamenti dopo lastSync
-        removeMissing: false, // Non rimuovere durante refresh incrementale
       })
 
       // Arricchisci con dati roster
