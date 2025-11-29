@@ -1,5 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom'
-import { useEffect } from 'react'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { XmppProvider, useXmpp } from './contexts/XmppContext'
 import { LoginPage } from './pages/LoginPage'
 import { ConversationsPage } from './pages/ConversationsPage'
@@ -43,35 +42,27 @@ function InitializingScreen() {
 }
 
 function AppRoutes() {
-  const { isConnected, isInitializing, isLoading } = useXmpp()
-  const location = useLocation()
-  const navigate = useNavigate()
+  const { isConnected, isInitializing } = useXmpp()
 
-  // Show initializing screen while checking credentials OR while connecting
-  // IMPORTANTE: questo controllo DEVE essere fatto PRIMA di qualsiasi altro rendering
-  // Mostra lo spinner se:
-  // 1. Stiamo ancora inizializzando (controllo credenziali)
-  // 2. Stiamo caricando e non siamo ancora connessi (riconnessione in corso)
-  if (isInitializing || (isLoading && !isConnected)) {
+  // Mostra spinner durante inizializzazione
+  if (isInitializing) {
     return <InitializingScreen />
   }
 
-  // After initialization, route appropriately
-  useEffect(() => {
-    if (isConnected && location.pathname === '/') {
-      // Connected and on login page -> go to conversations
-      navigate('/conversations', { replace: true })
-    } else if (!isConnected && location.pathname === '/conversations') {
-      // Not connected and on conversations -> go to login
-      navigate('/', { replace: true })
-    }
-  }, [isConnected, location.pathname, navigate])
-
+  // Dopo inizializzazione: routing basato su isConnected
   return (
     <Routes>
-      <Route path="/" element={<LoginPage />} />
-      <Route path="/conversations" element={<ConversationsPage />} />
-      <Route path="*" element={<Navigate to="/" replace />} />
+      {isConnected ? (
+        <>
+          <Route path="/conversations" element={<ConversationsPage />} />
+          <Route path="*" element={<Navigate to="/conversations" replace />} />
+        </>
+      ) : (
+        <>
+          <Route path="/" element={<LoginPage />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </>
+      )}
     </Routes>
   )
 }
