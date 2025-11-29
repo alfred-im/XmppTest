@@ -172,8 +172,15 @@ const enableInBandRegistration = (client: Agent, payload: RegistrationPayload) =
       console.debug('Registration IQ result:', result)
       
       // After successful registration, the client should automatically authenticate
-      // with the newly created credentials. We just need to wait for session:started
+      // with the newly created credentials. The client stanza library should handle
+      // the SASL authentication flow automatically after registration.
+      // We mark registration as completed, but don't call done() yet - let the
+      // authentication flow complete first.
       emitCustomEvent(client, 'register:completed')
+      
+      // Call done() to allow the feature negotiation to continue
+      // The client will then proceed with SASL authentication using the credentials
+      done()
     } catch (error: any) {
       console.error('Registration IQ error:', error)
       // Check if it's a conflict (user already exists) or other error
@@ -182,9 +189,8 @@ const enableInBandRegistration = (client: Agent, payload: RegistrationPayload) =
       } else {
         emitCustomEvent(client, 'register:error', error)
       }
+      done()
     }
-
-    done()
   })
 }
 
