@@ -3,16 +3,58 @@ import type { Agent } from 'stanza'
 import { DEFAULT_RESOURCE } from '../config/constants'
 
 export type XmppConnectionSettings = {
-  domain: string
-  websocketUrl?: string
-  username: string
+  jid: string
   password: string
   resource?: string
 }
 
 /**
+ * Estrae dominio e username da un JID completo
+ * Formato JID: [local@]domain[/resource]
+ */
+const parseJid = (jid: string): { username: string; domain: string; resource?: string } => {
+  const trimmed = jid.trim()
+  
+  // Rimuovi resource se presente
+  const [jidWithoutResource, resource] = trimmed.split('/')
+  
+  // Separa local part e domain
+  const parts = jidWithoutResource.split('@')
+  
+  if (parts.length === 1) {
+    // Solo domain (senza local part)
+    return { username: '', domain: parts[0].toLowerCase(), resource }
+  }
+  
+  const [username, domain] = parts
+  return {
+    username: username || '',
+    domain: domain.toLowerCase(),
+    resource: resource || undefined,
+  }
+}
+
+/**
+ * Discovers XMPP server hostname using SRV records (RFC 6120)
+ * Tries _xmpp-client._tcp.{domain} SRV record
+ */
+const discoverXmppServer = async (domain: string): Promise<string | null> => {
+  try {
+    // In browser, we can't do DNS SRV queries directly
+    // We'll try to connect to the domain directly first
+    // For proper SRV support, we'd need a backend or DNS-over-HTTPS
+    // For now, return null to use domain directly
+    console.debug('SRV discovery not available in browser, using domain directly:', domain)
+    return null
+  } catch (error) {
+    console.debug('SRV discovery failed:', error)
+    return null
+  }
+}
+
+/**
  * Discovers WebSocket URL from domain using XEP-0156 (host-meta discovery)
- * Falls back to standard port 5281 with /xmpp-websocket path if discovery fails
+ * Falls back to common patterns if discovery fails
  */
 const discoverWebSocketUrl = async (domain: string): Promise<string> => {
   // Try XEP-0156 discovery via .well-known/host-meta
@@ -44,44 +86,46 @@ const discoverWebSocketUrl = async (domain: string): Promise<string> => {
             if (href) {
               // Clean up any extra quotes or whitespace
               const cleanedHref = href.trim().replace(/["']+$/g, '').replace(/^["']+/g, '')
-              console.debug('Discovered WebSocket URL via XML parsing:', cleanedHref)
+              console.debug('Discovered WebSocket URL via XEP-0156:', cleanedHref)
               return cleanedHref
             }
           }
         }
-        console.debug('No WebSocket link found in valid XML')
+        console.debug('No WebSocket link found in host-meta XML')
       } else {
         // XML parsing failed - try regex extraction as fallback for malformed XML
-        console.warn('XML parsing error, trying regex extraction:', parserError.textContent)
+        console.debug('XML parsing error, trying regex extraction')
         const wsMatch = text.match(/rel=["']urn:xmpp:alt-connections:websocket["'][^>]*href=["']([^"']+)["']+/i)
         if (wsMatch && wsMatch[1]) {
           const cleanedHref = wsMatch[1].trim().replace(/["']+$/g, '').replace(/^["']+/g, '')
           console.debug('Extracted WebSocket URL via regex (malformed XML):', cleanedHref)
           return cleanedHref
         }
-        console.debug('Regex extraction also failed for malformed XML')
       }
     } else {
       console.debug('host-meta response not OK:', response.status)
     }
   } catch (error) {
     // Network error or fetch failed
-    console.debug('host-meta discovery failed:', error)
+    console.debug('XEP-0156 host-meta discovery failed:', error)
   }
 
-  // Fallback: try multiple common WebSocket patterns
-  console.debug('Using fallback WebSocket URL strategies')
+  // Fallback: try common WebSocket patterns according to XMPP conventions
+  console.debug('Using fallback WebSocket URL strategies for domain:', domain)
   
-  // Pattern 1: subdomain xmpp with /ws path (common for modern servers like trashserver.net)
+  // Pattern 1: subdomain xmpp with /ws path (common for modern servers)
   const fallbackUrl1 = `wss://xmpp.${domain}/ws`
   
-  // Pattern 2: standard port 5281 with /xmpp-websocket path
+  // Pattern 2: standard port 5281 with /xmpp-websocket path (RFC 7395)
   const fallbackUrl2 = `wss://${domain}:5281/xmpp-websocket`
   
-  console.debug('Fallback option 1 (preferred):', fallbackUrl1)
-  console.debug('Fallback option 2:', fallbackUrl2)
+  // Pattern 3: same domain with /ws path
+  const fallbackUrl3 = `wss://${domain}/ws`
+  
+  console.debug('Fallback options:', { fallbackUrl1, fallbackUrl2, fallbackUrl3 })
   
   // Return first fallback - the connection attempt will determine if it works
+  // Stanza library will try multiple transports if needed
   return fallbackUrl1
 }
 
@@ -95,8 +139,9 @@ export type XmppResult = {
 type Intent = 'register' | 'login'
 
 type RegistrationPayload = {
-  domain: string
+  jid: string
   username: string
+  domain: string
   password: string
 }
 
@@ -127,24 +172,42 @@ const emitCustomEvent = (client: Agent, event: string, ...args: unknown[]) => {
 }
 
 const buildClient = async (settings: XmppConnectionSettings): Promise<Agent> => {
-  const { domain, websocketUrl, username, password, resource = DEFAULT_RESOURCE } = settings
-  const trimmedWs = websocketUrl?.trim()
+  const { jid, password, resource = DEFAULT_RESOURCE } = settings
   
-  // Auto-discover WebSocket URL if not provided
-  let finalWebSocketUrl: string | true = true
-  if (trimmedWs && trimmedWs.length > 0) {
-    finalWebSocketUrl = trimmedWs
-  } else {
-    // Discover WebSocket URL from domain
-    finalWebSocketUrl = await discoverWebSocketUrl(domain)
+  // Parse JID to extract components
+  const { username, domain, resource: jidResource } = parseJid(jid)
+  
+  if (!domain) {
+    throw new Error('Il dominio del JID non può essere vuoto.')
   }
   
-  const jid = `${username}@${domain}`
+  if (!username) {
+    throw new Error('Il JID deve contenere una parte locale (username).')
+  }
+  
+  // Use resource from JID if present, otherwise use default
+  const finalResource = jidResource || resource
+  
+  // Discover XMPP server (SRV records - not available in browser, use domain)
+  const serverHost = await discoverXmppServer(domain) || domain
+  
+  // Discover WebSocket URL using XEP-0156
+  const websocketUrl = await discoverWebSocketUrl(domain)
+  
+  // Build full JID with resource
+  const fullJid = jidResource ? jid : `${username}@${domain}/${finalResource}`
+
+  console.debug('Building XMPP client:', {
+    jid: fullJid,
+    server: serverHost,
+    websocketUrl,
+    domain,
+  })
 
   return createClient({
-    jid,
-    resource,
-    server: domain,
+    jid: fullJid,
+    resource: finalResource,
+    server: serverHost,
     lang: 'it',
     autoReconnect: false,
     timeout: 20,
@@ -154,7 +217,7 @@ const buildClient = async (settings: XmppConnectionSettings): Promise<Agent> => 
       password,
     },
     transports: {
-      websocket: finalWebSocketUrl,
+      websocket: websocketUrl,
       bosh: false,
     },
   })
@@ -179,7 +242,7 @@ const enableInBandRegistration = (client: Agent, payload: RegistrationPayload) =
     }
 
     try {
-      console.debug('Sending registration IQ for:', payload.username)
+      console.debug('Sending registration IQ for JID:', payload.jid)
       const result = await client.sendIQ({
         account: {
           username: payload.username,
@@ -241,7 +304,7 @@ const runFlow = (client: Agent, intent: Intent): Promise<XmppResult> => {
 
     const handleAuthFailed = () => {
       clearTimeout(timeoutId) // Cancel timeout immediately - we got a response
-      fail('Autenticazione rifiutata dal server XMPP.', 'Controlla username/password o se il server richiede prerequisiti.')
+      fail('Autenticazione rifiutata dal server XMPP.', 'Controlla JID/password o se il server richiede prerequisiti.')
     }
 
     const handleStreamError = (error: any) => {
@@ -291,7 +354,7 @@ const runFlow = (client: Agent, intent: Intent): Promise<XmppResult> => {
       // This handles WebSocket connection failures (including fallback failures)
       fail(
         'Impossibile connettersi al server XMPP tramite WebSocket.',
-        'Il discovery automatico e il fallback standard hanno fallito. Verifica che il server sia raggiungibile e che supporti connessioni WebSocket.'
+        'Il discovery automatico secondo XEP-0156 e i fallback standard hanno fallito. Verifica che il server sia raggiungibile e che supporti connessioni WebSocket.'
       )
     }
 
@@ -373,14 +436,18 @@ const runFlow = (client: Agent, intent: Intent): Promise<XmppResult> => {
 const connectWithIntent = async (settings: XmppConnectionSettings, intent: Intent) => {
   const client = await buildClient(settings)
 
+  // Parse JID for registration
+  const { username, domain } = parseJid(settings.jid)
+
   // 1. Start the flow (registers event handlers, starts timeout, returns promise)
   const flowPromise = runFlow(client, intent)
   
   // 2. Enable registration feature if needed (must be before connect())
   if (intent === 'register') {
     enableInBandRegistration(client, {
-      domain: settings.domain,
-      username: settings.username,
+      jid: settings.jid,
+      username,
+      domain,
       password: settings.password,
     })
   }

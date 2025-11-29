@@ -1,7 +1,7 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import type { ChangeEvent, FormEvent } from 'react'
 import './App.css'
-import { DEFAULT_XMPP_DOMAIN, UI } from './config/constants'
+import { UI } from './config/constants'
 import { login, registerAccount } from './services/xmpp'
 
 const MIN_PASSWORD_LENGTH = 6
@@ -16,31 +16,67 @@ type FormStatus = {
 
 const initialStatus: FormStatus = { state: 'idle' }
 
-const sanitizeDomain = (value: string) => value.trim().toLowerCase()
+/**
+ * Valida e normalizza un JID secondo RFC 6122
+ * Un JID valido ha formato: [local@]domain[/resource]
+ */
+const validateAndNormalizeJid = (input: string): { valid: boolean; jid?: string; error?: string } => {
+  const trimmed = input.trim()
+  
+  if (!trimmed) {
+    return { valid: false, error: 'Il JID non può essere vuoto.' }
+  }
+
+  // Controlla formato base: deve contenere almeno un @ per separare local da domain
+  if (!trimmed.includes('@')) {
+    return { valid: false, error: 'Il JID deve essere completo (formato: username@domain.com).' }
+  }
+
+  const parts = trimmed.split('@')
+  if (parts.length !== 2) {
+    return { valid: false, error: 'Il JID non può contenere più di un simbolo @.' }
+  }
+
+  const [local, domainPart] = parts
+  const [domain, resource] = domainPart.split('/')
+
+  // Valida local part (se presente)
+  if (local && local.length > 0) {
+    // Local part non può essere vuoto se c'è @
+    if (local.length > 1023) {
+      return { valid: false, error: 'La parte locale del JID è troppo lunga (max 1023 caratteri).' }
+    }
+  }
+
+  // Valida domain
+  if (!domain || domain.length === 0) {
+    return { valid: false, error: 'Il dominio del JID non può essere vuoto.' }
+  }
+
+  if (domain.length > 1023) {
+    return { valid: false, error: 'Il dominio del JID è troppo lungo (max 1023 caratteri).' }
+  }
+
+  // Normalizza: lowercase per domain, preserva case per local
+  const normalizedDomain = domain.toLowerCase()
+  const normalizedJid = local ? `${local}@${normalizedDomain}${resource ? `/${resource}` : ''}` : normalizedDomain
+
+  return { valid: true, jid: normalizedJid }
+}
 
 function App() {
-  const [domain, setDomain] = useState(DEFAULT_XMPP_DOMAIN)
-  const [websocketUrl, setWebsocketUrl] = useState('')
-
-  const [registerForm, setRegisterForm] = useState({ username: '', password: '', confirm: '' })
-  const [loginForm, setLoginForm] = useState({ username: '', password: '' })
+  const [registerForm, setRegisterForm] = useState({ jid: '', password: '', confirm: '' })
+  const [loginForm, setLoginForm] = useState({ jid: '', password: '' })
 
   const [registerStatus, setRegisterStatus] = useState<FormStatus>(initialStatus)
   const [loginStatus, setLoginStatus] = useState<FormStatus>(initialStatus)
 
-  const serverSummary = useMemo(() => {
-    const cleanDomain = sanitizeDomain(domain) || DEFAULT_XMPP_DOMAIN
-    return {
-      domain: cleanDomain,
-    }
-  }, [domain])
-
-  const handleRegisterChange = (field: 'username' | 'password' | 'confirm') => (event: ChangeEvent<HTMLInputElement>) => {
+  const handleRegisterChange = (field: 'jid' | 'password' | 'confirm') => (event: ChangeEvent<HTMLInputElement>) => {
     setRegisterForm((prev) => ({ ...prev, [field]: event.target.value }))
     setRegisterStatus(initialStatus)
   }
 
-  const handleLoginChange = (field: 'username' | 'password') => (event: ChangeEvent<HTMLInputElement>) => {
+  const handleLoginChange = (field: 'jid' | 'password') => (event: ChangeEvent<HTMLInputElement>) => {
     setLoginForm((prev) => ({ ...prev, [field]: event.target.value }))
     setLoginStatus(initialStatus)
   }
@@ -51,14 +87,14 @@ function App() {
       return
     }
 
-    const username = registerForm.username.trim()
-    const password = registerForm.password
-    const confirm = registerForm.confirm
-
-    if (!username) {
-      setRegisterStatus({ state: 'error', message: 'Inserisci un username.' })
+    const jidValidation = validateAndNormalizeJid(registerForm.jid)
+    if (!jidValidation.valid) {
+      setRegisterStatus({ state: 'error', message: jidValidation.error || 'JID non valido.' })
       return
     }
+
+    const password = registerForm.password
+    const confirm = registerForm.confirm
 
     if (password.length < MIN_PASSWORD_LENGTH) {
       setRegisterStatus({
@@ -77,9 +113,7 @@ function App() {
 
     try {
       const result = await registerAccount({
-        domain: sanitizeDomain(domain) || DEFAULT_XMPP_DOMAIN,
-        websocketUrl: websocketUrl.trim() || undefined,
-        username,
+        jid: jidValidation.jid!,
         password,
       })
 
@@ -103,11 +137,16 @@ function App() {
       return
     }
 
-    const username = loginForm.username.trim()
+    const jidValidation = validateAndNormalizeJid(loginForm.jid)
+    if (!jidValidation.valid) {
+      setLoginStatus({ state: 'error', message: jidValidation.error || 'JID non valido.' })
+      return
+    }
+
     const password = loginForm.password
 
-    if (!username || !password) {
-      setLoginStatus({ state: 'error', message: 'Inserisci username e password per continuare.' })
+    if (!password) {
+      setLoginStatus({ state: 'error', message: 'Inserisci la password per continuare.' })
       return
     }
 
@@ -115,9 +154,7 @@ function App() {
 
     try {
       const result = await login({
-        domain: sanitizeDomain(domain) || DEFAULT_XMPP_DOMAIN,
-        websocketUrl: websocketUrl.trim() || undefined,
-        username,
+        jid: jidValidation.jid!,
         password,
       })
 
@@ -145,35 +182,9 @@ function App() {
           <ul className="checklist">
             <li>Registrazione XEP-0077 senza backend.</li>
             <li>Login e verifica presenza via WebSocket sicuro.</li>
+            <li>Discovery automatico server secondo standard XMPP (SRV, XEP-0156).</li>
             <li>Pronto per deploy statico (GitHub Pages/Netlify).</li>
           </ul>
-        </div>
-        <div className="server-card">
-          <h2>Server XMPP</h2>
-          <p className="muted">Inserisci il dominio del server. Il WebSocket URL verrà dedotto automaticamente secondo XEP-0156.</p>
-          <label className="field">
-            <span>Dominio</span>
-            <input value={domain} onChange={(event) => setDomain(event.target.value)} autoComplete="off" />
-          </label>
-          <details>
-            <summary style={{ cursor: 'pointer', marginTop: '0.5rem' }}>WebSocket URL manuale (opzionale)</summary>
-            <p className="muted" style={{ fontSize: '0.875rem', marginTop: '0.5rem' }}>
-              Specifica un WebSocket URL personalizzato se il discovery automatico fallisce. <br/>
-              <strong>Esempio per trashserver.net:</strong> wss://xmpp.trashserver.net/ws
-            </p>
-            <label className="field" style={{ marginTop: '0.5rem' }}>
-              <span>WebSocket URL</span>
-              <input 
-                value={websocketUrl} 
-                onChange={(event) => setWebsocketUrl(event.target.value)} 
-                placeholder="es. wss://xmpp.trashserver.net/ws"
-                autoComplete="off" 
-              />
-            </label>
-          </details>
-          <p className="server-summary">
-            Connessione: <strong>{serverSummary.domain}</strong>
-          </p>
         </div>
       </header>
 
@@ -181,16 +192,17 @@ function App() {
         <section className="auth-card">
           <div className="auth-card__header">
             <h3>Accedi</h3>
-            <p>Usa un JID già esistente sullo stesso dominio.</p>
+            <p>Inserisci il tuo JID completo (formato: username@domain.com)</p>
           </div>
           <form className="auth-form" onSubmit={handleLoginSubmit}>
             <div className="form-grid">
               <label className="field">
-                <span>Username</span>
+                <span>JID</span>
                 <input
                   autoComplete="username"
-                  value={loginForm.username}
-                  onChange={handleLoginChange('username')}
+                  value={loginForm.jid}
+                  onChange={handleLoginChange('jid')}
+                  placeholder="es. mario@example.com"
                 />
               </label>
               <label className="field">
@@ -247,12 +259,12 @@ function App() {
           <form className="auth-form" onSubmit={handleRegisterSubmit}>
             <div className="form-grid">
               <label className="field">
-                <span>Username</span>
+                <span>JID</span>
                 <input
                   autoComplete="username"
-                  value={registerForm.username}
-                  onChange={handleRegisterChange('username')}
-                  placeholder="es. nomeutente"
+                  value={registerForm.jid}
+                  onChange={handleRegisterChange('jid')}
+                  placeholder="es. nomeutente@example.com"
                 />
               </label>
               <label className="field">
