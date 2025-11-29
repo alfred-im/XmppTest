@@ -6,31 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>web-client</title>
     <script>
-      // GitHub Pages SPA routing
-      // When GitHub Pages can't find a file, it loads this 404.html
-      // We redirect to index.html with the path as a query parameter
-      var l = window.location;
-      var pathname = l.pathname;
-      var basePath = '/XmppTest';
-      
-      // Extract the route path (everything after /XmppTest/)
-      var routePath = '';
-      if (pathname.startsWith(basePath + '/')) {
-        routePath = pathname.substring(basePath.length);
-      } else if (pathname === basePath) {
-        routePath = '/';
-      }
-      
-      // Redirect to index.html with route as query param
-      // This way GitHub Pages finds index.html and React Router handles the route
-      var redirectUrl = basePath + '/?p=' + encodeURIComponent(routePath);
-      if (l.search) {
-        redirectUrl += '&' + l.search.substring(1);
-      }
-      if (l.hash) {
-        redirectUrl += l.hash;
-      }
-      l.replace(redirectUrl);
+      // GitHub Pages: redirect all 404s to app root
+      // React Router will handle the routing
+      window.location.replace('/XmppTest/');
     </script>
   </head>
   <body>

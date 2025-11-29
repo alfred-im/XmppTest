@@ -6,16 +6,22 @@ import { ConversationsPage } from './pages/ConversationsPage'
 import './App.css'
 
 function AppRoutes() {
-  const { isConnected } = useXmpp()
+  const { isConnected, isLoading } = useXmpp()
   const location = useLocation()
   const navigate = useNavigate()
 
-  // Redirect to conversations if connected and on root
+  // Wait for initial connection check, then route appropriately
   useEffect(() => {
-    if (location.pathname === '/' && isConnected) {
+    if (isLoading) return // Wait for initial connection attempt
+    
+    if (isConnected && location.pathname === '/') {
+      // Connected and on login page -> go to conversations
       navigate('/conversations', { replace: true })
+    } else if (!isConnected && location.pathname === '/conversations') {
+      // Not connected and on conversations -> go to login
+      navigate('/', { replace: true })
     }
-  }, [location.pathname, isConnected, navigate])
+  }, [isConnected, isLoading, location.pathname, navigate])
 
   return (
     <Routes>
