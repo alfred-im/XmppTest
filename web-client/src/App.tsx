@@ -175,14 +175,7 @@ function App() {
     <div className="app-shell">
       <header className="hero">
         <div className="hero__copy">
-          <p className="eyebrow">Proof-of-concept</p>
           <h1>{UI.appName}</h1>
-          <p className="tagline">{UI.tagline}</p>
-          <ul className="checklist">
-            <li>Registrazione e accesso direttamente dal browser.</li>
-            <li>Connessione sicura e crittografata.</li>
-            <li>Configurazione automatica del server.</li>
-          </ul>
         </div>
       </header>
 
@@ -191,7 +184,6 @@ function App() {
           <section className="auth-card">
             <div className="auth-card__header">
               <h3>Accedi</h3>
-              <p>Inserisci il tuo username completo con il server</p>
             </div>
             <form className="auth-form" onSubmit={handleLoginSubmit}>
               <div className="form-grid">
@@ -249,34 +241,6 @@ function App() {
           <section className="auth-card">
             <div className="auth-card__header">
               <h3>Crea account</h3>
-              <div className="info-box" style={{ 
-                background: '#fff3cd', 
-                border: '1px solid #ffc107', 
-                borderRadius: '4px', 
-                padding: '0.75rem', 
-                marginBottom: '1rem',
-                fontSize: '0.9rem'
-              }}>
-                <p style={{ margin: '0 0 0.5rem 0', fontWeight: '500' }}>
-                  ℹ️ La maggior parte dei server pubblici richiede la registrazione tramite il loro sito web.
-                </p>
-                <p style={{ margin: '0 0 0.5rem 0' }}>
-                  Alcuni esempi di server dove puoi registrarti:
-                </p>
-                <ul style={{ margin: '0', paddingLeft: '1.5rem', fontSize: '0.9rem' }}>
-                  <li>
-                    <a href="https://account.conversations.im/register/" target="_blank" rel="noopener noreferrer">
-                      Conversations.im
-                    </a>
-                  </li>
-                  <li>
-                    <a href="https://trashserver.net/en/register/" target="_blank" rel="noopener noreferrer">
-                      Trashserver.net
-                    </a>
-                  </li>
-                </ul>
-              </div>
-              <p>Se il tuo server lo permette, puoi registrarti direttamente qui:</p>
             </div>
             <form className="auth-form" onSubmit={handleRegisterSubmit}>
               <div className="form-grid">
@@ -343,14 +307,6 @@ function App() {
         )}
       </main>
 
-      <section className="notes">
-        <h4>Come iniziare</h4>
-        <ol>
-          <li>Registra un account su uno dei server suggeriti o usa un server che già conosci.</li>
-          <li>Una volta registrato, accedi qui con il tuo username completo (formato: username@server.com) e la password.</li>
-          <li>Dopo l'accesso potrai iniziare a chattare.</li>
-        </ol>
-      </section>
     </div>
   )
 }
