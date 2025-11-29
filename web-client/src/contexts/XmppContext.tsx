@@ -58,28 +58,32 @@ export function XmppProvider({ children }: { children: ReactNode }) {
       hasAttemptedReconnect.current = true
       
       const attemptAutoReconnect = async () => {
+        console.log('[INIT] Inizio inizializzazione, isInitializing:', true)
         setIsInitializing(true)
         try {
           const saved = loadCredentials()
+          console.log('[INIT] Credenziali caricate:', saved ? 'trovate' : 'non trovate')
           if (saved) {
-            console.log('Credenziali trovate, tentativo di riconnessione automatica...')
+            console.log('[INIT] Tentativo di riconnessione automatica...')
             try {
               await connect(saved.jid, saved.password)
-              console.log('Riconnessione automatica completata con successo')
+              console.log('[INIT] Riconnessione automatica completata con successo')
               // Aspetta un attimo per assicurarsi che tutto sia pronto
               await new Promise(resolve => setTimeout(resolve, 200))
             } catch (error) {
-              console.error('Riconnessione automatica fallita:', error)
+              console.error('[INIT] Riconnessione automatica fallita:', error)
               // Se la riconnessione fallisce, cancella le credenziali salvate
               clearCredentials()
               setError(error instanceof Error ? error.message : 'Riconnessione automatica fallita')
             }
           } else {
             // Nessuna credenziale salvata, aspetta un attimo per mostrare lo spinner
-            await new Promise(resolve => setTimeout(resolve, 300))
+            console.log('[INIT] Nessuna credenziale, aspetto 500ms...')
+            await new Promise(resolve => setTimeout(resolve, 500))
           }
         } finally {
           // Finito il tentativo di riconnessione, mostra l'interfaccia
+          console.log('[INIT] Fine inizializzazione, imposto isInitializing a false')
           setIsInitializing(false)
         }
       }

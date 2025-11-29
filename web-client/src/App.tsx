@@ -48,9 +48,12 @@ function AppRoutes() {
   const navigate = useNavigate()
 
   // Show initializing screen while checking credentials
+  console.log('[APP] AppRoutes render, isInitializing:', isInitializing)
   if (isInitializing) {
+    console.log('[APP] Mostrando InitializingScreen')
     return <InitializingScreen />
   }
+  console.log('[APP] Mostrando Routes normali')
 
   // After initialization, route appropriately
   useEffect(() => {
