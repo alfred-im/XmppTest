@@ -104,6 +104,7 @@ const removeCustomListener = (client: Agent, event: string, handler: GenericHand
 
 const emitCustomEvent = (client: Agent, event: string, ...args: unknown[]) => {
   const emitter = client as unknown as { emit: (name: string, ...payload: unknown[]) => boolean }
+  // Emit synchronously - handlers should be registered before this is called
   emitter.emit(event, ...args)
 }
 
@@ -343,6 +344,10 @@ const runFlow = (client: Agent, intent: Intent): Promise<XmppResult> => {
 const connectWithIntent = async (settings: XmppConnectionSettings, intent: Intent) => {
   const client = await buildClient(settings)
 
+  // Start the flow first to register event handlers
+  const flowPromise = runFlow(client, intent)
+
+  // Then enable registration if needed (after handlers are registered)
   if (intent === 'register') {
     enableInBandRegistration(client, {
       domain: settings.domain,
@@ -351,7 +356,7 @@ const connectWithIntent = async (settings: XmppConnectionSettings, intent: Inten
     })
   }
 
-  return runFlow(client, intent)
+  return flowPromise
 }
 
 export const registerAccount = async (
