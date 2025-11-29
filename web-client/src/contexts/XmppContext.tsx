@@ -4,12 +4,11 @@ import type { Agent } from 'stanza'
 import type { ReceivedMessage } from 'stanza/protocol'
 import { login, type XmppResult } from '../services/xmpp'
 import {
-  loadConversations,
-  loadMoreConversations,
+  loadAllConversations,
   enrichWithRoster,
   updateConversationOnNewMessage,
 } from '../services/conversations'
-import { getConversations, getMetadata, type Conversation } from '../services/conversations-db'
+import { getConversations, type Conversation } from '../services/conversations-db'
 
 interface XmppContextType {
   client: Agent | null
@@ -17,13 +16,10 @@ interface XmppContextType {
   jid: string | null
   conversations: Conversation[]
   isLoading: boolean
-  isLoadingMore: boolean
-  hasMore: boolean
   error: string | null
   connect: (jid: string, password: string) => Promise<void>
   disconnect: () => void
   refreshConversations: () => Promise<void>
-  loadMore: () => Promise<void>
 }
 
 const XmppContext = createContext<XmppContextType | undefined>(undefined)
@@ -34,10 +30,7 @@ export function XmppProvider({ children }: { children: ReactNode }) {
   const [jid, setJid] = useState<string | null>(null)
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [isLoading, setIsLoading] = useState(false)
-  const [isLoadingMore, setIsLoadingMore] = useState(false)
-  const [hasMore, setHasMore] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [lastRSMToken, setLastRSMToken] = useState<string | undefined>()
 
   // Carica conversazioni dal database locale all'avvio
   useEffect(() => {
@@ -101,22 +94,12 @@ export function XmppProvider({ children }: { children: ReactNode }) {
       setIsConnected(true)
       setJid(result.jid || jid)
 
-      // Carica conversazioni dal server
-      const loaded = await loadConversations(result.client, {
-        limit: 20, // Prime 20 conversazioni
-      })
+      // Carica TUTTE le conversazioni dal server (storico completo)
+      const loaded = await loadAllConversations(result.client)
 
       // Arricchisci con dati roster
-      const enriched = await enrichWithRoster(result.client, loaded.conversations)
+      const enriched = await enrichWithRoster(result.client, loaded)
       setConversations(enriched)
-
-      // Imposta token per paginazione
-      if (loaded.nextToken) {
-        setLastRSMToken(loaded.nextToken)
-        setHasMore(true)
-      } else {
-        setHasMore(false)
-      }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Errore di connessione'
       setError(errorMessage)
@@ -134,8 +117,6 @@ export function XmppProvider({ children }: { children: ReactNode }) {
     setIsConnected(false)
     setJid(null)
     setConversations([])
-    setHasMore(true)
-    setLastRSMToken(undefined)
   }
 
   const refreshConversations = async () => {
@@ -145,13 +126,11 @@ export function XmppProvider({ children }: { children: ReactNode }) {
 
     setIsLoading(true)
     try {
-      // Ricarica conversazioni dal server (query completa)
-      const loaded = await loadConversations(client, {
-        limit: conversations.length || 20, // Mantieni stesso numero o default
-      })
+      // Ricarica TUTTE le conversazioni dal server (storico completo)
+      const loaded = await loadAllConversations(client)
 
       // Arricchisci con dati roster
-      const enriched = await enrichWithRoster(client, loaded.conversations)
+      const enriched = await enrichWithRoster(client, loaded)
       
       setConversations(enriched)
     } catch (err) {
@@ -159,75 +138,6 @@ export function XmppProvider({ children }: { children: ReactNode }) {
       setError(err instanceof Error ? err.message : 'Errore nel refresh')
     } finally {
       setIsLoading(false)
-    }
-  }
-
-  const loadMore = async () => {
-    if (!client || !isConnected || isLoadingMore || !hasMore) {
-      return
-    }
-
-    // Se non c'è token, prova a caricare dal database
-    let tokenToUse = lastRSMToken
-    if (!tokenToUse) {
-      const metadata = await getMetadata()
-      if (!metadata?.lastRSMToken) {
-        setHasMore(false)
-        return
-      }
-      tokenToUse = metadata.lastRSMToken
-      setLastRSMToken(tokenToUse)
-    }
-
-    setIsLoadingMore(true)
-    try {
-      if (!tokenToUse) {
-        setHasMore(false)
-        setIsLoadingMore(false)
-        return
-      }
-      const result = await loadMoreConversations(client, tokenToUse, 20)
-
-      // Arricchisci con dati roster
-      const enriched = await enrichWithRoster(client, result.conversations)
-
-      // Merge intelligente: aggiorna conversazioni esistenti o aggiungi nuove
-      const conversationMap = new Map(conversations.map((c) => [c.jid, c]))
-      
-      for (const newConv of enriched) {
-        const existing = conversationMap.get(newConv.jid)
-        if (!existing) {
-          // Nuova conversazione
-          conversationMap.set(newConv.jid, newConv)
-        } else {
-          // Conversazione esistente: aggiorna solo se nuovo messaggio è più recente
-          const newTimestamp = newConv.lastMessage.timestamp.getTime()
-          const oldTimestamp = existing.lastMessage.timestamp.getTime()
-          
-          if (newTimestamp > oldTimestamp) {
-            // Aggiorna mantenendo unreadCount esistente
-            conversationMap.set(newConv.jid, {
-              ...newConv,
-              unreadCount: existing.unreadCount,
-            })
-          }
-        }
-      }
-      
-      // Converti in array e riordina
-      const combined = Array.from(conversationMap.values()).sort(
-        (a, b) => b.lastMessage.timestamp.getTime() - a.lastMessage.timestamp.getTime()
-      )
-      
-      setConversations(combined)
-      setHasMore(result.hasMore)
-      setLastRSMToken(result.nextToken)
-    } catch (err) {
-      console.error('Errore nel caricamento altre conversazioni:', err)
-      setError(err instanceof Error ? err.message : 'Errore nel caricamento')
-      setHasMore(false) // Stop trying if error
-    } finally {
-      setIsLoadingMore(false)
     }
   }
 
@@ -239,13 +149,10 @@ export function XmppProvider({ children }: { children: ReactNode }) {
         jid,
         conversations,
         isLoading,
-        isLoadingMore,
-        hasMore,
         error,
         connect,
         disconnect,
         refreshConversations,
-        loadMore,
       }}
     >
       {children}

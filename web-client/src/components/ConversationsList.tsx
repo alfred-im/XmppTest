@@ -1,51 +1,8 @@
-import { useEffect, useRef, useState } from 'react'
 import { useXmpp } from '../contexts/XmppContext'
 import './ConversationsList.css'
 
 export function ConversationsList() {
-  const { conversations, isLoading, isLoadingMore, hasMore, loadMore, error } = useXmpp()
-  const [observedElement, setObservedElement] = useState<HTMLDivElement | null>(null)
-  const observerRef = useRef<IntersectionObserver | null>(null)
-
-  // Intersection Observer per lazy loading
-  useEffect(() => {
-    if (!observedElement || isLoadingMore || !hasMore) {
-      return
-    }
-
-    // Crea observer se non esiste
-    if (!observerRef.current) {
-      observerRef.current = new IntersectionObserver(
-        (entries) => {
-          const entry = entries[0]
-          if (entry.isIntersecting && hasMore && !isLoadingMore) {
-            loadMore()
-          }
-        },
-        {
-          rootMargin: '200px', // Inizia a caricare 200px prima della fine
-        }
-      )
-    }
-
-    // Osserva l'elemento
-    observerRef.current.observe(observedElement)
-
-    return () => {
-      if (observerRef.current && observedElement) {
-        observerRef.current.unobserve(observedElement)
-      }
-    }
-  }, [observedElement, isLoadingMore, hasMore, loadMore])
-
-  // Cleanup observer
-  useEffect(() => {
-    return () => {
-      if (observerRef.current) {
-        observerRef.current.disconnect()
-      }
-    }
-  }, [])
+  const { conversations, isLoading, error } = useXmpp()
 
   const formatTimestamp = (date: Date): string => {
     const now = new Date()
@@ -137,23 +94,6 @@ export function ConversationsList() {
             </div>
           </div>
         ))}
-
-        {/* Elemento osservato per lazy loading */}
-        {hasMore && (
-          <div
-            ref={setObservedElement}
-            className="conversations-list__loader"
-            style={{ minHeight: '100px', padding: '1rem' }}
-          >
-            {isLoadingMore && <p>Caricamento altre conversazioni...</p>}
-          </div>
-        )}
-
-        {!hasMore && conversations.length > 0 && (
-          <div className="conversations-list__end">
-            <p>Nessun'altra conversazione</p>
-          </div>
-        )}
       </div>
     </div>
   )

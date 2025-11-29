@@ -162,69 +162,70 @@ export async function loadConversationsFromServer(
 }
 
 /**
- * Carica conversazioni dal server usando MAM
+ * Carica TUTTE le conversazioni dal server usando MAM
+ * Ricarica storico completo, elabora tutto e aggiorna database locale
  */
-export async function loadConversations(
-  client: Agent,
-  options: {
-    limit?: number // Limite conversazioni da caricare
-  } = {}
-): Promise<{ conversations: Conversation[]; nextToken?: string }> {
-  const { limit } = options
+export async function loadAllConversations(client: Agent): Promise<Conversation[]> {
+  let allConversations: Conversation[] = []
+  let hasMore = true
+  let lastToken: string | undefined
 
-  // Carica dal server (sempre query completa, senza filtri temporali)
-  const result = await loadConversationsFromServer(client, {
-    maxResults: limit ? limit * 3 : 100, // Carica più messaggi per avere conversazioni complete
-  })
+  // Carica tutte le pagine fino a quando non ci sono più risultati
+  while (hasMore) {
+    const result = await loadConversationsFromServer(client, {
+      maxResults: 100, // Carica 100 messaggi per pagina
+      afterToken: lastToken,
+    })
 
-  // Salva in database locale
-  if (result.conversations.length > 0) {
-    await saveConversations(result.conversations)
+    // Raggruppa e aggiungi alle conversazioni totali
+    allConversations = [...allConversations, ...result.conversations]
+
+    // Controlla se ci sono altre pagine
+    hasMore = !result.complete && !!result.nextToken
+    lastToken = result.nextToken
   }
 
-  // Aggiorna metadata (solo token per paginazione, non lastSync)
+  // Ordina tutte le conversazioni per timestamp (più recenti prima)
+  allConversations.sort(
+    (a, b) => b.lastMessage.timestamp.getTime() - a.lastMessage.timestamp.getTime()
+  )
+
+  // Rimuovi duplicati (se ci sono) mantenendo quella con timestamp più recente
+  const conversationMap = new Map<string, Conversation>()
+  for (const conv of allConversations) {
+    const existing = conversationMap.get(conv.jid)
+    if (!existing || conv.lastMessage.timestamp.getTime() > existing.lastMessage.timestamp.getTime()) {
+      conversationMap.set(conv.jid, conv)
+    }
+  }
+
+  const uniqueConversations = Array.from(conversationMap.values())
+
+  // Carica conversazioni esistenti dal database per mantenere unreadCount
+  const existingConversations = await getConversations()
+  const existingMap = new Map(existingConversations.map((c) => [c.jid, c]))
+
+  // Merge: mantieni unreadCount dalle conversazioni esistenti
+  const mergedConversations = uniqueConversations.map((conv) => {
+    const existing = existingMap.get(conv.jid)
+    return {
+      ...conv,
+      unreadCount: existing?.unreadCount ?? 0, // Mantieni unreadCount esistente o 0
+    }
+  })
+
+  // Salva TUTTE le conversazioni nel database locale
+  await saveConversations(mergedConversations)
+
+  // Aggiorna metadata
   await saveMetadata({
-    lastSync: new Date(), // Manteniamo per riferimento ma non lo usiamo per filtri
-    lastRSMToken: result.nextToken,
+    lastSync: new Date(),
+    lastRSMToken: lastToken,
   })
 
-  // Carica dal database (per avere unreadCount corretto)
-  const allConversations = await getConversations()
-
-  // Se c'è un limite, applica
-  const limitedConversations = limit ? allConversations.slice(0, limit) : allConversations
-
-  return {
-    conversations: limitedConversations,
-    nextToken: result.nextToken,
-  }
+  return mergedConversations
 }
 
-/**
- * Carica più conversazioni (per paginazione)
- */
-export async function loadMoreConversations(
-  client: Agent,
-  lastToken: string,
-  limit = 20
-): Promise<{ conversations: Conversation[]; nextToken?: string; hasMore: boolean }> {
-  const result = await loadConversationsFromServer(client, {
-    maxResults: limit * 2, // Carica più messaggi per avere conversazioni complete
-    afterToken: lastToken,
-  })
-
-  if (result.conversations.length > 0) {
-    await saveConversations(result.conversations)
-  }
-
-  const allConversations = await getConversations()
-
-  return {
-    conversations: allConversations.slice(0, limit),
-    nextToken: result.nextToken,
-    hasMore: !result.complete && !!result.nextToken,
-  }
-}
 
 /**
  * Arricchisce conversazioni con dati dal roster (nomi contatti)
