@@ -231,8 +231,9 @@ const runFlow = (client: Agent, intent: Intent): Promise<XmppResult> => {
     const handleRegisterCompleted = () => {
       console.debug('Registration completed event received')
       registerMessage = 'Account registrato e sessione aperta.'
-      // Registration completed, but we still need to wait for session:started
-      // The client should continue with authentication automatically
+      // Registration completed - the client should continue with SASL auth automatically
+      // We wait for session:started which should come after successful authentication
+      // If it doesn't come, the timeout will catch it
     }
 
     const handleRegisterError = (error: any) => {
