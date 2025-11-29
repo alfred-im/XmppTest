@@ -37,7 +37,21 @@ function RedirectHandler() {
       const targetPath = path === '' ? '/' : '/' + path
       
       // Navigate immediately to clean up the URL
+      // This will replace the current URL (with query params) with a clean path
       navigate(targetPath, { replace: true })
+      
+      // Also ensure the browser URL is updated correctly
+      // This is a fallback in case navigate doesn't fully clean the URL
+      if (window.location.search) {
+        const basePath = '/XmppTest'
+        const cleanUrl = basePath + targetPath
+        // Use a small delay to ensure React Router has processed the navigation
+        setTimeout(() => {
+          if (window.location.search) {
+            window.history.replaceState(null, '', cleanUrl)
+          }
+        }, 100)
+      }
     }
     
     // Reset the flag when search params change
