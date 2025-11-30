@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useXmpp } from '../contexts/XmppContext'
-import { loadMessagesForContact, sendMessage, getLocalMessages, type Message } from '../services/messages'
+import { loadMessagesForContact, sendMessage, getLocalMessages, reloadAllMessagesFromServer, type Message } from '../services/messages'
 import './ChatPage.css'
 
 export function ChatPage() {
@@ -20,6 +20,7 @@ export function ChatPage() {
   const [isSending, setIsSending] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [firstToken, setFirstToken] = useState<string | undefined>(undefined) // Token per caricare messaggi più vecchi
+  const [isPullRefreshing, setIsPullRefreshing] = useState(false)
   
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const messagesContainerRef = useRef<HTMLDivElement>(null)
@@ -27,6 +28,11 @@ export function ChatPage() {
   const isAtBottomRef = useRef(true)
   const lastScrollHeightRef = useRef(0)
   const isMountedRef = useRef(true) // Previene setState dopo unmount
+  
+  // Pull to refresh refs
+  const pullStartY = useRef(0)
+  const pullCurrentY = useRef(0)
+  const isPulling = useRef(false)
 
   // Cleanup al unmount
   useEffect(() => {
@@ -50,10 +56,19 @@ export function ChatPage() {
       const contactJid = from === myBareJid ? to : from
 
       if (contactJid === jid.toLowerCase()) {
-        // Ricarica messaggi locali e merge con esistenti
-        const updatedMessages = await getLocalMessages(jid)
-        if (isMountedRef.current) {
-          safeSetMessages(prev => mergeMessages(prev, updatedMessages))
+        // Invece di ricaricare tutto, carica solo i messaggi nuovi
+        // Il messaggio è già stato salvato nel DB dal context
+        const lastMessageTime = messages.length > 0 
+          ? messages[messages.length - 1].timestamp 
+          : new Date(0)
+        
+        // Carica solo messaggi più recenti dell'ultimo che abbiamo
+        const allMessages = await getLocalMessages(jid)
+        const newMessages = allMessages.filter(m => m.timestamp > lastMessageTime)
+        
+        if (newMessages.length > 0 && isMountedRef.current) {
+          // Merge solo i nuovi messaggi per evitare duplicati
+          safeSetMessages(prev => mergeMessages(prev, newMessages))
           
           // Marca come letta
           markConversationAsRead(jid)
@@ -62,7 +77,7 @@ export function ChatPage() {
     })
 
     return unsubscribe
-  }, [jid, myJid, subscribeToMessages, markConversationAsRead])
+  }, [jid, myJid, subscribeToMessages, markConversationAsRead, messages])
 
   // Auto-focus su input quando la chat si carica
   useEffect(() => {
@@ -212,6 +227,43 @@ export function ChatPage() {
     }
   }, [messages])
 
+  // Ricarica completa messaggi dal server (pull to refresh)
+  const handlePullRefresh = async () => {
+    if (!client || isPullRefreshing) return
+    
+    setIsPullRefreshing(true)
+    setError(null)
+    
+    try {
+      // Ricarica tutto dal server e sostituisci nel DB
+      const serverMessages = await reloadAllMessagesFromServer(client, jid)
+      
+      if (isMountedRef.current) {
+        // Sostituisci completamente i messaggi visualizzati
+        setMessages(serverMessages)
+        setHasMoreMessages(false) // Abbiamo già tutto
+        setFirstToken(undefined)
+        
+        // Scroll al bottom dopo il refresh
+        setTimeout(() => {
+          if (messagesEndRef.current) {
+            messagesEndRef.current.scrollIntoView({ behavior: 'smooth' })
+            isAtBottomRef.current = true
+          }
+        }, 100)
+      }
+    } catch (err) {
+      console.error('Errore nel pull refresh:', err)
+      if (isMountedRef.current) {
+        setError('Impossibile ricaricare i messaggi')
+      }
+    } finally {
+      if (isMountedRef.current) {
+        setIsPullRefreshing(false)
+      }
+    }
+  }
+
   // Traccia se l'utente è in fondo
   const handleScroll = () => {
     if (!messagesContainerRef.current) return
@@ -222,12 +274,69 @@ export function ChatPage() {
     // Considera "in fondo" se entro 100px dal bottom
     isAtBottomRef.current = distanceFromBottom < 100
 
-    // Trigger load more se vicino al top
-    if (scrollTop < 200 && hasMoreMessages && !isLoadingMore) {
+    // Trigger load more se vicino al top (ma non durante pull refresh)
+    if (scrollTop < 200 && hasMoreMessages && !isLoadingMore && !isPullRefreshing) {
       const currentScrollHeight = scrollHeight
       lastScrollHeightRef.current = currentScrollHeight
       loadMoreMessages()
     }
+  }
+  
+  // Pull to refresh handlers
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (!messagesContainerRef.current || isPullRefreshing || isLoadingMore) return
+    
+    const { scrollTop } = messagesContainerRef.current
+    
+    // Inizia il pull solo se siamo in cima (scrollTop <= 0)
+    if (scrollTop <= 0) {
+      isPulling.current = true
+      pullStartY.current = e.touches[0].clientY
+      pullCurrentY.current = pullStartY.current
+    }
+  }
+  
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isPulling.current || !messagesContainerRef.current) return
+    
+    const { scrollTop } = messagesContainerRef.current
+    pullCurrentY.current = e.touches[0].clientY
+    const pullDistance = pullCurrentY.current - pullStartY.current
+    
+    // Solo se siamo in cima E tiriamo verso il basso
+    if (scrollTop <= 0 && pullDistance > 0) {
+      // Previeni lo scroll nativo per mostrare l'indicatore
+      e.preventDefault()
+      
+      // Aggiorna lo stile per mostrare l'indicatore di pull
+      if (messagesContainerRef.current) {
+        const translateY = Math.min(pullDistance * 0.5, 80) // Max 80px
+        messagesContainerRef.current.style.transform = `translateY(${translateY}px)`
+        messagesContainerRef.current.style.transition = 'none'
+      }
+    }
+  }
+  
+  const handleTouchEnd = () => {
+    if (!isPulling.current || !messagesContainerRef.current) return
+    
+    const pullDistance = pullCurrentY.current - pullStartY.current
+    const threshold = 80 // Distanza minima per attivare il refresh
+    
+    // Reset transform con transizione
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.style.transition = 'transform 0.3s ease'
+      messagesContainerRef.current.style.transform = 'translateY(0)'
+    }
+    
+    // Se superato il threshold, attiva il refresh
+    if (pullDistance > threshold) {
+      handlePullRefresh()
+    }
+    
+    isPulling.current = false
+    pullStartY.current = 0
+    pullCurrentY.current = 0
   }
 
   // Mantieni posizione scroll dopo loadMore
@@ -259,10 +368,16 @@ export function ChatPage() {
       if (!isMountedRef.current) return
 
       if (result.success) {
-        // Ricarica messaggi locali e merge
-        const updatedMessages = await getLocalMessages(jid)
-        if (isMountedRef.current) {
-          safeSetMessages(prev => mergeMessages(prev, updatedMessages))
+        // Invece di ricaricare tutto, carica solo il messaggio appena inviato
+        const lastMessageTime = messages.length > 0 
+          ? messages[messages.length - 1].timestamp 
+          : new Date(0)
+        
+        const allMessages = await getLocalMessages(jid)
+        const newMessages = allMessages.filter(m => m.timestamp >= lastMessageTime)
+        
+        if (newMessages.length > 0 && isMountedRef.current) {
+          safeSetMessages(prev => mergeMessages(prev, newMessages))
         }
       } else {
         setError(result.error || 'Invio fallito')
@@ -334,8 +449,18 @@ export function ChatPage() {
         className="chat-page__messages"
         ref={messagesContainerRef}
         onScroll={handleScroll}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
       >
-        {isLoadingMore && (
+        {isPullRefreshing && (
+          <div className="chat-page__pull-refresh">
+            <div className="chat-page__spinner"></div>
+            <span>Ricaricamento storico...</span>
+          </div>
+        )}
+        
+        {isLoadingMore && !isPullRefreshing && (
           <div className="chat-page__load-more">
             <div className="chat-page__spinner"></div>
             <span>Caricamento...</span>

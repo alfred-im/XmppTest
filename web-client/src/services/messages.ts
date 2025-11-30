@@ -147,6 +147,36 @@ export async function loadAllMessagesForContact(
 }
 
 /**
+ * Ricarica completamente tutto lo storico messaggi dal server
+ * Cancella i messaggi locali e li sostituisce con quelli dal server
+ */
+export async function reloadAllMessagesFromServer(
+  client: Agent,
+  contactJid: string
+): Promise<Message[]> {
+  const normalizedJid = normalizeJid(contactJid)
+  
+  try {
+    // 1. Carica tutto lo storico dal server
+    const serverMessages = await loadAllMessagesForContact(client, normalizedJid)
+    
+    // 2. Cancella tutti i messaggi locali per questa conversazione
+    const { clearMessagesForConversation } = await import('./conversations-db')
+    await clearMessagesForConversation(normalizedJid)
+    
+    // 3. Salva i nuovi messaggi dal server
+    if (serverMessages.length > 0) {
+      await saveMessages(serverMessages)
+    }
+    
+    return serverMessages
+  } catch (error) {
+    console.error('Errore nel reload completo messaggi:', error)
+    throw new Error('Impossibile ricaricare i messaggi dal server')
+  }
+}
+
+/**
  * Invia un messaggio con optimistic update
  */
 export async function sendMessage(
@@ -270,20 +300,25 @@ export async function handleIncomingMessage(
   message: ReceivedMessage,
   myJid: string,
   contactJid: string
-): Promise<void> {
+): Promise<Message> {
   const myBareJid = normalizeJid(myJid)
   const from = message.from || ''
   const fromMe = from.startsWith(myBareJid)
 
-  // Estrai timestamp
-  const delay = message.delay
+  // Estrai timestamp con fallback migliore
   let timestamp = new Date()
+  
+  // 1. Prova con delay.stamp (per messaggi storici/offline)
+  const delay = message.delay
   if (delay && typeof delay === 'object' && 'stamp' in delay) {
     const stamp = (delay as { stamp?: string }).stamp
     if (stamp) {
       timestamp = new Date(stamp)
     }
   }
+  
+  // 2. Se non c'è delay, usa il timestamp attuale (messaggi in tempo reale)
+  // Il timestamp è comunque accurato perché il messaggio è appena arrivato
 
   const incomingMessage: Message = {
     messageId: message.id || `incoming_${Date.now()}`,
@@ -296,4 +331,7 @@ export async function handleIncomingMessage(
 
   // Salva nel database (de-duplicazione automatica)
   await addMessage(incomingMessage)
+  
+  // Ritorna il messaggio per permettere update ottimistici
+  return incomingMessage
 }

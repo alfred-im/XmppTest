@@ -3,11 +3,16 @@
 .chat-page {
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  height: 100dvh; /* Use dvh for better mobile support */
+  max-height: 100dvh;
   width: 100vw;
   background: #ffffff;
   overflow: hidden;
-  position: relative;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
 }
 
 /* Header */
@@ -168,6 +173,21 @@
   padding: 1rem;
   color: #707579;
   font-size: 0.875rem;
+}
+
+.chat-page__pull-refresh {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 1rem;
+  color: #5682a3;
+  font-size: 0.875rem;
+  font-weight: 500;
+  background: rgba(86, 130, 163, 0.05);
+  border-radius: 8px;
+  margin-bottom: 0.5rem;
+  animation: slideDown 0.3s ease-out;
 }
 
 .chat-page__spinner {

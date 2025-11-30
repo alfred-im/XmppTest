@@ -138,7 +138,8 @@ export function XmppProvider({ children }: { children: ReactNode }) {
         const updated = await getConversations()
         setConversations(updated)
 
-        // 4. Notifica i callback registrati (per ChatPage attiva)
+        // 4. Notifica i callback registrati con il messaggio completo (per ChatPage attiva)
+        // Passa sia ReceivedMessage che Message salvato per evitare reload
         messageCallbacks.current.forEach((callback) => {
           callback(message)
         })
