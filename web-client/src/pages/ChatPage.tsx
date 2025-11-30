@@ -31,6 +31,7 @@ export function ChatPage() {
   
   // Pull to refresh refs (ora dal basso verso l'alto)
   const pullStartY = useRef(0)
+  const pullStartX = useRef(0)
   const pullCurrentY = useRef(0)
   const isPulling = useRef(false)
   const pullIndicatorRef = useRef<HTMLDivElement>(null)
@@ -338,27 +339,41 @@ export function ChatPage() {
     if (!messagesContainerRef.current || isPullRefreshing || isLoadingMore) return
     
     const { scrollTop, scrollHeight, clientHeight } = messagesContainerRef.current
-    const isAtBottom = scrollHeight - scrollTop - clientHeight < 10
+    const isAtBottom = scrollHeight - scrollTop - clientHeight < 5
     
-    // Inizia il pull solo se siamo in fondo
+    // Solo salva la posizione iniziale se siamo in fondo, non attivare ancora il pull
     if (isAtBottom) {
-      isPulling.current = true
       pullStartY.current = e.touches[0].clientY
+      pullStartX.current = e.touches[0].clientX
       pullCurrentY.current = pullStartY.current
+    } else {
+      pullStartY.current = 0
     }
   }
   
   const handleTouchMove = (e: React.TouchEvent) => {
-    if (!isPulling.current || !messagesContainerRef.current || !pullIndicatorRef.current) return
+    if (!messagesContainerRef.current || !pullIndicatorRef.current || pullStartY.current === 0) return
     
     const { scrollTop, scrollHeight, clientHeight } = messagesContainerRef.current
-    const isAtBottom = scrollHeight - scrollTop - clientHeight < 10
+    const isAtBottom = scrollHeight - scrollTop - clientHeight < 5
     
     pullCurrentY.current = e.touches[0].clientY
     const pullDistance = pullStartY.current - pullCurrentY.current // Invertito: pull verso l'alto
+    const pullDistanceX = Math.abs(e.touches[0].clientX - pullStartX.current)
     
-    // Solo se siamo in fondo E tiriamo verso l'alto
-    if (isAtBottom && pullDistance > 0) {
+    // Se movimento orizzontale > verticale, è uno swipe orizzontale, ignora
+    if (pullDistanceX > Math.abs(pullDistance)) {
+      pullStartY.current = 0
+      return
+    }
+    
+    // Attiva il pull solo dopo un movimento significativo verso l'alto (>30px)
+    if (!isPulling.current && pullDistance > 30 && isAtBottom) {
+      isPulling.current = true
+    }
+    
+    // Solo se il pull è attivato e siamo in fondo E tiriamo verso l'alto
+    if (isPulling.current && isAtBottom && pullDistance > 0) {
       // Previeni lo scroll nativo per mostrare l'indicatore
       e.preventDefault()
       
