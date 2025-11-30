@@ -21,6 +21,8 @@ body {
     radial-gradient(circle at 20% 20%, rgba(14, 165, 233, 0.3), transparent 40%),
     #050b14;
   color: inherit;
+  /* Blocca completamente il pull-to-refresh nativo */
+  overscroll-behavior-y: none;
 }
 
 #root {

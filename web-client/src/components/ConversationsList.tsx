@@ -53,13 +53,20 @@ export function ConversationsList() {
 
       // Solo se trasciniamo verso il basso E siamo in cima
       if (distance > 0 && scrollTop === 0) {
-        // Previeni lo scroll nativo solo quando pull-to-refresh è attivo
+        // Previeni SEMPRE lo scroll nativo quando siamo in pull mode
         e.preventDefault()
+        e.stopPropagation()
         
         // Riduci la sensibilità: usa radice quadrata per effetto "gomma"
+        // Limita a 100px max per evitare di andare troppo in basso
         const pullDist = Math.min(Math.sqrt(distance * 30), 100)
         currentPullDistance.current = pullDist
         setPullDistance(pullDist)
+      } else if (distance <= 0) {
+        // Se si torna su, resetta
+        isDragging.current = false
+        currentPullDistance.current = 0
+        setPullDistance(0)
       }
     }
 
@@ -164,16 +171,16 @@ export function ConversationsList() {
         <h2>Chat</h2>
       </div>
 
-      {/* Pull-to-refresh indicator */}
-      {pullDistance > 5 && (
+      {/* Pull-to-refresh indicator - mostrato solo durante pull o refresh */}
+      {(pullDistance > 5 || isRefreshing) && (
         <div
           className="conversations-list__pull-refresh"
           style={{
-            transform: `translateY(${60 + pullDistance}px)`,
-            opacity: Math.min(pullDistance / 60, 1),
+            transform: `translateY(${60 + (isRefreshing ? 50 : pullDistance)}px)`,
+            opacity: isRefreshing ? 1 : Math.min(pullDistance / 60, 1),
           }}
         >
-          {isRefreshing || isLoading ? (
+          {isRefreshing ? (
             <>
               <div className="conversations-list__spinner"></div>
               <span>Aggiornamento...</span>

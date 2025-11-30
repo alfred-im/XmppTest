@@ -7,7 +7,7 @@
   background: #ffffff;
   overflow: hidden;
   /* Blocca overscroll/pull-to-refresh nativo */
-  overscroll-behavior-y: contain;
+  overscroll-behavior-y: none;
   touch-action: pan-y;
   position: relative;
 }
@@ -69,7 +69,7 @@
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
   /* Blocca overscroll/pull-to-refresh nativo */
-  overscroll-behavior-y: contain;
+  overscroll-behavior-y: none;
 }
 
 .conversation-item {

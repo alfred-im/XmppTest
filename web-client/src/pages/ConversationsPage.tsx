@@ -43,8 +43,8 @@ export function ConversationsPage() {
   return (
     <div className="app-shell">
       <header className="hero" style={{ position: 'relative' }}>
-        {/* Refresh spinner in alto a destra */}
-        {(isRefreshing || isLoading) && (
+        {/* Refresh spinner in alto a destra - solo per isLoading iniziale, non per pull-to-refresh */}
+        {isLoading && !isRefreshing && (
           <div
             style={{
               position: 'absolute',
