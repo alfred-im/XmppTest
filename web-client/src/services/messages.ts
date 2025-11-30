@@ -35,6 +35,17 @@ function extractTimestamp(msg: MAMResult): Date {
 }
 
 /**
+ * Verifica se un messaggio MAM è un messaggio di chat valido (con body)
+ * Filtra messaggi non testuali come ping, visualizzazioni, ecc.
+ */
+function isValidChatMessage(msg: MAMResult): boolean {
+  const type = msg.item.message?.type
+  const body = msg.item.message?.body
+  // Solo messaggi di tipo chat (o senza tipo) con body non vuoto
+  return (!type || type === 'chat') && body && body.trim().length > 0
+}
+
+/**
  * Converte un MAMResult in Message
  */
 function mamResultToMessage(msg: MAMResult, conversationJid: string, myJid: string): Message {
@@ -111,9 +122,12 @@ export async function loadMessagesForContact(
       }
     }
 
+    // Filtra solo messaggi di chat validi (con body)
+    const validMessages = result.results.filter(isValidChatMessage)
+
     // Converti MAMResult in Message
     const myJid = client.jid || ''
-    const messages = result.results.map((msg) =>
+    const messages = validMessages.map((msg) =>
       mamResultToMessage(msg, contactJid, myJid)
     )
 
@@ -188,8 +202,11 @@ export async function downloadAllMessagesFromServer(
         break
       }
 
+      // Filtra solo messaggi di chat validi (con body)
+      const validMessages = result.results.filter(isValidChatMessage)
+
       // Converti in Message ma NON salvare
-      const messages = result.results.map((msg) =>
+      const messages = validMessages.map((msg) =>
         mamResultToMessage(msg, contactJid, myJid)
       )
       
@@ -320,6 +337,7 @@ export async function retryMessage(
 
 /**
  * Carica messaggi dal database locale (più veloce, per UI)
+ * Filtra automaticamente messaggi vuoti (senza body)
  */
 export async function getLocalMessages(
   conversationJid: string,
@@ -328,7 +346,9 @@ export async function getLocalMessages(
     before?: Date
   }
 ): Promise<Message[]> {
-  return getMessagesForConversation(normalizeJid(conversationJid), options)
+  const messages = await getMessagesForConversation(normalizeJid(conversationJid), options)
+  // Filtra messaggi vuoti (senza body) - possono essere ping, visualizzazioni, ecc.
+  return messages.filter(msg => msg.body && msg.body.trim().length > 0)
 }
 
 /**
