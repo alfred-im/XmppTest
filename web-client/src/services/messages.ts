@@ -3,13 +3,13 @@ import type { MAMResult, ReceivedMessage } from 'stanza/protocol'
 import {
   saveMessages,
   getMessagesForConversation,
-  updateMessageStatus,
-  updateMessageId,
+  clearMessagesForConversation,
   type Message,
 } from './conversations-db'
 import { normalizeJid } from '../utils/jid'
 import { generateTempId } from '../utils/message'
 import { PAGINATION } from '../config/constants'
+import { sincronizza } from './sync'
 
 // Re-export per comodità
 export type { Message, MessageStatus } from './conversations-db'
@@ -227,7 +227,6 @@ export async function reloadAllMessagesFromServer(
     const serverMessages = await downloadAllMessagesFromServer(client, normalizedJid)
     
     // 2. Poi svuota il database dei messaggi per questa conversazione
-    const { clearMessagesForConversation } = await import('./conversations-db')
     await clearMessagesForConversation(normalizedJid)
     
     // 3. Infine salva i messaggi scaricati nel database
@@ -257,7 +256,6 @@ export async function sendMessage(
   try {
     // Usa il sistema di sincronizzazione unificato
     // Questo invia il messaggio, aspetta conferma e sincronizza tutto dal server
-    const { sincronizza } = await import('./sync')
     const result = await sincronizza(client, {
       type: 'sendMessage',
       toJid: normalizedJid,
@@ -284,7 +282,7 @@ export async function sendMessage(
 }
 
 /**
- * Riprova a inviare un messaggio fallito
+ * Riprova a inviare un messaggio fallito usando il sistema di sincronizzazione
  */
 export async function retryMessage(
   client: Agent,
@@ -294,35 +292,25 @@ export async function retryMessage(
     return { success: false, error: 'Il messaggio non è in stato failed' }
   }
 
-  // Aggiorna lo status a pending prima dell'invio
-  await updateMessageStatus(message.messageId, 'pending')
-
   try {
-    // Invia il messaggio
-    const sentMessage = await client.sendMessage({
-      to: message.conversationJid,
+    // Usa il sistema di sincronizzazione per inviare il messaggio
+    // Questo invia, aspetta conferma e sincronizza tutto dal server
+    const result = await sincronizza(client, {
+      type: 'sendMessage',
+      toJid: message.conversationJid,
       body: message.body,
-      type: 'chat',
     })
 
-    // Se l'invio ha successo, aggiorna il messaggio esistente invece di crearne uno nuovo
-    const serverId = typeof sentMessage === 'string' ? sentMessage : message.messageId
-    
-    if (serverId !== message.messageId) {
-      // Il server ha dato un nuovo ID, aggiorna
-      await updateMessageId(message.messageId, serverId)
-    } else {
-      // Aggiorna solo lo status
-      await updateMessageStatus(message.messageId, 'sent')
+    if (!result.success) {
+      return {
+        success: false,
+        error: result.error || 'Errore nel retry del messaggio',
+      }
     }
 
     return { success: true }
   } catch (error) {
     console.error('Errore nel retry del messaggio:', error)
-    
-    // Ripristina status a 'failed'
-    await updateMessageStatus(message.messageId, 'failed')
-    
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Errore sconosciuto',
