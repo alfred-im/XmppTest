@@ -165,7 +165,7 @@ async function loadAllMessagesFromServerOnly(
   contactJid: string
 ): Promise<Message[]> {
   const normalizedJid = normalizeJid(contactJid)
-  const allMessages: Message[] = []
+  const messagesMap = new Map<string, Message>() // Usa Map per de-duplicazione automatica
   let hasMore = true
   let afterToken: string | undefined
   const myJid = client.jid || ''
@@ -190,7 +190,8 @@ async function loadAllMessagesFromServerOnly(
         mamResultToMessage(msg, contactJid, myJid)
       )
       
-      allMessages.push(...messages)
+      // Aggiungi alla Map per de-duplicazione automatica per messageId
+      messages.forEach(msg => messagesMap.set(msg.messageId, msg))
 
       hasMore = !result.complete && !!result.paging?.last
       afterToken = result.paging?.last
@@ -199,6 +200,11 @@ async function loadAllMessagesFromServerOnly(
       break
     }
   }
+
+  // Converti Map in array ordinato per timestamp
+  const allMessages = Array.from(messagesMap.values()).sort(
+    (a, b) => a.timestamp.getTime() - b.timestamp.getTime()
+  )
 
   return allMessages
 }
