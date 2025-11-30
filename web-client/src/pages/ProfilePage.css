@@ -63,6 +63,10 @@
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
   min-height: 0;
+}
+
+/* Contenuto interno del main */
+.profile-page__content {
   padding: 1.5rem 1rem;
   padding-bottom: calc(1.5rem + env(safe-area-inset-bottom, 0));
 }
@@ -351,7 +355,7 @@
 
 /* Mobile optimizations */
 @media (max-width: 768px) {
-  .profile-page__main {
+  .profile-page__content {
     padding: 1rem;
   }
 
