@@ -378,9 +378,6 @@ export function ChatPage() {
     if (isAtBottom && pullDistance > 30) {
       isPulling.current = true
       
-      // Previeni lo scroll nativo per mostrare l'indicatore
-      e.preventDefault()
-      
       // Mostra l'indicatore di pull con opacità crescente
       const opacity = Math.min(pullDistance / 80, 1)
       const translateY = Math.min(pullDistance * 0.5, 60)
