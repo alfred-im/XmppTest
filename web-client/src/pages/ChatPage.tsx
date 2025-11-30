@@ -364,16 +364,28 @@ export function ChatPage() {
     // Se movimento orizzontale > verticale, è uno swipe orizzontale, ignora
     if (pullDistanceX > Math.abs(pullDistance)) {
       pullStartY.current = 0
+      isPulling.current = false
       return
     }
     
-    // Attiva il pull solo dopo un movimento significativo verso l'alto (>30px)
+    // Se non siamo più in fondo (l'utente ha scrollato), annulla il pull
+    if (!isAtBottom) {
+      isPulling.current = false
+      pullStartY.current = 0
+      if (pullIndicatorRef.current) {
+        pullIndicatorRef.current.style.opacity = '0'
+        pullIndicatorRef.current.style.transform = 'translateY(0)'
+      }
+      return
+    }
+    
+    // Attiva il pull solo dopo un movimento significativo verso l'alto (>30px) E siamo ancora in fondo
     if (!isPulling.current && pullDistance > 30 && isAtBottom) {
       isPulling.current = true
     }
     
-    // Solo se il pull è attivato e siamo in fondo E tiriamo verso l'alto
-    if (isPulling.current && isAtBottom && pullDistance > 0) {
+    // Solo se il pull è attivato, siamo in fondo E tiriamo verso l'alto
+    if (isPulling.current && pullDistance > 0) {
       // Previeni lo scroll nativo per mostrare l'indicatore
       e.preventDefault()
       
@@ -383,6 +395,10 @@ export function ChatPage() {
       
       pullIndicatorRef.current.style.opacity = opacity.toString()
       pullIndicatorRef.current.style.transform = `translateY(-${translateY}px)`
+    } else if (pullDistance < 0) {
+      // Se l'utente tira verso il basso (scroll normale), annulla tutto
+      isPulling.current = false
+      pullStartY.current = 0
     }
   }
   
