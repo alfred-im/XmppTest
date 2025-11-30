@@ -215,9 +215,214 @@ async function testLogin(page) {
   }
 }
 
-// Test 4: Analisi console logs
+// Test 4: Navigazione conversazioni
+async function testConversationsNavigation(page) {
+  log.section('Test 4: Navigazione Conversazioni');
+  
+  try {
+    // Aspetta che le conversazioni siano caricate
+    log.info('Attesa caricamento lista conversazioni...');
+    await page.waitForTimeout(3000);
+    
+    // Cerca elementi conversazione
+    const conversations = await page.locator('.conversation-item, [class*="conversation"]').all();
+    const conversationCount = conversations.length;
+    
+    log.info(`Trovate ${conversationCount} conversazioni`);
+    
+    if (conversationCount > 0) {
+      log.success(`Lista conversazioni caricata con ${conversationCount} elementi`);
+      
+      // Screenshot lista
+      await page.screenshot({ path: '/workspace/test-screenshot-6-conversations.png', fullPage: true });
+      log.info('Screenshot salvato: test-screenshot-6-conversations.png');
+      
+      // Prova a cliccare sulla prima conversazione
+      log.info('Apertura prima conversazione...');
+      const currentUrl = page.url();
+      await conversations[0].click();
+      
+      // Aspetta che l'URL cambi (navigazione a chat)
+      await page.waitForTimeout(1000);
+      await page.waitForURL(url => url !== currentUrl, { timeout: 5000 }).catch(() => {
+        log.warn('URL non cambiato dopo clic');
+      });
+      
+      await page.waitForTimeout(2000);
+      
+      // Screenshot dopo navigazione
+      await page.screenshot({ path: '/workspace/test-screenshot-7-chat-open.png', fullPage: true });
+      log.info('Screenshot salvato: test-screenshot-7-chat-open.png');
+      
+      // Verifica che siamo in pagina chat verificando URL o elementi specifici
+      const newUrl = page.url();
+      if (newUrl.includes('/chat/')) {
+        log.success('Chat aperta correttamente - URL cambiato a /chat/');
+        return true;
+      } else {
+        log.warn(`Navigazione chat fallita - URL attuale: ${newUrl}`);
+        return false;
+      }
+    } else {
+      log.warn('Nessuna conversazione trovata nella lista');
+      return false;
+    }
+  } catch (error) {
+    log.error(`Errore durante navigazione conversazioni: ${error.message}`);
+    await page.screenshot({ path: '/workspace/test-screenshot-7-error.png', fullPage: true });
+    return false;
+  }
+}
+
+// Test 5: Invio messaggio
+async function testSendMessage(page) {
+  log.section('Test 5: Invio Messaggio');
+  
+  try {
+    // Cerca il campo di input messaggio
+    const messageInput = await page.locator('input[type="text"]:visible, textarea:visible').last();
+    const inputExists = await messageInput.count() > 0;
+    
+    if (!inputExists) {
+      log.error('Campo input messaggio non trovato');
+      return false;
+    }
+    
+    const testMessage = `Test message from Playwright - ${new Date().toISOString()}`;
+    log.info(`Invio messaggio: "${testMessage}"`);
+    
+    await messageInput.fill(testMessage);
+    await page.waitForTimeout(500);
+    
+    // Screenshot con messaggio scritto
+    await page.screenshot({ path: '/workspace/test-screenshot-8-message-typed.png', fullPage: true });
+    log.info('Screenshot salvato: test-screenshot-8-message-typed.png');
+    
+    // Cerca pulsante invio
+    const sendButton = await page.locator('button[type="submit"]:visible, button:has-text("Invia"):visible, button[aria-label*="Invia"]:visible').last();
+    const sendButtonExists = await sendButton.count() > 0;
+    
+    if (sendButtonExists) {
+      log.info('Clic su pulsante invio...');
+      await sendButton.click();
+    } else {
+      log.info('Pulsante invio non trovato, provo con Enter...');
+      await messageInput.press('Enter');
+    }
+    
+    await page.waitForTimeout(2000);
+    
+    // Screenshot dopo invio
+    await page.screenshot({ path: '/workspace/test-screenshot-9-message-sent.png', fullPage: true });
+    log.info('Screenshot salvato: test-screenshot-9-message-sent.png');
+    
+    // Verifica che il campo sia vuoto dopo l'invio
+    const inputValue = await messageInput.inputValue();
+    if (inputValue === '') {
+      log.success('Messaggio inviato - campo input svuotato');
+      return true;
+    } else {
+      log.warn('Campo input non svuotato dopo invio');
+      return false;
+    }
+  } catch (error) {
+    log.error(`Errore durante invio messaggio: ${error.message}`);
+    return false;
+  }
+}
+
+// Test 6: Profilo utente
+async function testUserProfile(page) {
+  log.section('Test 6: Profilo Utente');
+  
+  try {
+    // Torna alla lista conversazioni (back button)
+    log.info('Navigazione alla pagina profilo...');
+    
+    // Cerca link/button profilo - potrebbe essere in header o menu
+    const profileButton = await page.locator('[href*="#/profile"], button:has-text("Profilo"), [aria-label*="Profilo"]').first();
+    const profileExists = await profileButton.count() > 0;
+    
+    if (!profileExists) {
+      // Prova con navigazione diretta
+      log.info('Link profilo non trovato, provo navigazione diretta...');
+      await page.goto(`${TEST_CONFIG.baseUrl}/XmppTest/#/profile`);
+      await page.waitForTimeout(2000);
+    } else {
+      await profileButton.click();
+      await page.waitForTimeout(2000);
+    }
+    
+    // Screenshot pagina profilo
+    await page.screenshot({ path: '/workspace/test-screenshot-10-profile.png', fullPage: true });
+    log.info('Screenshot salvato: test-screenshot-10-profile.png');
+    
+    // Verifica elementi profilo (JID, avatar, ecc.)
+    const jidDisplay = await page.locator('text=' + TEST_CONFIG.credentials.jid).first();
+    const hasJid = await jidDisplay.count() > 0;
+    
+    if (hasJid) {
+      log.success('Pagina profilo caricata - JID visibile');
+      return true;
+    } else {
+      log.warn('JID non visibile nella pagina profilo');
+      return false;
+    }
+  } catch (error) {
+    log.error(`Errore durante test profilo: ${error.message}`);
+    return false;
+  }
+}
+
+// Test 7: Logout
+async function testLogout(page) {
+  log.section('Test 7: Logout');
+  
+  try {
+    // Il pulsante logout è nella ConversationsPage, non in ProfilePage
+    // Torna alla home/conversations
+    log.info('Navigazione alla pagina conversazioni...');
+    await page.goto(`${TEST_CONFIG.baseUrl}/XmppTest/#/`);
+    await page.waitForTimeout(2000);
+    
+    // Screenshot pagina conversazioni
+    await page.screenshot({ path: '/workspace/test-screenshot-11-back-to-conversations.png', fullPage: true });
+    log.info('Screenshot salvato: test-screenshot-11-back-to-conversations.png');
+    
+    // Cerca pulsante logout/disconnetti
+    const logoutButton = await page.locator('button:has-text("Disconnetti"), button:has-text("Logout"), button:has-text("Esci"), [aria-label*="Disconnetti"]').first();
+    const logoutExists = await logoutButton.count() > 0;
+    
+    if (!logoutExists) {
+      log.warn('Pulsante logout non trovato nella pagina conversazioni');
+      return false;
+    }
+    
+    log.info('Clic su logout...');
+    await logoutButton.click();
+    await page.waitForTimeout(2000);
+    
+    // Verifica che il popup di login riappaia
+    const loginPopup = await waitForElement(page, 'form, [role="dialog"], .login-popup, .popup', 3000);
+    
+    if (loginPopup) {
+      log.success('Logout eseguito - LoginPopup riapparso');
+      await page.screenshot({ path: '/workspace/test-screenshot-12-logout.png', fullPage: true });
+      log.info('Screenshot salvato: test-screenshot-12-logout.png');
+      return true;
+    } else {
+      log.error('LoginPopup non riapparso dopo logout');
+      return false;
+    }
+  } catch (error) {
+    log.error(`Errore durante logout: ${error.message}`);
+    return false;
+  }
+}
+
+// Test 8: Analisi console logs
 async function analyzeConsoleLogs(consoleLogs) {
-  log.section('Test 4: Analisi Console Logs');
+  log.section('Test 8: Analisi Console Logs');
   
   const { errors, warnings, info } = consoleLogs;
   
@@ -291,13 +496,23 @@ async function runTests() {
       consoleLogs.errors.push(`[PAGE ERROR] ${error.message}`);
     });
     
-    // Esegui i test
+    // Esegui i test in sequenza
     const results = {
       pageLoad: await testPageLoad(page),
       uiElements: await testUIElements(page),
-      login: await testLogin(page),
-      consoleLogs: await analyzeConsoleLogs(consoleLogs)
+      login: await testLogin(page)
     };
+    
+    // Test uso applicazione (solo se login è riuscito)
+    if (results.login) {
+      results.conversationsNav = await testConversationsNavigation(page);
+      results.sendMessage = await testSendMessage(page);
+      results.userProfile = await testUserProfile(page);
+      results.logout = await testLogout(page);
+    }
+    
+    // Analizza console logs
+    results.consoleLogs = await analyzeConsoleLogs(consoleLogs);
     
     // Riassunto
     log.section('📊 Risultati Test');
