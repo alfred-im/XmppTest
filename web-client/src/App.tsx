@@ -15,7 +15,6 @@ function AppRoutes() {
         <Route path="/conversations" element={<ConversationsPage />} />
         <Route path="/chat/:jid" element={<ChatPage />} />
         <Route path="/" element={<Navigate to="/conversations" replace />} />
-        <Route path="*" element={<Navigate to="/conversations" replace />} />
       </Routes>
 
       {/* Popup di login globale - appare sopra le route quando necessario */}
