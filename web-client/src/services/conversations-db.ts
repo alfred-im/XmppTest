@@ -33,7 +33,7 @@ interface ConversationsDB extends DBSchema {
     value: Conversation
     indexes: { 
       'by-updatedAt': Date
-      'by-hidden': boolean // Index per filtrare conversazioni nascoste
+      'by-hidden': boolean | undefined // Index per filtrare conversazioni nascoste
     }
   }
   messages: {
@@ -64,7 +64,7 @@ export async function getDB(): Promise<IDBPDatabase<ConversationsDB>> {
   }
 
   dbInstance = await openDB<ConversationsDB>('conversations-db', 3, {
-    upgrade(db, oldVersion, newVersion, transaction) {
+    upgrade(db, oldVersion, _newVersion, transaction) {
       // Versione 1: Store originali
       if (oldVersion < 1) {
         // Store per conversazioni
