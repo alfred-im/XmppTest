@@ -2,7 +2,6 @@ import type { Agent } from 'stanza'
 import type { MAMResult, ReceivedMessage } from 'stanza/protocol'
 import {
   saveMessages,
-  addMessage,
   getMessagesForConversation,
   updateMessageStatus,
   updateMessageId,

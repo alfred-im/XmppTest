@@ -124,16 +124,9 @@ export function XmppProvider({ children }: { children: ReactNode }) {
       if (!jid || !message.body || !client) return
 
       try {
-        // 1. Determina il JID del contatto
-        const myBareJid = jid.split('/')[0].toLowerCase()
-        const from = message.from || ''
-        const to = message.to || ''
-        const contactJid = from.startsWith(myBareJid) 
-          ? to.split('/')[0].toLowerCase() 
-          : from.split('/')[0].toLowerCase()
-
-        // 2. Usa il sistema di sincronizzazione: sincronizza tutto dal server
+        // Usa il sistema di sincronizzazione: sincronizza tutto dal server
         // NON scriviamo direttamente nel database - la sincronizzazione lo fa
+        // handleIncomingMessageAndSync determina il JID del contatto internamente
         await handleIncomingMessageAndSync(client, message, jid)
 
         // 3. Aggiorna lista conversazioni dal database (ora sincronizzato)
