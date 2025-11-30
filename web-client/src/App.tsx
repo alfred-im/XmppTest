@@ -67,11 +67,12 @@ function App() {
   useEffect(() => {
     // Nascondi splash screen dopo il caricamento iniziale
     if (document.readyState === 'complete') {
-      setShowSplash(false)
+      // Usa setTimeout per evitare setState sincrono nell'effetto
+      setTimeout(() => setShowSplash(false), 0)
     } else {
-      window.addEventListener('load', () => {
-        setShowSplash(false)
-      })
+      const handleLoad = () => setShowSplash(false)
+      window.addEventListener('load', handleLoad)
+      return () => window.removeEventListener('load', handleLoad)
     }
   }, [])
 
