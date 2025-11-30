@@ -157,8 +157,8 @@ export function ProfilePage() {
         <h1>Profilo</h1>
       </header>
 
-      {/* Corpo scrollabile */}
-      <main className="profile-page__body">
+      {/* Main scrollabile */}
+      <main className="profile-page__main">
         {!isConnected ? (
           <div className="profile-page__error">
             <p>Non connesso al server XMPP</p>

@@ -56,8 +56,8 @@
   background-color: rgba(255, 255, 255, 0.15);
 }
 
-/* Corpo scrollabile */
-.profile-page__body {
+/* Main scrollabile */
+.profile-page__main {
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
@@ -324,7 +324,7 @@
     background: #17212b;
   }
 
-  .profile-page__body {
+  .profile-page__main {
     background: #0e1621;
   }
 
@@ -351,7 +351,7 @@
 
 /* Mobile optimizations */
 @media (max-width: 768px) {
-  .profile-page__body {
+  .profile-page__main {
     padding: 1rem;
   }
 
