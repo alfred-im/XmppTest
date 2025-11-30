@@ -84,7 +84,7 @@ textarea {
   overflow-y: auto;
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
-  overscroll-behavior-y: none;
+  overscroll-behavior-y: contain;
   overscroll-behavior-x: none;
   /* Permetti solo scroll verticale, blocca zoom */
   touch-action: pan-y;
