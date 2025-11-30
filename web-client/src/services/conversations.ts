@@ -168,10 +168,10 @@ export async function loadConversationsFromServer(
 }
 
 /**
- * Carica TUTTE le conversazioni dal server usando MAM
- * Ricarica storico completo, elabora tutto e aggiorna database locale
+ * Scarica TUTTE le conversazioni dal server senza salvare nel database
+ * Utile per refresh completo dove si vuole scaricare prima, poi svuotare e salvare
  */
-export async function loadAllConversations(client: Agent): Promise<Conversation[]> {
+export async function downloadAllConversations(client: Agent): Promise<{ conversations: Conversation[]; lastToken?: string }> {
   let allConversations: Conversation[] = []
   let hasMore = true
   let lastToken: string | undefined
@@ -206,6 +206,20 @@ export async function loadAllConversations(client: Agent): Promise<Conversation[
   }
 
   const uniqueConversations = Array.from(conversationMap.values())
+
+  return {
+    conversations: uniqueConversations,
+    lastToken,
+  }
+}
+
+/**
+ * Carica TUTTE le conversazioni dal server usando MAM
+ * Ricarica storico completo, elabora tutto e aggiorna database locale
+ */
+export async function loadAllConversations(client: Agent): Promise<Conversation[]> {
+  // Scarica tutte le conversazioni dal server
+  const { conversations: uniqueConversations, lastToken } = await downloadAllConversations(client)
 
   // Carica conversazioni esistenti dal database per mantenere unreadCount
   const existingConversations = await getConversations()
