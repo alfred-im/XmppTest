@@ -17,8 +17,9 @@
 Per iniziare rapidamente con Alfred:
 
 1. **[README](../README.md)** - Panoramica del progetto e setup iniziale
-2. **[Brand Identity](./design/brand-identity.md)** - Colori e stile
-3. **[Architecture Overview](./architecture/README.md)** - Architettura generale
+2. **[CHANGELOG](../CHANGELOG.md)** - Storia delle modifiche e versioni
+3. **[Brand Identity](./design/brand-identity.md)** - Colori e stile
+4. **[Architecture Overview](./architecture/README.md)** - Architettura generale
 
 ---
 
@@ -28,9 +29,7 @@ Per iniziare rapidamente con Alfred:
 - Coming soon
 
 ### Guide Sviluppatore
-- **[Sincronizzazione Dati](./guides/sync-strategy.md)** - Come funziona la sincronizzazione
-- **[Pull-to-Refresh](./guides/pull-to-refresh.md)** - Implementazione del refresh
-- **[Sistema Routing](./guides/routing-system.md)** - Gestione delle rotte
+- **[Sistema Routing](./guides/routing-system.md)** - Gestione delle rotte e navigazione
 
 ---
 
@@ -38,12 +37,10 @@ Per iniziare rapidamente con Alfred:
 
 ### Documentazione Architetturale
 - **[Panoramica](./architecture/README.md)** - Overview architetturale
-- **[Sincronizzazione](./architecture/sync-system.md)** - Sistema di sincronizzazione
-- **[Database Locale](./architecture/local-database.md)** - IndexedDB e cache
-- **[XMPP Integration](./architecture/xmpp-integration.md)** - Integrazione XMPP/MAM
-
-### Diagrammi
-- Coming soon
+- **[Analisi Conversazioni](./architecture/conversations-analysis.md)** - Gestione conversazioni
+- **[Strategia MAM Globale](./architecture/mam-global-strategy-explained.md)** - Message Archive Management
+- **[Performance MAM Long-term](./architecture/mam-performance-long-term.md)** - Ottimizzazioni MAM
+- **[Confronto Strategie](./architecture/strategy-comparison.md)** - Comparazione approcci
 
 ---
 
@@ -56,7 +53,13 @@ Per iniziare rapidamente con Alfred:
   - **[Dettagli Tecnici](./implementation/scrollable-containers-implementation.md)** - Implementazione dettagliata
 
 ### Fix e Ottimizzazioni
+- **[Panoramica Fix](./fixes/README.md)** - Overview fix applicati
 - **[Pull-to-Refresh Fix](./fixes/pull-to-refresh-fix.md)** - Correzione pull-to-refresh
+- **[Profile Save Error Fix](./fixes/profile-save-error-fix.md)** - Gestione errori salvataggio profilo
+- **[Profile Scroll Conflict Fix](./fixes/profile-scroll-conflict-fix.md)** - Risoluzione conflitti scroll
+- **[Profile Scroll Fix](./fixes/profile-scroll-fix.md)** - Fix scroll pagina profilo
+- **[vCard Photo Base64 Fix](./fixes/vcard-photo-base64-string-fix.md)** - Fix formato foto profilo
+- **[vCard Photo Server Issue](./fixes/vcard-photo-server-issue.md)** - Analisi problemi server vCard
 - **[Known Issues](./fixes/known-issues.md)** - Problemi noti e soluzioni
 
 ---
@@ -71,11 +74,10 @@ Per iniziare rapidamente con Alfred:
 
 ## 📝 Decisioni Architetturali
 
-Documenti che spiegano le scelte architetturali importanti:
+Documenti che spiegano le scelte architetturali importanti (ADR - Architecture Decision Records):
 
+- **[Panoramica Decisioni](./decisions/README.md)** - Overview decisioni architetturali
 - **[No Message Deletion](./decisions/no-message-deletion.md)** - Perché non implementare cancellazione messaggi XMPP
-- **[MAM Strategy](./decisions/mam-strategy.md)** - Strategia utilizzo MAM
-- **[Routing Strategy](./decisions/routing-strategy.md)** - Scelta di HashRouter
 
 ---
 
@@ -83,9 +85,16 @@ Documenti che spiegano le scelte architetturali importanti:
 
 Documenti di ricerca e analisi storiche (mantenuti per riferimento):
 
-- **[XMPP Deletion Research](./archive/xmpp-deletion-research/)** - Ricerca su cancellazione messaggi XMPP
-- **[MAM Analysis](./archive/mam-analysis/)** - Analisi approfondita MAM
-- **[Old Requirements](./archive/old-requirements/)** - Requisiti originali
+### XMPP Research
+- **[XMPP Deletion Comprehensive Analysis](./archive/xmpp-research/xmpp-deletion-comprehensive-analysis.md)** - Analisi approfondita cancellazione messaggi
+- **[XMPP Message Deletion Research](./archive/xmpp-research/xmpp-message-deletion-research.md)** - Ricerca iniziale
+- **[XMPP Hide Message History](./archive/xmpp-research/xmpp-hide-message-history.md)** - Opzioni per nascondere messaggi
+- **[XMPP Hide Conversation Flag](./archive/xmpp-research/xmpp-hide-conversation-flag.md)** - Flag per conversazioni nascoste
+- **[XEP-0424 Support Analysis](./archive/xmpp-research/xep-0424-support-analysis.md)** - Supporto Message Retraction
+
+### Documentazione Storica
+- **[Panoramica Archivio](./archive/README.md)** - Overview documenti archiviati
+- **[Old Docs](./archive/old-docs/)** - Documenti obsoleti pre-refactoring
 
 ---
 
@@ -118,5 +127,24 @@ Documenti di ricerca e analisi storiche (mantenuti per riferimento):
 
 ---
 
+---
+
+## 📋 Manutenzione Documentazione
+
+### Dove Trovare
+- **Storico completo modifiche**: [CHANGELOG.md](../CHANGELOG.md)
+- **Credenziali test**: [TEST_CREDENTIALS.md](../TEST_CREDENTIALS.md)
+- **Regole sviluppo**: [.cursor-rules.md](../.cursor-rules.md)
+- **Procedura revisione**: [PROCEDURA_REVISIONE_GENERALE.md](../PROCEDURA_REVISIONE_GENERALE.md)
+
+### Come Contribuire
+1. Leggi le convenzioni in questa pagina
+2. Usa nomenclatura standard per nuovi documenti
+3. Aggiorna questo indice quando aggiungi documentazione
+4. Mantieni CHANGELOG.md aggiornato per modifiche significative
+
+---
+
 **Ultimo aggiornamento**: 30 Novembre 2025  
-**Versione documentazione**: 2.0
+**Versione documentazione**: 3.0  
+**Documenti obsoleti rimossi**: 17 file consolidati in CHANGELOG.md
