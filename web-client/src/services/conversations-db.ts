@@ -112,8 +112,22 @@ export async function getConversations(): Promise<Conversation[]> {
   const conversations = await tx.store.getAll()
   await tx.done
 
+  // Converti le Date che potrebbero essere state serializzate come stringhe
+  const conversationsWithDates = conversations.map(conv => ({
+    ...conv,
+    lastMessage: {
+      ...conv.lastMessage,
+      timestamp: conv.lastMessage.timestamp instanceof Date 
+        ? conv.lastMessage.timestamp 
+        : new Date(conv.lastMessage.timestamp)
+    },
+    updatedAt: conv.updatedAt instanceof Date 
+      ? conv.updatedAt 
+      : new Date(conv.updatedAt)
+  }))
+
   // Ordina per data ultimo messaggio (più recenti prima)
-  return conversations.sort(
+  return conversationsWithDates.sort(
     (a, b) => b.lastMessage.timestamp.getTime() - a.lastMessage.timestamp.getTime()
   )
 }
@@ -124,17 +138,44 @@ export async function updateConversation(jid: string, updates: Partial<Conversat
   const existing = await tx.store.get(jid)
 
   if (existing) {
+    // Converti Date se necessario per la conversazione esistente
+    const existingTimestamp = existing.lastMessage.timestamp instanceof Date
+      ? existing.lastMessage.timestamp
+      : new Date(existing.lastMessage.timestamp)
+    
+    // Converti Date se necessario per gli updates
+    const updatesTimestamp = updates.lastMessage?.timestamp
+      ? (updates.lastMessage.timestamp instanceof Date
+          ? updates.lastMessage.timestamp
+          : new Date(updates.lastMessage.timestamp))
+      : existingTimestamp
+    
     // Se viene aggiornato lastMessage, aggiorna anche updatedAt con il timestamp del messaggio
-    const updatedAt = updates.lastMessage?.timestamp || existing.lastMessage.timestamp
-    await tx.store.put({ ...existing, ...updates, updatedAt })
+    const updatedAt = updates.lastMessage?.timestamp ? updatesTimestamp : existingTimestamp
+    
+    await tx.store.put({ 
+      ...existing, 
+      ...updates, 
+      updatedAt,
+      lastMessage: updates.lastMessage 
+        ? { ...updates.lastMessage, timestamp: updatesTimestamp }
+        : { ...existing.lastMessage, timestamp: existingTimestamp }
+    })
   } else if (updates.jid) {
     // Crea nuova conversazione
+    const timestamp = updates.lastMessage!.timestamp instanceof Date
+      ? updates.lastMessage!.timestamp
+      : new Date(updates.lastMessage!.timestamp)
+    
     await tx.store.put({
       jid: updates.jid,
-      lastMessage: updates.lastMessage!,
+      lastMessage: {
+        ...updates.lastMessage!,
+        timestamp
+      },
       unreadCount: updates.unreadCount ?? 0,
       displayName: updates.displayName,
-      updatedAt: updates.lastMessage!.timestamp,
+      updatedAt: timestamp,
     })
   }
 
