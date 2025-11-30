@@ -9,9 +9,9 @@ import {
   updateConversation,
   type Message,
 } from './conversations-db'
-import { normalizeJid } from '../utils/jid'
+import { normalizeJid, parseJid, isValidJid } from '../utils/jid'
 import { generateTempId } from '../utils/message'
-import { PAGINATION } from '../config/constants'
+import { PAGINATION, DEFAULT_XMPP_DOMAIN } from '../config/constants'
 
 // Re-export per comodità
 export type { Message, MessageStatus } from './conversations-db'
@@ -247,6 +247,31 @@ export async function reloadAllMessagesFromServer(
 }
 
 /**
+ * Completa un JID aggiungendo il dominio di default se manca
+ * Se l'utente inserisce solo "username", lo trasforma in "username@domain"
+ */
+function completeJid(jid: string, myJid?: string): string {
+  const trimmed = jid.trim()
+  
+  // Se contiene già @, è un JID completo
+  if (trimmed.includes('@')) {
+    return normalizeJid(trimmed)
+  }
+  
+  // Se non contiene @, aggiungi il dominio di default
+  // Prova prima a usare il dominio dal JID dell'utente corrente, altrimenti usa quello di default
+  let domain = DEFAULT_XMPP_DOMAIN
+  if (myJid) {
+    const parsed = parseJid(myJid)
+    if (parsed.domain) {
+      domain = parsed.domain
+    }
+  }
+  
+  return normalizeJid(`${trimmed}@${domain}`)
+}
+
+/**
  * Invia un messaggio con optimistic update
  */
 export async function sendMessage(
@@ -256,7 +281,20 @@ export async function sendMessage(
 ): Promise<{ tempId: string; success: boolean; error?: string }> {
   const tempId = generateTempId()
   const timestamp = new Date()
-  const normalizedJid = normalizeJid(toJid)
+  
+  // Completa il JID se manca il dominio (es. "mario" -> "mario@domain.com")
+  const myJid = client.jid || ''
+  const completedJid = completeJid(toJid, myJid)
+  const normalizedJid = normalizeJid(completedJid)
+  
+  // Valida il JID prima di procedere
+  if (!isValidJid(normalizedJid)) {
+    return {
+      tempId,
+      success: false,
+      error: `JID non valido: ${normalizedJid}. Il formato deve essere "username@domain.com"`,
+    }
+  }
 
   // 1. Optimistic update: aggiungi messaggio subito al database con stato 'pending'
   const optimisticMessage: Message = {
@@ -314,10 +352,27 @@ export async function sendMessage(
     // Aggiorna lo status a 'failed'
     await updateMessageStatus(tempId, 'failed')
 
+    // Estrai informazioni più dettagliate dall'errore
+    let errorMessage = 'Errore nell\'invio del messaggio'
+    if (error instanceof Error) {
+      errorMessage = error.message
+      
+      // Messaggi di errore più specifici per casi comuni
+      if (error.message.includes('not found') || error.message.includes('does not exist')) {
+        errorMessage = `L'account ${normalizedJid} non esiste sul server. Verifica che il JID sia corretto.`
+      } else if (error.message.includes('forbidden') || error.message.includes('not allowed')) {
+        errorMessage = `Non hai il permesso di inviare messaggi a ${normalizedJid}.`
+      } else if (error.message.includes('timeout') || error.message.includes('network')) {
+        errorMessage = 'Errore di connessione. Verifica la tua connessione internet.'
+      } else if (error.message.includes('invalid') || error.message.includes('malformed')) {
+        errorMessage = `JID non valido: ${normalizedJid}. Verifica il formato (es. username@domain.com).`
+      }
+    }
+
     return {
       tempId,
       success: false,
-      error: error instanceof Error ? error.message : 'Errore sconosciuto',
+      error: errorMessage,
     }
   }
 }
