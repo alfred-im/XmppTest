@@ -17,7 +17,7 @@
   height: 56px;
   padding: 0 1rem;
   padding-top: env(safe-area-inset-top, 0);
-  background: #5682a3;
+  background: #2D2926;
   color: #ffffff;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
   flex-shrink: 0;
@@ -146,7 +146,7 @@
 }
 
 .conversations-page__sidebar-header {
-  background: #5682a3;
+  background: #2D2926;
   padding: 2rem 1rem 1.5rem;
   color: #ffffff;
 }
@@ -224,7 +224,7 @@
 
 .conversations-page__sidebar-item--active {
   background-color: #f0f0f0;
-  color: #5682a3;
+  color: #2D2926;
   font-weight: 500;
 }
 
@@ -314,7 +314,7 @@
   height: 56px;
   border-radius: 50%;
   border: none;
-  background: #5682a3;
+  background: #2D2926;
   color: #ffffff;
   cursor: pointer;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
@@ -359,7 +359,7 @@
 /* Dark mode FAB */
 @media (prefers-color-scheme: dark) {
   .conversations-page__fab {
-    background: #5682a3;
+    background: #2D2926;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
   }
 

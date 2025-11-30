@@ -115,7 +115,7 @@ video {
 
 /* Miglioramenti accessibilità - Focus visibile */
 *:focus-visible {
-  outline: 2px solid #5682a3;
+  outline: 2px solid #2D2926;
   outline-offset: 2px;
   border-radius: 2px;
 }
@@ -125,7 +125,7 @@ video {
   position: absolute;
   top: -40px;
   left: 0;
-  background: #5682a3;
+  background: #2D2926;
   color: #ffffff;
   padding: 8px 16px;
   text-decoration: none;
