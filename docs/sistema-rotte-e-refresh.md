@@ -2,29 +2,55 @@
 
 ## Panoramica
 
-Il sistema è stato completamente revisionato per garantire che:
+Il sistema utilizza **HashRouter** di React Router per garantire che:
 1. Il login sia **sempre un popup** che appare sopra il contenuto
 2. Il refresh della pagina **preservi sempre la rotta corrente**
-3. Non ci siano redirect indesiderati durante l'inizializzazione
+3. Non ci siano problemi con hosting statici come GitHub Pages
 
 ## Architettura
 
-### 1. Rotte Sempre Accessibili
+### 1. Hash Routing (HashRouter)
 
-In `App.tsx`, le rotte sono definite in modo semplice e diretto:
+L'app usa `HashRouter` invece di `BrowserRouter`:
+
+**URL con hash:**
+- `/XmppTest/#/conversations`
+- `/XmppTest/#/chat/user@server.com`
+
+**Vantaggi:**
+- ✅ Funziona su qualsiasi hosting statico senza configurazione server
+- ✅ Il refresh funziona sempre (la parte dopo `#` non viene mandata al server)
+- ✅ Nessun problema con 404 su GitHub Pages
+- ✅ Soluzione standard prevista da React Router per hosting statici
+
+**In `App.tsx`:**
+```typescript
+import { HashRouter } from 'react-router-dom'
+
+function App() {
+  return (
+    <XmppProvider>
+      <HashRouter>
+        <AppRoutes />
+      </HashRouter>
+    </XmppProvider>
+  )
+}
+```
+
+### 2. Rotte Sempre Accessibili
 
 ```typescript
 <Routes>
   <Route path="/conversations" element={<ConversationsPage />} />
   <Route path="/chat/:jid" element={<ChatPage />} />
   <Route path="/" element={<Navigate to="/conversations" replace />} />
-  <Route path="*" element={<Navigate to="/conversations" replace />} />
 </Routes>
 ```
 
-**Nessuna logica condizionale** nelle rotte stesse - sono sempre accessibili.
+**Nessuna logica condizionale** nelle rotte - sono sempre accessibili.
 
-### 2. Login come Popup Globale
+### 3. Login come Popup Globale
 
 Il `LoginPopup` viene mostrato come overlay sopra le rotte quando necessario:
 
@@ -39,7 +65,7 @@ Il `LoginPopup` viene mostrato come overlay sopra le rotte quando necessario:
 - Quando non si è connessi (`!isConnected`)
 - **TRANNE** quando il logout è volontario (`!logoutIntentional`)
 
-### 3. Comportamento delle Pagine
+### 4. Comportamento delle Pagine
 
 #### ConversationsPage
 - Mostra sempre l'interfaccia
@@ -47,58 +73,50 @@ Il `LoginPopup` viene mostrato come overlay sopra le rotte quando necessario:
 - Non fa redirect
 
 #### ChatPage
-- **MODIFICATA**: Rimosso il redirect verso `/conversations`
 - Mostra sempre l'interfaccia della chat
 - Carica i messaggi solo quando `client` e `isConnected` sono disponibili
 - Durante l'inizializzazione, l'interfaccia è visibile ma i messaggi non vengono caricati
-
-```typescript
-// Se client e connessione sono disponibili, carica i messaggi
-if (client && isConnected) {
-  loadInitialMessages()
-  markConversationAsRead(jid)
-}
-
-// NON redirigere durante l'inizializzazione
-```
+- Non fa redirect automatici
 
 ## Flusso di Refresh
 
-### Scenario 1: Refresh su `/conversations`
+### Scenario 1: Refresh su `/#/conversations`
 
-1. Browser fa refresh
-2. `XmppProvider` inizializza (controlla credenziali salvate)
-3. Se ci sono credenziali: tenta auto-login
-4. Durante l'inizializzazione:
-   - Rotta rimane `/conversations`
+1. Browser fa refresh su `/XmppTest/#/conversations`
+2. Server vede solo `/XmppTest/` (ignora la parte dopo `#`)
+3. Server serve `index.html`
+4. React carica, `HashRouter` legge `#/conversations`
+5. `XmppProvider` inizializza (controlla credenziali salvate)
+6. Durante l'inizializzazione:
    - `LoginPopup` appare con spinner "Connessione in corso..."
    - `ConversationsPage` è renderizzata sotto il popup
-5. Quando il login ha successo:
+7. Quando il login ha successo:
    - Popup scompare
    - Conversazioni vengono caricate
-   - Utente vede la lista delle conversazioni
+   - **Utente rimane su `/#/conversations`** ✅
 
-### Scenario 2: Refresh su `/chat/:jid`
+### Scenario 2: Refresh su `/#/chat/:jid`
 
-1. Browser fa refresh
-2. `XmppProvider` inizializza
-3. Durante l'inizializzazione:
-   - Rotta rimane `/chat/:jid`
+1. Browser fa refresh su `/XmppTest/#/chat/user@server.com`
+2. Server serve `index.html` (ignora l'hash)
+3. React carica, `HashRouter` legge `#/chat/user@server.com`
+4. `XmppProvider` inizializza
+5. Durante l'inizializzazione:
    - `LoginPopup` appare con spinner
    - `ChatPage` è renderizzata sotto il popup (ma non carica messaggi)
-4. Quando il login ha successo:
+6. Quando il login ha successo:
    - Popup scompare
    - `ChatPage` carica i messaggi per il JID corrente
-   - Utente resta nella chat specifica
+   - **Utente rimane su `/#/chat/user@server.com`** ✅
 
 ### Scenario 3: Nessuna Credenziale Salvata
 
 1. Browser carica l'app
 2. `XmppProvider` rileva assenza di credenziali
-3. Rotta va a `/conversations` (default)
-4. `LoginPopup` appare con form di login
-5. Utente inserisce credenziali
-6. Dopo il login, popup scompare e utente vede `/conversations`
+3. `LoginPopup` appare con form di login
+4. Utente inserisce credenziali
+5. Dopo il login, popup scompare
+6. Utente vede la pagina sulla rotta corrente
 
 ### Scenario 4: Logout Volontario
 
@@ -107,110 +125,52 @@ if (client && isConnected) {
 3. Credenziali vengono cancellate
 4. Cliente XMPP si disconnette
 5. **Popup NON appare** grazie al flag `logoutIntentional`
-6. Utente può rimanere nella pagina corrente senza essere disturbato
+6. Utente può rimanere nella pagina corrente
 
-## File Eliminati
+## File Principali
 
-- **`LoginPage.tsx`**: Non più necessaria, sostituita completamente da `LoginPopup`
+- **`App.tsx`**: Definisce le rotte con `HashRouter`
+- **`ChatPage.tsx`**: Nessun redirect automatico
+- **`ConversationsPage.tsx`**: Nessun redirect automatico
+- **`LoginPopup.tsx`**: Overlay globale per autenticazione
+- **`XmppContext.tsx`**: Gestisce autenticazione e stato connessione
 
-## File Modificati
-
-1. **`ChatPage.tsx`**
-   - Rimosso il redirect condizionale verso `/conversations`
-   - Ora renderizza sempre l'interfaccia indipendentemente dallo stato di connessione
-   - Carica messaggi solo quando connesso
-
-2. **`App.tsx`**
-   - Nessuna modifica strutturale necessaria (già corretto)
-   - Le rotte sono sempre accessibili
-   - `LoginPopup` è gestito come overlay globale
-
-## Vantaggi del Nuovo Sistema
+## Vantaggi del Sistema
 
 1. **Preservazione della Rotta**: Il refresh mantiene sempre l'URL corrente
-2. **UX Migliore**: Non ci sono redirect improvvisi o cambi di schermata
-3. **Login Non Invasivo**: Il popup appare sopra il contenuto, rendendo chiaro che è uno stato temporaneo
-4. **Codice Più Semplice**: Meno logica condizionale di routing
-5. **Consistenza**: Tutte le pagine si comportano allo stesso modo
-
-## Fix per GitHub Pages
-
-Quando si deploya una SPA su GitHub Pages, c'è un problema: il server non conosce le rotte di React Router e restituisce 404 per URL come `/XmppTest/chat/user@server.com`.
-
-### Soluzione Implementata
-
-Abbiamo implementato il **pattern SPA per GitHub Pages** che preserva l'URL durante il refresh:
-
-#### 1. File `404.html`
-
-Quando GitHub Pages trova un 404 (es. refresh su `/XmppTest/chat/user@server.com`):
-- Cattura l'URL originale
-- Lo codifica come parametro di query `?p=`
-- Redirige a `/XmppTest/?p=/chat/user@server.com`
-
-```javascript
-// In 404.html
-var query = '?p=' + encodeURIComponent(
-  l.pathname.slice(redirect.length - 1) + l.search
-);
-l.replace(redirect + query);
-```
-
-#### 2. File `index.html`
-
-Quando l'app si carica con il parametro `?p=`:
-- Legge il parametro dalla query string
-- Ripristina l'URL originale usando `history.replaceState`
-- React Router vede l'URL corretto e renderizza la pagina giusta
-
-```javascript
-// In index.html
-if (q.p !== undefined) {
-  window.history.replaceState(
-    null, null,
-    l.pathname.slice(0, -1) + (q.p || '') + l.hash
-  );
-}
-```
-
-### Flusso Completo
-
-1. Utente fa refresh su `/XmppTest/chat/user@server.com`
-2. GitHub Pages serve `404.html` (pagina non trovata)
-3. `404.html` redirige a `/XmppTest/?p=/chat/user@server.com`
-4. GitHub Pages serve `index.html` (questa esiste!)
-5. Script in `index.html` ripristina l'URL a `/XmppTest/chat/user@server.com`
-6. React Router vede l'URL corretto e carica `ChatPage`
-7. Utente rimane nella chat, come previsto!
+2. **Compatibilità**: Funziona su qualsiasi hosting statico senza configurazione
+3. **UX Migliore**: Non ci sono redirect improvvisi o cambi di schermata
+4. **Login Non Invasivo**: Il popup appare sopra il contenuto
+5. **Codice Semplice**: Meno logica condizionale di routing
+6. **Standard**: Usa la soluzione raccomandata da React Router per hosting statici
 
 ## Testing
 
 Per testare il sistema:
 
 1. **Test Refresh su Lista Conversazioni**:
-   - Navigare a `/conversations`
+   - Navigare a `/#/conversations`
    - Fare refresh (F5)
-   - Verificare che si rimanga su `/conversations`
+   - ✅ Verificare che si rimanga su `/#/conversations`
    - Durante il caricamento, il popup appare brevemente
 
 2. **Test Refresh in Chat**:
-   - Aprire una chat specifica `/chat/user@server.com`
+   - Aprire una chat specifica `/#/chat/user@server.com`
    - Fare refresh (F5)
-   - Verificare che si rimanga nella stessa chat
+   - ✅ Verificare che si rimanga nella stessa chat
    - Durante il caricamento, il popup appare brevemente
    - Dopo il login, i messaggi della chat vengono caricati
 
 3. **Test Primo Accesso (Senza Credenziali)**:
    - Cancellare sessionStorage
    - Ricaricare l'app
-   - Verificare che appaia il popup di login
-   - L'URL va a `/conversations` (default)
-   - Dopo il login, il popup scompare
+   - ✅ Verificare che appaia il popup di login
+   - Dopo il login, il popup scompare e si rimane sulla rotta corrente
 
 4. **Test Logout**:
    - Fare logout dal menu
-   - Verificare che il popup NON appaia
-   - Si può rimanere sulla pagina corrente
+   - ✅ Verificare che il popup NON appaia
+   - Si rimane sulla pagina corrente
 
 ## Note Tecniche
 
@@ -218,3 +178,4 @@ Per testare il sistema:
 - Il flag `isInitializing` distingue tra "sto caricando" e "non sono connesso"
 - Il flag `logoutIntentional` previene il popup dopo un logout volontario
 - `XmppContext` gestisce tutta la logica di autenticazione e connessione
+- L'hash (`#`) impedisce che la parte dopo venga mandata al server
