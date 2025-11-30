@@ -191,10 +191,6 @@ export function ConversationsList() {
         className="conversations-list__items"
         role="list"
         aria-label="Lista conversazioni"
-        style={{
-          transform: `translateY(${Math.min(pullDistance, PULL_TO_REFRESH.MAX_DISTANCE)}px)`,
-          transition: pullDistance === 0 && !isRefreshing ? `transform ${PULL_TO_REFRESH.ANIMATION_DURATION}ms cubic-bezier(0.4, 0, 0.2, 1)` : 'none',
-        }}
       >
         {isLoading && conversations.length === 0 ? (
           <div className="conversations-list__loading" role="status" aria-live="polite">
