@@ -19,36 +19,66 @@ function findRecords<T extends VCardTempRecord>(records: VCardTempRecord[] | und
 
 /**
  * Converte Buffer a stringa base64
+ * Compatibile sia con Node.js che browser
  */
-function bufferToBase64(buffer: Buffer | Uint8Array | undefined): string | undefined {
+function bufferToBase64(buffer: Buffer | Uint8Array | ArrayBuffer | undefined): string | undefined {
   if (!buffer) return undefined
   
-  // Se è già un Buffer di Node.js
-  if (Buffer.isBuffer(buffer)) {
-    return buffer.toString('base64')
-  }
-  
-  // Se è un Uint8Array (browser)
-  if (buffer instanceof Uint8Array) {
-    // Converti Uint8Array a stringa binaria
-    let binary = ''
-    for (let i = 0; i < buffer.length; i++) {
-      binary += String.fromCharCode(buffer[i])
+  try {
+    // Se è un ArrayBuffer, convertilo a Uint8Array
+    if (buffer instanceof ArrayBuffer) {
+      buffer = new Uint8Array(buffer)
     }
-    return btoa(binary)
+    
+    // Verifica se Buffer è disponibile (Node.js o polyfill)
+    if (typeof Buffer !== 'undefined' && Buffer.isBuffer && Buffer.isBuffer(buffer)) {
+      return buffer.toString('base64')
+    }
+    
+    // Se è un Uint8Array o qualsiasi TypedArray
+    if (buffer instanceof Uint8Array || ArrayBuffer.isView(buffer)) {
+      // Converti a Uint8Array se non lo è già
+      const uint8Array = buffer instanceof Uint8Array 
+        ? buffer 
+        : new Uint8Array((buffer as { buffer: ArrayBuffer }).buffer)
+      
+      // Usa btoa per browser
+      let binary = ''
+      const chunkSize = 8192 // Process in chunks to avoid stack overflow
+      for (let i = 0; i < uint8Array.length; i += chunkSize) {
+        const chunk = uint8Array.subarray(i, Math.min(i + chunkSize, uint8Array.length))
+        binary += String.fromCharCode.apply(null, Array.from(chunk))
+      }
+      return btoa(binary)
+    }
+    
+    console.warn('Tipo di buffer non riconosciuto:', buffer)
+    return undefined
+  } catch (error) {
+    console.error('Errore nella conversione buffer a base64:', error)
+    return undefined
   }
-  
-  return undefined
 }
 
 /**
  * Converte stringa base64 a Buffer/Uint8Array
+ * Compatibile sia con Node.js che browser
  */
-function base64ToBuffer(base64: string | undefined): Uint8Array | undefined {
+function base64ToBuffer(base64: string | undefined): Uint8Array | Buffer | undefined {
   if (!base64) return undefined
   
   try {
-    // In ambiente browser, usa atob per decodificare base64
+    // Se Buffer è disponibile (Node.js o polyfill), usalo
+    if (typeof Buffer !== 'undefined' && Buffer.from) {
+      try {
+        return Buffer.from(base64, 'base64')
+      } catch (e) {
+        // Fallback a Uint8Array se Buffer.from fallisce
+        console.debug('Buffer.from fallito, uso Uint8Array:', e)
+      }
+    }
+    
+    // Fallback per browser: usa atob
     const binary = atob(base64)
     const bytes = new Uint8Array(binary.length)
     for (let i = 0; i < binary.length; i++) {
@@ -77,7 +107,8 @@ export async function fetchVCardFromServer(client: Agent, jid: string): Promise<
 
     // Estrai i campi dai records
     const nicknameRecord = findRecord<{ type: 'nickname'; value: string }>(vcard.records, 'nickname')
-    const photoRecord = findRecord<{ type: 'photo'; data?: Buffer; mediaType?: string; url?: string }>(vcard.records, 'photo')
+    // Usa any per il photoRecord perché il tipo esatto dipende dall'ambiente (Node vs browser)
+    const photoRecord = findRecord(vcard.records, 'photo') as { type: 'photo'; data?: unknown; mediaType?: string; url?: string } | undefined
     const emailRecords = findRecords<{ type: 'email'; value?: string }>(vcard.records, 'email')
     const descriptionRecord = findRecord<{ type: 'description'; value: string }>(vcard.records, 'description')
 
@@ -86,7 +117,7 @@ export async function fetchVCardFromServer(client: Agent, jid: string): Promise<
       jid: normalizedJid,
       fullName: vcard.fullName,
       nickname: nicknameRecord?.value,
-      photoData: bufferToBase64(photoRecord?.data as Buffer | Uint8Array | undefined),
+      photoData: bufferToBase64(photoRecord?.data as Buffer | Uint8Array | ArrayBuffer | undefined),
       photoType: photoRecord?.mediaType,
       email: emailRecords[0]?.value,
       description: descriptionRecord?.value,
