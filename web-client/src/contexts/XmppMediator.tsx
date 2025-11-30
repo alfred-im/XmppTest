@@ -70,6 +70,7 @@ export function XmppMediatorProvider({ children }: { children: ReactNode }) {
   // Inizializzazione State Machine listener
   useEffect(() => {
     const unsubscribe = stateMachine.current.onStateChange((newState) => {
+      console.log('[XmppMediator] State changed to:', newState)
       setState(newState)
     })
 
@@ -185,7 +186,9 @@ export function XmppMediatorProvider({ children }: { children: ReactNode }) {
   // Auto-login con credenziali salvate (dopo definizione di login)
   useEffect(() => {
     const saved = loadCredentials()
+    console.log('[XmppMediator] Auto-login check:', { hasSaved: !!saved })
     if (saved) {
+      console.log('[XmppMediator] Starting auto-login for:', saved.jid)
       void login(saved.jid, saved.password)
     }
   }, [login])
@@ -282,6 +285,8 @@ export function XmppMediatorProvider({ children }: { children: ReactNode }) {
   // Deriva isConnected e isConnecting dallo stato (reattivo)
   const isConnected = state === 'connected'
   const isConnecting = state === 'connecting' || state === 'authenticating'
+  
+  console.log('[XmppMediator] Render:', { state, isConnected, isConnecting })
 
   const contextValue: XmppMediatorContextType = useMemo(() => ({
     // Stato
