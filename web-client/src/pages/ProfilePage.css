@@ -54,7 +54,7 @@
 .profile-page__content {
   flex: 1;
   /* Le proprietà di overflow sono gestite da index.css (whitelist) */
-  padding: 1.5rem 1rem 1.5rem 1rem;
+  padding: 1.5rem 1rem 0 1rem;
   /* Assicura che il contenuto possa scrollare correttamente in flexbox */
   min-height: 0;
 }
@@ -225,8 +225,8 @@
 
 .profile-page__field textarea {
   resize: vertical;
-  min-height: 200px;
-  max-height: 400px;
+  min-height: 100px;
+  max-height: 300px;
 }
 
 .profile-page__char-count {
