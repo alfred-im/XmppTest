@@ -36,19 +36,6 @@ export function ChatPage() {
     }
   }, [])
 
-  // Carica messaggi iniziali
-  useEffect(() => {
-    if (!client || !isConnected || !jid) {
-      navigate('/conversations')
-      return
-    }
-
-    loadInitialMessages()
-    
-    // Marca conversazione come letta
-    markConversationAsRead(jid)
-  }, [jid, client, isConnected])
-
   // Subscribe a messaggi real-time
   useEffect(() => {
     if (!jid) return
@@ -134,6 +121,7 @@ export function ChatPage() {
     }
   }
 
+  // Funzione per caricare messaggi iniziali
   const loadInitialMessages = async () => {
     if (!client) return
 
@@ -202,6 +190,20 @@ export function ChatPage() {
       }
     }
   }
+
+  // Carica messaggi iniziali
+  useEffect(() => {
+    if (!client || !isConnected || !jid) {
+      navigate('/conversations')
+      return
+    }
+
+    loadInitialMessages()
+    
+    // Marca conversazione come letta
+    markConversationAsRead(jid)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [jid, client, isConnected])
 
   // Auto-scroll al bottom solo se già in fondo
   useEffect(() => {
