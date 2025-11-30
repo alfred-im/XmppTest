@@ -112,12 +112,24 @@ export async function fetchVCardFromServer(client: Agent, jid: string): Promise<
     const emailRecords = findRecords<{ type: 'email'; value?: string }>(vcard.records, 'email')
     const descriptionRecord = findRecord<{ type: 'description'; value: string }>(vcard.records, 'description')
 
+    // Gestisci la foto: può essere già una stringa base64 O un Buffer
+    let photoData: string | undefined
+    if (photoRecord?.data) {
+      if (typeof photoRecord.data === 'string') {
+        // È già base64, usala direttamente
+        photoData = photoRecord.data
+      } else {
+        // È un Buffer/Uint8Array, converti
+        photoData = bufferToBase64(photoRecord.data as Buffer | Uint8Array | ArrayBuffer)
+      }
+    }
+
     // Converti in VCardCache
     const vcardCache: VCardCache = {
       jid: normalizedJid,
       fullName: vcard.fullName,
       nickname: nicknameRecord?.value,
-      photoData: bufferToBase64(photoRecord?.data as Buffer | Uint8Array | ArrayBuffer | undefined),
+      photoData,
       photoType: photoRecord?.mediaType,
       email: emailRecords[0]?.value,
       description: descriptionRecord?.value,
