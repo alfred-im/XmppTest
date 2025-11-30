@@ -6,13 +6,13 @@ export function ConversationsList() {
   const { conversations, isLoading, error, refreshConversations } = useXmpp()
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [pullDistance, setPullDistance] = useState(0)
-  const containerRef = useRef<HTMLDivElement>(null)
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const wrapperRef = useRef<HTMLDivElement>(null)
   
   // Usa useRef per le variabili che devono persistere tra i render
   const touchStartY = useRef<number>(0)
   const touchCurrentY = useRef<number>(0)
   const isDragging = useRef<boolean>(false)
-  const isPulling = useRef<boolean>(false)
   const currentPullDistance = useRef<number>(0)
   
   // Mantieni riferimento aggiornato a refreshConversations senza causare re-render
@@ -29,72 +29,57 @@ export function ConversationsList() {
     isRefreshingRef.current = isRefreshing
   }, [isLoading, isRefreshing])
 
-  // Pull-to-refresh handler - SENZA dipendenze che cambiano frequentemente
+  // Pull-to-refresh handler - ascolta sul wrapper principale
   useEffect(() => {
-    const container = containerRef.current
-    if (!container) {
-      console.log('🔴 Pull-to-refresh: Container NON trovato!')
-      return
-    }
-    
-    console.log('✅ Pull-to-refresh: Registrazione event listeners sul container:', container)
+    const wrapper = wrapperRef.current
+    const scrollContainer = scrollContainerRef.current
+    if (!wrapper || !scrollContainer) return
 
     const handleTouchStart = (e: TouchEvent) => {
-      console.log('👆 TouchStart - scrollTop:', container.scrollTop)
       // Solo se siamo in cima alla lista
-      if (container.scrollTop === 0) {
+      if (scrollContainer.scrollTop === 0) {
         touchStartY.current = e.touches[0].clientY
         isDragging.current = true
-        isPulling.current = true
-        console.log('✅ Pull iniziato da Y:', touchStartY.current)
-      } else {
-        console.log('❌ Non in cima, scrollTop:', container.scrollTop)
+        currentPullDistance.current = 0
       }
     }
 
     const handleTouchMove = (e: TouchEvent) => {
-      if (!isDragging.current || !isPulling.current) return
-
+      if (!isDragging.current) return
+      
+      const scrollTop = scrollContainer.scrollTop
       touchCurrentY.current = e.touches[0].clientY
       const distance = touchCurrentY.current - touchStartY.current
-      console.log('👉 TouchMove - distance:', distance, 'scrollTop:', container.scrollTop)
 
-      // Solo se trasciniamo verso il basso
-      if (distance > 0 && container.scrollTop === 0) {
-        e.preventDefault() // Previeni scroll normale
-        const pullDist = Math.min(distance * 0.5, 100) // Riduci sensibilità, max 100px
+      // Solo se trasciniamo verso il basso E siamo in cima
+      if (distance > 0 && scrollTop === 0) {
+        // Previeni lo scroll nativo solo quando pull-to-refresh è attivo
+        e.preventDefault()
+        
+        // Riduci la sensibilità: usa radice quadrata per effetto "gomma"
+        const pullDist = Math.min(Math.sqrt(distance * 30), 100)
         currentPullDistance.current = pullDist
         setPullDistance(pullDist)
-        console.log('✅ Pull distance:', pullDist)
-      } else if (distance <= 0) {
-        // Reset se torniamo indietro
-        isDragging.current = false
-        isPulling.current = false
-        currentPullDistance.current = 0
-        setPullDistance(0)
-        console.log('⬆️ Reset - drag verso l\'alto')
       }
     }
 
     const handleTouchEnd = () => {
+      if (!isDragging.current) return
+      
       const finalDistance = currentPullDistance.current
-      console.log('👋 TouchEnd - finalDistance:', finalDistance)
       
       // Usa i ref per controllare lo stato attuale senza dipendenze
-      if (finalDistance > 50 && !isRefreshingRef.current && !isLoadingRef.current) {
-        // Trigger refresh se trascinato abbastanza (50px)
-        console.log('🔄 Avvio refresh!')
+      if (finalDistance > 60 && !isRefreshingRef.current && !isLoadingRef.current) {
+        // Trigger refresh se trascinato abbastanza
         setIsRefreshing(true)
         window.dispatchEvent(new CustomEvent('refresh-start'))
         refreshConversationsRef.current()
           .then(() => {
-            // Piccolo delay per mostrare il completamento
             setTimeout(() => {
               setIsRefreshing(false)
               setPullDistance(0)
               currentPullDistance.current = 0
               window.dispatchEvent(new CustomEvent('refresh-end'))
-              console.log('✅ Refresh completato!')
             }, 300)
           })
           .catch(() => {
@@ -102,34 +87,30 @@ export function ConversationsList() {
             setPullDistance(0)
             currentPullDistance.current = 0
             window.dispatchEvent(new CustomEvent('refresh-end'))
-            console.log('❌ Refresh fallito!')
           })
       } else {
         // Reset con animazione
-        console.log('↩️ Reset senza refresh (distance:', finalDistance, ')')
         setPullDistance(0)
         currentPullDistance.current = 0
       }
       
       isDragging.current = false
-      isPulling.current = false
       touchStartY.current = 0
       touchCurrentY.current = 0
     }
 
-    // CRITICAL: touchstart deve essere passive: false per permettere preventDefault in touchmove
-    container.addEventListener('touchstart', handleTouchStart, { passive: false })
-    container.addEventListener('touchmove', handleTouchMove, { passive: false })
-    container.addEventListener('touchend', handleTouchEnd, { passive: true })
-    container.addEventListener('touchcancel', handleTouchEnd, { passive: true })
+    // Ascolta sul wrapper, NON sul container scrollabile
+    wrapper.addEventListener('touchstart', handleTouchStart, { passive: false })
+    wrapper.addEventListener('touchmove', handleTouchMove, { passive: false })
+    wrapper.addEventListener('touchend', handleTouchEnd, { passive: true })
+    wrapper.addEventListener('touchcancel', handleTouchEnd, { passive: true })
 
     return () => {
-      container.removeEventListener('touchstart', handleTouchStart)
-      container.removeEventListener('touchmove', handleTouchMove)
-      container.removeEventListener('touchend', handleTouchEnd)
-      container.removeEventListener('touchcancel', handleTouchEnd)
+      wrapper.removeEventListener('touchstart', handleTouchStart)
+      wrapper.removeEventListener('touchmove', handleTouchMove)
+      wrapper.removeEventListener('touchend', handleTouchEnd)
+      wrapper.removeEventListener('touchcancel', handleTouchEnd)
     }
-    // NESSUNA dipendenza - gli event listeners vengono registrati una sola volta
   }, [])
 
   const formatTimestamp = (date: Date): string => {
@@ -178,7 +159,7 @@ export function ConversationsList() {
   }
 
   return (
-    <div className="conversations-list">
+    <div ref={wrapperRef} className="conversations-list">
       <div className="conversations-list__header">
         <h2>Chat</h2>
       </div>
@@ -207,21 +188,21 @@ export function ConversationsList() {
                 stroke="currentColor"
                 strokeWidth="2"
                 style={{
-                  transform: pullDistance > 50 ? 'rotate(180deg)' : 'rotate(0deg)',
+                  transform: pullDistance > 60 ? 'rotate(180deg)' : 'rotate(0deg)',
                   transition: 'transform 0.2s',
                 }}
               >
                 <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
                 <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
               </svg>
-              <span>{pullDistance > 50 ? 'Rilascia per aggiornare' : 'Trascina per aggiornare'}</span>
+              <span>{pullDistance > 60 ? 'Rilascia per aggiornare' : 'Trascina per aggiornare'}</span>
             </>
           )}
         </div>
       )}
 
       <div
-        ref={containerRef}
+        ref={scrollContainerRef}
         className="conversations-list__items"
         style={{
           transform: `translateY(${Math.min(pullDistance, 100)}px)`,

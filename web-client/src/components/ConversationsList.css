@@ -6,6 +6,10 @@
   height: 100%;
   background: #ffffff;
   overflow: hidden;
+  /* Blocca overscroll/pull-to-refresh nativo */
+  overscroll-behavior-y: contain;
+  touch-action: pan-y;
+  position: relative;
 }
 
 .conversations-list__header {
@@ -64,6 +68,8 @@
   overflow-y: auto;
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
+  /* Blocca overscroll/pull-to-refresh nativo */
+  overscroll-behavior-y: contain;
 }
 
 .conversation-item {
