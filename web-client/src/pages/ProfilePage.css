@@ -1,19 +1,20 @@
 /* Profile Page Styles */
 
+/* Layout principale: header fisso + body scrollabile */
 .profile-page {
   display: flex;
   flex-direction: column;
-  height: 100vh;
-  width: 100vw;
+  height: 100%;
+  width: 100%;
   background: #f5f5f5;
   overflow: hidden;
 }
 
-/* Header */
+/* Header fisso - non scrolla */
 .profile-page__header {
   display: flex;
   align-items: center;
-  height: 56px;
+  min-height: 56px;
   padding: 0 1rem;
   padding-top: env(safe-area-inset-top, 0);
   background: #2D2926;
@@ -50,18 +51,17 @@
   background-color: rgba(255, 255, 255, 0.15);
 }
 
-/* Content */
+/* Body scrollabile - occupa lo spazio rimanente */
 .profile-page__content {
-  flex: 1;
+  flex: 1 1 0;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 1.5rem 1rem;
-  /* Padding in fondo per evitare che l'ultimo elemento sia coperto dal footer */
-  padding-bottom: 1.5rem;
-  /* Assicura che il contenuto possa scrollare anche se è più alto del viewport */
+  padding-bottom: calc(1.5rem + 80px); /* Spazio per il footer */
   min-height: 0;
 }
 
-/* Footer con bottone fisso */
+/* Footer fisso - non scrolla */
 .profile-page__footer {
   flex-shrink: 0;
   padding: 1rem;
