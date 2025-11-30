@@ -7,11 +7,10 @@ import {
   loadAllConversations,
   downloadAllConversations,
   enrichWithRoster,
-  updateConversationOnNewMessage,
 } from '../services/conversations'
 import { getConversations, type Conversation, updateConversation, clearConversations, saveConversations, saveMetadata } from '../services/conversations-db'
 import { saveCredentials, loadCredentials, clearCredentials } from '../services/auth-storage'
-import { handleIncomingMessage } from '../services/messages'
+import { handleIncomingMessageAndSync } from '../services/sync'
 
 type MessageCallback = (message: ReceivedMessage) => void
 
@@ -122,27 +121,19 @@ export function XmppProvider({ children }: { children: ReactNode }) {
     }
 
     const handleMessage = async (message: ReceivedMessage) => {
-      if (!jid || !message.body) return
+      if (!jid || !message.body || !client) return
 
       try {
-        // 1. Determina il JID del contatto
-        const myBareJid = jid.split('/')[0].toLowerCase()
-        const from = message.from || ''
-        const to = message.to || ''
-        const contactJid = from.startsWith(myBareJid) 
-          ? to.split('/')[0].toLowerCase() 
-          : from.split('/')[0].toLowerCase()
+        // Usa il sistema di sincronizzazione: sincronizza tutto dal server
+        // NON scriviamo direttamente nel database - la sincronizzazione lo fa
+        // handleIncomingMessageAndSync determina il JID del contatto internamente
+        await handleIncomingMessageAndSync(client, message, jid)
 
-        // 2. Salva messaggio nel database
-        await handleIncomingMessage(message, jid, contactJid)
-
-        // 3. Aggiorna lista conversazioni
-        await updateConversationOnNewMessage(message, jid)
+        // 3. Aggiorna lista conversazioni dal database (ora sincronizzato)
         const updated = await getConversations()
         setConversations(updated)
 
         // 4. Notifica i callback registrati con il messaggio completo (per ChatPage attiva)
-        // Passa sia ReceivedMessage che Message salvato per evitare reload
         messageCallbacks.current.forEach((callback) => {
           callback(message)
         })
