@@ -68,10 +68,23 @@ function base64ToBuffer(base64: string | undefined): Uint8Array | Buffer | undef
   if (!base64) return undefined
   
   try {
+    // Valida che la stringa base64 non sia vuota
+    if (base64.trim().length === 0) {
+      console.error('Stringa base64 vuota')
+      return undefined
+    }
+
     // Se Buffer è disponibile (Node.js o polyfill), usalo
     if (typeof Buffer !== 'undefined' && Buffer.from) {
       try {
-        return Buffer.from(base64, 'base64')
+        const buffer = Buffer.from(base64, 'base64')
+        // Verifica che il buffer non sia vuoto
+        if (buffer.length === 0) {
+          console.error('Buffer vuoto dopo conversione')
+          return undefined
+        }
+        console.log(`Buffer creato con successo: ${buffer.length} bytes`)
+        return buffer
       } catch (e) {
         // Fallback a Uint8Array se Buffer.from fallisce
         console.debug('Buffer.from fallito, uso Uint8Array:', e)
@@ -79,12 +92,23 @@ function base64ToBuffer(base64: string | undefined): Uint8Array | Buffer | undef
     }
     
     // Fallback per browser: usa atob
-    const binary = atob(base64)
-    const bytes = new Uint8Array(binary.length)
-    for (let i = 0; i < binary.length; i++) {
-      bytes[i] = binary.charCodeAt(i)
+    try {
+      const binary = atob(base64)
+      if (binary.length === 0) {
+        console.error('Stringa binaria vuota dopo atob')
+        return undefined
+      }
+      
+      const bytes = new Uint8Array(binary.length)
+      for (let i = 0; i < binary.length; i++) {
+        bytes[i] = binary.charCodeAt(i)
+      }
+      console.log(`Uint8Array creato con successo: ${bytes.length} bytes`)
+      return bytes
+    } catch (atobError) {
+      console.error('Errore in atob - stringa base64 non valida:', atobError)
+      return undefined
     }
-    return bytes
   } catch (error) {
     console.error('Errore nella conversione base64 a buffer:', error)
     return undefined
@@ -239,6 +263,11 @@ export async function publishVCard(
   }
 ): Promise<boolean> {
   try {
+    // Verifica che il client sia connesso
+    if (!client || !client.jid) {
+      throw new Error('Client XMPP non connesso')
+    }
+
     // Costruisci l'array di records
     const records: VCardTempRecord[] = []
 
@@ -252,14 +281,31 @@ export async function publishVCard(
 
     // Aggiungi foto se presente
     if (vcard.photoData && vcard.photoType) {
+      console.log('Tentativo di conversione immagine profilo:', {
+        photoType: vcard.photoType,
+        photoDataLength: vcard.photoData.length,
+        photoDataPreview: vcard.photoData.substring(0, 50) + '...'
+      })
+      
       const photoBuffer = base64ToBuffer(vcard.photoData)
-      if (photoBuffer) {
-        records.push({
-          type: 'photo',
-          data: photoBuffer as Buffer,
-          mediaType: vcard.photoType
-        })
+      if (!photoBuffer) {
+        console.error('Conversione base64 a buffer fallita per l\'immagine del profilo')
+        throw new Error('Errore nella conversione dell\'immagine del profilo. Prova con un\'altra immagine.')
       }
+      
+      console.log('Immagine convertita con successo, dimensione:', photoBuffer.length, 'bytes')
+      
+      records.push({
+        type: 'photo',
+        data: photoBuffer as Buffer,
+        mediaType: vcard.photoType
+      })
+    } else if (vcard.photoData || vcard.photoType) {
+      // Solo uno dei due è presente - questo è un errore
+      console.warn('Dati immagine incompleti:', { 
+        hasPhotoData: !!vcard.photoData, 
+        hasPhotoType: !!vcard.photoType 
+      })
     }
 
     // Aggiungi email se presente
@@ -308,8 +354,46 @@ export async function publishVCard(
       records: records.length > 0 ? records : undefined
     }
 
+    // Verifica che ci sia almeno un campo da salvare
+    if (!vcard.fullName && records.length === 0) {
+      console.warn('Tentativo di salvare vCard vuoto - non ci sono dati da salvare')
+      throw new Error('Inserisci almeno un campo prima di salvare il profilo')
+    }
+
+    console.log('Pubblicazione vCard sul server:', {
+      fullName: vcard.fullName,
+      hasPhoto: !!vcard.photoData,
+      recordsCount: records.length,
+      jid: client.jid
+    })
+
     // Pubblica sul server
-    await client.publishVCard(vcardForStanza)
+    try {
+      await client.publishVCard(vcardForStanza)
+    } catch (publishError: any) {
+      console.error('Errore nella chiamata publishVCard:', publishError)
+      
+      // Gestisci errori specifici del server XMPP
+      if (publishError.error) {
+        const errorType = publishError.error.condition || publishError.error.type
+        console.error('Tipo errore XMPP:', errorType)
+        
+        if (errorType === 'not-authorized') {
+          throw new Error('Non autorizzato a modificare il profilo')
+        } else if (errorType === 'forbidden') {
+          throw new Error('Operazione non consentita dal server')
+        } else if (errorType === 'service-unavailable') {
+          throw new Error('Servizio vCard non disponibile sul server')
+        } else if (errorType === 'not-allowed') {
+          throw new Error('Modifica profilo non consentita')
+        }
+      }
+      
+      // Se non è un errore XMPP specifico, rilancia l'errore originale
+      throw publishError
+    }
+
+    console.log('vCard pubblicato con successo sul server')
 
     // Aggiorna la cache locale con il proprio vCard
     const myJid = normalizeJid(client.jid || '')
@@ -327,7 +411,8 @@ export async function publishVCard(
     return true
   } catch (error) {
     console.error('Errore nella pubblicazione del vCard:', error)
-    return false
+    // Propaga l'errore invece di ritornare solo false
+    throw error
   }
 }
 
