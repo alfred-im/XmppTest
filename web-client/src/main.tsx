@@ -83,11 +83,15 @@ if ('serviceWorker' in navigator) {
 }
 
 // Gestione orientamento schermo - previene rotazione su mobile se necessario
-if (screen.orientation && screen.orientation.lock) {
+if (typeof screen !== 'undefined' && 'orientation' in screen && screen.orientation && 'lock' in screen.orientation) {
   // Prova a bloccare in portrait (opzionale, può fallire se non in fullscreen)
-  screen.orientation.lock('portrait-primary').catch(() => {
-    // Fallisce silenziosamente se non permesso (richiede fullscreen o user gesture)
-  })
+  try {
+    (screen.orientation as { lock: (orientation: string) => Promise<void> }).lock('portrait-primary').catch(() => {
+      // Fallisce silenziosamente se non permesso (richiede fullscreen o user gesture)
+    })
+  } catch {
+    // Ignora errori se lock non è supportato
+  }
 }
 
 // Listener per gestire cambi di orientamento

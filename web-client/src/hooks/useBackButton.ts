@@ -9,7 +9,7 @@ export function useBackButton() {
   const navigate = useNavigate()
 
   useEffect(() => {
-    const handlePopState = (event: PopStateEvent) => {
+    const handlePopState = () => {
       // Se c'è una cronologia, il browser gestisce automaticamente
       // Altrimenti possiamo gestire manualmente
       if (window.history.length <= 1) {
