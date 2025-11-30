@@ -133,6 +133,56 @@ if (client && isConnected) {
 4. **Codice Più Semplice**: Meno logica condizionale di routing
 5. **Consistenza**: Tutte le pagine si comportano allo stesso modo
 
+## Fix per GitHub Pages
+
+Quando si deploya una SPA su GitHub Pages, c'è un problema: il server non conosce le rotte di React Router e restituisce 404 per URL come `/XmppTest/chat/user@server.com`.
+
+### Soluzione Implementata
+
+Abbiamo implementato il **pattern SPA per GitHub Pages** che preserva l'URL durante il refresh:
+
+#### 1. File `404.html`
+
+Quando GitHub Pages trova un 404 (es. refresh su `/XmppTest/chat/user@server.com`):
+- Cattura l'URL originale
+- Lo codifica come parametro di query `?p=`
+- Redirige a `/XmppTest/?p=/chat/user@server.com`
+
+```javascript
+// In 404.html
+var query = '?p=' + encodeURIComponent(
+  l.pathname.slice(redirect.length - 1) + l.search
+);
+l.replace(redirect + query);
+```
+
+#### 2. File `index.html`
+
+Quando l'app si carica con il parametro `?p=`:
+- Legge il parametro dalla query string
+- Ripristina l'URL originale usando `history.replaceState`
+- React Router vede l'URL corretto e renderizza la pagina giusta
+
+```javascript
+// In index.html
+if (q.p !== undefined) {
+  window.history.replaceState(
+    null, null,
+    l.pathname.slice(0, -1) + (q.p || '') + l.hash
+  );
+}
+```
+
+### Flusso Completo
+
+1. Utente fa refresh su `/XmppTest/chat/user@server.com`
+2. GitHub Pages serve `404.html` (pagina non trovata)
+3. `404.html` redirige a `/XmppTest/?p=/chat/user@server.com`
+4. GitHub Pages serve `index.html` (questa esiste!)
+5. Script in `index.html` ripristina l'URL a `/XmppTest/chat/user@server.com`
+6. React Router vede l'URL corretto e carica `ChatPage`
+7. Utente rimane nella chat, come previsto!
+
 ## Testing
 
 Per testare il sistema:
