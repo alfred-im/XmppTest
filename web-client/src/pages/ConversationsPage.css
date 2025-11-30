@@ -16,6 +16,7 @@
   align-items: center;
   height: 56px;
   padding: 0 1rem;
+  padding-top: env(safe-area-inset-top, 0);
   background: #5682a3;
   color: #ffffff;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
@@ -194,6 +195,12 @@
   flex: 1;
   padding: 0.5rem 0;
   overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: none;
+  /* Permetti solo scroll verticale, blocca zoom */
+  touch-action: pan-y;
+  -ms-touch-action: pan-y;
 }
 
 .conversations-page__sidebar-item {

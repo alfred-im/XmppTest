@@ -3,7 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content" />
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content" />
+    <!-- Theme color per la barra del browser su mobile -->
+    <meta name="theme-color" content="#5682a3" />
     <!-- Disabilita pull-to-refresh nativo su mobile -->
     <style>
       html, body {
@@ -19,9 +22,9 @@
       #root {
         width: 100%;
         height: 100%;
-        overflow-y: auto;
-        overflow-x: hidden;
+        overflow: hidden; /* Scroll solo nei contenitori interni */
         overscroll-behavior-y: none;
+        overscroll-behavior-x: none;
       }
     </style>
     <title>web-client</title>

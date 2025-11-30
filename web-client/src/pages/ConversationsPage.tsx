@@ -122,7 +122,7 @@ export function ConversationsPage() {
       )}
 
       {/* Lista conversazioni - occupa tutto lo spazio rimanente */}
-      <main className="conversations-page__main" role="main">
+      <main id="main-content" className="conversations-page__main" role="main" tabIndex={-1}>
         <ConversationsList />
       </main>
     </div>

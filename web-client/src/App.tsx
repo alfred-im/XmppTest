@@ -1,8 +1,9 @@
-import { lazy, Suspense } from 'react'
+import { lazy, Suspense, useState, useEffect } from 'react'
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { XmppProvider, useXmpp } from './contexts/XmppContext'
 import { LoginPopup } from './components/LoginPopup'
 import { ErrorBoundary } from './components/ErrorBoundary'
+import { SplashScreen } from './components/SplashScreen'
 import './App.css'
 
 // Lazy load delle pagine per code splitting
@@ -38,6 +39,10 @@ function AppRoutes() {
 
   return (
     <>
+      {/* Skip link per accessibilità */}
+      <a href="#main-content" className="skip-link">
+        Vai al contenuto principale
+      </a>
       {/* Route sempre accessibili - no routing condizionale */}
       <Suspense fallback={<PageLoader />}>
         <Routes>
@@ -57,8 +62,22 @@ function AppRoutes() {
 }
 
 function App() {
+  const [showSplash, setShowSplash] = useState(true)
+
+  useEffect(() => {
+    // Nascondi splash screen dopo il caricamento iniziale
+    if (document.readyState === 'complete') {
+      setShowSplash(false)
+    } else {
+      window.addEventListener('load', () => {
+        setShowSplash(false)
+      })
+    }
+  }, [])
+
   return (
     <ErrorBoundary>
+      {showSplash && <SplashScreen onFinish={() => setShowSplash(false)} />}
       <XmppProvider>
         <HashRouter>
           <AppRoutes />

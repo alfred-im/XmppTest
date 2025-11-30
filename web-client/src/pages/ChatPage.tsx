@@ -4,6 +4,7 @@ import { useXmpp } from '../contexts/XmppContext'
 import { useMessages } from '../hooks/useMessages'
 import { useChatScroll } from '../hooks/useChatScroll'
 import { usePullToRefresh } from '../hooks/usePullToRefresh'
+import { useBackButton } from '../hooks/useBackButton'
 import { formatDateSeparator, formatMessageTime, isSameDay } from '../utils/date'
 import { TEXT_LIMITS } from '../config/constants'
 import './ChatPage.css'
@@ -26,6 +27,9 @@ export function ChatPage() {
   const [inputValue, setInputValue] = useState('')
   const [isSending, setIsSending] = useState(false)
   const inputRef = useRef<HTMLTextAreaElement>(null)
+
+  // Gestione back button
+  useBackButton()
 
   // Custom hook per gestione messaggi
   const {
@@ -253,7 +257,7 @@ export function ChatPage() {
   }, [messages])
 
   return (
-    <div className="chat-page" role="main">
+    <div id="main-content" className="chat-page" role="main" tabIndex={-1}>
       {/* Header */}
       <header className="chat-page__header">
         <button 
