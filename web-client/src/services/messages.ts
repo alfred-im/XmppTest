@@ -161,10 +161,10 @@ export async function loadAllMessagesForContact(
 }
 
 /**
- * Carica tutti i messaggi dal server senza salvarli nel DB
- * (utile per reload completo dove poi sostituiamo tutto)
+ * Scarica tutti i messaggi dal server senza salvarli nel DB
+ * Utile per refresh completo dove si vuole scaricare prima, poi svuotare e salvare
  */
-async function loadAllMessagesFromServerOnly(
+export async function downloadAllMessagesFromServer(
   client: Agent,
   contactJid: string
 ): Promise<Message[]> {
@@ -215,8 +215,7 @@ async function loadAllMessagesFromServerOnly(
 
 /**
  * Ricarica completamente tutto lo storico messaggi dal server
- * Cancella i messaggi locali e li sostituisce con quelli dal server
- * Previene duplicati caricando prima senza salvare, poi cancellando e salvando tutto insieme
+ * Scarica prima, poi svuota il database, poi salva i nuovi messaggi
  */
 export async function reloadAllMessagesFromServer(
   client: Agent,
@@ -225,15 +224,14 @@ export async function reloadAllMessagesFromServer(
   const normalizedJid = normalizeJid(contactJid)
   
   try {
-    // 1. Carica tutto lo storico dal server SENZA salvare nel DB
-    //    (per evitare duplicati durante il processo)
-    const serverMessages = await loadAllMessagesFromServerOnly(client, normalizedJid)
+    // 1. Prima scarica tutti i messaggi dal server (senza salvare)
+    const serverMessages = await downloadAllMessagesFromServer(client, normalizedJid)
     
-    // 2. Cancella tutti i messaggi locali per questa conversazione
+    // 2. Poi svuota il database dei messaggi per questa conversazione
     const { clearMessagesForConversation } = await import('./conversations-db')
     await clearMessagesForConversation(normalizedJid)
     
-    // 3. Ora salva i nuovi messaggi dal server in un'unica operazione
+    // 3. Infine salva i messaggi scaricati nel database
     if (serverMessages.length > 0) {
       await saveMessages(serverMessages)
     }
