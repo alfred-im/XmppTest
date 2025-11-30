@@ -31,6 +31,7 @@ export function ChatPage() {
   
   // Pull to refresh refs (ora dal basso verso l'alto)
   const pullStartY = useRef(0)
+  const pullStartX = useRef(0)
   const pullCurrentY = useRef(0)
   const isPulling = useRef(false)
   const pullIndicatorRef = useRef<HTMLDivElement>(null)
@@ -40,6 +41,57 @@ export function ChatPage() {
     isMountedRef.current = true
     return () => {
       isMountedRef.current = false
+    }
+  }, [])
+
+  // Handle virtual keyboard on mobile
+  useEffect(() => {
+    // Prevent viewport resize when keyboard opens on mobile
+    const handleResize = () => {
+      // On mobile devices, use visualViewport if available
+      if (window.visualViewport && messagesContainerRef.current) {
+        const viewport = window.visualViewport
+        const viewportHeight = viewport.height
+        
+        // Adjust messages container to account for keyboard
+        const messagesContainer = messagesContainerRef.current
+        if (messagesContainer) {
+          // Calculate new bottom position accounting for keyboard
+          const inputHeight = 68
+          const keyboardHeight = window.innerHeight - viewportHeight
+          
+          // Only adjust if keyboard is actually open (significant height difference)
+          if (keyboardHeight > 50) {
+            // Keyboard is open - adjust the bottom to keep messages visible
+            messagesContainer.style.bottom = `${inputHeight}px`
+            messagesContainer.style.paddingBottom = `${keyboardHeight}px`
+          } else {
+            // Keyboard is closed - reset to normal
+            messagesContainer.style.bottom = '68px'
+            messagesContainer.style.paddingBottom = '1rem'
+          }
+          
+          // If user was at bottom, keep them at bottom after keyboard opens
+          if (isAtBottomRef.current && messagesEndRef.current) {
+            setTimeout(() => {
+              messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+            }, 100)
+          }
+        }
+      }
+    }
+
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', handleResize)
+      window.visualViewport.addEventListener('scroll', handleResize)
+      
+      // Initial call to set correct state
+      handleResize()
+      
+      return () => {
+        window.visualViewport?.removeEventListener('resize', handleResize)
+        window.visualViewport?.removeEventListener('scroll', handleResize)
+      }
     }
   }, [])
 
@@ -286,30 +338,42 @@ export function ChatPage() {
   const handleTouchStart = (e: React.TouchEvent) => {
     if (!messagesContainerRef.current || isPullRefreshing || isLoadingMore) return
     
-    const { scrollTop, scrollHeight, clientHeight } = messagesContainerRef.current
-    const isAtBottom = scrollHeight - scrollTop - clientHeight < 10
-    
-    // Inizia il pull solo se siamo in fondo
-    if (isAtBottom) {
-      isPulling.current = true
-      pullStartY.current = e.touches[0].clientY
-      pullCurrentY.current = pullStartY.current
-    }
+    // Salva sempre la posizione iniziale, ma non bloccare nulla
+    pullStartY.current = e.touches[0].clientY
+    pullStartX.current = e.touches[0].clientX
+    pullCurrentY.current = pullStartY.current
+    isPulling.current = false // Reset pull state
   }
   
   const handleTouchMove = (e: React.TouchEvent) => {
-    if (!isPulling.current || !messagesContainerRef.current || !pullIndicatorRef.current) return
+    if (!messagesContainerRef.current || !pullIndicatorRef.current) return
     
     const { scrollTop, scrollHeight, clientHeight } = messagesContainerRef.current
-    const isAtBottom = scrollHeight - scrollTop - clientHeight < 10
+    const isAtBottom = scrollHeight - scrollTop - clientHeight < 5
     
     pullCurrentY.current = e.touches[0].clientY
     const pullDistance = pullStartY.current - pullCurrentY.current // Invertito: pull verso l'alto
+    const pullDistanceX = Math.abs(e.touches[0].clientX - pullStartX.current)
     
-    // Solo se siamo in fondo E tiriamo verso l'alto
-    if (isAtBottom && pullDistance > 0) {
-      // Previeni lo scroll nativo per mostrare l'indicatore
-      e.preventDefault()
+    // Se movimento orizzontale > verticale, è uno swipe orizzontale, ignora
+    if (pullDistanceX > Math.abs(pullDistance)) {
+      isPulling.current = false
+      return
+    }
+    
+    // Se tiriamo verso il basso (scroll normale) o non siamo in fondo, NON è un pull-to-refresh
+    if (pullDistance < 0 || !isAtBottom) {
+      isPulling.current = false
+      if (pullIndicatorRef.current.style.opacity !== '0') {
+        pullIndicatorRef.current.style.opacity = '0'
+        pullIndicatorRef.current.style.transform = 'translateY(0)'
+      }
+      return
+    }
+    
+    // Solo se siamo in fondo E tiriamo verso l'alto > 30px, attiva il pull
+    if (isAtBottom && pullDistance > 30) {
+      isPulling.current = true
       
       // Mostra l'indicatore di pull con opacità crescente
       const opacity = Math.min(pullDistance / 80, 1)
