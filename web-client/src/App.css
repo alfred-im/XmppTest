@@ -3,6 +3,9 @@
   flex-direction: column;
   gap: 2.5rem;
   padding: 3rem clamp(1.5rem, 4vw, 4rem);
+  /* Blocca overscroll anche qui */
+  overscroll-behavior-y: none;
+  touch-action: pan-y;
 }
 
 .hero {

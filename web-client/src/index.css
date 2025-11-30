@@ -2,6 +2,13 @@
   box-sizing: border-box;
 }
 
+html {
+  /* Blocca completamente overscroll e pull-to-refresh nativo */
+  overscroll-behavior-y: none;
+  overscroll-behavior-x: none;
+  -webkit-overflow-scrolling: touch;
+}
+
 :root {
   font-family: 'Inter', 'SF Pro Display', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   line-height: 1.5;
@@ -16,17 +23,26 @@
 
 body {
   margin: 0;
-  min-height: 100vh;
+  /* Blocca completamente il pull-to-refresh nativo */
+  overscroll-behavior-y: none;
+  overscroll-behavior-x: none;
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
   background: radial-gradient(circle at top, rgba(49, 130, 206, 0.35), transparent 45%),
     radial-gradient(circle at 20% 20%, rgba(14, 165, 233, 0.3), transparent 40%),
     #050b14;
   color: inherit;
-  /* Blocca completamente il pull-to-refresh nativo */
-  overscroll-behavior-y: none;
 }
 
 #root {
-  min-height: 100vh;
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior-y: none;
+  overscroll-behavior-x: none;
 }
 
 a {
