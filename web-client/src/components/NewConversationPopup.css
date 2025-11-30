@@ -99,8 +99,8 @@
 
 .new-conversation-popup-field input:focus {
   outline: none;
-  border-color: #5682a3;
-  box-shadow: 0 0 0 3px rgba(86, 130, 163, 0.1);
+  border-color: #2D2926;
+  box-shadow: 0 0 0 3px rgba(45, 41, 38, 0.1);
 }
 
 .new-conversation-popup-field input::placeholder {
@@ -144,16 +144,16 @@
 }
 
 .new-conversation-popup-button--primary {
-  background: #5682a3;
+  background: #2D2926;
   color: #ffffff;
 }
 
 .new-conversation-popup-button--primary:hover {
-  background: #47698a;
+  background: #3d3632;
 }
 
 .new-conversation-popup-button--primary:active {
-  background: #3d5977;
+  background: #1e1b19;
 }
 
 /* Animazioni */
@@ -212,8 +212,8 @@
   }
 
   .new-conversation-popup-field input:focus {
-    border-color: #5682a3;
-    box-shadow: 0 0 0 3px rgba(86, 130, 163, 0.2);
+    border-color: #2D2926;
+    box-shadow: 0 0 0 3px rgba(45, 41, 38, 0.2);
   }
 
   .new-conversation-popup-field input::placeholder {

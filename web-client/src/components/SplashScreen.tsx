@@ -35,7 +35,7 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
       <div className="splash-screen__content">
         <div className="splash-screen__logo" aria-hidden="true">
           <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="32" cy="32" r="30" fill="#5682a3" />
+            <circle cx="32" cy="32" r="30" fill="#2D2926" />
             <path d="M20 32L28 40L44 24" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </div>
