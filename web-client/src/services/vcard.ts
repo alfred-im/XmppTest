@@ -281,25 +281,22 @@ export async function publishVCard(
 
     // Aggiungi foto se presente
     if (vcard.photoData && vcard.photoType) {
-      console.log('Tentativo di conversione immagine profilo:', {
+      console.log('Aggiunta immagine profilo al vCard:', {
         photoType: vcard.photoType,
         photoDataLength: vcard.photoData.length,
         photoDataPreview: vcard.photoData.substring(0, 50) + '...'
       })
       
-      const photoBuffer = base64ToBuffer(vcard.photoData)
-      if (!photoBuffer) {
-        console.error('Conversione base64 a buffer fallita per l\'immagine del profilo')
-        throw new Error('Errore nella conversione dell\'immagine del profilo. Prova con un\'altra immagine.')
-      }
-      
-      console.log('Immagine convertita con successo, dimensione:', photoBuffer.length, 'bytes')
-      
+      // FIX: Passa la stringa base64 direttamente, NON convertire a Buffer!
+      // Il server XMPP (e stanza.io) vogliono la stringa base64 come data.
+      // La conversione a Buffer causava timeout del server.
       records.push({
         type: 'photo',
-        data: photoBuffer as Buffer,
+        data: vcard.photoData, // ✅ Stringa base64 diretta
         mediaType: vcard.photoType
       })
+      
+      console.log('Immagine aggiunta al vCard (base64 string)')
     } else if (vcard.photoData || vcard.photoType) {
       // Solo uno dei due è presente - questo è un errore
       console.warn('Dati immagine incompleti:', { 
