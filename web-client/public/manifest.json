@@ -6,7 +6,7 @@
   "display": "standalone",
   "background_color": "#050b14",
   "theme_color": "#5682a3",
-  "orientation": "portrait",
+  "orientation": "portrait-primary",
   "icons": [
     {
       "src": "/vite.svg",
@@ -17,5 +17,8 @@
   ],
   "categories": ["social", "communication"],
   "screenshots": [],
-  "prefer_related_applications": false
+  "prefer_related_applications": false,
+  "scope": "/",
+  "lang": "it",
+  "dir": "ltr"
 }

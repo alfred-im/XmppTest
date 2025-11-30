@@ -64,6 +64,39 @@ document.addEventListener('gestureend', (e) => {
   e.preventDefault()
 }, { passive: false })
 
+// Registrazione Service Worker per funzionalità offline
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then((registration) => {
+        console.log('Service Worker registrato con successo:', registration.scope)
+        
+        // Controlla aggiornamenti ogni ora
+        setInterval(() => {
+          registration.update()
+        }, 3600000)
+      })
+      .catch((error) => {
+        console.log('Registrazione Service Worker fallita:', error)
+      })
+  })
+}
+
+// Gestione orientamento schermo - previene rotazione su mobile se necessario
+if (screen.orientation && screen.orientation.lock) {
+  // Prova a bloccare in portrait (opzionale, può fallire se non in fullscreen)
+  screen.orientation.lock('portrait-primary').catch(() => {
+    // Fallisce silenziosamente se non permesso (richiede fullscreen o user gesture)
+  })
+}
+
+// Listener per gestire cambi di orientamento
+window.addEventListener('orientationchange', () => {
+  // Forza un resize per aggiornare il layout dopo la rotazione
+  setTimeout(() => {
+    window.dispatchEvent(new Event('resize'))
+  }, 100)
+})
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
