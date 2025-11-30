@@ -18,6 +18,37 @@ Documentazione di bug fix e ottimizzazioni applicate.
   - passive: false per permettere preventDefault
 - **Status**: ✅ Risolto e testato
 
+### Profile Page Scroll Conflict Fix
+- **[profile-scroll-conflict-fix.md](./profile-scroll-conflict-fix.md)**
+- **Data**: 30 Novembre 2025
+- **Problema**: Scroll della pagina profilo funzionava solo in una direzione, conflitto di scroll
+- **Causa**: 
+  - Listener globali `touchmove` in main.tsx bloccavano il movimento
+  - Non distinguevano tra scroll della finestra e scroll di container interni
+  - Chiamavano `preventDefault()` anche su elementi scrollabili interni
+- **Soluzione**: 
+  - Aggiunta funzione `hasScrollableParent()` per rilevare container scrollabili
+  - Listener globali ora escludono elementi con scroll interno
+  - Scroll bidirezionale funziona correttamente
+- **Status**: ✅ Risolto e testato
+
+### Profile Save Error Fix
+- **[profile-save-error-fix.md](./profile-save-error-fix.md)**
+- **Data**: 30 Novembre 2025
+- **Problema**: Errore generico "Impossibile salvare il profilo" senza dettagli specifici
+- **Causa**: 
+  - `publishVCard` ritornava solo `false` invece di lanciare eccezioni
+  - Nessuna validazione preventiva dei dati
+  - Logging insufficiente per debugging
+  - Errori XMPP non tradotti in messaggi comprensibili
+- **Soluzione**: 
+  - Propagazione delle eccezioni con dettagli specifici
+  - Validazione preventiva (connessione, dati immagine, campi vuoti)
+  - Gestione errori XMPP specifici (not-authorized, forbidden, service-unavailable)
+  - Logging dettagliato per ogni fase del processo
+  - Messaggi di errore user-friendly in italiano
+- **Status**: ✅ Risolto e documentato
+
 ### Known Issues
 - **[known-issues.md](./known-issues.md)**
 - Lista problemi noti con workaround/soluzioni
@@ -30,15 +61,23 @@ Documentazione di bug fix e ottimizzazioni applicate.
    - Status: ✅ Risolto
    - Doc: [pull-to-refresh-fix.md](./pull-to-refresh-fix.md)
 
-2. **Conversazioni Non Aggiornate dopo Invio**
+2. **Conflitto Scroll Pagina Profilo**
+   - Status: ✅ Risolto
+   - Doc: [profile-scroll-conflict-fix.md](./profile-scroll-conflict-fix.md)
+
+3. **Errore Salvataggio Profilo**
+   - Status: ✅ Risolto
+   - Doc: [profile-save-error-fix.md](./profile-save-error-fix.md)
+
+4. **Conversazioni Non Aggiornate dopo Invio**
    - Status: ✅ Risolto tramite sistema sincronizzazione
    - Doc: [../implementation/sync-system-complete.md](../implementation/sync-system-complete.md)
 
-3. **Avatar Non Caricati**
+5. **Avatar Non Caricati**
    - Status: ✅ Risolto con vCard caching
    - Doc: Integrato in sync system
 
-4. **Redirect Loop dopo Logout**
+6. **Redirect Loop dopo Logout**
    - Status: ✅ Risolto con flag logoutIntentional
    - Doc: [../implementation/login-system.md](../implementation/login-system.md)
 

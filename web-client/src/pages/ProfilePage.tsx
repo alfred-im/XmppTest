@@ -101,7 +101,7 @@ export function ProfilePage() {
     setSuccess(false)
 
     try {
-      const result = await publishVCard(client, {
+      await publishVCard(client, {
         fullName: fullName.trim() || undefined,
         nickname: nickname.trim() || undefined,
         email: email.trim() || undefined,
@@ -110,15 +110,31 @@ export function ProfilePage() {
         photoType: avatarType,
       })
 
-      if (result) {
-        setSuccess(true)
-        setTimeout(() => setSuccess(false), 3000)
-      } else {
-        setError('Impossibile salvare il profilo')
-      }
+      setSuccess(true)
+      setTimeout(() => setSuccess(false), 3000)
     } catch (err) {
       console.error('Errore nel salvataggio profilo:', err)
-      setError(err instanceof Error ? err.message : 'Errore nel salvataggio')
+      
+      // Gestisci diversi tipi di errori con messaggi specifici
+      if (err instanceof Error) {
+        // Errori XMPP specifici
+        if (err.message.includes('not-authorized') || err.message.includes('auth')) {
+          setError('Autorizzazione negata. Verifica le tue credenziali.')
+        } else if (err.message.includes('timeout') || err.message.includes('Timeout')) {
+          setError('Timeout del server. Riprova tra qualche istante.')
+        } else if (err.message.includes('not-allowed') || err.message.includes('forbidden')) {
+          setError('Operazione non consentita dal server.')
+        } else if (err.message.includes('conversione') || err.message.includes('immagine')) {
+          setError('Errore nel processamento dell\'immagine. Prova con un\'altra foto.')
+        } else if (err.message.includes('connesso')) {
+          setError('Client non connesso al server.')
+        } else {
+          // Mostra il messaggio di errore originale se disponibile
+          setError(`Errore: ${err.message}`)
+        }
+      } else {
+        setError('Errore sconosciuto nel salvataggio del profilo')
+      }
     } finally {
       setIsSaving(false)
     }
