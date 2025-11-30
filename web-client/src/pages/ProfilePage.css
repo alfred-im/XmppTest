@@ -1,16 +1,19 @@
-/* Profile Page Styles */
+/* Profile Page Styles - Architettura con header fisso e corpo scrollabile */
 
 .profile-page {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
+  position: relative;
   width: 100vw;
+  height: 100vh;
   background: #f5f5f5;
   overflow: hidden;
 }
 
-/* Header */
+/* Header fisso */
 .profile-page__header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
   display: flex;
   align-items: center;
   height: 56px;
@@ -19,7 +22,6 @@
   background: #2D2926;
   color: #ffffff;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
-  flex-shrink: 0;
   z-index: 100;
 }
 
@@ -50,33 +52,28 @@
   background-color: rgba(255, 255, 255, 0.15);
 }
 
-/* Content */
-.profile-page__content {
-  flex: 1;
+/* Corpo scrollabile */
+.profile-page__body {
+  position: absolute;
+  top: calc(56px + env(safe-area-inset-top, 0));
+  left: 0;
+  right: 0;
+  bottom: 0;
   overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
   padding: 1.5rem 1rem;
-  /* Padding in fondo per evitare che l'ultimo elemento sia coperto dal footer */
-  padding-bottom: 1.5rem;
-  /* Assicura che il contenuto possa scrollare anche se è più alto del viewport */
-  min-height: 0;
+  padding-bottom: calc(1.5rem + env(safe-area-inset-bottom, 0));
 }
 
-/* Footer con bottone fisso */
-.profile-page__footer {
-  flex-shrink: 0;
-  padding: 1rem;
-  padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0));
-  background: #f5f5f5;
-  border-top: 1px solid #e0e0e0;
-  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.05);
-}
-
+/* Loading e Error States */
 .profile-page__loading,
 .profile-page__error {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  min-height: 50vh;
   padding: 3rem 1.5rem;
   text-align: center;
   color: #707579;
@@ -208,6 +205,7 @@
   transition: border-color 0.2s;
   background: #ffffff;
   color: #000000;
+  box-sizing: border-box;
 }
 
 .profile-page__field input:focus,
@@ -258,6 +256,13 @@
 .profile-page__message--success {
   background: #e8f5e9;
   color: #2e7d32;
+}
+
+/* Footer */
+.profile-page__footer {
+  padding: 1rem 0;
+  padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0));
+  margin-top: 1rem;
 }
 
 /* Buttons */
@@ -318,14 +323,8 @@
     background: #17212b;
   }
 
-  .profile-page__content {
+  .profile-page__body {
     background: #0e1621;
-  }
-
-  .profile-page__footer {
-    background: #17212b;
-    border-top-color: #2c3847;
-    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.3);
   }
 
   .profile-page__avatar-section,
@@ -351,7 +350,7 @@
 
 /* Mobile optimizations */
 @media (max-width: 768px) {
-  .profile-page__content {
+  .profile-page__body {
     padding: 1rem;
   }
 

@@ -141,30 +141,9 @@ export function ProfilePage() {
     return '?'
   }
 
-  if (!isConnected) {
-    return (
-      <div className="profile-page">
-        <header className="profile-page__header">
-          <button 
-            className="profile-page__back-btn"
-            onClick={() => navigate('/conversations')}
-            aria-label="Torna alle conversazioni"
-          >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M19 12H5M12 19l-7-7 7-7"/>
-            </svg>
-          </button>
-          <h1>Profilo</h1>
-        </header>
-        <div className="profile-page__error">
-          <p>Non connesso al server XMPP</p>
-        </div>
-      </div>
-    )
-  }
-
   return (
     <div className="profile-page">
+      {/* Header fisso */}
       <header className="profile-page__header">
         <button 
           className="profile-page__back-btn"
@@ -178,8 +157,13 @@ export function ProfilePage() {
         <h1>Profilo</h1>
       </header>
 
-      <main className="profile-page__content">
-        {isLoading ? (
+      {/* Corpo scrollabile */}
+      <main className="profile-page__body">
+        {!isConnected ? (
+          <div className="profile-page__error">
+            <p>Non connesso al server XMPP</p>
+          </div>
+        ) : isLoading ? (
           <div className="profile-page__loading">
             <div className="profile-page__spinner" />
             <p>Caricamento...</p>
@@ -297,22 +281,22 @@ export function ProfilePage() {
                 Profilo salvato con successo!
               </div>
             )}
+
+            {/* Footer con bottone sempre visibile */}
+            {!isLoading && (
+              <footer className="profile-page__footer">
+                <button
+                  onClick={handleSave}
+                  disabled={isSaving}
+                  className="profile-page__btn profile-page__btn--primary"
+                >
+                  {isSaving ? 'Salvataggio...' : 'Salva modifiche'}
+                </button>
+              </footer>
+            )}
           </>
         )}
       </main>
-
-      {/* Footer con bottone fisso sempre visibile */}
-      {!isLoading && (
-        <footer className="profile-page__footer">
-          <button
-            onClick={handleSave}
-            disabled={isSaving}
-            className="profile-page__btn profile-page__btn--primary"
-          >
-            {isSaving ? 'Salvataggio...' : 'Salva modifiche'}
-          </button>
-        </footer>
-      )}
     </div>
   )
 }
