@@ -30,7 +30,7 @@ function generateTempId(): string {
  * Estrae timestamp da un messaggio MAM
  */
 function extractTimestamp(msg: MAMResult): Date {
-  // 1. Prova con il delay del messaggio interno (più accurato)
+  // Prova con il delay del messaggio interno
   const message = msg.item.message
   if (message?.delay) {
     const delay = message.delay
@@ -46,22 +46,7 @@ function extractTimestamp(msg: MAMResult): Date {
     }
   }
   
-  // 2. Fallback al timestamp del risultato MAM stesso
-  if (msg.delay) {
-    const delay = msg.delay
-    if (typeof delay === 'object' && delay !== null) {
-      const stamp = (delay as any).stamp || (delay as any).timestamp
-      if (stamp) {
-        const date = new Date(stamp)
-        if (!isNaN(date.getTime())) {
-          return date
-        }
-      }
-    }
-  }
-  
-  // 3. Ultimo fallback: timestamp attuale (non dovrebbe mai accadere per MAM)
-  console.warn('Impossibile estrarre timestamp da messaggio MAM, uso timestamp corrente')
+  // Fallback: timestamp attuale (per messaggi in tempo reale)
   return new Date()
 }
 
