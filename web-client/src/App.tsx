@@ -16,8 +16,12 @@ function AppRoutes() {
       {/* Route sempre accessibili - no routing condizionale */}
       <Routes>
         <Route path="/conversations" element={<ConversationsPage />} />
+        {/* Route per chat individuali - TODO: creare ChatPage se necessario */}
+        <Route path="/conversations/:jid" element={<ConversationsPage />} />
+        <Route path="/chat/:jid" element={<ConversationsPage />} />
         <Route path="/" element={<Navigate to="/conversations" replace />} />
-        {/* Altre route future vanno qui */}
+        {/* Catch-all temporaneo */}
+        <Route path="*" element={<Navigate to="/conversations" replace />} />
       </Routes>
 
       {/* Popup di login globale - appare sopra le route quando necessario */}
