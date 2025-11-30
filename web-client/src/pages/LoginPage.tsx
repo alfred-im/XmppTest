@@ -128,7 +128,7 @@ export function LoginPage() {
                   autoComplete="username"
                   value={loginForm.jid}
                   onChange={handleLoginChange('jid')}
-                  placeholder="user@myserver.com"
+                  placeholder="mario@conversations.im"
                 />
               </label>
               <label className="field">
