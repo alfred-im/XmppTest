@@ -5,11 +5,7 @@ Quando l'utente richiede una **"revisione generale"** del software.
 
 ## Prompt da Eseguire
 ```
-La app è evoluta molto velocemente, vorrei che tu facessi un'analisi completa 
-di tutto il software senza fare nessuna modifica e mi dicessi quali pattern 
-conviene applicare visto il contenuto applicativo. Non mi serve un documento 
-lunghissimo mi servono poche frasi per capire che cosa si può fare a livello 
-di design
+La app è evoluta molto velocemente, vorrei che tu facessi un'analisi completa di tutto il software senza fare nessuna modifica e mi dicessi quali pattern conviene applicare visto il contenuto applicativo. Non mi serve un documento lunghissimo mi servono poche frasi per capire che cosa si può fare a livello di design
 ```
 
 ## Obiettivo
