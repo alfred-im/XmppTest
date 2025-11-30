@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useXmpp } from '../contexts/XmppContext'
 import { ConversationsList } from '../components/ConversationsList'
@@ -7,9 +7,10 @@ import './ConversationsPage.css'
 
 export function ConversationsPage() {
   const navigate = useNavigate()
-  const { isConnected, disconnect, jid } = useXmpp()
+  const { isConnected, disconnect, jid, client } = useXmpp()
   const [showMenu, setShowMenu] = useState(false)
   const [showNewConversation, setShowNewConversation] = useState(false)
+  const [userAvatar, setUserAvatar] = useState<{ data?: string; type?: string } | null>(null)
 
   const handleLogout = () => {
     // Chiudi prima il menu
@@ -25,6 +26,30 @@ export function ConversationsPage() {
     // Naviga alla chat con il JID inserito
     navigate(`/chat/${encodeURIComponent(jid)}`)
   }
+
+  const handleNavigateToProfile = () => {
+    setShowMenu(false)
+    navigate('/profile')
+  }
+
+  // Carica il vCard dell'utente per l'avatar
+  useEffect(() => {
+    const loadUserAvatar = async () => {
+      if (!client || !jid) return
+      
+      try {
+        const { getVCard } = await import('../services/vcard')
+        const vcard = await getVCard(client, jid, false)
+        if (vcard?.photoData && vcard?.photoType) {
+          setUserAvatar({ data: vcard.photoData, type: vcard.photoType })
+        }
+      } catch (error) {
+        console.error('Errore nel caricamento avatar utente:', error)
+      }
+    }
+    
+    loadUserAvatar()
+  }, [client, jid])
 
   return (
     <div className="conversations-page">
@@ -76,9 +101,30 @@ export function ConversationsPage() {
             aria-label="Menu laterale"
           >
             <div className="conversations-page__sidebar-header">
-              <div className="conversations-page__user-info">
+              <div 
+                className="conversations-page__user-info"
+                onClick={handleNavigateToProfile}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    handleNavigateToProfile()
+                  }
+                }}
+                role="button"
+                tabIndex={0}
+                aria-label="Vai al profilo"
+                style={{ cursor: 'pointer' }}
+              >
                 <div className="conversations-page__user-avatar" aria-hidden="true">
-                  {jid?.charAt(0).toUpperCase()}
+                  {userAvatar?.data && userAvatar?.type ? (
+                    <img 
+                      src={`data:${userAvatar.type};base64,${userAvatar.data}`}
+                      alt="Il tuo avatar"
+                      style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
+                    />
+                  ) : (
+                    jid?.charAt(0).toUpperCase()
+                  )}
                 </div>
                 <div className="conversations-page__user-details">
                   <div className="conversations-page__user-name">Account</div>
@@ -98,22 +144,16 @@ export function ConversationsPage() {
                 <span>Chat</span>
               </button>
               
-              <button className="conversations-page__sidebar-item" aria-label="Contatti">
+              <button 
+                className="conversations-page__sidebar-item" 
+                aria-label="Profilo"
+                onClick={handleNavigateToProfile}
+              >
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                  <circle cx="9" cy="7" r="4"></circle>
-                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                  <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="12" cy="7" r="4"></circle>
                 </svg>
-                <span>Contatti</span>
-              </button>
-              
-              <button className="conversations-page__sidebar-item" aria-label="Impostazioni">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-                  <circle cx="12" cy="12" r="3"></circle>
-                  <path d="M12 1v6m0 6v6m-9-9h6m6 0h6"></path>
-                </svg>
-                <span>Impostazioni</span>
+                <span>Profilo</span>
               </button>
             </nav>
             
