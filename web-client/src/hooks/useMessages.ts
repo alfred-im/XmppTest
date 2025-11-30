@@ -183,7 +183,7 @@ export function useMessages({
     }
   }, [client, jid])
 
-  // Invia un messaggio
+  // Invia un messaggio usando il sistema di sincronizzazione
   const sendMessage = useCallback(
     async (body: string): Promise<{ success: boolean; error?: string }> => {
       if (!client || !body.trim()) {
@@ -193,12 +193,17 @@ export function useMessages({
       setError(null)
 
       try {
+        // sendMessageService ora usa il sistema di sincronizzazione:
+        // 1. Invia al server
+        // 2. Aspetta conferma
+        // 3. Sincronizza tutto dal server (scaricando e salvando nel DB)
         const result = await sendMessageService(client, jid, body)
 
         if (!isMountedRef.current) return { success: false }
 
         if (result.success) {
-          // Ricarica tutti i messaggi dal DB locale
+          // Dopo la sincronizzazione, ricarica tutti i messaggi dal DB locale
+          // (che ora contiene i dati sincronizzati dal server)
           const allMessages = await getLocalMessages(jid)
 
           if (isMountedRef.current) {

@@ -244,7 +244,8 @@ export async function reloadAllMessagesFromServer(
 }
 
 /**
- * Invia un messaggio con optimistic update
+ * Invia un messaggio usando il sistema di sincronizzazione
+ * NON scrive nel database immediatamente - aspetta conferma e sincronizza tutto dal server
  */
 export async function sendMessage(
   client: Agent,
@@ -252,46 +253,29 @@ export async function sendMessage(
   body: string
 ): Promise<{ tempId: string; success: boolean; error?: string }> {
   const tempId = generateTempId()
-  const timestamp = new Date()
   const normalizedJid = normalizeJid(toJid)
 
-  // 1. Optimistic update: aggiungi messaggio subito al database con stato 'pending'
-  const optimisticMessage: Message = {
-    messageId: tempId,
-    conversationJid: normalizedJid,
-    body,
-    timestamp,
-    from: 'me',
-    status: 'pending',
-    tempId,
-  }
-
   try {
-    await addMessage(optimisticMessage)
-
-    // 2. Invia il messaggio al server
-    const sentMessage = await client.sendMessage({
-      to: normalizedJid,
+    // Usa il sistema di sincronizzazione unificato
+    // Questo invia il messaggio, aspetta conferma e sincronizza tutto dal server
+    const { sincronizza } = await import('./sync')
+    const result = await sincronizza(client, {
+      type: 'sendMessage',
+      toJid: normalizedJid,
       body,
-      type: 'chat',
     })
 
-    // 3. Aggiorna con l'ID del server (stanza restituisce una stringa)
-    const serverId = typeof sentMessage === 'string' ? sentMessage : tempId
-    if (serverId !== tempId) {
-      await updateMessageId(tempId, serverId)
-    } else {
-      // Se non c'è ID server, aggiorna solo lo status
-      await updateMessageStatus(tempId, 'sent')
+    if (!result.success) {
+      return {
+        tempId,
+        success: false,
+        error: result.error || 'Errore nell\'invio del messaggio',
+      }
     }
 
     return { tempId, success: true }
   } catch (error) {
     console.error('Errore nell\'invio del messaggio:', error)
-
-    // Aggiorna lo status a 'failed'
-    await updateMessageStatus(tempId, 'failed')
-
     return {
       tempId,
       success: false,
@@ -361,23 +345,26 @@ export async function getLocalMessages(
 }
 
 /**
- * Gestisce un messaggio ricevuto in real-time
+ * Gestisce un messaggio ricevuto in real-time usando il sistema di sincronizzazione
+ * NON scrive direttamente nel database - sincronizza tutto dal server
+ * 
+ * @deprecated Usa handleIncomingMessageAndSync da './sync' invece
+ * Questa funzione è mantenuta solo per compatibilità con codice esistente
  */
 export async function handleIncomingMessage(
   message: ReceivedMessage,
   myJid: string,
   contactJid: string
 ): Promise<Message> {
+  // Estrai timestamp per il messaggio di ritorno (per compatibilità)
+  const timestamp = message.delay?.timestamp || new Date()
   const myBareJid = normalizeJid(myJid)
   const from = message.from || ''
   const fromMe = from.startsWith(myBareJid)
 
-  // Estrai timestamp
-  // 1. Se c'è un delay, usa il suo timestamp (già un oggetto Date)
-  // 2. Altrimenti usa timestamp attuale (messaggio in tempo reale)
-  const timestamp = message.delay?.timestamp || new Date()
-
-  const incomingMessage: Message = {
+  // Ritorna un messaggio temporaneo per compatibilità
+  // Il vero messaggio sarà caricato dalla sincronizzazione nel contesto XMPP
+  return {
     messageId: message.id || `incoming_${Date.now()}`,
     conversationJid: normalizeJid(contactJid),
     body: message.body || '',
@@ -385,10 +372,4 @@ export async function handleIncomingMessage(
     from: fromMe ? 'me' : 'them',
     status: 'sent',
   }
-
-  // Salva nel database (de-duplicazione automatica)
-  await addMessage(incomingMessage)
-  
-  // Ritorna il messaggio per permettere update ottimistici
-  return incomingMessage
 }
