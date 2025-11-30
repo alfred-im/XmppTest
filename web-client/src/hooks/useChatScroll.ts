@@ -1,5 +1,5 @@
 import { useEffect, useRef, useCallback } from 'react'
-import { PAGINATION, TIMEOUTS } from '../config/constants'
+import { PAGINATION } from '../config/constants'
 
 interface UseChatScrollOptions {
   messages: unknown[] // Array di messaggi per triggerare scroll
@@ -10,8 +10,8 @@ interface UseChatScrollOptions {
 }
 
 interface UseChatScrollReturn {
-  messagesContainerRef: React.RefObject<HTMLDivElement>
-  messagesEndRef: React.RefObject<HTMLDivElement>
+  messagesContainerRef: React.RefObject<HTMLDivElement | null>
+  messagesEndRef: React.RefObject<HTMLDivElement | null>
   isAtBottomRef: React.MutableRefObject<boolean>
   handleScroll: () => void
   scrollToBottom: (behavior?: ScrollBehavior) => void

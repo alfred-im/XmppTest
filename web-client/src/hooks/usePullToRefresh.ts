@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useRef, useCallback } from 'react'
 import { PULL_TO_REFRESH } from '../config/constants'
 
 interface UsePullToRefreshOptions {
@@ -11,7 +11,7 @@ interface UsePullToRefreshOptions {
 interface UsePullToRefreshReturn {
   isRefreshing: boolean
   pullDistance: number
-  pullIndicatorRef: React.RefObject<HTMLDivElement>
+  pullIndicatorRef: React.RefObject<HTMLDivElement | null>
   handleTouchStart: (e: React.TouchEvent) => void
   handleTouchMove: (e: React.TouchEvent) => void
   handleTouchEnd: () => void

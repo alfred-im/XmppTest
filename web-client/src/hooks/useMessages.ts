@@ -227,19 +227,6 @@ export function useMessages({
     [client, jid, safeSetMessages, onNewMessage]
   )
 
-  // Aggiorna messaggi quando arrivano nuovi in real-time
-  const updateMessagesFromRealTime = useCallback(async () => {
-    if (!isMountedRef.current) return
-
-    const allMessages = await getLocalMessages(jid)
-    safeSetMessages(() => allMessages)
-  }, [jid, safeSetMessages])
-
-  // Esponi funzione per aggiornare messaggi da real-time
-  useEffect(() => {
-    // Questa funzione può essere chiamata da componenti esterni
-    // tramite un ref o callback
-  }, [])
 
   return {
     messages,

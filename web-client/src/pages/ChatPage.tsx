@@ -139,9 +139,6 @@ export function ChatPage() {
       const contactJid = from === myBareJid ? to : from
 
       if (contactJid === jid.toLowerCase()) {
-        // Ricarica messaggi dal DB locale
-        const allMessages = await getLocalMessages(jid)
-        
         // Aggiorna messaggi (gestito internamente da useMessages tramite subscribe)
         // Marca come letta
         markConversationAsRead(jid)
