@@ -142,16 +142,17 @@ export async function loadConversationsFromServer(
     const from = msg.item.message?.from || ''
     const sender: 'me' | 'them' = from.startsWith(myBareJid) ? 'me' : 'them'
 
+    const messageTimestamp = extractTimestamp(msg)
     conversations.push({
       jid: contactJid,
       lastMessage: {
         body: extractMessageBody(msg),
-        timestamp: extractTimestamp(msg),
+        timestamp: messageTimestamp,
         from: sender,
         messageId: msg.id,
       },
       unreadCount: 0,
-      updatedAt: new Date(),
+      updatedAt: messageTimestamp,
     })
   }
 

@@ -124,7 +124,9 @@ export async function updateConversation(jid: string, updates: Partial<Conversat
   const existing = await tx.store.get(jid)
 
   if (existing) {
-    await tx.store.put({ ...existing, ...updates, updatedAt: new Date() })
+    // Se viene aggiornato lastMessage, aggiorna anche updatedAt con il timestamp del messaggio
+    const updatedAt = updates.lastMessage?.timestamp || existing.lastMessage.timestamp
+    await tx.store.put({ ...existing, ...updates, updatedAt })
   } else if (updates.jid) {
     // Crea nuova conversazione
     await tx.store.put({
@@ -132,7 +134,7 @@ export async function updateConversation(jid: string, updates: Partial<Conversat
       lastMessage: updates.lastMessage!,
       unreadCount: updates.unreadCount ?? 0,
       displayName: updates.displayName,
-      updatedAt: new Date(),
+      updatedAt: updates.lastMessage!.timestamp,
     })
   }
 
