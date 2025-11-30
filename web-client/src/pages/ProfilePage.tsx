@@ -299,13 +299,7 @@ export function ProfilePage() {
             )}
 
             {/* Save Button */}
-            <div 
-              className="profile-page__save-section"
-              style={{ background: 'red', padding: '20px' }}
-            >
-              <p style={{ color: 'white', fontSize: '20px', marginBottom: '10px' }}>
-                QUESTO È IL BOTTONE:
-              </p>
+            <div className="profile-page__save-section">
               <button
                 onClick={handleSave}
                 disabled={isSaving}
@@ -313,10 +307,6 @@ export function ProfilePage() {
               >
                 {isSaving ? 'Salvataggio...' : 'Salva modifiche'}
               </button>
-            </div>
-            
-            <div style={{ background: 'yellow', padding: '50px', fontSize: '30px', fontWeight: 'bold', textAlign: 'center' }}>
-              FINE DEL CONTENUTO
             </div>
           </>
         )}
