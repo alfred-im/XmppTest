@@ -8,8 +8,12 @@ export function ConversationsPage() {
   const [showMenu, setShowMenu] = useState(false)
 
   const handleLogout = () => {
-    disconnect()
-    // Il popup di login apparirà automaticamente dopo la disconnessione
+    // Chiudi prima il menu
+    setShowMenu(false)
+    // Poi esegui la disconnessione dopo un breve delay per permettere l'animazione di chiusura
+    setTimeout(() => {
+      disconnect()
+    }, 200) // Delay per permettere l'animazione di chiusura del menu
   }
 
   return (
