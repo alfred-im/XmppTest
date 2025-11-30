@@ -9,7 +9,7 @@ import {
   enrichWithRoster,
   updateConversationOnNewMessage,
 } from '../services/conversations'
-import { getConversations, type Conversation, updateConversation, clearConversations, saveConversations, saveMetadata, removeConversation } from '../services/conversations-db'
+import { getConversations, type Conversation, updateConversation, clearConversations, saveConversations, saveMetadata, removeConversation, clearMessagesForConversation } from '../services/conversations-db'
 import { saveCredentials, loadCredentials, clearCredentials } from '../services/auth-storage'
 import { handleIncomingMessage } from '../services/messages'
 
@@ -289,6 +289,9 @@ export function XmppProvider({ children }: { children: ReactNode }) {
 
   const removeConversationFromList = useCallback(async (conversationJid: string) => {
     try {
+      // Rimuovi anche i messaggi associati alla conversazione
+      await clearMessagesForConversation(conversationJid)
+      // Rimuovi la conversazione
       await removeConversation(conversationJid)
       const updated = await getConversations()
       setConversations(updated)
