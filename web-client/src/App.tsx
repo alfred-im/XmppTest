@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { XmppProvider, useXmpp } from './contexts/XmppContext'
 import { ConversationsPage } from './pages/ConversationsPage'
 import { ChatPage } from './pages/ChatPage'
@@ -15,7 +15,6 @@ function AppRoutes() {
         <Route path="/conversations" element={<ConversationsPage />} />
         <Route path="/chat/:jid" element={<ChatPage />} />
         <Route path="/" element={<Navigate to="/conversations" replace />} />
-        <Route path="*" element={<Navigate to="/conversations" replace />} />
       </Routes>
 
       {/* Popup di login globale - appare sopra le route quando necessario */}
@@ -30,9 +29,9 @@ function AppRoutes() {
 function App() {
   return (
     <XmppProvider>
-      <BrowserRouter basename="/XmppTest">
+      <HashRouter>
         <AppRoutes />
-      </BrowserRouter>
+      </HashRouter>
     </XmppProvider>
   )
 }
