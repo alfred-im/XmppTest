@@ -277,7 +277,7 @@ export function ProfilePage() {
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Racconta qualcosa su di te..."
                   maxLength={300}
-                  rows={4}
+                  rows={8}
                 />
                 <span className="profile-page__char-count">
                   {description.length}/300
@@ -305,7 +305,7 @@ export function ProfilePage() {
                 disabled={isSaving}
                 className="profile-page__btn profile-page__btn--primary"
               >
-                {isSaving ? 'Salvataggio...' : 'Salva modifiche'}
+                {isSaving ? 'Salvataggio...' : '💾 Salva modifiche'}
               </button>
             </div>
           </>
