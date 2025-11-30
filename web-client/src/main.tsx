@@ -7,6 +7,26 @@ import App from './App.tsx'
 let lastTouchY = 0
 let isAtTop = true
 
+// Helper per verificare se un elemento ha scroll interno
+function hasScrollableParent(element: Element | null): boolean {
+  if (!element) return false
+  
+  let current: Element | null = element
+  while (current && current !== document.body) {
+    const style = window.getComputedStyle(current)
+    const overflowY = style.overflowY
+    
+    // Se l'elemento ha overflow-y: auto o scroll, è scrollabile
+    if (overflowY === 'auto' || overflowY === 'scroll') {
+      return true
+    }
+    
+    current = current.parentElement
+  }
+  
+  return false
+}
+
 document.addEventListener('touchstart', (e) => {
   lastTouchY = e.touches[0].clientY
   // Controlla se siamo in cima alla pagina
@@ -25,6 +45,12 @@ document.addEventListener('touchmove', (e) => {
   // Blocca il pinch-zoom: se ci sono più di un tocco, previeni il comportamento predefinito
   if (e.touches.length > 1) {
     e.preventDefault()
+    return
+  }
+  
+  // Non bloccare lo scroll se il touch è su un elemento con scroll interno
+  const target = e.target as Element
+  if (hasScrollableParent(target)) {
     return
   }
   
