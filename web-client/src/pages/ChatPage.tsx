@@ -1,58 +1,86 @@
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, useMemo, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useXmpp } from '../contexts/XmppContext'
-import { loadMessagesForContact, sendMessage, getLocalMessages, reloadAllMessagesFromServer, type Message } from '../services/messages'
-import { mergeMessages } from '../utils/message'
+import { getLocalMessages } from '../services/messages'
+import { useMessages } from '../hooks/useMessages'
+import { useChatScroll } from '../hooks/useChatScroll'
+import { usePullToRefresh } from '../hooks/usePullToRefresh'
 import { formatDateSeparator, formatMessageTime, isSameDay } from '../utils/date'
-import { PAGINATION, PULL_TO_REFRESH, TIMEOUTS, TEXT_LIMITS } from '../config/constants'
-import './ChatPage.css' 
+import { TEXT_LIMITS } from '../config/constants'
+import './ChatPage.css'
 
+/**
+ * Pagina principale per la visualizzazione e gestione di una chat
+ * Utilizza custom hooks per separare le responsabilità:
+ * - useMessages: gestione stato e operazioni sui messaggi
+ * - useChatScroll: gestione scroll e paginazione
+ * - usePullToRefresh: gestione pull-to-refresh
+ */
 export function ChatPage() {
   const { jid: encodedJid } = useParams<{ jid: string }>()
   const navigate = useNavigate()
   const { client, isConnected, conversations, subscribeToMessages, markConversationAsRead, jid: myJid } = useXmpp()
   
-  const jid = encodedJid ? decodeURIComponent(encodedJid) : ''
-  const conversation = conversations.find((c) => c.jid === jid)
+  const jid = useMemo(() => encodedJid ? decodeURIComponent(encodedJid) : '', [encodedJid])
+  const conversation = useMemo(() => conversations.find((c) => c.jid === jid), [conversations, jid])
   
-  const [messages, setMessages] = useState<Message[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [isLoadingMore, setIsLoadingMore] = useState(false)
-  const [hasMoreMessages, setHasMoreMessages] = useState(true)
   const [inputValue, setInputValue] = useState('')
   const [isSending, setIsSending] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [firstToken, setFirstToken] = useState<string | undefined>(undefined) // Token per caricare messaggi più vecchi
-  const [isPullRefreshing, setIsPullRefreshing] = useState(false)
-  
-  const messagesEndRef = useRef<HTMLDivElement>(null)
-  const messagesContainerRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
-  const isAtBottomRef = useRef(true)
-  const lastScrollHeightRef = useRef(0)
-  const isMountedRef = useRef(true) // Previene setState dopo unmount
-  
-  // Pull to refresh refs (ora dal basso verso l'alto)
-  const pullStartY = useRef(0)
-  const pullCurrentY = useRef(0)
-  const isPulling = useRef(false)
-  const pullIndicatorRef = useRef<HTMLDivElement>(null)
 
-  // Cleanup al unmount
-  useEffect(() => {
-    isMountedRef.current = true
-    return () => {
-      isMountedRef.current = false
-    }
-  }, [])
+  // Custom hook per gestione messaggi
+  const {
+    messages,
+    isLoading,
+    isLoadingMore,
+    hasMoreMessages,
+    error,
+    sendMessage: sendMessageHook,
+    loadMoreMessages,
+    reloadAllMessages,
+    setError,
+  } = useMessages({
+    jid,
+    client,
+    isConnected,
+  })
+
+  // Custom hook per gestione scroll
+  const {
+    messagesContainerRef,
+    messagesEndRef,
+    isAtBottomRef,
+    handleScroll,
+    scrollToBottom,
+  } = useChatScroll({
+    messages,
+    isLoadingMore,
+    hasMoreMessages,
+    onLoadMore: loadMoreMessages,
+  })
+
+  // Custom hook per pull-to-refresh
+  const {
+    isRefreshing: isPullRefreshing,
+    pullIndicatorRef,
+    handleTouchStart,
+    handleTouchMove,
+    handleTouchEnd,
+  } = usePullToRefresh({
+    onRefresh: async () => {
+      await reloadAllMessages()
+      setTimeout(() => {
+        scrollToBottom('smooth')
+      }, 100)
+    },
+    enabled: !isLoadingMore,
+  })
 
   // Subscribe a messaggi real-time
   useEffect(() => {
     if (!jid || !myJid) return
 
     const unsubscribe = subscribeToMessages(async (message) => {
-      if (!isMountedRef.current) return
-
       // Controlla se il messaggio è per questa conversazione
       const myBareJid = myJid.split('/')[0].toLowerCase()
       const from = message.from?.split('/')[0].toLowerCase() || ''
@@ -60,21 +88,24 @@ export function ChatPage() {
       const contactJid = from === myBareJid ? to : from
 
       if (contactJid === jid.toLowerCase()) {
-        // Ricarica tutti i messaggi e lascia che mergeMessages gestisca i duplicati
+        // Ricarica messaggi dal DB locale
         const allMessages = await getLocalMessages(jid)
         
-        if (isMountedRef.current) {
-          // Merge con tutti i messaggi - la funzione mergeMessages usa messageId per de-duplicare
-          safeSetMessages(() => allMessages)
-          
-          // Marca come letta
-          markConversationAsRead(jid)
-        }
+        // Aggiorna messaggi (gestito internamente da useMessages tramite subscribe)
+        // Marca come letta
+        markConversationAsRead(jid)
       }
     })
 
     return unsubscribe
   }, [jid, myJid, subscribeToMessages, markConversationAsRead])
+
+  // Marca conversazione come letta quando si apre
+  useEffect(() => {
+    if (jid && client && isConnected) {
+      markConversationAsRead(jid)
+    }
+  }, [jid, client, isConnected, markConversationAsRead])
 
   // Auto-focus su input quando la chat si carica
   useEffect(() => {
@@ -97,242 +128,9 @@ export function ChatPage() {
     return () => textarea.removeEventListener('input', adjustHeight)
   }, [])
 
-
-  // Helper: Update messages in modo safe
-  const safeSetMessages = (updater: (prev: Message[]) => Message[]) => {
-    if (isMountedRef.current) {
-      setMessages(updater)
-    }
-  }
-
-  // Funzione per caricare messaggi iniziali
-  const loadInitialMessages = async () => {
-    if (!client) return
-
-    if (!isMountedRef.current) return // Check prima di iniziare
-
-    setIsLoading(true)
-    setError(null)
-
-    try {
-      // Prima carica dalla cache locale (veloce)
-      const localMessages = await getLocalMessages(jid, { limit: PAGINATION.DEFAULT_MESSAGE_LIMIT })
-      if (localMessages.length > 0 && isMountedRef.current) {
-        safeSetMessages(() => localMessages)
-        setIsLoading(false)
-      }
-
-      // Poi carica dal server in background
-      const result = await loadMessagesForContact(client, jid, { maxResults: PAGINATION.DEFAULT_MESSAGE_LIMIT })
-      
-      if (!isMountedRef.current) return // Check prima di setState
-      
-      // Merge con messaggi esistenti per evitare sostituzione brusca
-      safeSetMessages(prev => mergeMessages(prev, result.messages))
-      setHasMoreMessages(!result.complete)
-      setFirstToken(result.firstToken) // Salva token per paginazione
-    } catch (err) {
-      console.error('Errore nel caricamento messaggi:', err)
-      if (isMountedRef.current) {
-        setError('Impossibile caricare i messaggi')
-      }
-    } finally {
-      if (isMountedRef.current) {
-        setIsLoading(false)
-      }
-    }
-  }
-
-  const loadMoreMessages = async () => {
-    if (!client || isLoadingMore || !hasMoreMessages || !firstToken) return
-    if (!isMountedRef.current) return
-
-    setIsLoadingMore(true)
-
-    try {
-      // Usa il token RSM corretto per caricare messaggi PRIMA del primo attuale
-      const result = await loadMessagesForContact(client, jid, {
-        maxResults: PAGINATION.DEFAULT_MESSAGE_LIMIT,
-        beforeToken: firstToken, // Usa il token salvato, non messageId!
-      })
-
-      if (!isMountedRef.current) return
-
-      if (result.messages.length > 0) {
-        // Merge invece di semplice concatenazione per evitare duplicati
-        safeSetMessages(prev => mergeMessages(result.messages, prev))
-        setHasMoreMessages(!result.complete)
-        setFirstToken(result.firstToken) // Aggiorna token per il prossimo caricamento
-      } else {
-        setHasMoreMessages(false)
-      }
-    } catch (err) {
-      console.error('Errore nel caricamento messaggi precedenti:', err)
-    } finally {
-      if (isMountedRef.current) {
-        setIsLoadingMore(false)
-      }
-    }
-  }
-
-  // Carica messaggi iniziali
-  useEffect(() => {
-    // Non fare nulla se non c'è il jid (non siamo in una chat)
-    if (!jid) {
-      return
-    }
-
-    // Se client e connessione sono disponibili, carica i messaggi
-    if (client && isConnected) {
-      loadInitialMessages()
-      
-      // Marca conversazione come letta
-      markConversationAsRead(jid)
-    }
-    
-    // NON redirigere durante l'inizializzazione - il popup di login gestirà l'autenticazione
-    // e la pagina rimarrà sulla rotta corrente
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [jid, client, isConnected])
-
-  // Auto-scroll al bottom solo se già in fondo
-  useEffect(() => {
-    if (isAtBottomRef.current && messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' })
-    }
-  }, [messages])
-
-  // Ricarica completa messaggi dal server (pull up to refresh dal basso)
-  const handlePullRefresh = async () => {
-    if (!client || isPullRefreshing) return
-    
-    setIsPullRefreshing(true)
-    setError(null)
-    
-    try {
-      // Ricarica tutto dal server - questa funzione ora gestisce correttamente i duplicati
-      const serverMessages = await reloadAllMessagesFromServer(client, jid)
-      
-      if (isMountedRef.current) {
-        // Sostituisci completamente i messaggi visualizzati con quelli dal server
-        setMessages(serverMessages)
-        setHasMoreMessages(false) // Abbiamo già tutto dal server
-        setFirstToken(undefined)
-        
-        // Scroll al bottom dopo il refresh
-        setTimeout(() => {
-          if (messagesEndRef.current) {
-            messagesEndRef.current.scrollIntoView({ behavior: 'smooth' })
-            isAtBottomRef.current = true
-          }
-        }, TIMEOUTS.AUTO_SCROLL_DELAY)
-      }
-    } catch (err) {
-      console.error('Errore nel pull refresh:', err)
-      if (isMountedRef.current) {
-        setError('Impossibile ricaricare i messaggi')
-      }
-    } finally {
-      if (isMountedRef.current) {
-        setIsPullRefreshing(false)
-      }
-    }
-  }
-
-  // Traccia se l'utente è in fondo
-  const handleScroll = () => {
-    if (!messagesContainerRef.current) return
-
-    const { scrollTop, scrollHeight, clientHeight } = messagesContainerRef.current
-    const distanceFromBottom = scrollHeight - scrollTop - clientHeight
-
-    // Considera "in fondo" se entro la soglia dal bottom
-    isAtBottomRef.current = distanceFromBottom < PAGINATION.SCROLL_TO_BOTTOM_THRESHOLD
-
-    // Trigger load more se vicino al top (ma non durante pull refresh)
-    if (scrollTop < PAGINATION.LOAD_MORE_THRESHOLD && hasMoreMessages && !isLoadingMore && !isPullRefreshing) {
-      const currentScrollHeight = scrollHeight
-      lastScrollHeightRef.current = currentScrollHeight
-      loadMoreMessages()
-    }
-  }
-  
-  // Pull to refresh handlers (ora dal basso verso l'alto)
-  const handleTouchStart = (e: React.TouchEvent) => {
-    if (!messagesContainerRef.current || isPullRefreshing || isLoadingMore) return
-    
-    const { scrollTop, scrollHeight, clientHeight } = messagesContainerRef.current
-    const isAtBottom = scrollHeight - scrollTop - clientHeight < 10
-    
-    // Inizia il pull solo se siamo in fondo
-    if (isAtBottom) {
-      isPulling.current = true
-      pullStartY.current = e.touches[0].clientY
-      pullCurrentY.current = pullStartY.current
-    }
-  }
-  
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (!isPulling.current || !messagesContainerRef.current || !pullIndicatorRef.current) return
-    
-    const { scrollTop, scrollHeight, clientHeight } = messagesContainerRef.current
-    const isAtBottom = scrollHeight - scrollTop - clientHeight < 10
-    
-    pullCurrentY.current = e.touches[0].clientY
-    const pullDistance = pullStartY.current - pullCurrentY.current // Invertito: pull verso l'alto
-    
-    // Solo se siamo in fondo E tiriamo verso l'alto
-    if (isAtBottom && pullDistance > 0) {
-      // Previeni lo scroll nativo per mostrare l'indicatore
-      e.preventDefault()
-      
-      // Mostra l'indicatore di pull con opacità crescente
-      const opacity = Math.min(pullDistance / PULL_TO_REFRESH.THRESHOLD, 1)
-      const translateY = Math.min(pullDistance * 0.5, PULL_TO_REFRESH.MAX_DISTANCE)
-      
-      pullIndicatorRef.current.style.opacity = opacity.toString()
-      pullIndicatorRef.current.style.transform = `translateY(-${translateY}px)`
-    }
-  }
-  
-  const handleTouchEnd = () => {
-    if (!isPulling.current || !pullIndicatorRef.current) return
-    
-    const pullDistance = pullStartY.current - pullCurrentY.current // Invertito
-    
-    // Reset indicatore con transizione
-    pullIndicatorRef.current.style.transition = `opacity ${PULL_TO_REFRESH.ANIMATION_DURATION}ms ease, transform ${PULL_TO_REFRESH.ANIMATION_DURATION}ms ease`
-    pullIndicatorRef.current.style.opacity = '0'
-    pullIndicatorRef.current.style.transform = 'translateY(0)'
-    
-    setTimeout(() => {
-      if (pullIndicatorRef.current) {
-        pullIndicatorRef.current.style.transition = 'none'
-      }
-    }, PULL_TO_REFRESH.ANIMATION_DURATION)
-    
-    // Se superato il threshold, attiva il refresh
-    if (pullDistance > PULL_TO_REFRESH.THRESHOLD) {
-      handlePullRefresh()
-    }
-    
-    isPulling.current = false
-    pullStartY.current = 0
-    pullCurrentY.current = 0
-  }
-
-  // Mantieni posizione scroll dopo loadMore
-  useEffect(() => {
-    if (messagesContainerRef.current && lastScrollHeightRef.current > 0) {
-      const newScrollHeight = messagesContainerRef.current.scrollHeight
-      const heightDifference = newScrollHeight - lastScrollHeightRef.current
-      messagesContainerRef.current.scrollTop = heightDifference
-      lastScrollHeightRef.current = 0
-    }
-  }, [messages.length])
-
-  const handleSend = async () => {
-    if (!client || !inputValue.trim() || isSending) return
+  // Handler per invio messaggio
+  const handleSend = useCallback(async () => {
+    if (!inputValue.trim() || isSending) return
 
     const messageText = inputValue.trim()
     setInputValue('')
@@ -345,74 +143,92 @@ export function ChatPage() {
     }
 
     try {
-      const result = await sendMessage(client, jid, messageText)
-      
-      if (!isMountedRef.current) return
+      const result = await sendMessageHook(messageText)
 
-      if (result.success) {
-        // Ricarica tutti i messaggi dal DB locale
-        const allMessages = await getLocalMessages(jid)
-        
-        if (isMountedRef.current) {
-          safeSetMessages(() => allMessages)
-        }
-      } else {
-        setError(result.error || 'Invio fallito')
+      if (!result.success) {
         // Ripristina il messaggio in caso di errore
         setInputValue(messageText)
       }
     } catch (err) {
       console.error('Errore nell\'invio:', err)
-      if (isMountedRef.current) {
-        setError('Errore nell\'invio del messaggio')
-        // Ripristina il messaggio in caso di errore
-        setInputValue(messageText)
-      }
+      setError('Errore nell\'invio del messaggio')
+      // Ripristina il messaggio in caso di errore
+      setInputValue(messageText)
     } finally {
-      if (isMountedRef.current) {
-        setIsSending(false)
-      }
+      setIsSending(false)
     }
-  }
+  }, [inputValue, isSending, sendMessageHook, setError])
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
       handleSend()
     }
-  }
+  }, [handleSend])
 
-  const getContactName = () => {
+  const getContactName = useCallback(() => {
     return conversation?.displayName || jid.split('@')[0] || 'Chat'
-  }
+  }, [conversation, jid])
 
+  // Memoizza il rendering dei messaggi per performance
+  const renderedMessages = useMemo(() => {
+    return messages.map((message, index) => {
+      const isMe = message.from === 'me'
+      const showDate = index === 0 || !isSameDay(messages[index - 1].timestamp, message.timestamp)
 
-  // Non bloccare il rendering se non connessi - lascia che il LoginPopup gestisca l'autenticazione
-  // Mostra l'interfaccia anche se non connessi (durante inizializzazione o riconnessione)
+      return (
+        <div key={message.messageId}>
+          {showDate && (
+            <div className="chat-page__date-separator">
+              {formatDateSeparator(message.timestamp)}
+            </div>
+          )}
+          <div className={`chat-page__message ${isMe ? 'chat-page__message--me' : 'chat-page__message--them'}`}>
+            <div className="chat-page__message-bubble">
+              <p className="chat-page__message-body">{message.body}</p>
+              <div className="chat-page__message-meta">
+                <span className="chat-page__message-time">
+                  {formatMessageTime(message.timestamp)}
+                </span>
+                {isMe && (
+                  <span className="chat-page__message-status" aria-label={`Messaggio ${message.status}`}>
+                    {message.status === 'pending' && '🕐'}
+                    {message.status === 'sent' && '✓'}
+                    {message.status === 'failed' && '✗'}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )
+    })
+  }, [messages])
+
   return (
-    <div className="chat-page">
+    <div className="chat-page" role="main">
       {/* Header */}
       <header className="chat-page__header">
         <button 
           className="chat-page__back-btn"
           onClick={() => navigate('/conversations')}
-          aria-label="Indietro"
+          aria-label="Torna alla lista conversazioni"
         >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
             <path d="M19 12H5M12 19l-7-7 7-7"/>
           </svg>
         </button>
         <div className="chat-page__contact-info">
           <h1 className="chat-page__contact-name">{getContactName()}</h1>
-          <p className="chat-page__contact-status">Online</p>
+          <p className="chat-page__contact-status" aria-live="polite">Online</p>
         </div>
       </header>
 
       {/* Error Banner */}
       {error && (
-        <div className="chat-page__error-banner">
+        <div className="chat-page__error-banner" role="alert">
           <span>{error}</span>
-          <button onClick={() => setError(null)} aria-label="Chiudi">✕</button>
+          <button onClick={() => setError(null)} aria-label="Chiudi messaggio di errore">✕</button>
         </div>
       )}
 
@@ -424,21 +240,23 @@ export function ChatPage() {
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
+        role="log"
+        aria-label="Messaggi della conversazione"
       >
         {isLoadingMore && !isPullRefreshing && (
-          <div className="chat-page__load-more">
-            <div className="chat-page__spinner"></div>
+          <div className="chat-page__load-more" aria-live="polite">
+            <div className="chat-page__spinner" aria-hidden="true"></div>
             <span>Caricamento...</span>
           </div>
         )}
 
         {isLoading && messages.length === 0 ? (
-          <div className="chat-page__loading">
-            <div className="chat-page__spinner"></div>
+          <div className="chat-page__loading" role="status" aria-live="polite">
+            <div className="chat-page__spinner" aria-hidden="true"></div>
             <p>Caricamento messaggi...</p>
           </div>
         ) : error && messages.length === 0 ? (
-          <div className="chat-page__error">
+          <div className="chat-page__error" role="alert">
             <p>{error}</p>
           </div>
         ) : messages.length === 0 ? (
@@ -447,39 +265,8 @@ export function ChatPage() {
           </div>
         ) : (
           <>
-            {messages.map((message, index) => {
-              const isMe = message.from === 'me'
-              const showDate = index === 0 || 
-                !isSameDay(messages[index - 1].timestamp, message.timestamp)
-
-              return (
-                <div key={message.messageId}>
-                  {showDate && (
-                    <div className="chat-page__date-separator">
-                      {formatDateSeparator(message.timestamp)}
-                    </div>
-                  )}
-                  <div className={`chat-page__message ${isMe ? 'chat-page__message--me' : 'chat-page__message--them'}`}>
-                    <div className="chat-page__message-bubble">
-                      <p className="chat-page__message-body">{message.body}</p>
-                      <div className="chat-page__message-meta">
-                        <span className="chat-page__message-time">
-                          {formatMessageTime(message.timestamp)}
-                        </span>
-                        {isMe && (
-                          <span className="chat-page__message-status">
-                            {message.status === 'pending' && '🕐'}
-                            {message.status === 'sent' && '✓'}
-                            {message.status === 'failed' && '✗'}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )
-            })}
-            <div ref={messagesEndRef} />
+            {renderedMessages}
+            <div ref={messagesEndRef} aria-hidden="true" />
           </>
         )}
         
@@ -488,10 +275,12 @@ export function ChatPage() {
           ref={pullIndicatorRef}
           className="chat-page__pull-refresh-bottom"
           style={{ opacity: 0 }}
+          aria-live="polite"
+          aria-label={isPullRefreshing ? 'Ricaricamento in corso' : 'Rilascia per ricaricare'}
         >
           {isPullRefreshing ? (
             <>
-              <div className="chat-page__spinner"></div>
+              <div className="chat-page__spinner" aria-hidden="true"></div>
               <span>Ricaricamento storico...</span>
             </>
           ) : (
@@ -503,7 +292,7 @@ export function ChatPage() {
       </main>
 
       {/* Input Area */}
-      <footer className="chat-page__input-area">
+      <footer className="chat-page__input-area" role="complementary">
         <textarea
           ref={inputRef}
           className="chat-page__input"
@@ -513,14 +302,18 @@ export function ChatPage() {
           onKeyDown={handleKeyDown}
           rows={1}
           disabled={isSending}
+          aria-label="Campo di testo per scrivere un messaggio"
+          aria-describedby="send-button"
         />
         <button
+          id="send-button"
           className="chat-page__send-btn"
           onClick={handleSend}
           disabled={!inputValue.trim() || isSending}
-          aria-label="Invia"
+          aria-label={isSending ? 'Invio in corso...' : 'Invia messaggio'}
+          aria-disabled={!inputValue.trim() || isSending}
         >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
             <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
           </svg>
         </button>
@@ -528,4 +321,3 @@ export function ChatPage() {
     </div>
   )
 }
-

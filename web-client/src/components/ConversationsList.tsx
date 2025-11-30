@@ -144,9 +144,12 @@ export function ConversationsList() {
     <div ref={wrapperRef} className="conversations-list">
 
       {/* Pull-to-refresh indicator - mostrato solo durante pull o refresh */}
-      {(pullDistance > 5 || isRefreshing) && (
+        {(pullDistance > 5 || isRefreshing) && (
         <div
           className="conversations-list__pull-refresh"
+          role="status"
+          aria-live="polite"
+          aria-label={isRefreshing ? 'Aggiornamento in corso' : pullDistance > PULL_TO_REFRESH.THRESHOLD ? 'Rilascia per aggiornare' : 'Trascina per aggiornare'}
           style={{
             transform: `translateY(${60 + (isRefreshing ? 50 : pullDistance)}px)`,
             opacity: isRefreshing ? 1 : Math.min(pullDistance / 60, 1),
@@ -154,7 +157,7 @@ export function ConversationsList() {
         >
           {isRefreshing ? (
             <>
-              <div className="conversations-list__spinner"></div>
+              <div className="conversations-list__spinner" aria-hidden="true"></div>
               <span>Aggiornamento...</span>
             </>
           ) : (
@@ -166,6 +169,7 @@ export function ConversationsList() {
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="2"
+                aria-hidden="true"
                 style={{
                   transform: pullDistance > 60 ? 'rotate(180deg)' : 'rotate(0deg)',
                   transition: 'transform 0.2s',
@@ -183,18 +187,20 @@ export function ConversationsList() {
       <div
         ref={scrollContainerRef}
         className="conversations-list__items"
+        role="list"
+        aria-label="Lista conversazioni"
         style={{
           transform: `translateY(${Math.min(pullDistance, PULL_TO_REFRESH.MAX_DISTANCE)}px)`,
           transition: pullDistance === 0 && !isRefreshing ? `transform ${PULL_TO_REFRESH.ANIMATION_DURATION}ms cubic-bezier(0.4, 0, 0.2, 1)` : 'none',
         }}
       >
         {isLoading && conversations.length === 0 ? (
-          <div className="conversations-list__loading">
-            <div className="conversations-list__spinner"></div>
+          <div className="conversations-list__loading" role="status" aria-live="polite">
+            <div className="conversations-list__spinner" aria-hidden="true"></div>
             <p>Caricamento conversazioni...</p>
           </div>
         ) : conversations.length === 0 ? (
-          <div className="conversations-list__empty">
+          <div className="conversations-list__empty" role="status">
             <p>Nessuna conversazione</p>
           </div>
         ) : (
@@ -202,7 +208,16 @@ export function ConversationsList() {
             <div 
               key={conv.jid} 
               className="conversation-item"
+              role="listitem"
               onClick={() => handleConversationClick(conv.jid)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault()
+                  handleConversationClick(conv.jid)
+                }
+              }}
+              tabIndex={0}
+              aria-label={`Conversazione con ${conv.displayName || conv.jid.split('@')[0]}. ${conv.unreadCount > 0 ? `${conv.unreadCount} messaggi non letti.` : ''} Ultimo messaggio: ${conv.lastMessage.body}`}
             >
               <div className="conversation-item__avatar">
                 {getInitials(conv.jid, conv.displayName)}
@@ -212,19 +227,27 @@ export function ConversationsList() {
                   <span className="conversation-item__name">
                     {conv.displayName || conv.jid.split('@')[0]}
                   </span>
-                  <span className="conversation-item__time">
-                    {formatTimestamp(conv.lastMessage.timestamp)}
-                  </span>
+                  <time 
+                    className="conversation-item__time"
+                    dateTime={conv.lastMessage.timestamp.toISOString()}
+                  >
+                    {formatConversationTimestamp(conv.lastMessage.timestamp)}
+                  </time>
                 </div>
                 <div className="conversation-item__preview">
-                  <span className={`conversation-item__sender ${conv.lastMessage.from}`}>
+                  <span className={`conversation-item__sender ${conv.lastMessage.from}`} aria-hidden="true">
                     {conv.lastMessage.from === 'me' ? 'Tu: ' : ''}
                   </span>
                   <span className="conversation-item__body">
                     {truncateMessage(conv.lastMessage.body, 50)}
                   </span>
                   {conv.unreadCount > 0 && (
-                    <span className="conversation-item__unread">{conv.unreadCount}</span>
+                    <span 
+                      className="conversation-item__unread"
+                      aria-label={`${conv.unreadCount} messaggi non letti`}
+                    >
+                      {conv.unreadCount}
+                    </span>
                   )}
                 </div>
               </div>

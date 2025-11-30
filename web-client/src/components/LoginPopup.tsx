@@ -120,23 +120,29 @@ export function LoginPopup({ isInitializing }: LoginPopupProps) {
   }
 
   return (
-    <div className="login-popup-overlay">
+    <div 
+      className="login-popup-overlay"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="login-title"
+      aria-describedby="login-description"
+    >
       <div className="login-popup-modal">
         {isInitializing ? (
           // Modalità 1: Caricamento durante auto-login
-          <div className="login-popup-loading">
-            <div className="login-popup-spinner"></div>
+          <div className="login-popup-loading" role="status" aria-live="polite">
+            <div className="login-popup-spinner" aria-hidden="true"></div>
             <p className="login-popup-loading-text">Connessione in corso...</p>
           </div>
         ) : (
           // Modalità 2: Form di login
           <>
             <div className="login-popup-header">
-              <h2>Connessione richiesta</h2>
-              <p>Effettua il login per continuare</p>
+              <h2 id="login-title">Connessione richiesta</h2>
+              <p id="login-description">Effettua il login per continuare</p>
             </div>
             
-            <form className="login-popup-form" onSubmit={handleLoginSubmit}>
+            <form className="login-popup-form" onSubmit={handleLoginSubmit} noValidate>
               <label className="login-popup-field">
                 <span>Username</span>
                 <input
@@ -146,6 +152,9 @@ export function LoginPopup({ isInitializing }: LoginPopupProps) {
                   onChange={handleLoginChange('jid')}
                   placeholder="mario@conversations.im"
                   disabled={loginStatus.state === 'pending'}
+                  aria-required="true"
+                  aria-invalid={loginStatus.state === 'error' && !loginForm.jid}
+                  aria-describedby={loginStatus.state === 'error' ? 'login-error' : undefined}
                 />
               </label>
               
@@ -157,6 +166,9 @@ export function LoginPopup({ isInitializing }: LoginPopupProps) {
                   value={loginForm.password}
                   onChange={handleLoginChange('password')}
                   disabled={loginStatus.state === 'pending'}
+                  aria-required="true"
+                  aria-invalid={loginStatus.state === 'error' && !loginForm.password}
+                  aria-describedby={loginStatus.state === 'error' ? 'login-error' : undefined}
                 />
               </label>
               
@@ -164,6 +176,7 @@ export function LoginPopup({ isInitializing }: LoginPopupProps) {
                 type="submit" 
                 className="login-popup-button"
                 disabled={loginStatus.state === 'pending'}
+                aria-label={loginStatus.state === 'pending' ? 'Connessione in corso...' : 'Collega all\'account XMPP'}
               >
                 {loginStatus.state === 'pending' ? 'Connessione in corso...' : 'Collegati'}
               </button>
@@ -183,7 +196,12 @@ const StatusBanner = ({ status }: { status: FormStatus }) => {
   }
 
   return (
-    <div className={`login-popup-status login-popup-status--${status.state}`}>
+    <div 
+      className={`login-popup-status login-popup-status--${status.state}`}
+      role={status.state === 'error' ? 'alert' : 'status'}
+      aria-live={status.state === 'error' ? 'assertive' : 'polite'}
+      id="login-error"
+    >
       <p>{status.message}</p>
       {status.details && <p className="login-popup-status-details">{status.details}</p>}
     </div>
