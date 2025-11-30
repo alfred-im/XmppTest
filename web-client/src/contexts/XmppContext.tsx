@@ -5,10 +5,11 @@ import type { ReceivedMessage } from 'stanza/protocol'
 import { login, type XmppResult } from '../services/xmpp'
 import {
   loadAllConversations,
+  downloadAllConversations,
   enrichWithRoster,
   updateConversationOnNewMessage,
 } from '../services/conversations'
-import { getConversations, type Conversation, updateConversation, clearConversations } from '../services/conversations-db'
+import { getConversations, type Conversation, updateConversation, clearConversations, saveConversations, saveMetadata } from '../services/conversations-db'
 import { saveCredentials, loadCredentials, clearCredentials } from '../services/auth-storage'
 import { handleIncomingMessage } from '../services/messages'
 
@@ -240,12 +241,23 @@ export function XmppProvider({ children }: { children: ReactNode }) {
 
     setIsLoading(true)
     try {
-      // Svuota il database delle conversazioni prima di ricaricare
+      // 1. Prima scarica tutte le conversazioni dal server (senza salvare)
+      const { conversations: downloadedConversations, lastToken } = await downloadAllConversations(client)
+      
+      // 2. Poi svuota il database delle conversazioni
       await clearConversations()
       
-      // Ricarica tutte le conversazioni dal server
-      const loaded = await loadAllConversations(client)
-      const enriched = await enrichWithRoster(client, loaded)
+      // 3. Infine salva le conversazioni scaricate nel database
+      await saveConversations(downloadedConversations)
+      
+      // Aggiorna metadata
+      await saveMetadata({
+        lastSync: new Date(),
+        lastRSMToken: lastToken,
+      })
+      
+      // Arricchisci con dati dal roster e aggiorna lo stato
+      const enriched = await enrichWithRoster(client, downloadedConversations)
       setConversations(enriched)
     } catch (err) {
       console.error('Errore nel refresh conversazioni:', err)
