@@ -81,12 +81,14 @@ export function XmppMediatorProvider({ children }: { children: ReactNode }) {
     const initializeAuth = async () => {
       const saved = loadCredentials()
       if (saved) {
-        await login(saved.jid, saved.password)
+        // Non aspettare il risultato per evitare blocchi
+        void login(saved.jid, saved.password)
       }
     }
 
     initializeAuth()
-  }, [])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []) // Esegui solo una volta al mount
 
   // Gestione eventi XMPP
   useEffect(() => {
