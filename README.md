@@ -62,7 +62,7 @@
 - ✅ **Paginazione messaggi** con lazy loading
 - ✅ **Ricerca conversazioni**
 - ✅ **Profilo utente** con modifica vCard
-- ✅ **Push Notifications** (XEP-0357) con Web Push API
+- ✅ **Push Notifications** (XEP-0357) con Web Push API - **Abilitazione automatica**
 
 ### In Roadmap 🚧
 

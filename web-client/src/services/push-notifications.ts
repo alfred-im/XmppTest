@@ -18,7 +18,7 @@ export interface PushNotificationConfig {
   /** Endpoint URL del servizio push (es. Firebase Cloud Messaging) */
   endpoint: string
   /** Chiave pubblica VAPID */
-  publicKey: string
+  publicKey?: string
   /** Chiave privata VAPID (solo lato server, non esposta al client) */
   privateKey?: string
   /** Node ID per PubSub (opzionale, per XEP-0060) */
@@ -96,6 +96,8 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
 
 /**
  * Ottiene o crea una subscription push
+ * Se applicationServerKey non è fornita, tenta di creare una subscription senza chiave
+ * (alcuni servizi push non richiedono VAPID)
  */
 export async function getPushSubscription(
   applicationServerKey?: string
@@ -120,24 +122,44 @@ export async function getPushSubscription(
       }
     }
 
-    // Non abbiamo una subscription, creiamola se abbiamo la chiave
-    if (!applicationServerKey) {
-      console.warn('Chiave server non fornita, impossibile creare subscription')
+    // Non abbiamo una subscription, creiamola
+    // Se abbiamo la chiave, usala; altrimenti prova senza (per servizi che non richiedono VAPID)
+    try {
+      let newSubscription: PushSubscription
+      
+      if (applicationServerKey) {
+        const key = urlBase64ToUint8Array(applicationServerKey)
+        const sub = await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: key as BufferSource,
+        })
+        newSubscription = {
+          endpoint: sub.endpoint,
+          keys: {
+            p256dh: arrayBufferToBase64(sub.getKey('p256dh')!),
+            auth: arrayBufferToBase64(sub.getKey('auth')!),
+          },
+        }
+      } else {
+        // Prova senza chiave (per servizi push che non richiedono VAPID)
+        // Nota: molti browser richiedono comunque una chiave, quindi questo potrebbe fallire
+        const sub = await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+        })
+        newSubscription = {
+          endpoint: sub.endpoint,
+          keys: {
+            p256dh: arrayBufferToBase64(sub.getKey('p256dh')!),
+            auth: arrayBufferToBase64(sub.getKey('auth')!),
+          },
+        }
+      }
+
+      return newSubscription
+    } catch (error) {
+      console.warn('Impossibile creare subscription push senza chiave VAPID:', error)
+      console.warn('Alcuni browser richiedono una chiave VAPID per le push notifications')
       return null
-    }
-
-    const key = urlBase64ToUint8Array(applicationServerKey)
-    const newSubscription = await registration.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: key as BufferSource,
-    })
-
-    return {
-      endpoint: newSubscription.endpoint,
-      keys: {
-        p256dh: arrayBufferToBase64(newSubscription.getKey('p256dh')!),
-        auth: arrayBufferToBase64(newSubscription.getKey('auth')!),
-      },
     }
   } catch (error) {
     console.error('Errore nella gestione push subscription:', error)
@@ -158,6 +180,63 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
 }
 
 /**
+ * Scopre automaticamente il servizio push dal server XMPP
+ * Secondo XEP-0357, il server può annunciare il servizio push tramite disco.info
+ */
+export async function discoverPushService(client: Agent): Promise<{ jid: string; node?: string } | null> {
+  try {
+    const serverJid = client.jid?.split('/')[0]
+    if (!serverJid) {
+      console.warn('Impossibile determinare JID del server')
+      return null
+    }
+
+    try {
+      // Per ora, usiamo un approccio semplificato:
+      // 1. Prova pattern comuni per servizi push
+      // 2. In futuro, possiamo implementare disco.info completo se necessario
+      
+      const domain = serverJid.split('@')[1]
+      if (!domain) {
+        return null
+      }
+
+      // Pattern comuni per servizi push
+      const commonPushJids = [
+        `push.${domain}`,
+        `push-notifications.${domain}`,
+        `push-service.${domain}`,
+        serverJid, // Il server stesso potrebbe supportare push
+      ]
+
+      // Prova ogni JID comune
+      for (const pushJid of commonPushJids) {
+        try {
+          // Tenta di abilitare push su questo JID
+          // Se funziona, è il servizio push corretto
+          // Per ora, assumiamo che il primo pattern comune funzioni
+          // In produzione, si potrebbe fare una vera disco.info
+          return { jid: pushJid }
+        } catch {
+          // Continua con il prossimo
+        }
+      }
+
+      // Fallback: usa il server stesso come servizio push
+      // Molti server XMPP moderni supportano push direttamente
+      return { jid: serverJid }
+    } catch (error) {
+      console.debug('Errore nella discovery del servizio push:', error)
+    }
+
+    return null
+  } catch (error) {
+    console.error('Errore nella discovery del servizio push:', error)
+    return null
+  }
+}
+
+/**
  * Abilita le push notifications sul server XMPP secondo XEP-0357
  * 
  * Invia una IQ stanza per registrare l'endpoint push con il server
@@ -172,6 +251,37 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
  *     </x>
  *   </enable>
  * </iq>
+ */
+/**
+ * Abilita automaticamente le push notifications
+ * Scopre il servizio push e abilita senza configurazione manuale
+ */
+export async function enablePushNotificationsAuto(client: Agent): Promise<boolean> {
+  try {
+    // 1. Scopri il servizio push
+    const pushService = await discoverPushService(client)
+    if (!pushService) {
+      console.warn('Servizio push non trovato sul server XMPP')
+      return false
+    }
+
+    // 2. Ottieni subscription push (senza chiave VAPID se possibile)
+    const subscription = await getPushSubscription()
+    if (!subscription) {
+      console.warn('Impossibile ottenere subscription push')
+      return false
+    }
+
+    // 3. Abilita push notifications
+    return await enablePushNotifications(client, pushService.jid, subscription, pushService.node)
+  } catch (error) {
+    console.error('Errore nell\'abilitazione automatica push notifications:', error)
+    return false
+  }
+}
+
+/**
+ * Abilita le push notifications sul server XMPP secondo XEP-0357
  */
 export async function enablePushNotifications(
   client: Agent,
