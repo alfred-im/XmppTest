@@ -29,6 +29,21 @@ function usePushNotifications() {
     }
   }, [])
 
+  const requestPermission = async (): Promise<NotificationPermission> => {
+    if (!pushSupported || pushPermission !== 'default') {
+      return pushPermission
+    }
+
+    try {
+      const permission = await Notification.requestPermission()
+      setPushPermission(permission)
+      return permission
+    } catch (e) {
+      console.error('Errore richiesta permesso:', e)
+      return 'denied'
+    }
+  }
+
   const enablePushAuto = async (): Promise<boolean> => {
     if (!client || !isConnected || !pushSupported) {
       return false
@@ -38,17 +53,9 @@ function usePushNotifications() {
       return false
     }
 
-    // Richiedi permesso se necessario
+    // NON richiedere permesso automaticamente - deve essere fatto dall'utente
     if (pushPermission !== 'granted') {
-      try {
-        const permission = await Notification.requestPermission()
-        setPushPermission(permission)
-        if (permission !== 'granted') {
-          return false
-        }
-      } catch (e) {
-        return false
-      }
+      return false
     }
 
     try {
@@ -64,11 +71,11 @@ function usePushNotifications() {
     }
   }
 
-  return { pushSupported, pushEnabled, pushPermission, enablePushAuto }
+  return { pushSupported, pushEnabled, pushPermission, enablePushAuto, requestPermission }
 }
 
 export function PushNotificationStatus() {
-  const { pushSupported, pushEnabled, pushPermission, enablePushAuto } = usePushNotifications()
+  const { pushSupported, pushEnabled, pushPermission, enablePushAuto, requestPermission } = usePushNotifications()
   const [showStatus, setShowStatus] = useState(false)
   const [statusMessage, setStatusMessage] = useState<{
     type: 'success' | 'error' | 'info' | 'warning'
@@ -114,7 +121,7 @@ export function PushNotificationStatus() {
         setStatusMessage({
           type: 'info',
           title: 'Permesso Richiesto',
-          message: 'Per ricevere notifiche push, devi concedere il permesso quando richiesto.'
+          message: 'Per ricevere notifiche push, clicca sul pulsante qui sotto per concedere il permesso.'
         })
         setShowStatus(true)
         setHasShownInitialStatus(true)
@@ -341,12 +348,49 @@ export function PushNotificationStatus() {
                 </span>
               </div>
             </div>
-            <button
-              className="push-status-close"
-              onClick={() => setShowStatus(false)}
-            >
-              Chiudi
-            </button>
+            <div className="push-status-actions">
+              {pushPermission === 'default' && (
+                <button
+                  className="push-status-button-primary"
+                  onClick={async () => {
+                    const permission = await requestPermission()
+                    if (permission === 'granted') {
+                      // Prova ad abilitare automaticamente dopo aver ottenuto il permesso
+                      const success = await enablePushAuto()
+                      if (success) {
+                        setStatusMessage({
+                          type: 'success',
+                          title: 'Push Abilitate',
+                          message: 'Permesso concesso e push notifications abilitate con successo!'
+                        })
+                      } else {
+                        setStatusMessage({
+                          type: 'warning',
+                          title: 'Permesso Concesso',
+                          message: 'Permesso concesso, ma impossibile abilitare le push. Il server potrebbe non supportarle.'
+                        })
+                      }
+                      setShowStatus(true)
+                    } else if (permission === 'denied') {
+                      setStatusMessage({
+                        type: 'error',
+                        title: 'Permesso Negato',
+                        message: 'Il permesso è stato negato. Vai nelle impostazioni del browser per abilitarlo.'
+                      })
+                      setShowStatus(true)
+                    }
+                  }}
+                >
+                  Concedi Permesso
+                </button>
+              )}
+              <button
+                className="push-status-close"
+                onClick={() => setShowStatus(false)}
+              >
+                Chiudi
+              </button>
+            </div>
           </div>
         </div>
       )}
