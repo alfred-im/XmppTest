@@ -93,9 +93,12 @@ document.addEventListener('gestureend', (e) => {
 // Registrazione Service Worker per funzionalità offline
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js')
+    // Usa il path corretto basato su base URL
+    const swPath = import.meta.env.BASE_URL + 'sw.js'
+    navigator.serviceWorker.register(swPath)
       .then((registration) => {
         console.log('Service Worker registrato con successo:', registration.scope)
+        console.log('Service Worker path:', swPath)
         
         // Controlla aggiornamenti ogni ora
         setInterval(() => {
@@ -103,7 +106,8 @@ if ('serviceWorker' in navigator) {
         }, 3600000)
       })
       .catch((error) => {
-        console.log('Registrazione Service Worker fallita:', error)
+        console.error('Registrazione Service Worker fallita:', error)
+        console.error('Tentativo di registrare:', swPath)
       })
   })
 }

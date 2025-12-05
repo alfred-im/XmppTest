@@ -10,6 +10,19 @@ import {
 import { getConversations, type Conversation, updateConversation } from '../services/conversations-db'
 import { saveCredentials, loadCredentials, clearCredentials } from '../services/auth-storage'
 import { handleIncomingMessageAndSync } from '../services/sync'
+import {
+  isPushSupported,
+  checkNotificationPermission,
+  requestNotificationPermission,
+  getPushSubscription,
+  enablePushNotifications,
+  disablePushNotifications,
+  checkPushNotificationsStatus,
+  savePushConfig,
+  loadPushConfig,
+  clearPushConfig,
+  type PushNotificationConfig,
+} from '../services/push-notifications'
 
 type MessageCallback = (message: ReceivedMessage) => void
 
@@ -22,6 +35,10 @@ interface XmppContextType {
   isInitializing: boolean
   error: string | null
   logoutIntentional: boolean
+  // Push Notifications
+  pushSupported: boolean
+  pushEnabled: boolean
+  pushPermission: NotificationPermission
   connect: (jid: string, password: string) => Promise<void>
   disconnect: () => void
   refreshAllConversations: () => Promise<void>  // Rinominato da refreshConversations
@@ -29,6 +46,11 @@ interface XmppContextType {
   reloadConversationsFromDB: () => Promise<void>
   subscribeToMessages: (callback: MessageCallback) => () => void
   markConversationAsRead: (jid: string) => Promise<void>
+  // Push Notifications methods
+  enablePush: (pushJid: string, publicKey?: string, node?: string) => Promise<boolean>
+  enablePushAuto: () => Promise<boolean>
+  disablePush: () => Promise<boolean>
+  requestPushPermission: () => Promise<NotificationPermission>
 }
 
 const XmppContext = createContext<XmppContextType | undefined>(undefined)
@@ -42,8 +64,34 @@ export function XmppProvider({ children }: { children: ReactNode }) {
   const [isInitializing, setIsInitializing] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [logoutIntentional, setLogoutIntentional] = useState(false)
+  // Push Notifications state
+  const [pushSupported, setPushSupported] = useState(false)
+  const [pushEnabled, setPushEnabled] = useState(false)
+  const [pushPermission, setPushPermission] = useState<NotificationPermission>('default')
+  const pushConfigRef = useRef<PushNotificationConfig | null>(null)
   const hasInitialized = useRef(false)
   const messageCallbacks = useRef<Set<MessageCallback>>(new Set())
+
+  // Inizializza supporto push notifications
+  useEffect(() => {
+    const initPush = async () => {
+      const supported = isPushSupported()
+      setPushSupported(supported)
+      
+      if (supported) {
+        const permission = await checkNotificationPermission()
+        setPushPermission(permission)
+        
+        // Carica configurazione salvata
+        const config = loadPushConfig()
+        if (config) {
+          pushConfigRef.current = config
+        }
+      }
+    }
+    
+    initPush()
+  }, [])
 
   // Inizializzazione al caricamento: controlla credenziali e tenta login
   useEffect(() => {
@@ -305,6 +353,198 @@ export function XmppProvider({ children }: { children: ReactNode }) {
     }
   }, []) // Nessuna dependency: funzioni pure
 
+  // Push Notifications methods
+  const requestPushPermission = useCallback(async (): Promise<NotificationPermission> => {
+    try {
+      const permission = await requestNotificationPermission()
+      setPushPermission(permission)
+      return permission
+    } catch (error) {
+      console.error('Errore nella richiesta permesso notifiche:', error)
+      return 'denied'
+    }
+  }, [])
+
+  // Abilita automaticamente le push notifications
+  const enablePushAuto = useCallback(async (): Promise<boolean> => {
+    if (!client || !isConnected) {
+      console.debug('Client XMPP non connesso, push notifications non abilitate')
+      return false
+    }
+
+    if (!pushSupported) {
+      console.debug('Push Notifications non supportate dal browser')
+      return false
+    }
+
+    // Se già abilitate, non fare nulla
+    if (pushEnabled) {
+      return true
+    }
+
+    // Se il permesso è negato, non tentare
+    if (pushPermission === 'denied') {
+      console.debug('Permesso notifiche negato dall\'utente')
+      return false
+    }
+
+    // Richiedi permesso se necessario
+    if (pushPermission !== 'granted') {
+      const permission = await requestPushPermission()
+      if (permission !== 'granted') {
+        console.debug('Permesso notifiche non concesso')
+        return false
+      }
+    }
+
+    try {
+      const { enablePushNotificationsAuto } = await import('../services/push-notifications')
+      const success = await enablePushNotificationsAuto(client)
+
+      if (success) {
+        setPushEnabled(true)
+        console.log('Push Notifications abilitate automaticamente con successo')
+        // Notifica visibile verrà mostrata dal componente PushNotificationStatus
+      } else {
+        console.debug('Push Notifications non disponibili sul server o errore nell\'abilitazione')
+      }
+
+      return success
+    } catch (error) {
+      console.error('Errore nell\'abilitazione automatica push notifications:', error)
+      return false
+    }
+  }, [client, isConnected, pushSupported, pushPermission, pushEnabled, requestPushPermission])
+
+  // Metodo manuale per abilitare (mantenuto per compatibilità)
+  const enablePush = useCallback(async (
+    pushJid: string,
+    publicKey?: string,
+    node?: string
+  ): Promise<boolean> => {
+    if (!client || !isConnected) {
+      console.error('Client XMPP non connesso')
+      return false
+    }
+
+    if (!pushSupported) {
+      console.error('Push Notifications non supportate dal browser')
+      return false
+    }
+
+    if (pushPermission !== 'granted') {
+      const permission = await requestPushPermission()
+      if (permission !== 'granted') {
+        console.error('Permesso notifiche negato')
+        return false
+      }
+    }
+
+    try {
+      // Ottieni o crea subscription push
+      const subscription = await getPushSubscription(publicKey)
+      if (!subscription) {
+        console.error('Impossibile ottenere subscription push')
+        return false
+      }
+
+      // Abilita push sul server XMPP
+      const success = await enablePushNotifications(
+        client,
+        pushJid,
+        subscription,
+        node
+      )
+
+      if (success) {
+        setPushEnabled(true)
+        
+        // Salva configurazione
+        const config: PushNotificationConfig = {
+          pushJid,
+          endpoint: subscription.endpoint,
+          publicKey,
+          node,
+        }
+        savePushConfig(config)
+        pushConfigRef.current = config
+        
+        console.log('Push Notifications abilitate con successo')
+      }
+
+      return success
+    } catch (error) {
+      console.error('Errore nell\'abilitazione push notifications:', error)
+      return false
+    }
+  }, [client, isConnected, pushSupported, pushPermission, requestPushPermission])
+
+  const disablePush = useCallback(async (): Promise<boolean> => {
+    if (!client || !isConnected) {
+      console.error('Client XMPP non connesso')
+      return false
+    }
+
+    const config = pushConfigRef.current || loadPushConfig()
+    if (!config) {
+      console.warn('Nessuna configurazione push trovata')
+      return false
+    }
+
+    try {
+      const success = await disablePushNotifications(
+        client,
+        config.pushJid,
+        config.node
+      )
+
+      if (success) {
+        setPushEnabled(false)
+        clearPushConfig()
+        pushConfigRef.current = null
+        console.log('Push Notifications disabilitate con successo')
+      }
+
+      return success
+    } catch (error) {
+      console.error('Errore nella disabilitazione push notifications:', error)
+      return false
+    }
+  }, [client, isConnected])
+
+  // Abilita automaticamente le push notifications quando ci si connette
+  useEffect(() => {
+    if (!client || !isConnected || !pushSupported) {
+      return
+    }
+
+    // Aspetta un po' per assicurarsi che la connessione sia stabile
+    const timeoutId = setTimeout(async () => {
+      try {
+        // Verifica se abbiamo già una configurazione salvata
+        const config = loadPushConfig()
+        if (config) {
+          // Abbiamo una configurazione, verifica lo stato
+          const status = await checkPushNotificationsStatus(client)
+          setPushEnabled(status.enabled)
+          
+          // Se non abilitate ma abbiamo config, prova a riabilitare
+          if (!status.enabled && pushPermission === 'granted') {
+            await enablePushAuto()
+          }
+        } else {
+          // Nessuna configurazione, prova ad abilitare automaticamente
+          await enablePushAuto()
+        }
+      } catch (error) {
+        console.debug('Errore nell\'abilitazione automatica push:', error)
+        // Non mostrare errore all'utente, è silenzioso
+      }
+    }, 2000) // Aspetta 2 secondi dopo la connessione
+
+    return () => clearTimeout(timeoutId)
+  }, [client, isConnected, pushSupported, pushPermission, enablePushAuto])
+
   return (
     <XmppContext.Provider
       value={{
@@ -316,6 +556,9 @@ export function XmppProvider({ children }: { children: ReactNode }) {
         isInitializing,
         error,
         logoutIntentional,
+        pushSupported,
+        pushEnabled,
+        pushPermission,
         connect,
         disconnect,
         refreshAllConversations,
@@ -323,6 +566,10 @@ export function XmppProvider({ children }: { children: ReactNode }) {
         reloadConversationsFromDB,
         subscribeToMessages,
         markConversationAsRead,
+        enablePush,
+        enablePushAuto,
+        disablePush,
+        requestPushPermission,
       }}
     >
       {children}
