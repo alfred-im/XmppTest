@@ -180,8 +180,16 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
 }
 
 /**
- * Scopre automaticamente il servizio push dal server XMPP
- * Secondo XEP-0357, il server può annunciare il servizio push tramite disco.info
+ * Scopre automaticamente il servizio push dal server XMPP usando Service Discovery (XEP-0030)
+ * 
+ * Secondo XEP-0357, il client può usare Service Discovery per chiedere al server
+ * quali servizi push sono disponibili.
+ * 
+ * Processo:
+ * 1. Fa disco.info sul server per vedere se supporta push direttamente
+ * 2. Se non lo supporta direttamente, fa disco.items per vedere i servizi disponibili
+ * 3. Per ogni servizio, fa disco.info per verificare se supporta push
+ * 4. Restituisce il primo servizio che supporta XEP-0357
  */
 export async function discoverPushService(client: Agent): Promise<{ jid: string; node?: string } | null> {
   try {
@@ -191,45 +199,64 @@ export async function discoverPushService(client: Agent): Promise<{ jid: string;
       return null
     }
 
+    // Verifica che il plugin disco sia disponibile
+    if (!client.getDiscoInfo || !client.getDiscoItems) {
+      console.warn('Service Discovery non disponibile - il plugin disco potrebbe non essere caricato')
+      return null
+    }
+
+    // 1. Verifica se il server stesso supporta push direttamente
     try {
-      // Per ora, usiamo un approccio semplificato:
-      // 1. Prova pattern comuni per servizi push
-      // 2. In futuro, possiamo implementare disco.info completo se necessario
+      const serverDiscoInfo = await client.getDiscoInfo(serverJid)
       
-      const domain = serverJid.split('@')[1]
-      if (!domain) {
+      if (serverDiscoInfo.features && serverDiscoInfo.features.includes(PUSH_NAMESPACE)) {
+        console.log('Server supporta push notifications direttamente:', serverJid)
+        return { jid: serverJid }
+      }
+    } catch (error) {
+      console.debug('Errore nel disco.info sul server:', error)
+      // Continua con la ricerca nei servizi
+    }
+
+    // 2. Il server non supporta push direttamente, cerca nei servizi disponibili
+    try {
+      const serverDiscoItems = await client.getDiscoItems(serverJid)
+      
+      if (!serverDiscoItems.items || serverDiscoItems.items.length === 0) {
+        console.debug('Nessun servizio disponibile sul server')
         return null
       }
 
-      // Pattern comuni per servizi push
-      const commonPushJids = [
-        `push.${domain}`,
-        `push-notifications.${domain}`,
-        `push-service.${domain}`,
-        serverJid, // Il server stesso potrebbe supportare push
-      ]
+      // 3. Per ogni servizio, verifica se supporta push
+      for (const item of serverDiscoItems.items) {
+        if (!item.jid) {
+          continue
+        }
 
-      // Prova ogni JID comune
-      for (const pushJid of commonPushJids) {
         try {
-          // Tenta di abilitare push su questo JID
-          // Se funziona, è il servizio push corretto
-          // Per ora, assumiamo che il primo pattern comune funzioni
-          // In produzione, si potrebbe fare una vera disco.info
-          return { jid: pushJid }
-        } catch {
-          // Continua con il prossimo
+          const itemDiscoInfo = await client.getDiscoInfo(item.jid, item.node)
+          
+          // Verifica se questo servizio supporta XEP-0357
+          if (itemDiscoInfo.features && itemDiscoInfo.features.includes(PUSH_NAMESPACE)) {
+            console.log('Servizio push trovato tramite Service Discovery:', item.jid, item.node)
+            return { 
+              jid: item.jid.toString(), 
+              node: item.node 
+            }
+          }
+        } catch (error) {
+          // Ignora errori per singoli servizi e continua con il prossimo
+          console.debug(`Errore nel disco.info sul servizio ${item.jid}:`, error)
+          continue
         }
       }
 
-      // Fallback: usa il server stesso come servizio push
-      // Molti server XMPP moderni supportano push direttamente
-      return { jid: serverJid }
+      console.debug('Nessun servizio push trovato tramite Service Discovery')
+      return null
     } catch (error) {
-      console.debug('Errore nella discovery del servizio push:', error)
+      console.debug('Errore nel disco.items sul server:', error)
+      return null
     }
-
-    return null
   } catch (error) {
     console.error('Errore nella discovery del servizio push:', error)
     return null
