@@ -1,9 +1,74 @@
 import { useState, useEffect, useRef } from 'react'
-import { useXmpp } from '../contexts/XmppContext'
+import { useConnection } from '../contexts/ConnectionContext'
 import './PushNotificationStatus.css'
 
+// Hook per gestire le push notifications senza dipendere da XmppProvider
+function usePushNotifications() {
+  const { client, isConnected } = useConnection()
+  const [pushSupported, setPushSupported] = useState(false)
+  const [pushEnabled, setPushEnabled] = useState(false)
+  const [pushPermission, setPushPermission] = useState<NotificationPermission>('default')
+
+  // Inizializza supporto push
+  useEffect(() => {
+    const supported = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window
+    setPushSupported(supported)
+    
+    if (supported) {
+      setPushPermission(Notification.permission)
+      
+      // Carica configurazione salvata
+      try {
+        const configStr = localStorage.getItem('push_config')
+        if (configStr) {
+          setPushEnabled(true)
+        }
+      } catch (e) {
+        // Ignora errori
+      }
+    }
+  }, [])
+
+  const enablePushAuto = async (): Promise<boolean> => {
+    if (!client || !isConnected || !pushSupported) {
+      return false
+    }
+
+    if (pushPermission === 'denied') {
+      return false
+    }
+
+    // Richiedi permesso se necessario
+    if (pushPermission !== 'granted') {
+      try {
+        const permission = await Notification.requestPermission()
+        setPushPermission(permission)
+        if (permission !== 'granted') {
+          return false
+        }
+      } catch (e) {
+        return false
+      }
+    }
+
+    try {
+      const { enablePushNotificationsAuto } = await import('../services/push-notifications')
+      const success = await enablePushNotificationsAuto(client)
+      if (success) {
+        setPushEnabled(true)
+      }
+      return success
+    } catch (error) {
+      console.error('Errore abilitazione push:', error)
+      return false
+    }
+  }
+
+  return { pushSupported, pushEnabled, pushPermission, enablePushAuto }
+}
+
 export function PushNotificationStatus() {
-  const { pushSupported, pushEnabled, pushPermission, enablePushAuto } = useXmpp()
+  const { pushSupported, pushEnabled, pushPermission, enablePushAuto } = usePushNotifications()
   const [showStatus, setShowStatus] = useState(false)
   const [statusMessage, setStatusMessage] = useState<{
     type: 'success' | 'error' | 'info' | 'warning'
