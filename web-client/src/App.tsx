@@ -2,6 +2,7 @@ import { lazy, Suspense, useState, useEffect } from 'react'
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext'
 import { ConnectionProvider, useConnection } from './contexts/ConnectionContext'
+import { XmppProvider } from './contexts/XmppContext'
 import { ConversationsProvider } from './contexts/ConversationsContext'
 import { MessagingProvider } from './contexts/MessagingContext'
 import { AppInitializerWithCallback } from './components/AppInitializer'
@@ -86,23 +87,25 @@ function App() {
     <ErrorBoundary>
       {showSplash && <SplashScreen onFinish={() => setShowSplash(false)} />}
       
-      {/* Context orchestration: Auth → Connection → Conversations → Messaging */}
+      {/* Context orchestration: Auth → Connection → XMPP → Conversations → Messaging */}
       <AuthProvider>
         <ConnectionProvider>
-          <ConversationsProvider>
-            <MessagingProvider>
-              <HashRouter>
-                <AppInitializerWithCallback>
-                  {({ isInitializing }) => (
-                    <>
-                      <AppRoutes isInitializing={isInitializing} />
-                      <PushNotificationStatus />
-                    </>
-                  )}
-                </AppInitializerWithCallback>
-              </HashRouter>
-            </MessagingProvider>
-          </ConversationsProvider>
+          <XmppProvider>
+            <ConversationsProvider>
+              <MessagingProvider>
+                <HashRouter>
+                  <AppInitializerWithCallback>
+                    {({ isInitializing }) => (
+                      <>
+                        <AppRoutes isInitializing={isInitializing} />
+                        <PushNotificationStatus />
+                      </>
+                    )}
+                  </AppInitializerWithCallback>
+                </HashRouter>
+              </MessagingProvider>
+            </ConversationsProvider>
+          </XmppProvider>
         </ConnectionProvider>
       </AuthProvider>
     </ErrorBoundary>
