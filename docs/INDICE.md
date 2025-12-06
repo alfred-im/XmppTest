@@ -41,9 +41,7 @@ Indice documenti tecnici per navigazione rapida. Questo documento è per AI, non
 
 ## Design
 
-- [design/README.md](./design/README.md) - Principi design
-- [design/brand-identity.md](./design/brand-identity.md) - Brand identity (#2D2926)
-- [design/database-architecture.md](./design/database-architecture.md) - Architettura database
+- [design/README.md](./design/README.md) - Principi design (Note: brand identity e database architecture integrati in PROJECT_MAP.md)
 
 ## Decisioni Architetturali (ADR)
 

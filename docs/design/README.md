@@ -2,10 +2,7 @@
 
 Principi design e decisioni architetturali design-related. Documento per AI.
 
-## Documenti
-
-- **brand-identity.md** - Colore istituzionale (#2D2926 Dark Charcoal), palette, typography
-- **database-architecture.md** - Database locale come cache sincronizzata, principi sync, pattern
+**Note**: Informazioni brand e architettura database sono state integrate in `PROJECT_MAP.md` nella sezione Design System e Principi Architetturali.
 
 ## Principi CSS (Riferimento Rapido)
 

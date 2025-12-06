@@ -94,6 +94,13 @@
 2. **Cache-First**: Mostra sempre prima i dati locali (IndexedDB)
 3. **Minimal Server Queries**: Massimizza cache, minimizza query XMPP
 4. **Unidirectional Data Flow**: Props down, Events up
+5. **Server as Source of Truth**: Database locale è SOLO sincronizzazione dal server XMPP
+   - Il server XMPP è l'unica fonte di verità
+   - Database locale è cache/sincronizzazione per performance
+   - Direzione sync: DAL server AL database locale (mai il contrario)
+   - Modifiche: sempre tramite server XMPP, poi sincronizzare localmente
+   - NON modificare mai direttamente il database locale
+   - Benefici: Coerenza dati, sync multi-device, affidabilità, performance
 
 ---
 
@@ -639,11 +646,27 @@ Documentati in `docs/fixes/known-issues.md`:
 
 ### 🎨 Design System
 
-**Colore Istituzionale**: `#2D2926` (Dark Charcoal)  
-**Font**: System fonts  
-**UI Pattern**: Ispirato a Telegram/WhatsApp web
+**Nome Ufficiale**: Alfred - Messaggistica istantanea
 
-Documentato in: `docs/design/brand-identity.md`
+**Colore Istituzionale**: `#2D2926` (Dark Charcoal)
+- Hover: `#3d3632`
+- Active: `#1e1b19`
+- Gradient: `linear-gradient(135deg, #2D2926, #4a433e)`
+- Contrasto: 15.8:1 con bianco (WCAG AAA)
+
+**Logo**: Spunta (✓) in cerchio - SVG in `SplashScreen.tsx`
+
+**Typography**: 
+- Font Family: 'Inter', 'SF Pro Display', system-ui
+- Heading: 24px/700, 20px/600, 18px/600
+- Body: 14px/400, Small: 12px/400
+
+**UI Pattern**: Ispirato a Telegram/WhatsApp web
+- Layout: Sidebar + Main panel
+- Componenti: Glassmorphism per modal
+- Animazioni: 150-300ms ease-in-out
+
+**CSS Files con colore**: index.css, App.css, ConversationsPage.css, ChatPage.css, NewConversationPopup.css, LoginPopup.css
 
 ---
 
