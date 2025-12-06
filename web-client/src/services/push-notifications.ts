@@ -312,9 +312,11 @@ export async function discoverPushService(client: Agent): Promise<{ jid: string;
       }
 
       console.warn('❌ Push Notifications: Nessun servizio push trovato tramite Service Discovery')
-      console.warn('❌ Push Notifications: Il server non supporta XEP-0357 (Push Notifications)')
-      console.warn('💡 Push Notifications: Per abilitare le push, serve un server XMPP con supporto XEP-0357')
-      return null
+      console.log('💡 Push Notifications: Tento comunque con il server principale come fallback...')
+      
+      // Fallback: alcuni server hanno push integrato direttamente
+      // Tentiamo con il dominio principale
+      return { jid: serverDomain }
     } catch (error) {
       console.warn('⚠️ Push Notifications: Errore nel disco.items sul server:', error)
       return null
