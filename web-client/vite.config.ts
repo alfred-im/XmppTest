@@ -5,6 +5,9 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   base: '/XmppTest/',
+  define: {
+    global: 'globalThis',
+  },
   resolve: {
     alias: {
       events: 'events',
