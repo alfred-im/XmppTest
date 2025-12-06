@@ -361,9 +361,10 @@ export async function enablePushNotificationsAuto(client: Agent): Promise<boolea
 
     console.log(`✅ Push Notifications: Servizio push trovato: ${pushService.jid}`)
 
-    // 2. Ottieni subscription push (senza chiave VAPID se possibile)
+    // 2. Ottieni subscription push (con chiave VAPID)
     console.log('🔑 Push Notifications: Ottengo subscription push dal browser...')
-    const subscription = await getPushSubscription()
+    const { PUSH_NOTIFICATIONS } = await import('../config/constants')
+    const subscription = await getPushSubscription(PUSH_NOTIFICATIONS.VAPID_PUBLIC_KEY || undefined)
     if (!subscription) {
       console.warn('⚠️ Push Notifications: Impossibile ottenere subscription push dal browser')
       console.warn('💡 Push Notifications: Verifica che il browser supporti Web Push API')
