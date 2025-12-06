@@ -1,6 +1,6 @@
-# 🔧 Bug Fixes & Ottimizzazioni
+# Bug Fixes & Ottimizzazioni (Riferimento Tecnico)
 
-Documentazione di bug fix e ottimizzazioni applicate.
+Analisi fix applicati e ottimizzazioni per tracciare problemi risolti e soluzioni implementate. Documento per AI.
 
 ## Fix Documentati
 
@@ -116,77 +116,13 @@ Documentazione di bug fix e ottimizzazioni applicate.
    - Dependency injection pattern
    - Mocking più facile per test
 
-## Pattern Anti-Bug
+## Pattern Anti-Bug (Riferimento Rapido)
 
-### 1. useRef per Event Listeners
+### useRef per Event Listeners
+Evita closure stale: usa `useRef` per state in event listeners, registra listener una sola volta in useEffect con `[]` dependencies.
 
-❌ **Sbagliato**:
-```typescript
-useEffect(() => {
-  const handler = () => {
-    doSomething(state)  // Closure stale
-  }
-  element.addEventListener('event', handler)
-  return () => element.removeEventListener('event', handler)
-}, [state])  // Re-registra ad ogni cambio
-```
+### Cleanup Effects
+Sempre fare cleanup: unsubscribe, removeEventListener, clearInterval nel return di useEffect.
 
-✅ **Corretto**:
-```typescript
-const stateRef = useRef(state)
-useEffect(() => { stateRef.current = state }, [state])
-
-useEffect(() => {
-  const handler = () => {
-    doSomething(stateRef.current)  // Sempre aggiornato
-  }
-  element.addEventListener('event', handler)
-  return () => element.removeEventListener('event', handler)
-}, [])  // Una sola volta
-```
-
-### 2. Cleanup Effects
-
-✅ **Sempre cleanup**:
-```typescript
-useEffect(() => {
-  const subscription = api.subscribe()
-  return () => subscription.unsubscribe()  // Cleanup
-}, [])
-```
-
-### 3. Async State Updates
-
-✅ **Check mounted**:
-```typescript
-const isMountedRef = useRef(true)
-useEffect(() => {
-  return () => { isMountedRef.current = false }
-}, [])
-
-const loadData = async () => {
-  const data = await fetchData()
-  if (isMountedRef.current) {  // Check prima di setState
-    setData(data)
-  }
-}
-```
-
-## Report Bug
-
-Per segnalare nuovi bug:
-
-1. Crea issue su GitHub con label `bug`
-2. Includi:
-   - Descrizione problema
-   - Steps to reproduce
-   - Expected vs actual behavior
-   - Screenshot/video se possibile
-   - Browser/device info
-3. Se hai un fix, crea PR con test
-
-## Vedere Anche
-
-- [Implementation](../implementation/)
-- [Architecture](../architecture/)
-- [Testing Guide](#) (coming soon)
+### Async State Updates
+Check `isMountedRef.current` prima di setState dopo operazioni async per evitare setState su componente unmounted.
