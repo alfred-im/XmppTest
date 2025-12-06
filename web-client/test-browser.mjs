@@ -101,6 +101,10 @@ async function testPageLoad(page) {
     
     log.success('Pagina caricata correttamente');
     
+    // Aspetta che lo splash screen scompaia (max 2 secondi)
+    log.info('Aspetto che lo splash screen scompaia...');
+    await page.waitForTimeout(2000);
+    
     // Prendi screenshot
     await page.screenshot({ path: '/workspace/test-screenshot-1-loaded.png', fullPage: true });
     log.info('Screenshot salvato: test-screenshot-1-loaded.png');
