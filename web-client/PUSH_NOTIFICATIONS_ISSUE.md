@@ -1,6 +1,27 @@
 # Problema: Notifiche Push Non Arrivano
 
-## Problema Identificato
+## ⚠️ PROBLEMA RISOLTO ⚠️
+
+**Data Fix**: 5 Dicembre 2025
+
+Il problema tecnico "server fallisce" è stato risolto. Vedi [PUSH_NOTIFICATIONS_FIX.md](./PUSH_NOTIFICATIONS_FIX.md) per i dettagli completi della soluzione.
+
+### Riepilogo Fix
+
+- ✅ Stanze IQ ora vengono inviate correttamente come XML grezzo
+- ✅ Sistema di risposta asincrona implementato
+- ✅ Logging dettagliato aggiunto per diagnostica
+- ✅ Rilevamento automatico del supporto XEP-0357 sul server
+
+### Limitazione Importante
+
+**Il problema principale rimane**: i server pubblici (`jabber.hot-chilli.net`, `conversations.im`) **NON supportano XEP-0357 (Push Notifications)**.
+
+Per usare le push notifications serve un server XMPP configurato con supporto XEP-0357.
+
+---
+
+## Problema Originale Identificato
 
 Le notifiche push non arrivano quando si riceve un messaggio.
 
