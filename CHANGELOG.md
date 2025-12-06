@@ -1,9 +1,6 @@
-# Changelog
+# Changelog Tecnico
 
-Tutte le modifiche rilevanti al progetto Alfred saranno documentate in questo file.
-
-Il formato è basato su [Keep a Changelog](https://keepachangelog.com/it/1.0.0/),
-e questo progetto aderisce al [Semantic Versioning](https://semver.org/lang/it/).
+Modifiche rilevanti al progetto per tracciare evoluzione tecnica e decisioni implementative. Questo documento è per riferimento interno AI, non per utenti esterni.
 
 ---
 
@@ -195,51 +192,10 @@ e questo progetto aderisce al [Semantic Versioning](https://semver.org/lang/it/)
 
 ---
 
-## Linee Guida Contributi
-
-### Convenzioni Commit
-Seguiamo [Conventional Commits](https://www.conventionalcommits.org/):
-
-- `feat:` - Nuova feature
-- `fix:` - Bug fix
-- `docs:` - Solo documentazione
-- `style:` - Formattazione codice
-- `refactor:` - Refactoring senza modifiche funzionali
-- `perf:` - Miglioramenti performance
-- `test:` - Aggiunta o modifica test
-- `chore:` - Maintenance (build, deps, ecc.)
-
-### Versionamento
-- **Major (X.0.0)**: Breaking changes
-- **Minor (0.X.0)**: Nuove feature backward-compatible
-- **Patch (0.0.X)**: Bug fix backward-compatible
-
----
-
 ## Note Storiche
 
-### Documenti Archiviati (Pre-0.9.0)
-I seguenti documenti sono stati consolidati in questo CHANGELOG:
-- `FIX_APPLICATI.md` - Fix critici applicati
-- `FIX_VCARD_PHOTO_APPLIED.md` - Fix foto vCard
-- `PROFILE_SAVE_FIX_SUMMARY.md` - Fix salvataggio profilo
-- `RIEPILOGO_FIX_VCARD.md` - Riepilogo fix vCard
-- `MIGLIORAMENTI_COMPLETATI.md` - Miglioramenti ingegnerizzazione
-- `SOMMARIO_MIGLIORAMENTI.md` - Sommario miglioramenti
-- `FLEXBOX_REFACTORING_SUMMARY.md` - Refactoring flexbox
-- `FLEXBOX_VERIFICATION_REPORT.md` - Report verifica flexbox
-- `ANALISI_SCROLLABLE_CONTAINERS.md` - Analisi scrollable containers
-- `CHANGELOG_SCROLLABLE_CONTAINERS.md` - Changelog scrollable containers
-- `REFACTORING_SUMMARY_30_NOV_2025.md` - Sommario refactoring
-- `MERGE_MAIN_30_NOV_2025.md` - Merge summary
-- `REVISIONE_TECNICA.md` - Revisione tecnica
-- `REVISIONE_INGEGNERIZZAZIONE.md` - Revisione ingegnerizzazione
-- `DOCUMENTATION_INDEX.md` - Indice documentazione (specifico refactoring)
-- `README_REFACTORING.md` - README refactoring temporaneo
-
-Questi documenti contenevano informazioni specifiche a sessioni di lavoro completate e sono stati consolidati per mantenere uno storico pulito e organizzato.
+Documenti archiviati pre-0.9.0 consolidati in questo changelog. Documenti specifici di sessioni di lavoro sono stati archiviati in `docs/archive/old-docs/`.
 
 ---
 
-**Ultimo aggiornamento**: 30 Novembre 2025  
-**Maintainer**: Alfred Team
+**Ultimo aggiornamento**: 2025-12-06

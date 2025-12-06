@@ -107,14 +107,13 @@
 ├── .github/                   # GitHub Actions per deployment
 │   └── workflows/
 │       └── deploy-pages.yml   # Deploy automatico su GitHub Pages
-├── docs/                      # Documentazione completa (40 file)
-│   ├── architecture/          # Documentazione architetturale
+├── docs/                      # Documentazione tecnica per AI (35 file)
+│   ├── architecture/          # Analisi architetturali
 │   ├── implementation/        # Dettagli implementativi
-│   ├── guides/                # Guide per sviluppatori
-│   ├── design/                # Design e brand identity
+│   ├── design/                # Principi design e brand identity
 │   ├── decisions/             # Architecture Decision Records
-│   ├── fixes/                 # Bug fix documentati
-│   └── archive/               # Documenti storici
+│   ├── fixes/                 # Analisi bug fix
+│   └── archive/               # Ricerca XMPP e documenti storici
 ├── web-client/                # Applicazione React principale
 ├── README.md                  # Documentazione principale
 ├── CHANGELOG.md               # Change log del progetto
@@ -651,13 +650,15 @@ Documentato in: `docs/design/brand-identity.md`
 ## 🔄 Ultima Revisione
 
 **Data**: 2025-12-06  
-**Branch**: `cursor/generate-and-update-project-map-claude-4.5-sonnet-thinking-be64`  
+**Branch**: `cursor/revisionare-documentazione-progetto-per-nuova-regola-claude-4.5-sonnet-thinking-462e`  
 **Commit**: Latest  
 
-**Prossimi Step**:
-1. Integrare questo documento nelle regole di Cursor
-2. Aggiornare automaticamente ad ogni cambio significativo
-3. Utilizzare come punto di verità per tutte le modifiche
+**Modifiche Recenti**:
+- Revisione completa documentazione per conformità Regola 2 (documentazione SOLO per AI)
+- Rimossi 5 file (guide per utenti)
+- Modificati 10 file README/INDICE (trasformati in riferimenti tecnici)
+- Riduzione 2131 righe di documentazione orientata agli utenti
+- Vedi `DOCUMENTAZIONE_REVISIONATA.md` per dettagli completi
 
 ---
 

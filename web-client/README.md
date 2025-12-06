@@ -1,69 +1,44 @@
-# Web XMPP Client (Browser Only)
+# Web Client - Note Tecniche
 
-Client React/Vite progettato per registrazione (XEP-0077) e login XMPP direttamente dal browser, senza backend proprietario. Il flusso usa la libreria [`stanza`](https://github.com/legastero/stanza) con trasporto WebSocket e fornisce un layout ispirato a WhatsApp/Telegram.
+Note tecniche web client per riferimento AI. Vedi `/workspace/PROJECT_MAP.md` per architettura completa.
 
 ## Stack
 
-- React 19 + TypeScript
-- Vite 7 (dev server + bundler)
-- Stanza (client XMPP con supporto WebSocket/BOSH)
-- CSS modulare minimal, nessun framework UI esterno
+- React 19.2.0 + TypeScript 5.9.3
+- Vite 7.2.4 (dev server + bundler)
+- Stanza.js 12.21.0 (XMPP WebSocket/BOSH)
+- idb 8.0.3 (IndexedDB wrapper)
+- CSS modulare, no framework UI
 
-## Funzionalità attuali
-
-1. **Configurazione server**: dominio e endpoint WebSocket personalizzabili dall'interfaccia.
-2. **Registrazione in-band**: invio di IQ `jabber:iq:register` prima della negoziazione SASL.
-3. **Login**: autenticazione via SASL + indicazione JID assegnato dal server.
-4. **Feedback UX**: messaggi di stato differenziati (pending/success/error) utili per i test manuali.
-
-## Script disponibili
+## Build
 
 ```bash
-npm install        # già eseguito qui, reinstalla le dipendenze
-npm run dev        # avvia Vite in modalità sviluppo (HMR)
-npm run build      # genera la cartella dist/ pronta per deploy statico
-npm run preview    # serve il build prodotto localmente
+npm install
+npm run dev        # Dev server localhost:5173/XmppTest/
+npm run build      # Production build → dist/
+npm run preview    # Preview production build
 ```
 
-> Nota: tutti i comandi possono essere eseguiti nel container remoto, quindi non è necessario avere Node sul dispositivo locale.
+## XMPP Configuration
 
-## Configurazione XMPP
+**Default Server**: `jabber.hot-chilli.net`
 
-- **Dominio predefinito**: `jabber.hot-chilli.net` (consente registrazioni in-band).
-- **WebSocket URL**: Viene dedotto automaticamente dal dominio secondo XEP-0156 (host-meta discovery).
-  - Il client prova prima a recuperare l'URL WebSocket tramite `https://domain/.well-known/host-meta`
-  - Se il discovery fallisce, usa automaticamente l'URL standard `wss://domain:5281/xmpp-websocket`
-  - **Se anche il fallback fallisce, viene mostrato un errore**: il server non è raggiungibile o non supporta connessioni WebSocket
-  - Il campo WebSocket URL è completamente nascosto all'utente - tutto è automatico
-- Requisito: il server deve permettere connessioni CORS sul trasporto WebSocket.
+**WebSocket Discovery**: XEP-0156 automatico
+1. Prova `https://domain/.well-known/host-meta`
+2. Fallback `wss://domain:5281/xmpp-websocket`
+3. Se fallisce: errore connessione
 
-## Flusso di test suggerito
+**Note**: Server deve supportare CORS su WebSocket
 
-1. Apri l'app (`npm run dev` oppure distribuzione statica) e imposta il server desiderato.
-2. Compila il form "Crea account" (username + password). La password deve avere almeno 6 caratteri.
-3. Al termine, prendi nota del JID mostrato nel banner di successo.
-4. Usa il form "Accedi" con le stesse credenziali per verificare la sessione.
+## GitHub Pages Deploy
 
-## Deploy su GitHub Pages (static hosting)
+Workflow `.github/workflows/deploy-pages.yml` automatico su push main:
+- `npm ci --prefix web-client`
+- `npm run build --prefix web-client`
+- Deploy `dist/` via actions/deploy-pages
 
-Il workflow [`deploy-pages.yml`](../.github/workflows/deploy-pages.yml) automatizza build e pubblicazione della cartella `web-client/dist/`.
+**Setup**: Settings → Pages → Source = GitHub Actions (prima volta)
 
-1. In GitHub vai su **Settings → Pages** e imposta **Source = GitHub Actions** (richiesto solo la prima volta).
-2. Ogni push su `main` (o su questo branch di lavoro) che tocca `web-client/**` fa partire il workflow:
-   - checkout repo
-   - `npm ci --prefix web-client`
-   - `npm run build --prefix web-client`
-   - upload dell'artefatto e deploy con `actions/deploy-pages`.
-3. Puoi anche eseguirlo manualmente via **Actions → Deploy web client to GitHub Pages → Run workflow**.
-4. L'URL finale appare nell'output del job `deploy`. L'app è puramente statica, quindi non richiede ulteriori servizi.
+## Riferimenti
 
-Se preferisci un deploy manuale resta valido il vecchio approccio: `npm run build` e pubblicazione dei file presenti in `web-client/dist/`.
-
-## Prossimi passi possibili
-
-- Visualizzazione roster/presenza dopo il login.
-- Chat 1:1 con gestione messaggi in tempo reale.
-- Storage lato browser (IndexedDB) per cache messaggi.
-- Modalità dark responsive e supporto mobile.
-
-Per domande su configurazione/testing fai riferimento alla documentazione in `docs/requirements.md` o chiedi direttamente nel thread di lavoro corrente.
+Vedi `/workspace/docs/` per analisi dettagliate implementazioni e decisioni architetturali.

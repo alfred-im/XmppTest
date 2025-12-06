@@ -1,16 +1,6 @@
-# 📝 Decisioni Architetturali
+# Decisioni Architetturali (ADR)
 
-Architecture Decision Records (ADR) - Documenti che spiegano decisioni architetturali importanti.
-
-## Formato ADR
-
-Ogni decisione è documentata seguendo questo formato:
-
-1. **Contesto**: Qual è il problema/necessità
-2. **Opzioni Considerate**: Alternative valutate
-3. **Decisione**: Cosa abbiamo scelto
-4. **Conseguenze**: Impatto della decisione (pros/cons)
-5. **Status**: Accettata, Deprecata, Superseded
+Architecture Decision Records per tracciare decisioni importanti e motivazioni. Documento per AI.
 
 ## Decisioni Documentate
 
@@ -71,72 +61,8 @@ Dettagli: [../guides/routing-system.md](../guides/routing-system.md)
 - Plugin ecosystem
 - Documentazione completa
 
-## Decisioni Future
+## Decisioni In Valutazione
 
-### In Valutazione
-
-1. **Virtual Scrolling**
-   - Quando: Liste > 100 elementi
-   - Libreria: react-window vs react-virtualized
-   - Status: In discussione
-
-2. **Progressive Web App**
-   - Service Worker per offline completo
-   - Install prompt
-   - Push notifications
-   - Status: In discussione
-
-3. **End-to-End Encryption**
-   - OMEMO (XEP-0384)
-   - Complessità vs benefici
-   - Status: Ricerca
-
-## Come Proporre Nuove Decisioni
-
-1. Crea issue su GitHub con tag `adr`
-2. Usa template ADR
-3. Discussione con team
-4. Documentare decisione finale qui
-
-## Template ADR
-
-```markdown
-# [Titolo Decisione]
-
-**Data**: YYYY-MM-DD  
-**Status**: [Proposta | Accettata | Deprecata | Superseded]  
-**Deciders**: [Chi decide]
-
-## Contesto
-
-[Descrivi il problema o la necessità]
-
-## Opzioni Considerate
-
-### Opzione 1: [Nome]
-- Pro: ...
-- Contro: ...
-
-### Opzione 2: [Nome]
-- Pro: ...
-- Contro: ...
-
-## Decisione
-
-[Cosa abbiamo deciso e perché]
-
-## Conseguenze
-
-### Positive
-- ...
-
-### Negative
-- ...
-
-### Neutral
-- ...
-
-## Note
-
-[Informazioni aggiuntive, link, riferimenti]
-```
+- **Virtual Scrolling**: Liste > 100 elementi (react-window vs react-virtualized)
+- **PWA**: Service Worker completo + install prompt
+- **OMEMO**: XEP-0384 (complessità vs benefici in ricerca)
