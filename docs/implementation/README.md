@@ -1,29 +1,12 @@
-# 🔧 Implementazione
+# Implementazione - Analisi Dettagliate
 
-Documentazione dettagliata delle implementazioni completate.
+Analisi tecniche implementazioni completate per comprensione dettagli e decisioni. Documento per AI.
 
-## Documenti
+## Documenti Disponibili
 
-### Sistema di Login
-- **[login-system.md](./login-system.md)** - Login con popup glassmorphism
-  - LoginPopup component
-  - Preservazione route al refresh
-  - Gestione stati (initializing, connected, disconnected)
-  - Flag `logoutIntentional`
-
-### Sistema di Sincronizzazione
-- **[sync-system-complete.md](./sync-system-complete.md)** - Sistema completo di sincronizzazione
-  - Pull-to-refresh lista conversazioni (tutto)
-  - Pull-to-refresh chat singola (mirato)
-  - Cache-first loading
-  - IndexedDB integration
-
-### Utility Classes CSS
-- **[scrollable-containers.md](./scrollable-containers.md)** - Classe utility `.scrollable-container`
-  - Gestione scroll verticale con touch support
-  - Prevenzione pull-to-refresh nativo
-  - Supporto iOS smooth scrolling
-  - Documentazione dettagliata: [scrollable-containers-implementation.md](./scrollable-containers-implementation.md)
+- **login-system.md** - Login popup glassmorphism (LoginPopup, route preservation, stati, logoutIntentional flag)
+- **sync-system-complete.md** - Sistema sync completo (pull-to-refresh globale/mirato, cache-first, IndexedDB)
+- **scrollable-containers.md** + **scrollable-containers-implementation.md** - Utility class `.scrollable-container` (scroll verticale, touch support, iOS)
 
 ## Status Implementazioni
 
@@ -37,61 +20,14 @@ Documentazione dettagliata delle implementazioni completate.
 | Chat Interface | ✅ Completato | Nov 2025 | - |
 | vCard Support | ✅ Completato | Nov 2025 | - |
 
-## Pattern Implementativi
+## Pattern (Riferimento Rapido)
 
-### Custom Hooks
-Alfred usa custom hooks per separare logica da UI:
+**Custom Hooks**: useMessages, useChatScroll, usePullToRefresh, useBackButton
 
-- **useMessages**: Gestione messaggi (load, send, pagination)
-- **useChatScroll**: Gestione scroll e auto-scroll
-- **usePullToRefresh**: Pull-to-refresh gesture
-- **useBackButton**: Gestione back button Android
+**Context**: XmppProvider wraps HashRouter + App
 
-### Context Pattern
-State globale gestito tramite React Context:
+**Services**: xmpp.ts, sync.ts, conversations.ts, messages.ts, vcard.ts, conversations-db.ts
 
-```typescript
-<XmppProvider>
-  <HashRouter>
-    <App />
-  </HashRouter>
-</XmppProvider>
-```
+**Error Handling**: Try-catch async, logging console, fallback a cache
 
-### Service Layer
-Logica business separata in services:
-
-```
-services/
-├── xmpp.ts           (Connessione XMPP)
-├── sync.ts           (Sincronizzazione)
-├── conversations.ts  (Gestione conversazioni)
-├── messages.ts       (Gestione messaggi)
-├── vcard.ts          (vCard/avatar)
-└── conversations-db.ts (Database locale)
-```
-
-## Best Practices
-
-### TypeScript
-- Tipi espliciti per tutti i parametri
-- Interfacce per strutture dati complesse
-- Type guards per validazione runtime
-
-### Error Handling
-- Try-catch in tutti i metodi async
-- Logging in console per debugging
-- Messaggio utente-friendly per errori
-- Fallback a cache se server non disponibile
-
-### Performance
-- Virtualizzazione liste lunghe (react-window)
-- Debouncing input utente
-- Lazy loading componenti
-- Code splitting automatico (Vite)
-
-## Vedere Anche
-
-- [Architettura](../architecture/)
-- [Guide](../guides/)
-- [Fix Applicati](../fixes/)
+**Performance**: react-window per liste, debouncing, lazy loading, code splitting

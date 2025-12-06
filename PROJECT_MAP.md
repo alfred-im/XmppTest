@@ -94,6 +94,13 @@
 2. **Cache-First**: Mostra sempre prima i dati locali (IndexedDB)
 3. **Minimal Server Queries**: Massimizza cache, minimizza query XMPP
 4. **Unidirectional Data Flow**: Props down, Events up
+5. **Server as Source of Truth**: Database locale è SOLO sincronizzazione dal server XMPP
+   - Il server XMPP è l'unica fonte di verità
+   - Database locale è cache/sincronizzazione per performance
+   - Direzione sync: DAL server AL database locale (mai il contrario)
+   - Modifiche: sempre tramite server XMPP, poi sincronizzare localmente
+   - NON modificare mai direttamente il database locale
+   - Benefici: Coerenza dati, sync multi-device, affidabilità, performance
 
 ---
 
@@ -107,14 +114,13 @@
 ├── .github/                   # GitHub Actions per deployment
 │   └── workflows/
 │       └── deploy-pages.yml   # Deploy automatico su GitHub Pages
-├── docs/                      # Documentazione completa (40 file)
-│   ├── architecture/          # Documentazione architetturale
+├── docs/                      # Documentazione tecnica per AI (35 file)
+│   ├── architecture/          # Analisi architetturali
 │   ├── implementation/        # Dettagli implementativi
-│   ├── guides/                # Guide per sviluppatori
-│   ├── design/                # Design e brand identity
+│   ├── design/                # Principi design e brand identity
 │   ├── decisions/             # Architecture Decision Records
-│   ├── fixes/                 # Bug fix documentati
-│   └── archive/               # Documenti storici
+│   ├── fixes/                 # Analisi bug fix
+│   └── archive/               # Ricerca XMPP e documenti storici
 ├── web-client/                # Applicazione React principale
 ├── README.md                  # Documentazione principale
 ├── CHANGELOG.md               # Change log del progetto
@@ -640,24 +646,42 @@ Documentati in `docs/fixes/known-issues.md`:
 
 ### 🎨 Design System
 
-**Colore Istituzionale**: `#2D2926` (Dark Charcoal)  
-**Font**: System fonts  
-**UI Pattern**: Ispirato a Telegram/WhatsApp web
+**Nome Ufficiale**: Alfred - Messaggistica istantanea
 
-Documentato in: `docs/design/brand-identity.md`
+**Colore Istituzionale**: `#2D2926` (Dark Charcoal)
+- Hover: `#3d3632`
+- Active: `#1e1b19`
+- Gradient: `linear-gradient(135deg, #2D2926, #4a433e)`
+- Contrasto: 15.8:1 con bianco (WCAG AAA)
+
+**Logo**: Spunta (✓) in cerchio - SVG in `SplashScreen.tsx`
+
+**Typography**: 
+- Font Family: 'Inter', 'SF Pro Display', system-ui
+- Heading: 24px/700, 20px/600, 18px/600
+- Body: 14px/400, Small: 12px/400
+
+**UI Pattern**: Ispirato a Telegram/WhatsApp web
+- Layout: Sidebar + Main panel
+- Componenti: Glassmorphism per modal
+- Animazioni: 150-300ms ease-in-out
+
+**CSS Files con colore**: index.css, App.css, ConversationsPage.css, ChatPage.css, NewConversationPopup.css, LoginPopup.css
 
 ---
 
 ## 🔄 Ultima Revisione
 
 **Data**: 2025-12-06  
-**Branch**: `cursor/generate-and-update-project-map-claude-4.5-sonnet-thinking-be64`  
+**Branch**: `cursor/revisionare-documentazione-progetto-per-nuova-regola-claude-4.5-sonnet-thinking-462e`  
 **Commit**: Latest  
 
-**Prossimi Step**:
-1. Integrare questo documento nelle regole di Cursor
-2. Aggiornare automaticamente ad ogni cambio significativo
-3. Utilizzare come punto di verità per tutte le modifiche
+**Modifiche Recenti**:
+- Revisione completa documentazione per conformità Regola 2 (documentazione SOLO per AI)
+- Rimossi 5 file (guide per utenti)
+- Modificati 10 file README/INDICE (trasformati in riferimenti tecnici)
+- Riduzione 2131 righe di documentazione orientata agli utenti
+- Vedi `DOCUMENTAZIONE_REVISIONATA.md` per dettagli completi
 
 ---
 
