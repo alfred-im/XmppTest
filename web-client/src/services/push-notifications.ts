@@ -193,13 +193,16 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
  */
 export async function discoverPushService(client: Agent): Promise<{ jid: string; node?: string } | null> {
   try {
-    const serverJid = client.jid?.split('/')[0]
-    if (!serverJid) {
+    const fullJid = client.jid?.split('/')[0]
+    if (!fullJid) {
       console.warn('⚠️ Push Notifications: Impossibile determinare JID del server')
       return null
     }
 
-    console.log(`🔍 Push Notifications: Cerco servizio push sul server ${serverJid}...`)
+    // Estrai solo il dominio dal JID (es. "user@conversations.im" -> "conversations.im")
+    const serverDomain = fullJid.split('@')[1] || fullJid
+    
+    console.log(`🔍 Push Notifications: Cerco servizio push sul server ${serverDomain}...`)
 
     // Verifica che il plugin disco sia disponibile
     if (!client.getDiscoInfo || !client.getDiscoItems) {
@@ -210,13 +213,13 @@ export async function discoverPushService(client: Agent): Promise<{ jid: string;
     // 1. Verifica se il server stesso supporta push direttamente
     try {
       console.log(`🔍 Push Notifications: Verifico se il server supporta XEP-0357 direttamente...`)
-      const serverDiscoInfo = await client.getDiscoInfo(serverJid)
+      const serverDiscoInfo = await client.getDiscoInfo(serverDomain)
       
       console.log(`📋 Push Notifications: Features del server:`, serverDiscoInfo.features)
       
       if (serverDiscoInfo.features && serverDiscoInfo.features.includes(PUSH_NAMESPACE)) {
-        console.log('✅ Push Notifications: Server supporta push notifications direttamente:', serverJid)
-        return { jid: serverJid }
+        console.log('✅ Push Notifications: Server supporta push notifications direttamente:', serverDomain)
+        return { jid: serverDomain }
       } else {
         console.log('ℹ️ Push Notifications: Server non supporta push direttamente, cerco nei servizi...')
       }
@@ -228,7 +231,7 @@ export async function discoverPushService(client: Agent): Promise<{ jid: string;
     // 2. Il server non supporta push direttamente, cerca nei servizi disponibili
     try {
       console.log(`🔍 Push Notifications: Cerco servizi disponibili sul server...`)
-      const serverDiscoItems = await client.getDiscoItems(serverJid)
+      const serverDiscoItems = await client.getDiscoItems(serverDomain)
       
       if (!serverDiscoItems.items || serverDiscoItems.items.length === 0) {
         console.warn('⚠️ Push Notifications: Nessun servizio disponibile sul server')
