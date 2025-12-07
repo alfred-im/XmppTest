@@ -11,6 +11,7 @@ import {
 import { mergeMessages } from '../utils/message'
 import { PAGINATION } from '../config/constants'
 import { normalizeJid } from '../utils/jid'
+import { messageRepository } from '../services/repositories'
 
 interface UseMessagesOptions {
   jid: string
@@ -138,6 +139,44 @@ export function useMessages({
       loadInitialMessages()
     }
   }, [client, isConnected, jid, loadInitialMessages])
+
+  // Osserva i cambiamenti del database per questa conversazione (pattern Observer)
+  // Quando arriva un messaggio XMPP → viene salvato nel DB → questo listener si attiva → UI aggiornata
+  useEffect(() => {
+    if (!jid) return
+
+    const normalizedJid = normalizeJid(jid)
+    
+    // Callback chiamato quando il database cambia
+    const handleDatabaseChange = async () => {
+      if (!isMountedRef.current) return
+
+      console.debug(`Database cambiato per conversazione ${normalizedJid}, ricarico messaggi...`)
+      
+      try {
+        // Ricarica messaggi dal database locale
+        const allMessages = await getLocalMessages(normalizedJid)
+        
+        if (isMountedRef.current) {
+          safeSetMessages(() => allMessages)
+          
+          // Notifica nuovo messaggio se callback presente
+          if (onNewMessage && allMessages.length > 0) {
+            const newMsg = allMessages[allMessages.length - 1]
+            onNewMessage(newMsg)
+          }
+        }
+      } catch (err) {
+        console.error('Errore nel ricaricamento messaggi dopo cambio DB:', err)
+      }
+    }
+
+    // Registra observer sul repository
+    const unsubscribe = messageRepository.observe(normalizedJid, handleDatabaseChange)
+
+    // Cleanup: rimuove observer quando componente unmonta o jid cambia
+    return unsubscribe
+  }, [jid, safeSetMessages, onNewMessage])
 
   // Sottoscrizione ai messaggi in tempo reale
   // Questo listener viene chiamato per OGNI messaggio ricevuto,

@@ -14,3 +14,10 @@ export { MessageRepository } from './MessageRepository'
 export { VCardRepository } from './VCardRepository'
 export { MetadataRepository } from './MetadataRepository'
 export type { SyncMetadata } from './MetadataRepository'
+
+/**
+ * Istanze singleton dei repository per observer pattern
+ * MessageRepository usa eventi per notificare cambiamenti real-time
+ */
+import { MessageRepository } from './MessageRepository'
+export const messageRepository = new MessageRepository()

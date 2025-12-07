@@ -2,22 +2,92 @@ import { getDB } from '../conversations-db'
 import type { Message, MessageStatus } from '../conversations-db'
 
 /**
+ * Callback chiamato quando i messaggi di una conversazione cambiano
+ */
+type MessageChangeListener = (conversationJid: string) => void
+
+/**
  * Repository per operazioni CRUD sui messaggi
  * Garantisce transazioni atomiche e de-duplicazione
+ * Implementa pattern Observer per notificare cambiamenti real-time
  */
 export class MessageRepository {
+  private listeners: Map<string, Set<MessageChangeListener>> = new Map()
+  private globalListeners: Set<MessageChangeListener> = new Set()
+
+  /**
+   * Registra un listener per osservare cambiamenti su una conversazione specifica
+   * @param conversationJid - JID della conversazione da osservare
+   * @param listener - Callback chiamato quando i messaggi cambiano
+   * @returns Funzione per rimuovere il listener
+   */
+  observe(conversationJid: string, listener: MessageChangeListener): () => void {
+    if (!this.listeners.has(conversationJid)) {
+      this.listeners.set(conversationJid, new Set())
+    }
+    this.listeners.get(conversationJid)!.add(listener)
+
+    // Ritorna funzione per unsubscribe
+    return () => {
+      this.listeners.get(conversationJid)?.delete(listener)
+    }
+  }
+
+  /**
+   * Registra un listener globale che viene notificato per OGNI cambiamento
+   * @param listener - Callback chiamato quando qualsiasi messaggio cambia
+   * @returns Funzione per rimuovere il listener
+   */
+  observeAll(listener: MessageChangeListener): () => void {
+    this.globalListeners.add(listener)
+    
+    return () => {
+      this.globalListeners.delete(listener)
+    }
+  }
+
+  /**
+   * Notifica tutti i listener interessati a una conversazione
+   */
+  private notifyListeners(conversationJid: string): void {
+    // Notifica listener specifici per questa conversazione
+    const specificListeners = this.listeners.get(conversationJid)
+    if (specificListeners) {
+      specificListeners.forEach(listener => {
+        try {
+          listener(conversationJid)
+        } catch (error) {
+          console.error('Errore nel listener messaggi:', error)
+        }
+      })
+    }
+
+    // Notifica listener globali
+    this.globalListeners.forEach(listener => {
+      try {
+        listener(conversationJid)
+      } catch (error) {
+        console.error('Errore nel listener globale messaggi:', error)
+      }
+    })
+  }
   /**
    * Salva multipli messaggi con de-duplicazione automatica
    * Transazione atomica: tutto o niente
+   * Notifica i listener dopo il salvataggio
    */
   async saveAll(messages: Message[]): Promise<void> {
     if (messages.length === 0) return
 
     const db = await getDB()
     const tx = db.transaction('messages', 'readwrite')
+    const affectedConversations = new Set<string>()
 
     try {
       for (const message of messages) {
+        // Traccia conversazioni modificate
+        affectedConversations.add(message.conversationJid)
+        
         // Verifica se esiste già (de-duplicazione per messageId)
         const existing = await tx.store.get(message.messageId)
         
@@ -34,6 +104,9 @@ export class MessageRepository {
         }
       }
       await tx.done
+      
+      // Notifica i listener DOPO il completamento della transazione
+      affectedConversations.forEach(jid => this.notifyListeners(jid))
     } catch (error) {
       console.error('Errore nel salvataggio messaggi:', error)
       throw new Error('Impossibile salvare i messaggi')
@@ -126,17 +199,25 @@ export class MessageRepository {
 
   /**
    * Aggiorna status di un messaggio
+   * Notifica i listener dopo l'aggiornamento
    */
   async updateStatus(messageId: string, status: MessageStatus): Promise<void> {
     const db = await getDB()
     const tx = db.transaction('messages', 'readwrite')
+    let conversationJid: string | null = null
     
     try {
       const existing = await tx.store.get(messageId)
       if (existing) {
+        conversationJid = existing.conversationJid
         await tx.store.put({ ...existing, status })
       }
       await tx.done
+      
+      // Notifica i listener
+      if (conversationJid) {
+        this.notifyListeners(conversationJid)
+      }
     } catch (error) {
       console.error('Errore nell\'aggiornamento status messaggio:', error)
       throw new Error('Impossibile aggiornare lo status del messaggio')
@@ -204,6 +285,7 @@ export class MessageRepository {
   /**
    * Sostituisce TUTTI i messaggi di una conversazione in transazione atomica
    * Operazione critica: scarica → svuota → salva tutto insieme
+   * Notifica i listener dopo il completamento
    */
   async replaceAllForConversation(conversationJid: string, messages: Message[]): Promise<void> {
     const db = await getDB()
@@ -225,6 +307,9 @@ export class MessageRepository {
       }
 
       await tx.done
+      
+      // Notifica i listener
+      this.notifyListeners(conversationJid)
     } catch (error) {
       console.error('Errore nella sostituzione messaggi:', error)
       throw new Error('Impossibile sostituire i messaggi della conversazione')
@@ -233,6 +318,7 @@ export class MessageRepository {
 
   /**
    * Svuota tutti i messaggi di una conversazione
+   * Notifica i listener dopo la cancellazione
    */
   async clearForConversation(conversationJid: string): Promise<void> {
     const db = await getDB()
@@ -248,6 +334,9 @@ export class MessageRepository {
       }
       
       await tx.done
+      
+      // Notifica i listener
+      this.notifyListeners(conversationJid)
     } catch (error) {
       console.error('Errore nella cancellazione messaggi:', error)
       throw new Error('Impossibile cancellare i messaggi della conversazione')
