@@ -6,7 +6,7 @@ import {
   clearMessagesForConversation,
   type Message,
 } from './conversations-db'
-import { normalizeJid } from '../utils/jid'
+import { normalizeJID } from '../utils/jid'
 import { generateTempId } from '../utils/message'
 import { PAGINATION } from '../config/constants'
 import { sincronizza } from './sync'
@@ -39,13 +39,13 @@ function extractTimestamp(msg: MAMResult): Date {
  * Nota: per self-chat la direzione viene determinata dopo dalla funzione applySelfChatLogic
  */
 function mamResultToMessage(msg: MAMResult, conversationJid: string, myJid: string): Message {
-  const myBareJid = normalizeJid(myJid)
+  const myBareJid = normalizeJID(myJid)
   const from = msg.item.message?.from || ''
   const fromMe = from.startsWith(myBareJid)
 
   return {
     messageId: msg.id || `mam_${Date.now()}`,
-    conversationJid: normalizeJid(conversationJid),
+    conversationJid: normalizeJID(conversationJid),
     body: msg.item.message?.body || '',
     timestamp: extractTimestamp(msg),
     // La direzione base (sovrascritta da applySelfChatLogic per self-chat)
@@ -129,7 +129,7 @@ export async function loadMessagesForContact(
   try {
     // Query MAM filtrata per contatto specifico
     const result = await client.searchHistory({
-      with: normalizeJid(contactJid),
+      with: normalizeJID(contactJid),
       paging: {
         max: maxResults,
         after: afterToken,
@@ -207,7 +207,7 @@ export async function downloadAllMessagesFromServer(
   client: Agent,
   contactJid: string
 ): Promise<Message[]> {
-  const normalizedJid = normalizeJid(contactJid)
+  const normalizedJid = normalizeJID(contactJid)
   const messagesMap = new Map<string, Message>() // Usa Map per de-duplicazione automatica
   let hasMore = true
   let afterToken: string | undefined
@@ -262,7 +262,7 @@ export async function reloadAllMessagesFromServer(
   client: Agent,
   contactJid: string
 ): Promise<Message[]> {
-  const normalizedJid = normalizeJid(contactJid)
+  const normalizedJid = normalizeJID(contactJid)
   
   try {
     // 1. Prima scarica tutti i messaggi dal server (senza salvare)
@@ -293,7 +293,7 @@ export async function sendMessage(
   body: string
 ): Promise<{ tempId: string; success: boolean; error?: string }> {
   const tempId = generateTempId()
-  const normalizedJid = normalizeJid(toJid)
+  const normalizedJid = normalizeJID(toJid)
 
   try {
     // Usa il sistema di sincronizzazione unificato
@@ -371,7 +371,7 @@ export async function getLocalMessages(
     before?: Date
   }
 ): Promise<Message[]> {
-  const messages = await getMessagesForConversation(normalizeJid(conversationJid), options)
+  const messages = await getMessagesForConversation(normalizeJID(conversationJid), options)
   // Filtra messaggi vuoti (senza body) - possono essere ping, visualizzazioni, ecc.
   return messages.filter(msg => msg.body && msg.body.trim().length > 0)
 }
@@ -390,7 +390,7 @@ export async function handleIncomingMessage(
 ): Promise<Message> {
   // Estrai timestamp per il messaggio di ritorno (per compatibilità)
   const timestamp = message.delay?.timestamp || new Date()
-  const myBareJid = normalizeJid(myJid)
+  const myBareJid = normalizeJID(myJid)
   const from = message.from || ''
   const fromMe = from.startsWith(myBareJid)
 
@@ -398,7 +398,7 @@ export async function handleIncomingMessage(
   // Il vero messaggio sarà caricato dalla sincronizzazione nel contesto XMPP
   return {
     messageId: message.id || `incoming_${Date.now()}`,
-    conversationJid: normalizeJid(contactJid),
+    conversationJid: normalizeJID(contactJid),
     body: message.body || '',
     timestamp,
     from: fromMe ? 'me' : 'them',

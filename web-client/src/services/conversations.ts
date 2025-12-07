@@ -1,7 +1,7 @@
 import type { Agent } from 'stanza'
 import type { MAMResult, ReceivedMessage } from 'stanza/protocol'
 import { saveConversations, updateConversation, saveMetadata, getConversations, type Conversation } from './conversations-db'
-import { normalizeJid } from '../utils/jid'
+import { normalizeJID, type BareJID } from '../utils/jid'
 import { PAGINATION } from '../config/constants'
 
 // Re-export per comodità
@@ -10,18 +10,19 @@ export { getConversations } from './conversations-db'
 
 /**
  * Estrae il JID del contatto da un messaggio MAM
+ * Ritorna un BareJID validato
  */
-function extractContactJid(msg: MAMResult, myJid: string): string {
-  const myBareJid = normalizeJid(myJid)
+function extractContactJid(msg: MAMResult, myJid: string): BareJID {
+  const myBareJid = normalizeJID(myJid)
   const from = msg.item.message?.from || ''
   const to = msg.item.message?.to || ''
 
   // Se il messaggio è da me, il contatto è il destinatario
   if (from.startsWith(myBareJid)) {
-    return normalizeJid(to)
+    return normalizeJID(to)
   }
   // Se il messaggio è a me, il contatto è il mittente
-  return normalizeJid(from)
+  return normalizeJID(from)
 }
 
 /**
@@ -148,7 +149,7 @@ export async function loadConversationsFromServer(
   // Se richiesto, salva TUTTI i messaggi nel database
   if (saveMessages) {
     const myJid = client.jid || ''
-    const myBareJid = normalizeJid(myJid)
+    const myBareJid = normalizeJID(myJid)
     
     // Importa saveMessages dal database
     const { saveMessages: saveMessagesToDB } = await import('./conversations-db')
@@ -182,14 +183,17 @@ export async function loadConversationsFromServer(
   // Converti in conversazioni
   const conversations: Conversation[] = []
   for (const [contactJid, msg] of lastMessages.entries()) {
+    // TypeScript: contactJid è BareJID dalla Map
+    const jid: BareJID = contactJid as BareJID
+    
     // Correggo extractSender per usare myJid corretto
-    const myBareJid = normalizeJid(client.jid || '')
+    const myBareJid = normalizeJID(client.jid || '')
     const from = msg.item.message?.from || ''
     const sender: 'me' | 'them' = from.startsWith(myBareJid) ? 'me' : 'them'
 
     const messageTimestamp = extractTimestamp(msg)
     conversations.push({
-      jid: contactJid,
+      jid,
       lastMessage: {
         body: extractMessageBody(msg),
         timestamp: messageTimestamp,
@@ -317,7 +321,7 @@ export async function enrichWithRoster(
     const rosterData = rosterResult as unknown as { roster?: { items?: Array<{ jid: string; name?: string }> } }
     const rosterItems = rosterData.roster?.items || []
     const rosterMap = new Map(
-      rosterItems.map((item) => [normalizeJid(item.jid), item])
+      rosterItems.map((item) => [normalizeJID(item.jid), item])
     )
 
     // 2. Recupera vCard per tutti i contatti (in batch)
@@ -353,12 +357,12 @@ export async function updateConversationOnNewMessage(
   message: ReceivedMessage,
   myJid: string
 ): Promise<void> {
-  const myBareJid = normalizeJid(myJid)
+  const myBareJid = normalizeJID(myJid)
   const from = message.from || ''
   const to = message.to || ''
 
 // Determina il JID del contatto
-const contactJid = from.startsWith(myBareJid) ? normalizeJid(to) : normalizeJid(from)
+const contactJid = from.startsWith(myBareJid) ? normalizeJID(to) : normalizeJID(from)
 
 if (!contactJid) {
   return // Skip messaggi senza contatto valido

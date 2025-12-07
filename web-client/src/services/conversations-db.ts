@@ -1,8 +1,9 @@
 import { openDB } from 'idb'
 import type { DBSchema, IDBPDatabase } from 'idb'
+import { type BareJID } from '../types/jid'
 
 export interface Conversation {
-  jid: string
+  jid: BareJID
   displayName?: string
   avatarData?: string // Base64 image data
   avatarType?: string // MIME type (es: 'image/png')
@@ -20,7 +21,7 @@ export type MessageStatus = 'pending' | 'sent' | 'delivered' | 'failed'
 
 export interface Message {
   messageId: string // ID dal server o ID temporaneo
-  conversationJid: string // JID bare del contatto
+  conversationJid: BareJID // JID bare del contatto (validato)
   body: string
   timestamp: Date
   from: 'me' | 'them'
@@ -29,7 +30,7 @@ export interface Message {
 }
 
 export interface VCardCache {
-  jid: string
+  jid: BareJID
   fullName?: string
   nickname?: string
   photoData?: string // Base64 image data
