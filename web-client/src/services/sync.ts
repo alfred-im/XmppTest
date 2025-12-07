@@ -1,6 +1,6 @@
 import type { Agent } from 'stanza'
 import type { ReceivedMessage } from 'stanza/protocol'
-import { normalizeJid } from '../utils/jid'
+import { normalizeJID } from '../utils/jid'
 import { reloadAllMessagesFromServer } from './messages'
 import { loadAllConversations } from './conversations'
 import { clearMessagesForConversation } from './conversations-db'
@@ -120,7 +120,7 @@ class SyncManager {
       return { success: false, error: 'Client XMPP non disponibile' }
     }
 
-    const normalizedJid = normalizeJid(toJid)
+    const normalizedJid = normalizeJID(toJid)
     const actionId = `send_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
 
     try {
@@ -187,7 +187,7 @@ class SyncManager {
       return { success: false, error: 'Client XMPP non disponibile' }
     }
 
-    const normalizedJid = normalizeJid(conversationJid)
+    const normalizedJid = normalizeJID(conversationJid)
 
     try {
       // 1. Svuota i messaggi locali per questa conversazione
@@ -270,12 +270,12 @@ class SyncManager {
     }
 
   // Determina il JID del contatto
-  const myBareJid = normalizeJid(myJid)
+  const myBareJid = normalizeJID(myJid)
   const from = message.from || ''
   const to = message.to || ''
   const contactJid = from.startsWith(myBareJid) 
-    ? normalizeJid(to) 
-    : normalizeJid(from)
+    ? normalizeJID(to) 
+    : normalizeJID(from)
 
   if (!contactJid) {
     return { success: false, error: 'JID contatto non valido' }

@@ -1,6 +1,6 @@
 import type { Agent } from 'stanza'
 import type { ReceivedMessage } from 'stanza/protocol'
-import { normalizeJid } from '../utils/jid'
+import { normalizeJID } from '../utils/jid'
 import { ConversationRepository, MessageRepository, MetadataRepository } from './repositories'
 import { reloadAllMessagesFromServer } from './messages'
 
@@ -30,7 +30,7 @@ export class SyncService {
     error?: string
     messageCount?: number
   }> {
-    const normalizedJid = normalizeJid(contactJid)
+    const normalizedJid = normalizeJID(contactJid)
 
     try {
       // Usa repository per operazione atomica
@@ -72,7 +72,7 @@ export class SyncService {
     error?: string
     messageCount?: number
   }> {
-    const normalizedJid = normalizeJid(contactJid)
+    const normalizedJid = normalizeJID(contactJid)
 
     try {
       // 1. Sincronizza messaggi
@@ -184,12 +184,12 @@ export class SyncService {
 
     try {
       // Determina JID del contatto
-      const myBareJid = normalizeJid(myJid)
+      const myBareJid = normalizeJID(myJid)
       const from = message.from || ''
       const to = message.to || ''
       const contactJid = from.startsWith(myBareJid) 
-        ? normalizeJid(to) 
-        : normalizeJid(from)
+        ? normalizeJID(to) 
+        : normalizeJID(from)
 
       if (!contactJid) {
         return { success: false, error: 'JID contatto non valido' }

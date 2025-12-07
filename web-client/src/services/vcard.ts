@@ -1,6 +1,6 @@
 import type { Agent } from 'stanza'
 import type { VCardTemp, VCardTempRecord } from 'stanza/protocol'
-import { normalizeJid } from '../utils/jid'
+import { normalizeJID } from '../utils/jid'
 import { saveVCard, getVCard as getCachedVCardFromDB, type VCardCache } from './conversations-db'
 
 /**
@@ -69,7 +69,7 @@ function bufferToBase64(buffer: Buffer | Uint8Array | ArrayBuffer | undefined): 
  */
 export async function fetchVCardFromServer(client: Agent, jid: string): Promise<VCardCache | null> {
   try {
-    const normalizedJid = normalizeJid(jid)
+    const normalizedJid = normalizeJID(jid)
     
     // Recupera vCard dal server
     const vcard: VCardTemp = await client.getVCard(normalizedJid)
@@ -124,7 +124,7 @@ export async function fetchVCardFromServer(client: Agent, jid: string): Promise<
  * La cache è permanente e viene aggiornata solo su richiesta esplicita (forceRefresh)
  */
 export async function getVCard(client: Agent, jid: string, forceRefresh = false): Promise<VCardCache | null> {
-  const normalizedJid = normalizeJid(jid)
+  const normalizedJid = normalizeJID(jid)
 
   // Se non è forzato il refresh, usa sempre la cache se presente
   if (!forceRefresh) {
@@ -156,11 +156,11 @@ export async function getVCardsForJids(
 
   if (forceRefresh) {
     // Refresh forzato: scarica tutti
-    jidsToFetch.push(...jids.map(jid => normalizeJid(jid)))
+    jidsToFetch.push(...jids.map(jid => normalizeJID(jid)))
   } else {
     // Prima controlla la cache per tutti i JID
     for (const jid of jids) {
-      const normalizedJid = normalizeJid(jid)
+      const normalizedJid = normalizeJID(jid)
       const cached = await getCachedVCardFromDB(normalizedJid)
 
       if (cached) {
@@ -342,7 +342,7 @@ export async function publishVCard(
     console.log('vCard pubblicato con successo sul server')
 
     // Aggiorna la cache locale con il proprio vCard
-    const myJid = normalizeJid(client.jid || '')
+    const myJid = normalizeJID(client.jid || '')
     await saveVCard({
       jid: myJid,
       fullName: vcard.fullName,

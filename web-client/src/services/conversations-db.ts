@@ -1,8 +1,9 @@
 import { openDB } from 'idb'
 import type { DBSchema, IDBPDatabase } from 'idb'
+import { type BareJID } from '../types/jid'
 
 export interface Conversation {
-  jid: string
+  jid: BareJID
   displayName?: string
   avatarData?: string // Base64 image data
   avatarType?: string // MIME type (es: 'image/png')
@@ -20,7 +21,7 @@ export type MessageStatus = 'pending' | 'sent' | 'delivered' | 'failed'
 
 export interface Message {
   messageId: string // ID dal server o ID temporaneo
-  conversationJid: string // JID bare del contatto
+  conversationJid: BareJID // JID bare del contatto (validato)
   body: string
   timestamp: Date
   from: 'me' | 'them'
@@ -29,7 +30,7 @@ export interface Message {
 }
 
 export interface VCardCache {
-  jid: string
+  jid: BareJID
   fullName?: string
   nickname?: string
   photoData?: string // Base64 image data
@@ -273,43 +274,14 @@ export async function clearConversations(): Promise<void> {
 export async function saveMessages(messages: Message[]): Promise<void> {
   if (messages.length === 0) return
 
-  const db = await getDB()
-  const tx = db.transaction('messages', 'readwrite')
-
-  for (const message of messages) {
-    // Verifica se esiste già (de-duplicazione)
-    const existing = await tx.store.get(message.messageId)
-    if (!existing) {
-      // Nuovo messaggio - inserisci direttamente
-      await tx.store.put(message)
-    } else {
-      // Messaggio esiste già - aggiorna solo se necessario
-      let shouldUpdate = false
-      const updated = { ...existing }
-      
-      // Aggiorna status se il nuovo è migliore (pending -> sent)
-      if (existing.status === 'pending' && message.status === 'sent') {
-        updated.status = 'sent'
-        shouldUpdate = true
-      }
-      
-      // Aggiorna timestamp se quello nuovo è più accurato (non è "ora")
-      // e quello esistente sembra essere un placeholder
-      const now = new Date()
-      const existingIsRecent = Math.abs(existing.timestamp.getTime() - now.getTime()) < 5000
-      const newIsNotRecent = Math.abs(message.timestamp.getTime() - now.getTime()) > 5000
-      if (existingIsRecent && newIsNotRecent) {
-        updated.timestamp = message.timestamp
-        shouldUpdate = true
-      }
-      
-      if (shouldUpdate) {
-        await tx.store.put(updated)
-      }
-    }
-  }
-
-  await tx.done
+  console.log(`💾 saveMessages: salvando ${messages.length} messaggi`)
+  console.log(`   - Conversazioni: ${[...new Set(messages.map(m => m.conversationJid))].join(', ')}`)
+  
+  // Usa il repository singleton per notificare gli observer
+  const { messageRepository } = await import('./repositories')
+  await messageRepository.saveAll(messages)
+  
+  console.log(`✓ saveMessages completato`)
 }
 
 /**
@@ -486,19 +458,12 @@ export async function deleteMessage(messageId: string): Promise<void> {
 
 /**
  * Pulisce tutti i messaggi di una conversazione
+ * Usa MessageRepository per notificare observer
  */
 export async function clearMessagesForConversation(conversationJid: string): Promise<void> {
-  const db = await getDB()
-  const tx = db.transaction('messages', 'readwrite')
-  const index = tx.store.index('by-conversationJid')
-  
-  let cursor = await index.openCursor(conversationJid)
-  while (cursor) {
-    await cursor.delete()
-    cursor = await cursor.continue()
-  }
-
-  await tx.done
+  // Usa il repository singleton per notificare gli observer
+  const { messageRepository } = await import('./repositories')
+  await messageRepository.clearForConversation(conversationJid)
 }
 
 // ============================================================================
