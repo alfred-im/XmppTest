@@ -190,10 +190,8 @@ class SyncManager {
     const normalizedJid = normalizeJID(conversationJid)
 
     try {
-      // 1. Svuota i messaggi locali per questa conversazione
-      await clearMessagesForConversation(normalizedJid)
-
-      // 2. Scarica tutti i messaggi dal server e salvali nel database
+      // 1. Scarica tutti i messaggi dal server e salvali nel database
+      // (reloadAllMessagesFromServer gestisce già lo svuotamento e il salvataggio)
       const messages = await reloadAllMessagesFromServer(this.client, normalizedJid)
 
       // 3. Aggiorna la conversazione con l'ultimo messaggio
