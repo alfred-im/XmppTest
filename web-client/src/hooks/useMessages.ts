@@ -139,6 +139,54 @@ export function useMessages({
     }
   }, [client, isConnected, jid, loadInitialMessages])
 
+  // Sottoscrizione ai messaggi in tempo reale
+  // Questo listener viene chiamato per OGNI messaggio ricevuto,
+  // quindi dobbiamo filtrare per la conversazione corrente
+  useEffect(() => {
+    if (!client || !isConnected || !jid) return
+
+    const myBareJid = client.jid ? normalizeJid(client.jid) : ''
+    
+    const handleMessage = async (message: any) => {
+      // Filtra solo messaggi per questa conversazione
+      if (!message.from || !message.body) return
+
+      const from = normalizeJid(message.from)
+      const to = message.to ? normalizeJid(message.to) : ''
+      
+      // Determina il JID del contatto
+      const contactJid = from === myBareJid ? to : from
+      
+      // Se il messaggio è per questa conversazione, ricarica i messaggi
+      if (normalizeJid(contactJid) === normalizeJid(jid)) {
+        // Aspetta un attimo per permettere a MessagingContext di sincronizzare
+        await new Promise(resolve => setTimeout(resolve, 500))
+        
+        try {
+          const allMessages = await getLocalMessages(jid)
+          if (isMountedRef.current) {
+            safeSetMessages(() => allMessages)
+            
+            // Notifica nuovo messaggio se callback presente
+            if (onNewMessage && allMessages.length > 0) {
+              const newMsg = allMessages[allMessages.length - 1]
+              onNewMessage(newMsg)
+            }
+          }
+        } catch (err) {
+          console.error('Errore nel ricaricamento messaggi dopo ricezione:', err)
+        }
+      }
+    }
+
+    // Ascolta eventi di messaggio dal client XMPP
+    client.on('message', handleMessage)
+
+    return () => {
+      client.off('message', handleMessage)
+    }
+  }, [client, isConnected, jid, safeSetMessages, onNewMessage])
+
   // Carica più messaggi (paginazione)
   const loadMoreMessages = useCallback(async () => {
     if (!client || isLoadingMore || !hasMoreMessages || !firstToken) return
