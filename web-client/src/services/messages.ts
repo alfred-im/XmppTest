@@ -7,6 +7,7 @@ import {
   type Message,
 } from './conversations-db'
 import { normalizeJID } from '../utils/jid'
+import type { BareJID } from '../types/jid'
 import { generateTempId } from '../utils/message'
 import { PAGINATION } from '../config/constants'
 import { sincronizza } from './sync'
@@ -365,13 +366,13 @@ export async function retryMessage(
  * Filtra automaticamente messaggi vuoti (senza body)
  */
 export async function getLocalMessages(
-  conversationJid: string,
+  conversationJid: BareJID,
   options?: {
     limit?: number
     before?: Date
   }
 ): Promise<Message[]> {
-  const messages = await getMessagesForConversation(normalizeJID(conversationJid), options)
+  const messages = await getMessagesForConversation(conversationJid, options)
   // Filtra messaggi vuoti (senza body) - possono essere ping, visualizzazioni, ecc.
   return messages.filter(msg => msg.body && msg.body.trim().length > 0)
 }

@@ -1,10 +1,11 @@
 import { getDB } from '../conversations-db'
 import type { Message, MessageStatus } from '../conversations-db'
+import type { BareJID } from '../../types/jid'
 
 /**
  * Callback chiamato quando i messaggi di una conversazione cambiano
  */
-type MessageChangeListener = (conversationJid: string) => void
+type MessageChangeListener = (conversationJid: BareJID) => void
 
 /**
  * Repository per operazioni CRUD sui messaggi
@@ -21,7 +22,7 @@ export class MessageRepository {
    * @param listener - Callback chiamato quando i messaggi cambiano
    * @returns Funzione per rimuovere il listener
    */
-  observe(conversationJid: string, listener: MessageChangeListener): () => void {
+  observe(conversationJid: BareJID, listener: MessageChangeListener): () => void {
     if (!this.listeners.has(conversationJid)) {
       this.listeners.set(conversationJid, new Set())
     }
@@ -49,7 +50,7 @@ export class MessageRepository {
   /**
    * Notifica tutti i listener interessati a una conversazione
    */
-  private notifyListeners(conversationJid: string): void {
+  private notifyListeners(conversationJid: BareJID): void {
     console.log(`🔔 MessageRepository: notifica listener per ${conversationJid}`)
     console.log(`   - Listener specifici: ${this.listeners.get(conversationJid)?.size || 0}`)
     console.log(`   - Listener globali: ${this.globalListeners.size}`)
@@ -87,7 +88,7 @@ export class MessageRepository {
 
     const db = await getDB()
     const tx = db.transaction('messages', 'readwrite')
-    const affectedConversations = new Set<string>()
+    const affectedConversations = new Set<BareJID>()
 
     try {
       for (const message of messages) {
@@ -149,7 +150,7 @@ export class MessageRepository {
    * Recupera messaggi per una conversazione con paginazione
    */
   async getForConversation(
-    conversationJid: string,
+    conversationJid: BareJID,
     options?: {
       limit?: number
       before?: Date
@@ -194,7 +195,7 @@ export class MessageRepository {
   /**
    * Conta messaggi per una conversazione
    */
-  async countForConversation(conversationJid: string): Promise<number> {
+  async countForConversation(conversationJid: BareJID): Promise<number> {
     const db = await getDB()
     const tx = db.transaction('messages', 'readonly')
     const index = tx.store.index('by-conversationJid')
@@ -210,7 +211,7 @@ export class MessageRepository {
   async updateStatus(messageId: string, status: MessageStatus): Promise<void> {
     const db = await getDB()
     const tx = db.transaction('messages', 'readwrite')
-    let conversationJid: string | null = null
+    let conversationJid: BareJID | null = null
     
     try {
       const existing = await tx.store.get(messageId)
@@ -293,7 +294,7 @@ export class MessageRepository {
    * Operazione critica: scarica → svuota → salva tutto insieme
    * Notifica i listener dopo il completamento
    */
-  async replaceAllForConversation(conversationJid: string, messages: Message[]): Promise<void> {
+  async replaceAllForConversation(conversationJid: BareJID, messages: Message[]): Promise<void> {
     const db = await getDB()
     const tx = db.transaction('messages', 'readwrite')
 
@@ -326,7 +327,7 @@ export class MessageRepository {
    * Svuota tutti i messaggi di una conversazione
    * Notifica i listener dopo la cancellazione
    */
-  async clearForConversation(conversationJid: string): Promise<void> {
+  async clearForConversation(conversationJid: BareJID): Promise<void> {
     const db = await getDB()
     const tx = db.transaction('messages', 'readwrite')
     

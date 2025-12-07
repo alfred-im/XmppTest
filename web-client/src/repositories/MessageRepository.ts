@@ -18,6 +18,7 @@ import {
   deleteMessage as dbDeleteMessage,
   clearMessagesForConversation as dbClearMessagesForConversation,
 } from '../services/conversations-db'
+import type { BareJID } from '../types/jid'
 
 export class MessageRepository {
   /**
@@ -38,7 +39,7 @@ export class MessageRepository {
    * Recupera messaggi per una conversazione
    */
   async getByConversationJid(
-    conversationJid: string,
+    conversationJid: BareJID,
     options?: {
       limit?: number
       before?: Date
@@ -78,7 +79,7 @@ export class MessageRepository {
   /**
    * Conta messaggi per una conversazione
    */
-  async countByConversationJid(conversationJid: string): Promise<number> {
+  async countByConversationJid(conversationJid: BareJID): Promise<number> {
     return dbCountMessagesForConversation(conversationJid)
   }
 
@@ -106,7 +107,7 @@ export class MessageRepository {
   /**
    * Elimina tutti i messaggi di una conversazione
    */
-  async deleteByConversationJid(conversationJid: string): Promise<void> {
+  async deleteByConversationJid(conversationJid: BareJID): Promise<void> {
     return dbClearMessagesForConversation(conversationJid)
   }
 
@@ -114,7 +115,7 @@ export class MessageRepository {
    * Recupera l'ultimo messaggio di una conversazione
    */
   async getLastByConversationJid(
-    conversationJid: string
+    conversationJid: BareJID
   ): Promise<Message | null> {
     const messages = await this.getByConversationJid(conversationJid, {
       limit: 1,
@@ -126,7 +127,7 @@ export class MessageRepository {
    * Recupera messaggi con status specifico per una conversazione
    */
   async getByStatus(
-    conversationJid: string,
+    conversationJid: BareJID,
     status: MessageStatus
   ): Promise<Message[]> {
     const allMessages = await this.getByConversationJid(conversationJid)
@@ -144,14 +145,14 @@ export class MessageRepository {
   /**
    * Recupera messaggi pendenti (non ancora inviati)
    */
-  async getPending(conversationJid: string): Promise<Message[]> {
+  async getPending(conversationJid: BareJID): Promise<Message[]> {
     return this.getByStatus(conversationJid, 'pending')
   }
 
   /**
    * Recupera messaggi falliti
    */
-  async getFailed(conversationJid: string): Promise<Message[]> {
+  async getFailed(conversationJid: BareJID): Promise<Message[]> {
     return this.getByStatus(conversationJid, 'failed')
   }
 }

@@ -10,7 +10,8 @@ import {
 } from '../services/messages'
 import { mergeMessages } from '../utils/message'
 import { PAGINATION } from '../config/constants'
-import { normalizeJid } from '../utils/jid'
+import { normalizeJID } from '../utils/jid'
+import type { BareJID } from '../types/jid'
 import { messageRepository } from '../services/repositories'
 
 interface UseMessagesOptions {
@@ -72,8 +73,8 @@ export function useMessages({
   const messages = useMemo(() => {
     if (!client?.jid || !jid) return messagesRaw
     
-    const myBareJid = normalizeJid(client.jid)
-    const contactBareJid = normalizeJid(jid)
+    const myBareJid = normalizeJID(client.jid)
+    const contactBareJid = normalizeJID(jid)
     const isSelfChat = myBareJid === contactBareJid
     
     return applySelfChatLogic(messagesRaw, isSelfChat)
@@ -104,7 +105,8 @@ export function useMessages({
 
     try {
       // Prima carica dalla cache locale (veloce)
-      const localMessages = await getLocalMessages(jid, { limit: PAGINATION.DEFAULT_MESSAGE_LIMIT })
+      const normalizedJid = normalizeJID(jid)
+      const localMessages = await getLocalMessages(normalizedJid, { limit: PAGINATION.DEFAULT_MESSAGE_LIMIT })
       if (localMessages.length > 0 && isMountedRef.current) {
         safeSetMessages(() => localMessages)
         setIsLoading(false)
@@ -145,19 +147,19 @@ export function useMessages({
   useEffect(() => {
     if (!jid) return
 
-    const normalizedJid = normalizeJid(jid)
+    const normalizedJid: BareJID = normalizeJID(jid)
     
     console.log(`👀 useMessages: registro observer per ${normalizedJid}`)
     
     // Callback chiamato quando il database cambia
-    const handleDatabaseChange = async () => {
+    const handleDatabaseChange = async (conversationJid: BareJID) => {
       if (!isMountedRef.current) return
 
-      console.log(`🔄 useMessages: database cambiato per ${normalizedJid}, ricarico messaggi...`)
+      console.log(`🔄 useMessages: database cambiato per ${conversationJid}, ricarico messaggi...`)
       
       try {
         // Ricarica messaggi dal database locale
-        const allMessages = await getLocalMessages(normalizedJid)
+        const allMessages = await getLocalMessages(conversationJid)
         
         console.log(`   - Caricati ${allMessages.length} messaggi dal DB`)
         
@@ -193,25 +195,27 @@ export function useMessages({
   useEffect(() => {
     if (!client || !isConnected || !jid) return
 
-    const myBareJid = client.jid ? normalizeJid(client.jid) : ''
+    const myBareJid: BareJID | '' = client.jid ? normalizeJID(client.jid) : ''
+    const currentJid: BareJID = normalizeJID(jid)
     
     const handleMessage = async (message: any) => {
       // Filtra solo messaggi per questa conversazione
       if (!message.from || !message.body) return
 
-      const from = normalizeJid(message.from)
-      const to = message.to ? normalizeJid(message.to) : ''
+      const from: BareJID = normalizeJID(message.from)
+      const to: BareJID | null = message.to ? normalizeJID(message.to) : null
       
       // Determina il JID del contatto
-      const contactJid = from === myBareJid ? to : from
+      if (!to && from === myBareJid) return // Non possiamo determinare il contatto se non c'è un 'to'
+      const contactJid: BareJID = from === myBareJid ? to! : from
       
       // Se il messaggio è per questa conversazione, ricarica i messaggi
-      if (normalizeJid(contactJid) === normalizeJid(jid)) {
+      if (contactJid === currentJid) {
         // Aspetta un attimo per permettere a MessagingContext di sincronizzare
         await new Promise(resolve => setTimeout(resolve, 500))
         
         try {
-          const allMessages = await getLocalMessages(jid)
+          const allMessages = await getLocalMessages(currentJid)
           if (isMountedRef.current) {
             safeSetMessages(() => allMessages)
             
@@ -316,7 +320,8 @@ export function useMessages({
         if (result.success) {
           // Dopo la sincronizzazione, ricarica tutti i messaggi dal DB locale
           // (che ora contiene i dati sincronizzati dal server)
-          const allMessages = await getLocalMessages(jid)
+          const normalizedJid = normalizeJID(jid)
+          const allMessages = await getLocalMessages(normalizedJid)
 
           if (isMountedRef.current) {
             safeSetMessages(() => allMessages)

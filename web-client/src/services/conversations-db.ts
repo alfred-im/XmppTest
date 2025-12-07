@@ -329,7 +329,7 @@ export async function addMessage(message: Message): Promise<void> {
  * Ordinati per timestamp (più vecchi prima per il rendering)
  */
 export async function getMessagesForConversation(
-  conversationJid: string,
+  conversationJid: BareJID,
   options?: {
     limit?: number
     before?: Date // Carica messaggi prima di questa data (per paginazione)
@@ -376,7 +376,7 @@ export async function getMessagesForConversation(
 /**
  * Conta il numero di messaggi per una conversazione
  */
-export async function countMessagesForConversation(conversationJid: string): Promise<number> {
+export async function countMessagesForConversation(conversationJid: BareJID): Promise<number> {
   const db = await getDB()
   const tx = db.transaction('messages', 'readonly')
   const index = tx.store.index('by-conversationJid')
@@ -460,7 +460,7 @@ export async function deleteMessage(messageId: string): Promise<void> {
  * Pulisce tutti i messaggi di una conversazione
  * Usa MessageRepository per notificare observer
  */
-export async function clearMessagesForConversation(conversationJid: string): Promise<void> {
+export async function clearMessagesForConversation(conversationJid: BareJID): Promise<void> {
   // Usa il repository singleton per notificare gli observer
   const { messageRepository } = await import('./repositories')
   await messageRepository.clearForConversation(conversationJid)
