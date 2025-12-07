@@ -23,11 +23,18 @@ export function MessagingProvider({ children }: { children: ReactNode }) {
     if (!client || !isConnected || !jid) return
 
     const handleMessage = async (message: ReceivedMessage) => {
-      if (!message.body) return
+      console.log('📨 MessagingContext: messaggio ricevuto', { from: message.from, body: message.body })
+      
+      if (!message.body) {
+        console.log('   ⚠️ Messaggio senza body, ignorato')
+        return
+      }
 
       try {
+        console.log('   🔄 Sincronizzo dal server...')
         // Sincronizza dal server
         await handleIncomingMessageAndSync(client, message, jid)
+        console.log('   ✓ Sincronizzazione completata')
 
         // Aggiorna lista conversazioni
         await reloadFromDB()
@@ -37,7 +44,7 @@ export function MessagingProvider({ children }: { children: ReactNode }) {
           callback(message)
         })
       } catch (error) {
-        console.error('Errore nella gestione messaggio:', error)
+        console.error('❌ Errore nella gestione messaggio:', error)
       }
     }
 

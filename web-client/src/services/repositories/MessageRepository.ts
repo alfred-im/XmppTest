@@ -50,11 +50,16 @@ export class MessageRepository {
    * Notifica tutti i listener interessati a una conversazione
    */
   private notifyListeners(conversationJid: string): void {
+    console.log(`🔔 MessageRepository: notifica listener per ${conversationJid}`)
+    console.log(`   - Listener specifici: ${this.listeners.get(conversationJid)?.size || 0}`)
+    console.log(`   - Listener globali: ${this.globalListeners.size}`)
+    
     // Notifica listener specifici per questa conversazione
     const specificListeners = this.listeners.get(conversationJid)
     if (specificListeners) {
       specificListeners.forEach(listener => {
         try {
+          console.log(`   ✓ Chiamata listener specifico per ${conversationJid}`)
           listener(conversationJid)
         } catch (error) {
           console.error('Errore nel listener messaggi:', error)
@@ -65,6 +70,7 @@ export class MessageRepository {
     // Notifica listener globali
     this.globalListeners.forEach(listener => {
       try {
+        console.log(`   ✓ Chiamata listener globale per ${conversationJid}`)
         listener(conversationJid)
       } catch (error) {
         console.error('Errore nel listener globale messaggi:', error)

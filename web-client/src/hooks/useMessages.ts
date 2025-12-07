@@ -147,15 +147,19 @@ export function useMessages({
 
     const normalizedJid = normalizeJid(jid)
     
+    console.log(`👀 useMessages: registro observer per ${normalizedJid}`)
+    
     // Callback chiamato quando il database cambia
     const handleDatabaseChange = async () => {
       if (!isMountedRef.current) return
 
-      console.debug(`Database cambiato per conversazione ${normalizedJid}, ricarico messaggi...`)
+      console.log(`🔄 useMessages: database cambiato per ${normalizedJid}, ricarico messaggi...`)
       
       try {
         // Ricarica messaggi dal database locale
         const allMessages = await getLocalMessages(normalizedJid)
+        
+        console.log(`   - Caricati ${allMessages.length} messaggi dal DB`)
         
         if (isMountedRef.current) {
           safeSetMessages(() => allMessages)
@@ -173,9 +177,14 @@ export function useMessages({
 
     // Registra observer sul repository
     const unsubscribe = messageRepository.observe(normalizedJid, handleDatabaseChange)
+    
+    console.log(`✓ useMessages: observer registrato per ${normalizedJid}`)
 
     // Cleanup: rimuove observer quando componente unmonta o jid cambia
-    return unsubscribe
+    return () => {
+      console.log(`🗑️ useMessages: rimuovo observer per ${normalizedJid}`)
+      unsubscribe()
+    }
   }, [jid, safeSetMessages, onNewMessage])
 
   // Sottoscrizione ai messaggi in tempo reale

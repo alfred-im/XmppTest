@@ -273,9 +273,14 @@ export async function clearConversations(): Promise<void> {
 export async function saveMessages(messages: Message[]): Promise<void> {
   if (messages.length === 0) return
 
+  console.log(`💾 saveMessages: salvando ${messages.length} messaggi`)
+  console.log(`   - Conversazioni: ${[...new Set(messages.map(m => m.conversationJid))].join(', ')}`)
+  
   // Usa il repository singleton per notificare gli observer
   const { messageRepository } = await import('./repositories')
   await messageRepository.saveAll(messages)
+  
+  console.log(`✓ saveMessages completato`)
 }
 
 /**
