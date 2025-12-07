@@ -132,42 +132,50 @@ export async function getPushSubscription(
 
     // Non abbiamo una subscription, creiamola
     // Se abbiamo la chiave, usala; altrimenti prova senza (per servizi che non richiedono VAPID)
-    try {
-      let newSubscription: PushSubscription
-      
-      if (applicationServerKey) {
+    if (applicationServerKey) {
+      try {
+        console.log('🔑 Push Notifications: Creazione subscription con chiave VAPID...')
         const key = urlBase64ToUint8Array(applicationServerKey)
         const sub = await registration.pushManager.subscribe({
           userVisibleOnly: true,
           applicationServerKey: key as BufferSource,
         })
-        newSubscription = {
+        const newSubscription: PushSubscription = {
           endpoint: sub.endpoint,
           keys: {
             p256dh: arrayBufferToBase64(sub.getKey('p256dh')!),
             auth: arrayBufferToBase64(sub.getKey('auth')!),
           },
         }
-      } else {
-        // Prova senza chiave (per servizi push che non richiedono VAPID)
-        // Nota: molti browser richiedono comunque una chiave, quindi questo potrebbe fallire
+        console.log('✅ Push Notifications: Subscription creata con successo')
+        return newSubscription
+      } catch (error) {
+        console.error('❌ Push Notifications: Impossibile creare subscription CON chiave VAPID:', error)
+        console.error('   Dettagli errore:', error instanceof Error ? error.message : JSON.stringify(error))
+        return null
+      }
+    } else {
+      // Prova senza chiave (per servizi push che non richiedono VAPID)
+      // Nota: molti browser richiedono comunque una chiave, quindi questo potrebbe fallire
+      try {
+        console.log('⚠️ Push Notifications: Tentativo creazione subscription SENZA chiave VAPID...')
         const sub = await registration.pushManager.subscribe({
           userVisibleOnly: true,
         })
-        newSubscription = {
+        const newSubscription: PushSubscription = {
           endpoint: sub.endpoint,
           keys: {
             p256dh: arrayBufferToBase64(sub.getKey('p256dh')!),
             auth: arrayBufferToBase64(sub.getKey('auth')!),
           },
         }
+        console.log('✅ Push Notifications: Subscription creata senza VAPID (inusuale)')
+        return newSubscription
+      } catch (error) {
+        console.warn('❌ Push Notifications: Impossibile creare subscription SENZA chiave VAPID:', error)
+        console.warn('💡 Questo è normale - i browser moderni richiedono chiavi VAPID')
+        return null
       }
-
-      return newSubscription
-    } catch (error) {
-      console.warn('Impossibile creare subscription push senza chiave VAPID:', error)
-      console.warn('Alcuni browser richiedono una chiave VAPID per le push notifications')
-      return null
     }
   } catch (error) {
     console.error('Errore nella gestione push subscription:', error)
