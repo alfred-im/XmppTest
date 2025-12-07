@@ -7,6 +7,7 @@ import {
   type Message,
 } from './conversations-db'
 import { normalizeJID } from '../utils/jid'
+import type { BareJID } from '../types/jid'
 import { generateTempId } from '../utils/message'
 import { PAGINATION } from '../config/constants'
 import { sincronizza } from './sync'

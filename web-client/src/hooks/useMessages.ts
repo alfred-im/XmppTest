@@ -105,7 +105,8 @@ export function useMessages({
 
     try {
       // Prima carica dalla cache locale (veloce)
-      const localMessages = await getLocalMessages(jid, { limit: PAGINATION.DEFAULT_MESSAGE_LIMIT })
+      const normalizedJid = normalizeJID(jid)
+      const localMessages = await getLocalMessages(normalizedJid, { limit: PAGINATION.DEFAULT_MESSAGE_LIMIT })
       if (localMessages.length > 0 && isMountedRef.current) {
         safeSetMessages(() => localMessages)
         setIsLoading(false)
@@ -202,10 +203,11 @@ export function useMessages({
       if (!message.from || !message.body) return
 
       const from: BareJID = normalizeJID(message.from)
-      const to: BareJID | '' = message.to ? normalizeJID(message.to) : ''
+      const to: BareJID | null = message.to ? normalizeJID(message.to) : null
       
       // Determina il JID del contatto
-      const contactJid: BareJID = from === myBareJid ? to : from
+      if (!to && from === myBareJid) return // Non possiamo determinare il contatto se non c'è un 'to'
+      const contactJid: BareJID = from === myBareJid ? to! : from
       
       // Se il messaggio è per questa conversazione, ricarica i messaggi
       if (contactJid === currentJid) {
@@ -318,7 +320,8 @@ export function useMessages({
         if (result.success) {
           // Dopo la sincronizzazione, ricarica tutti i messaggi dal DB locale
           // (che ora contiene i dati sincronizzati dal server)
-          const allMessages = await getLocalMessages(jid)
+          const normalizedJid = normalizeJID(jid)
+          const allMessages = await getLocalMessages(normalizedJid)
 
           if (isMountedRef.current) {
             safeSetMessages(() => allMessages)

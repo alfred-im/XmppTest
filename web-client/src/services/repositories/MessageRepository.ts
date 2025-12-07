@@ -88,7 +88,7 @@ export class MessageRepository {
 
     const db = await getDB()
     const tx = db.transaction('messages', 'readwrite')
-    const affectedConversations = new Set<string>()
+    const affectedConversations = new Set<BareJID>()
 
     try {
       for (const message of messages) {
@@ -211,7 +211,7 @@ export class MessageRepository {
   async updateStatus(messageId: string, status: MessageStatus): Promise<void> {
     const db = await getDB()
     const tx = db.transaction('messages', 'readwrite')
-    let conversationJid: string | null = null
+    let conversationJid: BareJID | null = null
     
     try {
       const existing = await tx.store.get(messageId)

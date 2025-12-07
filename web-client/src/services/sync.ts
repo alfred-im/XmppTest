@@ -3,7 +3,6 @@ import type { ReceivedMessage } from 'stanza/protocol'
 import { normalizeJID } from '../utils/jid'
 import { reloadAllMessagesFromServer } from './messages'
 import { loadAllConversations } from './conversations'
-import { clearMessagesForConversation } from './conversations-db'
 import { updateConversation } from './conversations-db'
 
 /**
