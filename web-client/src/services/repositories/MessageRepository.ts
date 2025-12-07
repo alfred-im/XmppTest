@@ -1,5 +1,6 @@
 import { getDB } from '../conversations-db'
 import type { Message, MessageStatus } from '../conversations-db'
+import { normalizeJID } from '../../utils/jid'
 
 /**
  * Callback chiamato quando i messaggi di una conversazione cambiano
@@ -16,20 +17,29 @@ export class MessageRepository {
   private globalListeners: Set<MessageChangeListener> = new Set()
 
   /**
+   * Normalizza un JID per garantire coerenza
+   */
+  private normalizeJid(jid: string): string {
+    return normalizeJID(jid)
+  }
+
+  /**
    * Registra un listener per osservare cambiamenti su una conversazione specifica
    * @param conversationJid - JID della conversazione da osservare
    * @param listener - Callback chiamato quando i messaggi cambiano
    * @returns Funzione per rimuovere il listener
    */
   observe(conversationJid: string, listener: MessageChangeListener): () => void {
-    if (!this.listeners.has(conversationJid)) {
-      this.listeners.set(conversationJid, new Set())
+    const normalizedJid = this.normalizeJid(conversationJid)
+    
+    if (!this.listeners.has(normalizedJid)) {
+      this.listeners.set(normalizedJid, new Set())
     }
-    this.listeners.get(conversationJid)!.add(listener)
+    this.listeners.get(normalizedJid)!.add(listener)
 
     // Ritorna funzione per unsubscribe
     return () => {
-      this.listeners.get(conversationJid)?.delete(listener)
+      this.listeners.get(normalizedJid)?.delete(listener)
     }
   }
 
@@ -50,17 +60,20 @@ export class MessageRepository {
    * Notifica tutti i listener interessati a una conversazione
    */
   private notifyListeners(conversationJid: string): void {
-    console.log(`🔔 MessageRepository: notifica listener per ${conversationJid}`)
-    console.log(`   - Listener specifici: ${this.listeners.get(conversationJid)?.size || 0}`)
+    // Normalizza il JID per garantire coerenza
+    const normalizedJid = this.normalizeJid(conversationJid)
+    
+    console.log(`🔔 MessageRepository: notifica listener per ${normalizedJid}`)
+    console.log(`   - Listener specifici: ${this.listeners.get(normalizedJid)?.size || 0}`)
     console.log(`   - Listener globali: ${this.globalListeners.size}`)
     
     // Notifica listener specifici per questa conversazione
-    const specificListeners = this.listeners.get(conversationJid)
+    const specificListeners = this.listeners.get(normalizedJid)
     if (specificListeners) {
       specificListeners.forEach(listener => {
         try {
-          console.log(`   ✓ Chiamata listener specifico per ${conversationJid}`)
-          listener(conversationJid)
+          console.log(`   ✓ Chiamata listener specifico per ${normalizedJid}`)
+          listener(normalizedJid)
         } catch (error) {
           console.error('Errore nel listener messaggi:', error)
         }
@@ -70,8 +83,8 @@ export class MessageRepository {
     // Notifica listener globali
     this.globalListeners.forEach(listener => {
       try {
-        console.log(`   ✓ Chiamata listener globale per ${conversationJid}`)
-        listener(conversationJid)
+        console.log(`   ✓ Chiamata listener globale per ${normalizedJid}`)
+        listener(normalizedJid)
       } catch (error) {
         console.error('Errore nel listener globale messaggi:', error)
       }
@@ -91,18 +104,27 @@ export class MessageRepository {
 
     try {
       for (const message of messages) {
-        // Traccia conversazioni modificate
-        affectedConversations.add(message.conversationJid)
+        // Normalizza il JID della conversazione per garantire coerenza
+        const normalizedJid = this.normalizeJid(message.conversationJid)
+        
+        // Traccia conversazioni modificate (con JID normalizzato)
+        affectedConversations.add(normalizedJid)
+        
+        // Assicurati che il messaggio abbia il JID normalizzato
+        const normalizedMessage = {
+          ...message,
+          conversationJid: normalizedJid,
+        }
         
         // Verifica se esiste già (de-duplicazione per messageId)
-        const existing = await tx.store.get(message.messageId)
+        const existing = await tx.store.get(normalizedMessage.messageId)
         
         if (!existing) {
           // Nuovo messaggio - inserisci
-          await tx.store.put(message)
+          await tx.store.put(normalizedMessage)
         } else {
           // Messaggio esiste - aggiorna solo se necessario
-          const shouldUpdate = this.shouldUpdateExisting(existing, message)
+          const shouldUpdate = this.shouldUpdateExisting(existing, normalizedMessage)
           
           if (shouldUpdate.update) {
             await tx.store.put(shouldUpdate.updated)
@@ -155,6 +177,7 @@ export class MessageRepository {
       before?: Date
     }
   ): Promise<Message[]> {
+    const normalizedJid = this.normalizeJid(conversationJid)
     const db = await getDB()
     const tx = db.transaction('messages', 'readonly')
     const index = tx.store.index('by-conversation-timestamp')
@@ -163,15 +186,15 @@ export class MessageRepository {
     let range: IDBKeyRange
     if (options?.before) {
       range = IDBKeyRange.bound(
-        [conversationJid, new Date(0)],
-        [conversationJid, options.before],
+        [normalizedJid, new Date(0)],
+        [normalizedJid, options.before],
         false,
         true // exclude upper bound
       )
     } else {
       range = IDBKeyRange.bound(
-        [conversationJid, new Date(0)],
-        [conversationJid, new Date(Date.now() + 86400000)],
+        [normalizedJid, new Date(0)],
+        [normalizedJid, new Date(Date.now() + 86400000)],
         false,
         false
       )
@@ -195,10 +218,11 @@ export class MessageRepository {
    * Conta messaggi per una conversazione
    */
   async countForConversation(conversationJid: string): Promise<number> {
+    const normalizedJid = this.normalizeJid(conversationJid)
     const db = await getDB()
     const tx = db.transaction('messages', 'readonly')
     const index = tx.store.index('by-conversationJid')
-    const count = await index.count(conversationJid)
+    const count = await index.count(normalizedJid)
     await tx.done
     return count
   }
@@ -294,28 +318,33 @@ export class MessageRepository {
    * Notifica i listener dopo il completamento
    */
   async replaceAllForConversation(conversationJid: string, messages: Message[]): Promise<void> {
+    const normalizedJid = this.normalizeJid(conversationJid)
     const db = await getDB()
     const tx = db.transaction('messages', 'readwrite')
 
     try {
       // 1. Elimina tutti i messaggi esistenti per questa conversazione
       const index = tx.store.index('by-conversationJid')
-      let cursor = await index.openCursor(conversationJid)
+      let cursor = await index.openCursor(normalizedJid)
       
       while (cursor) {
         await cursor.delete()
         cursor = await cursor.continue()
       }
 
-      // 2. Inserisci tutti i nuovi messaggi
+      // 2. Inserisci tutti i nuovi messaggi (con JID normalizzato)
       for (const message of messages) {
-        await tx.store.put(message)
+        const normalizedMessage = {
+          ...message,
+          conversationJid: normalizedJid,
+        }
+        await tx.store.put(normalizedMessage)
       }
 
       await tx.done
       
       // Notifica i listener
-      this.notifyListeners(conversationJid)
+      this.notifyListeners(normalizedJid)
     } catch (error) {
       console.error('Errore nella sostituzione messaggi:', error)
       throw new Error('Impossibile sostituire i messaggi della conversazione')
@@ -327,12 +356,13 @@ export class MessageRepository {
    * Notifica i listener dopo la cancellazione
    */
   async clearForConversation(conversationJid: string): Promise<void> {
+    const normalizedJid = this.normalizeJid(conversationJid)
     const db = await getDB()
     const tx = db.transaction('messages', 'readwrite')
     
     try {
       const index = tx.store.index('by-conversationJid')
-      let cursor = await index.openCursor(conversationJid)
+      let cursor = await index.openCursor(normalizedJid)
       
       while (cursor) {
         await cursor.delete()
@@ -342,7 +372,7 @@ export class MessageRepository {
       await tx.done
       
       // Notifica i listener
-      this.notifyListeners(conversationJid)
+      this.notifyListeners(normalizedJid)
     } catch (error) {
       console.error('Errore nella cancellazione messaggi:', error)
       throw new Error('Impossibile cancellare i messaggi della conversazione')
