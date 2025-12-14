@@ -3,7 +3,7 @@ import type { ReceivedMessage } from 'stanza/protocol'
 import { normalizeJID } from '../utils/jid'
 import { reloadAllMessagesFromServer } from './messages'
 import { loadAllConversations } from './conversations'
-import { updateConversation } from './conversations-db'
+import { updateConversation, getDB } from './conversations-db'
 
 /**
  * Tipo per le azioni che possono essere sincronizzate
@@ -256,6 +256,7 @@ class SyncManager {
   /**
    * Gestisce un messaggio ricevuto in real-time
    * Dopo averlo ricevuto, sincronizza la conversazione completa
+   * e incrementa il contatore messaggi non letti se il messaggio è da altri
    * 
    * @param message - Messaggio ricevuto
    * @param myJid - JID dell'utente corrente
@@ -266,17 +267,42 @@ class SyncManager {
       return { success: false, error: 'Messaggio o client non valido' }
     }
 
-  // Determina il JID del contatto
-  const myBareJid = normalizeJID(myJid)
-  const from = message.from || ''
-  const to = message.to || ''
-  const contactJid = from.startsWith(myBareJid) 
-    ? normalizeJID(to) 
-    : normalizeJID(from)
+    // Determina il JID del contatto
+    const myBareJid = normalizeJID(myJid)
+    const from = message.from || ''
+    const to = message.to || ''
+    
+    // Controlla se il messaggio è da me o da qualcun altro
+    const isFromMe = from.toLowerCase().startsWith(myBareJid.toLowerCase())
+    
+    const contactJid = isFromMe 
+      ? normalizeJID(to) 
+      : normalizeJID(from)
 
-  if (!contactJid) {
-    return { success: false, error: 'JID contatto non valido' }
-  }
+    if (!contactJid) {
+      return { success: false, error: 'JID contatto non valido' }
+    }
+
+    // Se il messaggio è da qualcun altro, incrementa il contatore non letti
+    if (!isFromMe) {
+      try {
+        const db = await getDB()
+        const tx = db.transaction('conversations', 'readwrite')
+        const conversation = await tx.store.get(contactJid)
+        
+        if (conversation) {
+          // Incrementa il contatore
+          await tx.store.put({
+            ...conversation,
+            unreadCount: (conversation.unreadCount || 0) + 1
+          })
+        }
+        await tx.done
+        console.log(`📬 Incrementato unreadCount per ${contactJid}`)
+      } catch (error) {
+        console.error('Errore nell\'incremento unreadCount:', error)
+      }
+    }
 
     // Sincronizza la conversazione completa dal server
     // Questo garantisce che abbiamo tutti i messaggi aggiornati
