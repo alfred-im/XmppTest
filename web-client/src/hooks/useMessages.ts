@@ -68,6 +68,12 @@ export function useMessages({
   const [firstToken, setFirstToken] = useState<string | undefined>(undefined)
   
   const isMountedRef = useRef(true)
+  
+  // Per tracciare se sono arrivati NUOVI messaggi (non solo aggiornamenti)
+  const lastMessageCountRef = useRef(0)
+  
+  // Flag per ignorare onNewMessage durante operazioni che non sono "nuovi messaggi"
+  const skipNextOnNewMessageRef = useRef(false)
 
   // Applica logica self-chat ai messaggi per visualizzazione corretta
   const messages = useMemo(() => {
@@ -108,6 +114,7 @@ export function useMessages({
       const normalizedJid = normalizeJID(jid)
       const localMessages = await getLocalMessages(normalizedJid, { limit: PAGINATION.DEFAULT_MESSAGE_LIMIT })
       if (localMessages.length > 0 && isMountedRef.current) {
+        lastMessageCountRef.current = localMessages.length
         safeSetMessages(() => localMessages)
         setIsLoading(false)
       }
@@ -120,7 +127,11 @@ export function useMessages({
       if (!isMountedRef.current) return
 
       // Merge con messaggi esistenti per evitare sostituzione brusca
-      safeSetMessages((prev) => mergeMessages(prev, result.messages))
+      safeSetMessages((prev) => {
+        const merged = mergeMessages(prev, result.messages)
+        lastMessageCountRef.current = merged.length
+        return merged
+      })
       setHasMoreMessages(!result.complete)
       setFirstToken(result.firstToken)
     } catch (err) {
@@ -160,14 +171,27 @@ export function useMessages({
       try {
         // Ricarica messaggi dal database locale
         const allMessages = await getLocalMessages(conversationJid)
+        const prevCount = lastMessageCountRef.current
         
-        console.log(`   - Caricati ${allMessages.length} messaggi dal DB`)
+        console.log(`   - Caricati ${allMessages.length} messaggi dal DB (precedenti: ${prevCount})`)
         
         if (isMountedRef.current) {
+          // Aggiorna il contatore PRIMA di chiamare onNewMessage
+          lastMessageCountRef.current = allMessages.length
+          
           safeSetMessages(() => allMessages)
           
-          // Notifica nuovo messaggio se callback presente
-          if (onNewMessage && allMessages.length > 0) {
+          // Notifica SOLO se sono arrivati NUOVI messaggi (count aumentato)
+          // Non al caricamento iniziale, loadMore, o altre operazioni di bulk
+          const shouldNotify = onNewMessage && 
+            allMessages.length > prevCount && 
+            prevCount > 0 && 
+            !skipNextOnNewMessageRef.current
+          
+          // Reset del flag
+          skipNextOnNewMessageRef.current = false
+          
+          if (shouldNotify) {
             const newMsg = allMessages[allMessages.length - 1]
             onNewMessage(newMsg)
           }
@@ -200,6 +224,8 @@ export function useMessages({
     if (!client || isLoadingMore || !hasMoreMessages || !firstToken) return
     if (!isMountedRef.current) return
 
+    // Skip onNewMessage durante loadMore (sono messaggi storici, non nuovi)
+    skipNextOnNewMessageRef.current = true
     setIsLoadingMore(true)
 
     try {
@@ -213,7 +239,12 @@ export function useMessages({
 
       if (result.messages.length > 0) {
         // Merge invece di semplice concatenazione per evitare duplicati
-        safeSetMessages((prev) => mergeMessages(result.messages, prev))
+        safeSetMessages((prev) => {
+          const merged = mergeMessages(result.messages, prev)
+          // Aggiorna il contatore per evitare falsi positivi su "nuovi messaggi"
+          lastMessageCountRef.current = merged.length
+          return merged
+        })
         setHasMoreMessages(!result.complete)
         setFirstToken(result.firstToken)
       } else {
@@ -278,13 +309,15 @@ export function useMessages({
           // (che ora contiene i dati sincronizzati dal server)
           const normalizedJid = normalizeJID(jid)
           const allMessages = await getLocalMessages(normalizedJid)
+          const prevCount = lastMessageCountRef.current
 
           if (isMountedRef.current) {
+            lastMessageCountRef.current = allMessages.length
             safeSetMessages(() => allMessages)
           }
 
-          // Notifica nuovo messaggio se callback presente
-          if (onNewMessage && allMessages.length > 0) {
+          // Notifica nuovo messaggio (l'utente ha appena inviato, quindi scrolla)
+          if (onNewMessage && allMessages.length > prevCount) {
             const newMsg = allMessages[allMessages.length - 1]
             onNewMessage(newMsg)
           }

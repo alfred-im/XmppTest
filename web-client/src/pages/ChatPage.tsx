@@ -9,7 +9,7 @@ import { usePullToRefresh } from '../hooks/usePullToRefresh'
 import { useBackButton } from '../hooks/useBackButton'
 import { formatDateSeparator, formatMessageTime, isSameDay } from '../utils/date'
 import { isValidJid } from '../utils/jid'
-import { TEXT_LIMITS } from '../config/constants'
+import { TEXT_LIMITS, PAGINATION } from '../config/constants'
 import './ChatPage.css'
 
 /**
@@ -44,7 +44,17 @@ export function ChatPage() {
   // Gestione back button
   useBackButton()
 
+  // Custom hook per gestione scroll (design binario - NESSUN EFFETTO)
+  const {
+    messagesContainerRef,
+    messagesEndRef,
+    handleScroll: baseHandleScroll,
+    scrollToBottom,
+    scrollToBottomIfAnchored,
+  } = useChatScroll()
+
   // Custom hook per gestione messaggi
+  // onNewMessage viene chiamato quando arrivano nuovi messaggi → scrolla se agganciato
   const {
     messages,
     isLoading,
@@ -59,21 +69,24 @@ export function ChatPage() {
     jid,
     client,
     isConnected,
+    onNewMessage: scrollToBottomIfAnchored, // Collegamento imperativo!
   })
 
-  // Custom hook per gestione scroll
-  const {
-    messagesContainerRef,
-    messagesEndRef,
-    isAtBottomRef,
-    handleScroll,
-    scrollToBottom,
-  } = useChatScroll({
-    messages,
-    isLoadingMore,
-    hasMoreMessages,
-    onLoadMore: loadMoreMessages,
-  })
+  // Handler scroll che combina aggiornamento stato + trigger loadMore
+  const handleScroll = useCallback(() => {
+    baseHandleScroll()
+    
+    // Trigger loadMore se vicino al top
+    const container = messagesContainerRef.current
+    if (
+      container &&
+      container.scrollTop < PAGINATION.LOAD_MORE_THRESHOLD &&
+      hasMoreMessages &&
+      !isLoadingMore
+    ) {
+      loadMoreMessages()
+    }
+  }, [baseHandleScroll, messagesContainerRef, hasMoreMessages, isLoadingMore, loadMoreMessages])
 
   // Custom hook per pull-to-refresh
   const {
@@ -117,54 +130,43 @@ export function ChatPage() {
 
   // Handle virtual keyboard on mobile
   useEffect(() => {
-    // Prevent viewport resize when keyboard opens on mobile
+    if (!window.visualViewport) return
+
+    let lastKeyboardHeight = 0
+
     const handleResize = () => {
-      // On mobile devices, use visualViewport if available
-      if (window.visualViewport && messagesContainerRef.current) {
-        const viewport = window.visualViewport
-        const viewportHeight = viewport.height
-        
-        // Adjust messages container to account for keyboard
-        const messagesContainer = messagesContainerRef.current
-        if (messagesContainer) {
-          // Calculate new bottom position accounting for keyboard
-          const inputHeight = 68
-          const keyboardHeight = window.innerHeight - viewportHeight
-          
-          // Only adjust if keyboard is actually open (significant height difference)
-          if (keyboardHeight > 50) {
-            // Keyboard is open - adjust the bottom to keep messages visible
-            messagesContainer.style.bottom = `${inputHeight}px`
-            messagesContainer.style.paddingBottom = `${keyboardHeight}px`
-          } else {
-            // Keyboard is closed - reset to normal
-            messagesContainer.style.bottom = '68px'
-            messagesContainer.style.paddingBottom = '1rem'
-          }
-          
-          // If user was at bottom, keep them at bottom after keyboard opens
-          if (isAtBottomRef.current && messagesEndRef.current) {
-            setTimeout(() => {
-              messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-            }, 100)
-          }
-        }
+      const container = messagesContainerRef.current
+      if (!container) return
+
+      const viewport = window.visualViewport!
+      const keyboardHeight = window.innerHeight - viewport.height
+      const keyboardJustOpened = keyboardHeight > 50 && lastKeyboardHeight <= 50
+      
+      // Aggiorna layout del container
+      const inputHeight = 68
+      if (keyboardHeight > 50) {
+        container.style.bottom = `${inputHeight}px`
+        container.style.paddingBottom = `${keyboardHeight}px`
+      } else {
+        container.style.bottom = '68px'
+        container.style.paddingBottom = '1rem'
       }
+      
+      // Scrolla in fondo SOLO se la keyboard si è appena aperta
+      // e usa scrollToBottomIfAnchored per rispettare lo stato di aggancio
+      if (keyboardJustOpened) {
+        scrollToBottomIfAnchored()
+      }
+      
+      lastKeyboardHeight = keyboardHeight
     }
 
-    if (window.visualViewport) {
-      window.visualViewport.addEventListener('resize', handleResize)
-      window.visualViewport.addEventListener('scroll', handleResize)
-      
-      // Initial call to set correct state
-      handleResize()
-      
-      return () => {
-        window.visualViewport?.removeEventListener('resize', handleResize)
-        window.visualViewport?.removeEventListener('scroll', handleResize)
-      }
+    window.visualViewport.addEventListener('resize', handleResize)
+    
+    return () => {
+      window.visualViewport?.removeEventListener('resize', handleResize)
     }
-  }, [messagesContainerRef, isAtBottomRef, messagesEndRef])
+  }, [messagesContainerRef, scrollToBottomIfAnchored])
 
   // Subscribe a messaggi real-time
   useEffect(() => {
