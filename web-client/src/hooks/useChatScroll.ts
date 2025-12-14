@@ -55,7 +55,6 @@ export function useChatScroll(): UseChatScrollReturn {
   const scrollToBottom = useCallback((behavior: ScrollBehavior = 'smooth') => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior })
-      isAnchoredRef.current = true
     }
   }, [])
 
