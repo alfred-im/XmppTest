@@ -46,13 +46,4 @@ export const TEXT_LIMITS = {
 export const STORAGE_KEYS = {
   JID: 'xmpp_jid',
   PASSWORD: 'xmpp_password',
-  PUSH_CONFIG: 'push_config',
-} as const;
-
-// Push Notifications Configuration
-export const PUSH_NOTIFICATIONS = {
-  // Chiave pubblica VAPID per Web Push
-  VAPID_PUBLIC_KEY: 'BFpP06Ef7jFJ8aMcVN_-tGMgpDaYiDHxrrB2hXaMzxQKIEPrUWusBIjvOYnZ0rsmWIDVb0m9NTo-5JDwED5vXoA',
-  // JID del servizio push (viene scoperto automaticamente via service discovery)
-  DEFAULT_PUSH_JID: '',
 } as const;

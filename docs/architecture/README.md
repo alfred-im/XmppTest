@@ -19,7 +19,7 @@ UI Layer (Pages, Components)
     ↓
 Context Layer (XmppContext, ConversationsContext, MessagingContext, AuthContext, ConnectionContext)
     ↓
-Services Layer (xmpp.ts, messages.ts, conversations.ts, sync.ts, vcard.ts, push-notifications.ts)
+Services Layer (xmpp.ts, messages.ts, conversations.ts, sync.ts, vcard.ts)
     ↓
 Repository Layer (ConversationRepository, MessageRepository, VCardRepository, MetadataRepository)
     ↓

@@ -61,14 +61,6 @@ Indice documenti tecnici per navigazione rapida. Questo documento è per AI, non
 - [archive/README.md](./archive/README.md)
 - [archive/old-docs/](./archive/old-docs/)
 
-## Push Notifications (Riferimenti)
-
-- [../RIEPILOGO_FIX_PUSH_NOTIFICATIONS.md](../RIEPILOGO_FIX_PUSH_NOTIFICATIONS.md)
-- [../SUMMARY_PUSH_FIX.md](../SUMMARY_PUSH_FIX.md)
-- [../CHANGELOG_PUSH_FIX.md](../CHANGELOG_PUSH_FIX.md)
-- [../web-client/PUSH_NOTIFICATIONS_FIX.md](../web-client/PUSH_NOTIFICATIONS_FIX.md)
-- [../web-client/PUSH_NOTIFICATIONS_ISSUE.md](../web-client/PUSH_NOTIFICATIONS_ISSUE.md)
-
 ---
 
 **Ultimo aggiornamento**: 2025-12-06
