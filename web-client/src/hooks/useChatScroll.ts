@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from 'react'
+import { useRef, useCallback, useLayoutEffect } from 'react'
 import { PAGINATION } from '../config/constants'
 
 interface UseChatScrollOptions {
@@ -22,9 +22,6 @@ interface UseChatScrollReturn {
  * - Se sei in fondo (entro SCROLL_BOTTOM_TOLERANCE pixel) → agganciato → auto-scroll attivo
  * - Se scrolli via anche di 1px oltre la tolleranza → sganciato → auto-scroll disattivato
  * - Per riagganciare: scroll manuale fino in fondo oppure click su "vai in fondo"
- * 
- * @param options - Opzioni di configurazione
- * @returns Oggetto con refs e funzioni per gestire lo scroll
  */
 export function useChatScroll({
   messages,
@@ -36,14 +33,16 @@ export function useChatScroll({
   const messagesEndRef = useRef<HTMLDivElement>(null)
   
   // Flag che traccia se l'utente è "agganciato" al fondo
-  // Aggiornato SOLO durante l'evento scroll dell'utente
   const isAnchoredRef = useRef(true)
   
-  // Per preservare la posizione scroll durante il loadMore
-  const lastScrollHeightRef = useRef(0)
+  // Per gestire il loadMore: salva scrollHeight PRIMA del caricamento
+  const scrollHeightBeforeLoadRef = useRef(0)
   
-  // Per tracciare il numero di messaggi e distinguere nuovi messaggi da loadMore
-  const prevMessagesLengthRef = useRef(messages.length)
+  // Per tracciare se è il primo caricamento
+  const isFirstLoadRef = useRef(true)
+  
+  // Per tracciare il numero precedente di messaggi
+  const prevMessagesCountRef = useRef(0)
 
   /**
    * Scrolla al fondo del container
@@ -56,9 +55,7 @@ export function useChatScroll({
   }, [])
 
   /**
-   * Handler per l'evento scroll.
-   * - Aggiorna lo stato "agganciato" in base alla posizione
-   * - Triggera load more quando vicino al top
+   * Handler per l'evento scroll dell'utente.
    */
   const handleScroll = useCallback(() => {
     if (!messagesContainerRef.current) return
@@ -69,66 +66,60 @@ export function useChatScroll({
     // Aggiorna lo stato "agganciato": sei agganciato SOLO se sei veramente in fondo
     isAnchoredRef.current = distanceFromBottom <= PAGINATION.SCROLL_BOTTOM_TOLERANCE
 
-    // Trigger load more se vicino al top (ma non durante loading)
+    // Trigger load more se vicino al top
     if (
       scrollTop < PAGINATION.LOAD_MORE_THRESHOLD &&
       hasMoreMessages &&
       !isLoadingMore &&
       onLoadMore
     ) {
-      lastScrollHeightRef.current = scrollHeight
+      // Salva scrollHeight PRIMA di caricare nuovi messaggi
+      scrollHeightBeforeLoadRef.current = scrollHeight
       onLoadMore()
     }
   }, [hasMoreMessages, isLoadingMore, onLoadMore])
 
   /**
-   * Effetto per auto-scroll quando arrivano NUOVI messaggi (non caricamento storico)
-   * Scrolla al fondo SOLO se l'utente era agganciato
+   * Effetto principale che gestisce lo scroll quando cambiano i messaggi.
+   * Usa useLayoutEffect per agire PRIMA del paint del browser.
    */
-  useEffect(() => {
-    const currentLength = messages.length
-    const prevLength = prevMessagesLengthRef.current
-    
-    // Aggiorna il contatore per la prossima volta
-    prevMessagesLengthRef.current = currentLength
-
-    // Caso 1: Nuovi messaggi aggiunti in fondo (currentLength > prevLength)
-    // Auto-scroll solo se l'utente era agganciato
-    if (currentLength > prevLength && isAnchoredRef.current) {
-      requestAnimationFrame(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-      })
-    }
-  }, [messages.length])
-
-  /**
-   * Effetto per preservare la posizione scroll dopo loadMore
-   * Quando si caricano messaggi storici (in alto), mantieni la vista sui messaggi che l'utente stava leggendo
-   */
-  useEffect(() => {
-    if (!messagesContainerRef.current || lastScrollHeightRef.current === 0) return
-    
+  useLayoutEffect(() => {
     const container = messagesContainerRef.current
-    const newScrollHeight = container.scrollHeight
-    const heightDifference = newScrollHeight - lastScrollHeightRef.current
+    const endElement = messagesEndRef.current
+    const currentCount = messages.length
+    const prevCount = prevMessagesCountRef.current
     
-    // Sposta lo scroll per compensare i nuovi messaggi aggiunti in alto
-    container.scrollTop = container.scrollTop + heightDifference
+    // Aggiorna il contatore
+    prevMessagesCountRef.current = currentCount
     
-    // Reset per la prossima volta
-    lastScrollHeightRef.current = 0
-  }, [messages.length])
-
-  /**
-   * Scroll iniziale al fondo quando il componente monta con messaggi
-   */
-  useEffect(() => {
-    if (messages.length > 0 && messagesEndRef.current) {
-      // Usa 'instant' per lo scroll iniziale (senza animazione)
-      messagesEndRef.current.scrollIntoView({ behavior: 'instant' as ScrollBehavior })
-      isAnchoredRef.current = true
+    // Caso 0: Nessun messaggio o container non pronto
+    if (currentCount === 0 || !container || !endElement) {
+      return
     }
-  }, []) // Solo al mount
+    
+    // Caso 1: Primo caricamento - scrolla in fondo istantaneamente
+    if (isFirstLoadRef.current) {
+      isFirstLoadRef.current = false
+      endElement.scrollIntoView({ behavior: 'instant' as ScrollBehavior })
+      isAnchoredRef.current = true
+      return
+    }
+    
+    // Caso 2: LoadMore completato - preserva la posizione di lettura
+    if (scrollHeightBeforeLoadRef.current > 0) {
+      const newScrollHeight = container.scrollHeight
+      const heightDifference = newScrollHeight - scrollHeightBeforeLoadRef.current
+      container.scrollTop = container.scrollTop + heightDifference
+      scrollHeightBeforeLoadRef.current = 0
+      return
+    }
+    
+    // Caso 3: Nuovi messaggi arrivati in fondo - auto-scroll solo se agganciato
+    if (currentCount > prevCount && isAnchoredRef.current) {
+      endElement.scrollIntoView({ behavior: 'smooth' })
+    }
+    
+  }, [messages.length])
 
   return {
     messagesContainerRef,
