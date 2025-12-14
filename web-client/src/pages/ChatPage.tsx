@@ -9,7 +9,7 @@ import { usePullToRefresh } from '../hooks/usePullToRefresh'
 import { useBackButton } from '../hooks/useBackButton'
 import { formatDateSeparator, formatMessageTime, isSameDay } from '../utils/date'
 import { isValidJid } from '../utils/jid'
-import { TEXT_LIMITS } from '../config/constants'
+import { TEXT_LIMITS, PAGINATION } from '../config/constants'
 import './ChatPage.css'
 
 /**
@@ -61,11 +61,10 @@ export function ChatPage() {
     isConnected,
   })
 
-  // Custom hook per gestione scroll
+  // Custom hook per gestione scroll (design binario con aggancio esatto)
   const {
     messagesContainerRef,
     messagesEndRef,
-    isAtBottomRef,
     handleScroll,
     scrollToBottom,
   } = useChatScroll({
@@ -117,12 +116,22 @@ export function ChatPage() {
 
   // Handle virtual keyboard on mobile
   useEffect(() => {
+    // Helper per controllare se siamo in fondo (in tempo reale)
+    const isCurrentlyAtBottom = (): boolean => {
+      if (!messagesContainerRef.current) return true
+      const { scrollTop, scrollHeight, clientHeight } = messagesContainerRef.current
+      return scrollHeight - scrollTop - clientHeight <= PAGINATION.SCROLL_BOTTOM_TOLERANCE
+    }
+
     // Prevent viewport resize when keyboard opens on mobile
     const handleResize = () => {
       // On mobile devices, use visualViewport if available
       if (window.visualViewport && messagesContainerRef.current) {
         const viewport = window.visualViewport
         const viewportHeight = viewport.height
+        
+        // Salva se siamo in fondo PRIMA di modificare il layout
+        const wasAtBottom = isCurrentlyAtBottom()
         
         // Adjust messages container to account for keyboard
         const messagesContainer = messagesContainerRef.current
@@ -143,7 +152,7 @@ export function ChatPage() {
           }
           
           // If user was at bottom, keep them at bottom after keyboard opens
-          if (isAtBottomRef.current && messagesEndRef.current) {
+          if (wasAtBottom && messagesEndRef.current) {
             setTimeout(() => {
               messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
             }, 100)
@@ -164,7 +173,7 @@ export function ChatPage() {
         window.visualViewport?.removeEventListener('scroll', handleResize)
       }
     }
-  }, [messagesContainerRef, isAtBottomRef, messagesEndRef])
+  }, [messagesContainerRef, messagesEndRef])
 
   // Subscribe a messaggi real-time
   useEffect(() => {
