@@ -44,7 +44,17 @@ export function ChatPage() {
   // Gestione back button
   useBackButton()
 
+  // Custom hook per gestione scroll (design binario - NESSUN EFFETTO)
+  const {
+    messagesContainerRef,
+    messagesEndRef,
+    handleScroll: baseHandleScroll,
+    scrollToBottom,
+    scrollToBottomIfAnchored,
+  } = useChatScroll()
+
   // Custom hook per gestione messaggi
+  // onNewMessage viene chiamato quando arrivano nuovi messaggi → scrolla se agganciato
   const {
     messages,
     isLoading,
@@ -59,20 +69,24 @@ export function ChatPage() {
     jid,
     client,
     isConnected,
+    onNewMessage: scrollToBottomIfAnchored, // Collegamento imperativo!
   })
 
-  // Custom hook per gestione scroll (design binario con aggancio esatto)
-  const {
-    messagesContainerRef,
-    messagesEndRef,
-    handleScroll,
-    scrollToBottom,
-  } = useChatScroll({
-    messages,
-    isLoadingMore,
-    hasMoreMessages,
-    onLoadMore: loadMoreMessages,
-  })
+  // Handler scroll che combina aggiornamento stato + trigger loadMore
+  const handleScroll = useCallback(() => {
+    baseHandleScroll()
+    
+    // Trigger loadMore se vicino al top
+    const container = messagesContainerRef.current
+    if (
+      container &&
+      container.scrollTop < PAGINATION.LOAD_MORE_THRESHOLD &&
+      hasMoreMessages &&
+      !isLoadingMore
+    ) {
+      loadMoreMessages()
+    }
+  }, [baseHandleScroll, messagesContainerRef, hasMoreMessages, isLoadingMore, loadMoreMessages])
 
   // Custom hook per pull-to-refresh
   const {
