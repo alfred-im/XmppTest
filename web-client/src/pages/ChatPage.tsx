@@ -32,6 +32,11 @@ export function ChatPage() {
   const [inputValue, setInputValue] = useState('')
   const [isSending, setIsSending] = useState(false)
   const inputRef = useRef<HTMLTextAreaElement>(null)
+  
+  // Flag per tracciare se lo scroll iniziale è già stato fatto
+  const hasInitiallyScrolledRef = useRef(false)
+  // Traccia il numero di messaggi per rilevare NUOVI messaggi (non loadMore)
+  const lastMessageCountRef = useRef(0)
 
   // Validate JID format - redirect if invalid
   useEffect(() => {
@@ -44,17 +49,16 @@ export function ChatPage() {
   // Gestione back button
   useBackButton()
 
-  // Custom hook per gestione scroll (design binario - NESSUN EFFETTO)
+  // Custom hook per gestione scroll (design binario)
   const {
     messagesContainerRef,
     messagesEndRef,
+    isAnchored,
     handleScroll: baseHandleScroll,
     scrollToBottom,
-    scrollToBottomIfAnchored,
   } = useChatScroll()
 
   // Custom hook per gestione messaggi
-  // onNewMessage viene chiamato quando arrivano nuovi messaggi → scrolla se agganciato
   const {
     messages,
     isLoading,
@@ -69,8 +73,42 @@ export function ChatPage() {
     jid,
     client,
     isConnected,
-    onNewMessage: scrollToBottomIfAnchored, // Collegamento imperativo!
   })
+
+  // SCROLL AUTOMATICO: Gestisce tre casi distinti
+  // 1. Scroll iniziale: una volta sola quando i messaggi vengono caricati
+  // 2. Nuovi messaggi: scroll se agganciato (messaggi aggiunti in fondo)
+  // 3. LoadMore: MAI scroll (messaggi aggiunti in cima, utente sta leggendo storia)
+  useEffect(() => {
+    const container = messagesContainerRef.current
+    if (!container || messages.length === 0) return
+    
+    const prevCount = lastMessageCountRef.current
+    const currentCount = messages.length
+    
+    // Caso 1: Scroll iniziale (prima volta che abbiamo messaggi)
+    if (!hasInitiallyScrolledRef.current) {
+      container.scrollTop = container.scrollHeight - container.clientHeight
+      hasInitiallyScrolledRef.current = true
+      lastMessageCountRef.current = currentCount
+      return
+    }
+    
+    // Caso 3: LoadMore in corso - NON scrollare MAI
+    // L'utente sta scrollando verso l'alto per leggere la storia
+    if (isLoadingMore) {
+      lastMessageCountRef.current = currentCount
+      return
+    }
+    
+    // Caso 2: Nuovi messaggi aggiunti (count aumentato, non durante loadMore)
+    // Scrolla solo se l'utente è agganciato al fondo
+    if (currentCount > prevCount && isAnchored()) {
+      container.scrollTop = container.scrollHeight - container.clientHeight
+    }
+    
+    lastMessageCountRef.current = currentCount
+  }, [messages, isAnchored, messagesContainerRef, isLoadingMore])
 
   // Handler scroll che combina aggiornamento stato + trigger loadMore
   const handleScroll = useCallback(() => {
@@ -152,10 +190,9 @@ export function ChatPage() {
         container.style.paddingBottom = '1rem'
       }
       
-      // Scrolla in fondo SOLO se la keyboard si è appena aperta
-      // e usa scrollToBottomIfAnchored per rispettare lo stato di aggancio
-      if (keyboardJustOpened) {
-        scrollToBottomIfAnchored()
+      // Scrolla in fondo SOLO se la keyboard si è appena aperta e se agganciato
+      if (keyboardJustOpened && isAnchored()) {
+        container.scrollTop = container.scrollHeight - container.clientHeight
       }
       
       lastKeyboardHeight = keyboardHeight
@@ -166,7 +203,7 @@ export function ChatPage() {
     return () => {
       window.visualViewport?.removeEventListener('resize', handleResize)
     }
-  }, [messagesContainerRef, scrollToBottomIfAnchored])
+  }, [messagesContainerRef, isAnchored])
 
   // Subscribe a messaggi real-time
   useEffect(() => {
