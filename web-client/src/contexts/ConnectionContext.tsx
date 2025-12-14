@@ -58,6 +58,11 @@ export function ConnectionProvider({ children }: { children: ReactNode }) {
       setIsConnected(true)
       setJid(result.jid || userJid)
       
+      // CRITICO: Invia presenza XMPP per annunciare che siamo online
+      // Senza questo, il server non inoltra i messaggi in tempo reale
+      xmppClient.sendPresence()
+      console.log('📡 Presenza XMPP inviata - client online')
+      
       // Salva credenziali
       saveAuth(userJid, password)
       
