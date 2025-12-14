@@ -6,7 +6,8 @@ import { useMessaging } from '../contexts/MessagingContext'
 import { useMessages } from '../hooks/useMessages'
 import { usePullToRefresh } from '../hooks/usePullToRefresh'
 import { useBackButton } from '../hooks/useBackButton'
-import { formatDateSeparator, formatMessageTime, isSameDay } from '../utils/date'
+import { isSameDay } from '../utils/date'
+import { MessageItem } from '../components/MessageItem'
 import { isValidJid } from '../utils/jid'
 import { TEXT_LIMITS, PAGINATION } from '../config/constants'
 import './ChatPage.css'
@@ -228,40 +229,19 @@ export function ChatPage() {
     return conversation?.displayName || jid.split('@')[0] || 'Chat'
   }, [conversation, jid])
 
-  // Memoizza il rendering dei messaggi per performance
-  const renderedMessages = useMemo(() => {
-    return messages.map((message, index) => {
-      const isMe = message.from === 'me'
-      const showDate = index === 0 || !isSameDay(messages[index - 1].timestamp, message.timestamp)
-
-      return (
-        <div key={message.messageId}>
-          {showDate && (
-            <div className="chat-page__date-separator">
-              {formatDateSeparator(message.timestamp)}
-            </div>
-          )}
-          <div className={`chat-page__message ${isMe ? 'chat-page__message--me' : 'chat-page__message--them'}`}>
-            <div className="chat-page__message-bubble">
-              <p className="chat-page__message-body">{message.body}</p>
-              <div className="chat-page__message-meta">
-                <span className="chat-page__message-time">
-                  {formatMessageTime(message.timestamp)}
-                </span>
-                {isMe && (
-                  <span className="chat-page__message-status" aria-label={`Messaggio ${message.status}`}>
-                    {message.status === 'pending' && '🕐'}
-                    {message.status === 'sent' && '✓'}
-                    {message.status === 'failed' && '✗'}
-                  </span>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      )
-    })
-  }, [messages])
+  // Renderizza i messaggi usando componenti memoizzati
+  // MessageItem è wrappato con React.memo, quindi React riusa i componenti
+  // esistenti e non ricrea tutto da zero quando la lista cambia
+  const renderedMessages = messages.map((message, index) => {
+    const showDate = index === 0 || !isSameDay(messages[index - 1].timestamp, message.timestamp)
+    return (
+      <MessageItem
+        key={message.messageId}
+        message={message}
+        showDate={showDate}
+      />
+    )
+  })
 
   return (
     <div id="main-content" className="chat-page" role="main" tabIndex={-1}>
