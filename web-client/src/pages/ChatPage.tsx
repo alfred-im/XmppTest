@@ -4,7 +4,6 @@ import { useConnection } from '../contexts/ConnectionContext'
 import { useConversations } from '../contexts/ConversationsContext'
 import { useMessaging } from '../contexts/MessagingContext'
 import { useMessages } from '../hooks/useMessages'
-import { useChatScroll } from '../hooks/useChatScroll'
 import { usePullToRefresh } from '../hooks/usePullToRefresh'
 import { useBackButton } from '../hooks/useBackButton'
 import { formatDateSeparator, formatMessageTime, isSameDay } from '../utils/date'
@@ -16,7 +15,6 @@ import './ChatPage.css'
  * Pagina principale per la visualizzazione e gestione di una chat
  * Utilizza custom hooks per separare le responsabilità:
  * - useMessages: gestione stato e operazioni sui messaggi
- * - useChatScroll: gestione scroll e paginazione
  * - usePullToRefresh: gestione pull-to-refresh
  */
 export function ChatPage() {
@@ -32,11 +30,7 @@ export function ChatPage() {
   const [inputValue, setInputValue] = useState('')
   const [isSending, setIsSending] = useState(false)
   const inputRef = useRef<HTMLTextAreaElement>(null)
-  
-  // Flag per tracciare se lo scroll iniziale è già stato fatto
-  const hasInitiallyScrolledRef = useRef(false)
-  // Traccia il numero di messaggi per rilevare NUOVI messaggi (non loadMore)
-  const lastMessageCountRef = useRef(0)
+  const messagesContainerRef = useRef<HTMLDivElement>(null)
 
   // Validate JID format - redirect if invalid
   useEffect(() => {
@@ -48,15 +42,6 @@ export function ChatPage() {
 
   // Gestione back button
   useBackButton()
-
-  // Custom hook per gestione scroll (design binario)
-  const {
-    messagesContainerRef,
-    messagesEndRef,
-    isAnchored,
-    handleScroll: baseHandleScroll,
-    scrollToBottom,
-  } = useChatScroll()
 
   // Custom hook per gestione messaggi
   const {
@@ -75,46 +60,8 @@ export function ChatPage() {
     isConnected,
   })
 
-  // SCROLL AUTOMATICO: Gestisce tre casi distinti
-  // 1. Scroll iniziale: una volta sola quando i messaggi vengono caricati
-  // 2. Nuovi messaggi: scroll se agganciato (messaggi aggiunti in fondo)
-  // 3. LoadMore: MAI scroll (messaggi aggiunti in cima, utente sta leggendo storia)
-  useEffect(() => {
-    const container = messagesContainerRef.current
-    if (!container || messages.length === 0) return
-    
-    const prevCount = lastMessageCountRef.current
-    const currentCount = messages.length
-    
-    // Caso 1: Scroll iniziale (prima volta che abbiamo messaggi)
-    if (!hasInitiallyScrolledRef.current) {
-      container.scrollTop = container.scrollHeight - container.clientHeight
-      hasInitiallyScrolledRef.current = true
-      lastMessageCountRef.current = currentCount
-      return
-    }
-    
-    // Caso 3: LoadMore in corso - NON scrollare MAI
-    // L'utente sta scrollando verso l'alto per leggere la storia
-    if (isLoadingMore) {
-      lastMessageCountRef.current = currentCount
-      return
-    }
-    
-    // Caso 2: Nuovi messaggi aggiunti (count aumentato, non durante loadMore)
-    // Scrolla solo se l'utente è agganciato al fondo
-    if (currentCount > prevCount && isAnchored()) {
-      container.scrollTop = container.scrollHeight - container.clientHeight
-    }
-    
-    lastMessageCountRef.current = currentCount
-  }, [messages, isAnchored, messagesContainerRef, isLoadingMore])
-
-  // Handler scroll che combina aggiornamento stato + trigger loadMore
+  // Handler scroll per trigger loadMore quando vicino al top
   const handleScroll = useCallback(() => {
-    baseHandleScroll()
-    
-    // Trigger loadMore se vicino al top
     const container = messagesContainerRef.current
     if (
       container &&
@@ -124,7 +71,7 @@ export function ChatPage() {
     ) {
       loadMoreMessages()
     }
-  }, [baseHandleScroll, messagesContainerRef, hasMoreMessages, isLoadingMore, loadMoreMessages])
+  }, [hasMoreMessages, isLoadingMore, loadMoreMessages])
 
   // Custom hook per pull-to-refresh
   const {
@@ -151,11 +98,6 @@ export function ChatPage() {
             
             // Ricarica conversazioni dal database (con vCard aggiornato)
             await reloadFromDB()
-            
-            // Scroll in fondo dopo il refresh
-            setTimeout(() => {
-              scrollToBottom('smooth')
-            }, 100)
           }
         } catch (error) {
           console.error('Errore durante la sincronizzazione completa:', error)
@@ -166,11 +108,9 @@ export function ChatPage() {
     enabled: !isLoadingMore,
   })
 
-  // Handle virtual keyboard on mobile
+  // Handle virtual keyboard on mobile - adjust layout only
   useEffect(() => {
     if (!window.visualViewport) return
-
-    let lastKeyboardHeight = 0
 
     const handleResize = () => {
       const container = messagesContainerRef.current
@@ -178,7 +118,6 @@ export function ChatPage() {
 
       const viewport = window.visualViewport!
       const keyboardHeight = window.innerHeight - viewport.height
-      const keyboardJustOpened = keyboardHeight > 50 && lastKeyboardHeight <= 50
       
       // Aggiorna layout del container
       const inputHeight = 68
@@ -189,13 +128,6 @@ export function ChatPage() {
         container.style.bottom = '68px'
         container.style.paddingBottom = '1rem'
       }
-      
-      // Scrolla in fondo SOLO se la keyboard si è appena aperta e se agganciato
-      if (keyboardJustOpened && isAnchored()) {
-        container.scrollTop = container.scrollHeight - container.clientHeight
-      }
-      
-      lastKeyboardHeight = keyboardHeight
     }
 
     window.visualViewport.addEventListener('resize', handleResize)
@@ -203,7 +135,7 @@ export function ChatPage() {
     return () => {
       window.visualViewport?.removeEventListener('resize', handleResize)
     }
-  }, [messagesContainerRef, isAnchored])
+  }, [])
 
   // Subscribe a messaggi real-time
   useEffect(() => {
@@ -403,10 +335,7 @@ export function ChatPage() {
             <p>Nessun messaggio. Inizia la conversazione!</p>
           </div>
         ) : (
-          <>
-            {renderedMessages}
-            <div ref={messagesEndRef} aria-hidden="true" />
-          </>
+          renderedMessages
         )}
         
         {/* Pull to refresh indicator (at bottom) */}

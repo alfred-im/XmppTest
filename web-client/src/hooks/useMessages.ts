@@ -18,7 +18,6 @@ interface UseMessagesOptions {
   jid: string
   client: Agent | null
   isConnected: boolean
-  onNewMessage?: (message: Message) => void
 }
 
 interface UseMessagesReturn {
@@ -42,7 +41,6 @@ interface UseMessagesReturn {
  * @param options.jid - JID del contatto per cui gestire i messaggi
  * @param options.client - Client XMPP connesso
  * @param options.isConnected - Flag di connessione
- * @param options.onNewMessage - Callback chiamato quando arriva un nuovo messaggio
  * @returns Oggetto con stato e funzioni per gestire i messaggi
  * 
  * @example
@@ -58,7 +56,6 @@ export function useMessages({
   jid,
   client,
   isConnected,
-  onNewMessage,
 }: UseMessagesOptions): UseMessagesReturn {
   const [messagesRaw, setMessagesRaw] = useState<Message[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -68,12 +65,6 @@ export function useMessages({
   const [firstToken, setFirstToken] = useState<string | undefined>(undefined)
   
   const isMountedRef = useRef(true)
-  
-  // Per tracciare se sono arrivati NUOVI messaggi (non solo aggiornamenti)
-  const lastMessageCountRef = useRef(0)
-  
-  // Flag per ignorare onNewMessage durante operazioni che non sono "nuovi messaggi"
-  const skipNextOnNewMessageRef = useRef(false)
 
   // Applica logica self-chat ai messaggi per visualizzazione corretta
   const messages = useMemo(() => {
@@ -114,7 +105,6 @@ export function useMessages({
       const normalizedJid = normalizeJID(jid)
       const localMessages = await getLocalMessages(normalizedJid, { limit: PAGINATION.DEFAULT_MESSAGE_LIMIT })
       if (localMessages.length > 0 && isMountedRef.current) {
-        lastMessageCountRef.current = localMessages.length
         safeSetMessages(() => localMessages)
         setIsLoading(false)
       }
@@ -127,11 +117,7 @@ export function useMessages({
       if (!isMountedRef.current) return
 
       // Merge con messaggi esistenti per evitare sostituzione brusca
-      safeSetMessages((prev) => {
-        const merged = mergeMessages(prev, result.messages)
-        lastMessageCountRef.current = merged.length
-        return merged
-      })
+      safeSetMessages((prev) => mergeMessages(prev, result.messages))
       setHasMoreMessages(!result.complete)
       setFirstToken(result.firstToken)
     } catch (err) {
@@ -171,30 +157,11 @@ export function useMessages({
       try {
         // Ricarica messaggi dal database locale
         const allMessages = await getLocalMessages(conversationJid)
-        const prevCount = lastMessageCountRef.current
         
-        console.log(`   - Caricati ${allMessages.length} messaggi dal DB (precedenti: ${prevCount})`)
+        console.log(`   - Caricati ${allMessages.length} messaggi dal DB`)
         
         if (isMountedRef.current) {
-          // Aggiorna il contatore PRIMA di chiamare onNewMessage
-          lastMessageCountRef.current = allMessages.length
-          
           safeSetMessages(() => allMessages)
-          
-          // Notifica SOLO se sono arrivati NUOVI messaggi (count aumentato)
-          // Non al caricamento iniziale, loadMore, o altre operazioni di bulk
-          const shouldNotify = onNewMessage && 
-            allMessages.length > prevCount && 
-            prevCount > 0 && 
-            !skipNextOnNewMessageRef.current
-          
-          // Reset del flag
-          skipNextOnNewMessageRef.current = false
-          
-          if (shouldNotify) {
-            const newMsg = allMessages[allMessages.length - 1]
-            onNewMessage(newMsg)
-          }
         }
       } catch (err) {
         console.error('Errore nel ricaricamento messaggi dopo cambio DB:', err)
@@ -211,7 +178,7 @@ export function useMessages({
       console.log(`🗑️ useMessages: rimuovo observer per ${normalizedJid}`)
       unsubscribe()
     }
-  }, [jid, safeSetMessages, onNewMessage])
+  }, [jid, safeSetMessages])
 
   // NOTA: L'aggiornamento dei messaggi in tempo reale è gestito interamente
   // dal pattern Observer implementato sopra (messageRepository.observe).
@@ -224,8 +191,6 @@ export function useMessages({
     if (!client || isLoadingMore || !hasMoreMessages || !firstToken) return
     if (!isMountedRef.current) return
 
-    // Skip onNewMessage durante loadMore (sono messaggi storici, non nuovi)
-    skipNextOnNewMessageRef.current = true
     setIsLoadingMore(true)
 
     try {
@@ -239,12 +204,7 @@ export function useMessages({
 
       if (result.messages.length > 0) {
         // Merge invece di semplice concatenazione per evitare duplicati
-        safeSetMessages((prev) => {
-          const merged = mergeMessages(result.messages, prev)
-          // Aggiorna il contatore per evitare falsi positivi su "nuovi messaggi"
-          lastMessageCountRef.current = merged.length
-          return merged
-        })
+        safeSetMessages((prev) => mergeMessages(result.messages, prev))
         setHasMoreMessages(!result.complete)
         setFirstToken(result.firstToken)
       } else {
@@ -309,17 +269,9 @@ export function useMessages({
           // (che ora contiene i dati sincronizzati dal server)
           const normalizedJid = normalizeJID(jid)
           const allMessages = await getLocalMessages(normalizedJid)
-          const prevCount = lastMessageCountRef.current
 
           if (isMountedRef.current) {
-            lastMessageCountRef.current = allMessages.length
             safeSetMessages(() => allMessages)
-          }
-
-          // Notifica nuovo messaggio (l'utente ha appena inviato, quindi scrolla)
-          if (onNewMessage && allMessages.length > prevCount) {
-            const newMsg = allMessages[allMessages.length - 1]
-            onNewMessage(newMsg)
           }
         } else {
           setError(result.error || 'Invio fallito')
@@ -335,7 +287,7 @@ export function useMessages({
         return { success: false, error: errorMsg }
       }
     },
-    [client, jid, safeSetMessages, onNewMessage]
+    [client, jid, safeSetMessages]
   )
 
 

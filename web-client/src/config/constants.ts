@@ -13,7 +13,6 @@ export const PAGINATION = {
   DEFAULT_MESSAGE_LIMIT: 50,
   DEFAULT_CONVERSATION_LIMIT: 100,
   LOAD_MORE_THRESHOLD: 200, // px from top to trigger load more
-  SCROLL_BOTTOM_TOLERANCE: 5, // px - tolleranza tecnica minima per considerare "in fondo"
 } as const;
 
 // Pull to Refresh
@@ -34,7 +33,6 @@ export const MESSAGE_STATUS = {
 // Timeouts & Delays
 export const TIMEOUTS = {
   CONNECTION: 5000, // ms - XMPP connection timeout
-  AUTO_SCROLL_DELAY: 100, // ms - delay before auto-scroll after update
 } as const;
 
 // Text Limits
