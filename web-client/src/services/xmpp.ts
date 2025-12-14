@@ -2,7 +2,6 @@ import { createClient } from 'stanza'
 import type { Agent } from 'stanza'
 import plugins from 'stanza/plugins'
 import { DEFAULT_RESOURCE, TIMEOUTS } from '../config/constants'
-import pushNotificationsPlugin from './push-notifications-plugin'
 
 export type XmppConnectionSettings = {
   jid: string
@@ -209,9 +208,8 @@ const buildClient = async (settings: XmppConnectionSettings): Promise<Agent> => 
     },
   })
 
-  // Carica plugin necessari (MAM, Roster, Push Notifications)
+  // Carica plugin necessari (MAM, Roster)
   plugins(client)
-  client.use(pushNotificationsPlugin)
 
   return client
 }
