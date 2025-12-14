@@ -19,7 +19,6 @@ interface UseMessagesOptions {
   client: Agent | null
   isConnected: boolean
   onNewMessage?: (message: Message) => void
-  onInitialLoad?: () => void // Chiamato quando i messaggi vengono caricati per la prima volta
 }
 
 interface UseMessagesReturn {
@@ -60,7 +59,6 @@ export function useMessages({
   client,
   isConnected,
   onNewMessage,
-  onInitialLoad,
 }: UseMessagesOptions): UseMessagesReturn {
   const [messagesRaw, setMessagesRaw] = useState<Message[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -76,9 +74,6 @@ export function useMessages({
   
   // Flag per ignorare onNewMessage durante operazioni che non sono "nuovi messaggi"
   const skipNextOnNewMessageRef = useRef(false)
-  
-  // Flag per tracciare se è già stato fatto il caricamento iniziale (scroll al fondo)
-  const hasCalledInitialLoadRef = useRef(false)
 
   // Applica logica self-chat ai messaggi per visualizzazione corretta
   const messages = useMemo(() => {
