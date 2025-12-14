@@ -44,17 +44,16 @@ export function ChatPage() {
   // Gestione back button
   useBackButton()
 
-  // Custom hook per gestione scroll (design binario - NESSUN EFFETTO)
+  // Custom hook per gestione scroll (design binario)
   const {
     messagesContainerRef,
     messagesEndRef,
+    isAnchored,
     handleScroll: baseHandleScroll,
     scrollToBottom,
-    scrollToBottomIfAnchored,
   } = useChatScroll()
 
   // Custom hook per gestione messaggi
-  // onNewMessage viene chiamato quando arrivano nuovi messaggi → scrolla se agganciato
   const {
     messages,
     isLoading,
@@ -69,8 +68,18 @@ export function ChatPage() {
     jid,
     client,
     isConnected,
-    onNewMessage: scrollToBottomIfAnchored, // Collegamento imperativo!
   })
+
+  // SCROLL AUTOMATICO: Quando i messaggi cambiano, se agganciato, vai in fondo
+  // Questo copre: caricamento iniziale, nuovi messaggi, invio messaggi
+  // NON scrolla se l'utente ha scrollato in alto (isAnchored = false)
+  useEffect(() => {
+    const container = messagesContainerRef.current
+    if (isAnchored() && container && messages.length > 0) {
+      // Scroll istantaneo al fondo
+      container.scrollTop = container.scrollHeight - container.clientHeight
+    }
+  }, [messages, isAnchored, messagesContainerRef])
 
   // Handler scroll che combina aggiornamento stato + trigger loadMore
   const handleScroll = useCallback(() => {
@@ -152,10 +161,9 @@ export function ChatPage() {
         container.style.paddingBottom = '1rem'
       }
       
-      // Scrolla in fondo SOLO se la keyboard si è appena aperta
-      // e usa scrollToBottomIfAnchored per rispettare lo stato di aggancio
-      if (keyboardJustOpened) {
-        scrollToBottomIfAnchored()
+      // Scrolla in fondo SOLO se la keyboard si è appena aperta e se agganciato
+      if (keyboardJustOpened && isAnchored()) {
+        container.scrollTop = container.scrollHeight - container.clientHeight
       }
       
       lastKeyboardHeight = keyboardHeight
@@ -166,7 +174,7 @@ export function ChatPage() {
     return () => {
       window.visualViewport?.removeEventListener('resize', handleResize)
     }
-  }, [messagesContainerRef, scrollToBottomIfAnchored])
+  }, [messagesContainerRef, isAnchored])
 
   // Subscribe a messaggi real-time
   useEffect(() => {

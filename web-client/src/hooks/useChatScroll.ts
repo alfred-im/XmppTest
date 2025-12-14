@@ -7,19 +7,19 @@ interface UseChatScrollReturn {
   isAnchored: () => boolean
   handleScroll: () => void
   scrollToBottom: (behavior?: ScrollBehavior) => void
-  scrollToBottomIfAnchored: () => void
 }
 
 /**
  * Custom hook per gestire lo scroll nella chat.
  * 
- * Design: Sistema binario con aggancio esatto.
- * - L'unica cosa che determina aggancio/sgancio è lo scroll dell'utente
+ * Design: Sistema binario con aggancio.
+ * - Il flag isAnchored nasce TRUE (conversazione parte dal fondo)
+ * - L'utente scrolla → handleScroll aggiorna isAnchored in base alla posizione
  * - Se sei in fondo (≤ SCROLL_BOTTOM_TOLERANCE px) → agganciato
  * - Se scrolli via → sganciato
- * - Per riagganciare: torna in fondo manualmente
  * 
- * NESSUN EFFETTO - tutto è imperativo.
+ * Il consumer (ChatPage) usa isAnchored() per decidere se scrollare
+ * quando i messaggi cambiano.
  */
 export function useChatScroll(): UseChatScrollReturn {
   const messagesContainerRef = useRef<HTMLDivElement>(null)
@@ -50,25 +50,12 @@ export function useChatScroll(): UseChatScrollReturn {
   }, [])
 
   /**
-   * Scrolla al fondo del container (forzato)
+   * Scrolla al fondo del container (forzato, usato per azioni esplicite come pull-to-refresh)
    */
   const scrollToBottom = useCallback((behavior: ScrollBehavior = 'smooth') => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior })
       isAnchoredRef.current = true
-    }
-  }, [])
-
-  /**
-   * Scrolla al fondo SOLO se l'utente è agganciato.
-   * Chiamare questa funzione quando arrivano nuovi messaggi.
-   */
-  const scrollToBottomIfAnchored = useCallback(() => {
-    if (isAnchoredRef.current && messagesEndRef.current) {
-      // requestAnimationFrame per aspettare che il DOM sia aggiornato
-      requestAnimationFrame(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-      })
     }
   }, [])
 
@@ -78,6 +65,5 @@ export function useChatScroll(): UseChatScrollReturn {
     isAnchored,
     handleScroll,
     scrollToBottom,
-    scrollToBottomIfAnchored,
   }
 }
