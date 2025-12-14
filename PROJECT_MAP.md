@@ -229,7 +229,6 @@ Custom React Hooks
 | File | Responsabilità |
 |------|----------------|
 | `useMessages.ts` | Hook per gestione messaggi in chat |
-| `useChatScroll.ts` | Hook per gestione scroll e auto-scroll |
 | `usePullToRefresh.ts` | Hook per pull-to-refresh gesture |
 | `useBackButton.ts` | Hook per back button Android |
 

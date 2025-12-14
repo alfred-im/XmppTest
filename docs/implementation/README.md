@@ -22,7 +22,7 @@ Analisi tecniche implementazioni completate per comprensione dettagli e decision
 
 ## Pattern (Riferimento Rapido)
 
-**Custom Hooks**: useMessages, useChatScroll, usePullToRefresh, useBackButton
+**Custom Hooks**: useMessages, usePullToRefresh, useBackButton
 
 **Context**: XmppProvider wraps HashRouter + App
 
