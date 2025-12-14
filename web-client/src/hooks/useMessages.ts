@@ -65,6 +65,10 @@ export function useMessages({
   const [firstToken, setFirstToken] = useState<string | undefined>(undefined)
   
   const isMountedRef = useRef(true)
+  
+  // Flag per ignorare notifiche observer durante operazioni di caricamento
+  // (evita doppi refresh quando loadMessagesForContact salva nel DB)
+  const skipObserverRef = useRef(false)
 
   // Applica logica self-chat ai messaggi per visualizzazione corretta
   const messages = useMemo(() => {
@@ -97,6 +101,8 @@ export function useMessages({
     if (!client || !jid) return
     if (!isMountedRef.current) return
 
+    // Ignora notifiche observer durante il caricamento iniziale
+    skipObserverRef.current = true
     setIsLoading(true)
     setError(null)
 
@@ -129,6 +135,8 @@ export function useMessages({
       if (isMountedRef.current) {
         setIsLoading(false)
       }
+      // Riabilita notifiche observer
+      skipObserverRef.current = false
     }
   }, [client, jid, safeSetMessages])
 
@@ -151,6 +159,12 @@ export function useMessages({
     // Callback chiamato quando il database cambia
     const handleDatabaseChange = async (conversationJid: BareJID) => {
       if (!isMountedRef.current) return
+      
+      // Ignora notifiche durante il caricamento iniziale (evita doppio refresh)
+      if (skipObserverRef.current) {
+        console.log(`⏭️ useMessages: ignoro notifica observer durante caricamento iniziale`)
+        return
+      }
 
       console.log(`🔄 useMessages: database cambiato per ${conversationJid}, ricarico messaggi...`)
       
@@ -191,6 +205,8 @@ export function useMessages({
     if (!client || isLoadingMore || !hasMoreMessages || !firstToken) return
     if (!isMountedRef.current) return
 
+    // Ignora notifiche observer durante loadMore
+    skipObserverRef.current = true
     setIsLoadingMore(true)
 
     try {
@@ -216,6 +232,8 @@ export function useMessages({
       if (isMountedRef.current) {
         setIsLoadingMore(false)
       }
+      // Riabilita notifiche observer
+      skipObserverRef.current = false
     }
   }, [client, jid, isLoadingMore, hasMoreMessages, firstToken, safeSetMessages])
 
