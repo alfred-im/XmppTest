@@ -241,7 +241,8 @@ export async function publishVCard(
       // La conversione a Buffer causava timeout del server.
       records.push({
         type: 'photo',
-        data: vcard.photoData as any, // ✅ Stringa base64 diretta (cast necessario per tipo stanza)
+        // Cast necessario: stanza.io accetta stringa base64 ma i tipi dicono Buffer
+        data: vcard.photoData as unknown as Buffer,
         mediaType: vcard.photoType
       })
       
@@ -316,12 +317,13 @@ export async function publishVCard(
     // Pubblica sul server
     try {
       await client.publishVCard(vcardForStanza)
-    } catch (publishError: any) {
+    } catch (publishError: unknown) {
       console.error('Errore nella chiamata publishVCard:', publishError)
       
       // Gestisci errori specifici del server XMPP
-      if (publishError.error) {
-        const errorType = publishError.error.condition || publishError.error.type
+      const xmppError = publishError as { error?: { condition?: string; type?: string } }
+      if (xmppError.error) {
+        const errorType = xmppError.error.condition || xmppError.error.type
         console.error('Tipo errore XMPP:', errorType)
         
         if (errorType === 'not-authorized') {
