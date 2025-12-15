@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useEffect, useCallback, useRef } from 'react'
 import type { ReactNode } from 'react'
 import type { ReceivedMessage } from 'stanza/protocol'
@@ -6,6 +7,7 @@ import { useConversations } from './ConversationsContext'
 import { messageRepository } from '../services/repositories'
 import { conversationRepository } from '../services/repositories'
 import { normalizeJID } from '../utils/jid'
+import type { Message } from '../services/conversations-db'
 
 type MessageCallback = (message: ReceivedMessage) => void
 
@@ -63,14 +65,14 @@ export function MessagingProvider({ children }: { children: ReactNode }) {
         const from = message.from || ''
         const isFromMe = from.toLowerCase().startsWith(myBareJid.toLowerCase())
 
-        // Crea oggetto messaggio (con type any per evitare type checking su BareJID branded type)
-        const messageToSave: any = {
+        // Crea oggetto messaggio
+        const messageToSave: Message = {
           messageId: message.id || `msg_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
-          conversationJid: normalizeJID(contactJid), // Normalizza il JID
+          conversationJid: normalizeJID(contactJid),
           body: message.body,
           timestamp: message.delay?.timestamp || new Date(),
-          from: isFromMe ? 'me' as const : 'them' as const,
-          status: 'sent' as const,
+          from: isFromMe ? 'me' : 'them',
+          status: 'sent',
         }
 
         // Salva nel DB (questo triggera automaticamente l'observer)
