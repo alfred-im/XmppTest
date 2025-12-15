@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useState, useRef, type ReactNode } from 'react'
 import { useConnection } from '../contexts/ConnectionContext'
 import { SplashScreen } from './SplashScreen'
 import { performInitialSync } from '../services/sync-initializer'
@@ -10,23 +10,30 @@ interface AppInitializerProps {
 
 /**
  * Componente wrapper che gestisce la sincronizzazione iniziale
- * - All'avvio: controlla se DB vuoto → full sync o incremental sync
- * - Dopo sync: attiva listener real-time e passa al rendering normale
+ * - Se non connesso: mostra i children (per permettere login via LoginPopup)
+ * - Dopo connessione: esegue sync (full o incremental)
+ * - Durante sync: mostra SplashScreen sopra i children
+ * - Dopo sync: mostra children normalmente
  * 
  * Questo è l'UNICO punto dove avviene la sincronizzazione.
  * Dopo la sync iniziale, l'app riceve solo messaggi real-time.
  */
 export function AppInitializer({ children }: AppInitializerProps) {
-  const [syncStatus, setSyncStatus] = useState<'pending' | 'syncing' | 'complete' | 'error'>('pending')
-  const [syncMessage, setSyncMessage] = useState('Connessione...')
+  const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'complete' | 'error'>('idle')
+  const [syncMessage, setSyncMessage] = useState('Sincronizzazione...')
   const [error, setError] = useState<string | null>(null)
   const { client, isConnected } = useConnection()
+  const hasSyncedRef = useRef(false)
 
   useEffect(() => {
+    // Se non connesso, non fare nulla
     if (!client || !isConnected) {
-      setSyncStatus('pending')
-      setSyncMessage('Connessione al server...')
       syncStatusService.setSyncing(false)
+      return
+    }
+
+    // Se già sincronizzato in questa sessione, non risincronizzare
+    if (hasSyncedRef.current) {
       return
     }
 
@@ -43,6 +50,7 @@ export function AppInitializer({ children }: AppInitializerProps) {
           })
         }
 
+        hasSyncedRef.current = true
         setSyncStatus('complete')
         syncStatusService.setSyncing(false)
         console.log('✅ Sync completata, app pronta')
@@ -57,16 +65,31 @@ export function AppInitializer({ children }: AppInitializerProps) {
     initializeApp()
   }, [client, isConnected])
 
-  // Mostra splash screen durante sync
-  if (syncStatus !== 'complete') {
+  // Se non connesso: mostra children (LoginPopup può apparire)
+  if (!isConnected) {
+    return <>{children}</>
+  }
+
+  // Se connesso e sync in corso: mostra splash screen
+  if (syncStatus === 'syncing') {
     return (
       <SplashScreen 
-        message={error || syncMessage}
-        error={!!error}
+        message={syncMessage}
+        error={false}
       />
     )
   }
 
-  // Sync completata: renderizza app normale
+  // Se errore durante sync: mostra errore
+  if (syncStatus === 'error') {
+    return (
+      <SplashScreen 
+        message={error || 'Errore durante la sincronizzazione'}
+        error={true}
+      />
+    )
+  }
+
+  // Sync completata o idle: renderizza app normale
   return <>{children}</>
 }
