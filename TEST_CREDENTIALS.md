@@ -2,14 +2,20 @@
 
 Credenziali account di test configurati su conversations.im per sviluppo e testing. Documento per riferimento rapido AI.
 
+## Accesso Produzione
+
+**URL**: https://alfred-im.github.io/XmppTest/
+
+Usa uno degli account sotto per accedere alla versione live dell'applicazione.
+
 ## Account Disponibili
 
 ### Server: conversations.im
 
 | Account | JID | Password | Note |
 |---------|-----|----------|------|
-| Account 1 | `testardo@conversations.im` | `FyqnD2YpGScNsuC` | Avatar WebP configurato |
-| Account 2 | `testarda@conversations.im` | `FyqnD2YpGScNsuC` | Avatar WebP configurato |
+| Account 1 | `testardo@conversations.im` | `FyqnD2YpGScNsuC` | Avatar WebP configurato, account principale test |
+| Account 2 | `testarda@conversations.im` | `FyqnD2YpGScNsuC` | Avatar WebP configurato, account secondario test |
 
 ## WebSocket Configuration
 

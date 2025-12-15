@@ -55,6 +55,21 @@ npm run preview   # Preview build locale
 - HashRouter per compatibility hosting statico
 - Hot reload funzionante con Vite
 
+## Accesso Produzione
+
+**URL Live**: https://alfred-im.github.io/XmppTest/
+
+**Credenziali Test**:
+- **Username**: `testardo@conversations.im`
+- **Password**: `FyqnD2YpGScNsuC`
+
+Vedi `TEST_CREDENTIALS.md` per altri account di test disponibili.
+
+**Note**:
+- Prima apertura: sync iniziale ~5-10 secondi
+- Aperture successive: ~2 secondi (sync incrementale)
+- Server XMPP: conversations.im
+
 ## Architettura (Sintesi)
 
 Vedi `PROJECT_MAP.md` per architettura dettagliata completa.

@@ -39,6 +39,28 @@ Workflow `.github/workflows/deploy-pages.yml` automatico su push main:
 
 **Setup**: Settings → Pages → Source = GitHub Actions (prima volta)
 
+## Accesso Produzione
+
+**URL Live**: https://alfred-im.github.io/XmppTest/
+
+**Credenziali Test**:
+```
+Username: testardo@conversations.im
+Password: FyqnD2YpGScNsuC
+```
+
+**Primo Accesso**:
+1. Apri l'URL
+2. Inserisci le credenziali nel popup di login
+3. Click su "Collegati"
+4. Attendi sync iniziale (~5-10 secondi)
+5. Verrai reindirizzato alla lista conversazioni
+
+**Note**:
+- Splash screen blu durante sync è normale
+- Conversazioni vengono caricate dopo sync completata
+- Accessi successivi: auto-login e sync incrementale (~2s)
+
 ## Riferimenti
 
 Vedi `/workspace/docs/` per analisi dettagliate implementazioni e decisioni architetturali.
