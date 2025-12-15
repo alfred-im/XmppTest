@@ -175,7 +175,9 @@ export function useMessages({
         console.log(`   - Caricati ${allMessages.length} messaggi dal DB`)
         
         if (isMountedRef.current) {
-          safeSetMessages(() => allMessages)
+          // Merge incrementale invece di sostituzione totale
+          // Questo evita lo "svuotamento" della UI e mantiene i componenti esistenti
+          safeSetMessages((prev) => mergeMessages(prev, allMessages))
         }
       } catch (err) {
         console.error('Errore nel ricaricamento messaggi dopo cambio DB:', err)
@@ -289,7 +291,8 @@ export function useMessages({
           const allMessages = await getLocalMessages(normalizedJid)
 
           if (isMountedRef.current) {
-            safeSetMessages(() => allMessages)
+            // Merge incrementale per evitare "flicker" dopo l'invio
+            safeSetMessages((prev) => mergeMessages(prev, allMessages))
           }
         } else {
           setError(result.error || 'Invio fallito')
