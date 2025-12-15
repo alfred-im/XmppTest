@@ -14,8 +14,13 @@ import './ChatPage.css'
 /**
  * Pagina principale per la visualizzazione e gestione di una chat
  * Utilizza custom hooks per separare le responsabilità:
- * - useMessages: gestione stato e operazioni sui messaggi
- * - usePullToRefresh: gestione pull-to-refresh
+ * - useMessages: gestione stato e operazioni sui messaggi (cache-first + observer)
+ * 
+ * ARCHITETTURA "SYNC-ONCE + LISTEN":
+ * - Messaggi sincronizzati all'avvio (AppInitializer)
+ * - Real-time updates via MessagingContext listener
+ * - NO pull-to-refresh (rimosso)
+ * - NO sync durante utilizzo
  */
 export function ChatPage() {
   const { jid: encodedJid } = useParams<{ jid: string }>()
@@ -72,9 +77,8 @@ export function ChatPage() {
     }
   }, [hasMoreMessages, isLoadingMore, loadMoreMessages])
 
-  // Pull-to-refresh rimosso con nuova architettura sync-once
-  // I messaggi vengono sincronizzati all'avvio e ricevuti real-time
-  // Non serve più refresh manuale
+  // Pull-to-refresh rimosso con architettura "sync-once + listen"
+  // Messaggi sincronizzati all'avvio, poi solo real-time listener
 
   // Handle virtual keyboard on mobile - adjust layout only
   useEffect(() => {
