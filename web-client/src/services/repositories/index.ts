@@ -21,6 +21,10 @@ export type { SyncMetadata } from './MetadataRepository'
  */
 import { MessageRepository } from './MessageRepository'
 import { ConversationRepository } from './ConversationRepository'
+import { MetadataRepository } from './MetadataRepository'
+import { VCardRepository } from './VCardRepository'
 
 export const messageRepository = new MessageRepository()
 export const conversationRepository = new ConversationRepository()
+export const metadataRepository = new MetadataRepository()
+export const vcardRepository = new VCardRepository()
