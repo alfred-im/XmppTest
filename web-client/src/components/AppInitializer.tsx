@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useState, useRef, useCallback, type ReactNode } from 'react'
 import { useConnection } from '../contexts/ConnectionContext'
 import { SplashScreen } from './SplashScreen'
 import { performInitialSync } from '../services/sync-initializer'
@@ -10,63 +10,96 @@ interface AppInitializerProps {
 
 /**
  * Componente wrapper che gestisce la sincronizzazione iniziale
- * - All'avvio: controlla se DB vuoto → full sync o incremental sync
- * - Dopo sync: attiva listener real-time e passa al rendering normale
+ * - Se non connesso: mostra i children (per permettere login)
+ * - Dopo connessione: esegue sync (full o incremental)
+ * - Durante sync: mostra SplashScreen
+ * - Dopo sync: mostra children normalmente
  * 
  * Questo è l'UNICO punto dove avviene la sincronizzazione.
  * Dopo la sync iniziale, l'app riceve solo messaggi real-time.
  */
 export function AppInitializer({ children }: AppInitializerProps) {
-  const [syncStatus, setSyncStatus] = useState<'pending' | 'syncing' | 'complete' | 'error'>('pending')
-  const [syncMessage, setSyncMessage] = useState('Connessione...')
+  const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'complete' | 'error'>('idle')
+  const [syncMessage, setSyncMessage] = useState('Sincronizzazione...')
   const [error, setError] = useState<string | null>(null)
   const { client, isConnected } = useConnection()
+  const hasSyncedRef = useRef(false)
+  const isSyncingRef = useRef(false)
+
+  const runSync = useCallback(async () => {
+    // Evita sync multipli paralleli
+    if (isSyncingRef.current || !client) return
+
+    isSyncingRef.current = true
+    setSyncStatus('syncing')
+    setSyncMessage('Sincronizzazione...')
+    setError(null)
+    syncStatusService.setSyncing(true)
+
+    try {
+      await performInitialSync(client, (progress) => {
+        setSyncMessage(progress.message)
+      })
+
+      hasSyncedRef.current = true
+      setSyncStatus('complete')
+      syncStatusService.setSyncing(false)
+      console.log('✅ Sync completata, app pronta')
+    } catch (err) {
+      console.error('❌ Errore sync iniziale:', err)
+      setSyncStatus('error')
+      syncStatusService.setSyncing(false)
+      setError(err instanceof Error ? err.message : 'Errore durante la sincronizzazione')
+    } finally {
+      isSyncingRef.current = false
+    }
+  }, [client])
 
   useEffect(() => {
+    // Se non connesso, non fare nulla (stato rimane idle)
     if (!client || !isConnected) {
-      setSyncStatus('pending')
-      setSyncMessage('Connessione al server...')
       syncStatusService.setSyncing(false)
       return
     }
 
-    async function initializeApp() {
-      setSyncStatus('syncing')
-      setSyncMessage('Sincronizzazione...')
-      setError(null)
-      syncStatusService.setSyncing(true)
-
-      try {
-        if (client) {
-          await performInitialSync(client, (progress) => {
-            setSyncMessage(progress.message)
-          })
-        }
-
+    // Se già sincronizzato in questa sessione, non risincronizzare
+    if (hasSyncedRef.current) {
+      // Aggiorna stato a complete se necessario (dopo reconnessione)
+      if (syncStatus !== 'complete') {
         setSyncStatus('complete')
-        syncStatusService.setSyncing(false)
-        console.log('✅ Sync completata, app pronta')
-      } catch (err) {
-        console.error('❌ Errore sync iniziale:', err)
-        setSyncStatus('error')
-        syncStatusService.setSyncing(false)
-        setError(err instanceof Error ? err.message : 'Errore durante la sincronizzazione')
       }
+      return
     }
 
-    initializeApp()
-  }, [client, isConnected])
+    // Avvia sync
+    runSync()
+  }, [client, isConnected, runSync, syncStatus])
 
-  // Mostra splash screen durante sync
-  if (syncStatus !== 'complete') {
+  // Se non connesso, mostra i children (per permettere login via LoginPopup)
+  if (!isConnected) {
+    return <>{children}</>
+  }
+
+  // Se connesso e sync in corso, mostra splash screen
+  if (syncStatus === 'syncing') {
     return (
       <SplashScreen 
-        message={error || syncMessage}
-        error={!!error}
+        message={syncMessage}
+        error={false}
       />
     )
   }
 
-  // Sync completata: renderizza app normale
+  // Se errore durante sync, mostra splash screen con errore ma permetti retry
+  if (syncStatus === 'error') {
+    return (
+      <SplashScreen 
+        message={error || 'Errore durante la sincronizzazione'}
+        error={true}
+      />
+    )
+  }
+
+  // Sync completata o idle (prima connessione): renderizza app normale
   return <>{children}</>
 }
