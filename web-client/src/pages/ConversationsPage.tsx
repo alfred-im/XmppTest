@@ -4,6 +4,7 @@ import { useConnection } from '../contexts/ConnectionContext'
 import { ConversationsList } from '../components/ConversationsList'
 import { NewConversationPopup } from '../components/NewConversationPopup'
 import { DebugLogPopup } from '../components/DebugLogPopup'
+import { syncStatusService } from '../services/sync-status'
 import './ConversationsPage.css'
 
 export function ConversationsPage() {
@@ -13,6 +14,7 @@ export function ConversationsPage() {
   const [showNewConversation, setShowNewConversation] = useState(false)
   const [showDebugLog, setShowDebugLog] = useState(false)
   const [userAvatar, setUserAvatar] = useState<{ data?: string; type?: string } | null>(null)
+  const [isSyncing, setIsSyncing] = useState(false)
 
   const handleLogout = () => {
     // Chiudi prima il menu
@@ -53,6 +55,18 @@ export function ConversationsPage() {
     loadUserAvatar()
   }, [client, jid])
 
+  // Sottoscrivi a cambiamenti dello stato sync
+  useEffect(() => {
+    const unsubscribe = syncStatusService.subscribe((syncing) => {
+      setIsSyncing(syncing)
+    })
+
+    // Imposta stato iniziale
+    setIsSyncing(syncStatusService.getIsSyncing())
+
+    return unsubscribe
+  }, [])
+
   return (
     <div className="conversations-page">
       {/* Header Telegram-style */}
@@ -76,6 +90,13 @@ export function ConversationsPage() {
             <div className="conversations-page__connection-status" role="status" aria-live="polite">
               <span className="conversations-page__status-dot" aria-hidden="true"></span>
               <span className="conversations-page__status-text">Non connesso</span>
+            </div>
+          )}
+          {isSyncing && (
+            <div className="conversations-page__sync-indicator" role="status" aria-live="polite" aria-label="Sincronizzazione in corso">
+              <svg className="conversations-page__spinner" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+              </svg>
             </div>
           )}
           <button 
