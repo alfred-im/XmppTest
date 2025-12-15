@@ -45,7 +45,6 @@ interface UseMessagesReturn {
 export function useMessages({
   jid,
   client,
-  isConnected,
 }: UseMessagesOptions): UseMessagesReturn {
   const [messagesRaw, setMessagesRaw] = useState<Message[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -92,7 +91,7 @@ export function useMessages({
       const normalizedJid: BareJID = normalizeJID(jid)
       
       // Carica ultimi N messaggi dalla cache
-      const cached = await messageRepository.getByConversationJid(normalizedJid, {
+      const cached = await messageRepository.getForConversation(normalizedJid, {
         limit: PAGINATION.DEFAULT_MESSAGE_LIMIT,
       })
 
@@ -137,7 +136,7 @@ export function useMessages({
       
       try {
         // Ricarica tutti i messaggi della conversazione dalla cache
-        const updated = await messageRepository.getByConversationJid(normalizedJid)
+        const updated = await messageRepository.getForConversation(normalizedJid)
         
         console.log(`   - Caricati ${updated.length} messaggi dal DB`)
         
@@ -173,7 +172,7 @@ export function useMessages({
       const oldestMessage = messagesRaw[0]
 
       // Carica messaggi più vecchi del primo attuale (dalla cache)
-      const olderMessages = await messageRepository.getByConversationJid(normalizedJid, {
+          const olderMessages = await messageRepository.getForConversation(normalizedJid, {
         before: oldestMessage.timestamp,
         limit: PAGINATION.DEFAULT_MESSAGE_LIMIT,
       })

@@ -10,6 +10,7 @@ import { normalizeJID } from '../utils/jid'
 import type { BareJID } from '../types/jid'
 import { generateTempId } from '../utils/message'
 import { PAGINATION } from '../config/constants'
+import { messageRepository, conversationRepository } from './repositories'
 
 // Re-export per comodità
 export type { Message, MessageStatus } from './conversations-db'
@@ -310,7 +311,6 @@ export async function sendMessage(
     const finalMessageId = typeof messageId === 'string' ? messageId : tempId
 
     // Salva nel DB locale
-    const { messageRepository } = await import('./repositories')
     await messageRepository.saveAll([{
       messageId: finalMessageId,
       conversationJid: normalizedJid,
@@ -322,7 +322,6 @@ export async function sendMessage(
     }])
 
     // Aggiorna conversazione
-    const { conversationRepository } = await import('./repositories')
     await conversationRepository.update(normalizedJid, {
       lastMessage: {
         body,

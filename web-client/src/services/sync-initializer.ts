@@ -1,6 +1,5 @@
 import type { Agent } from 'stanza'
 import { ConversationRepository } from './repositories/ConversationRepository'
-import { MessageRepository } from './repositories/MessageRepository'
 import { MetadataRepository } from './repositories/MetadataRepository'
 import { downloadAllConversations, enrichWithRoster } from './conversations'
 import { getVCardsForJids } from './vcard'
@@ -15,7 +14,6 @@ interface SyncProgress {
 type ProgressCallback = (progress: SyncProgress) => void
 
 const conversationRepo = new ConversationRepository()
-const messageRepo = new MessageRepository()
 const metadataRepo = new MetadataRepository()
 
 /**

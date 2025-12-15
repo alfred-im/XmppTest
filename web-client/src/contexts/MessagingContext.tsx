@@ -63,10 +63,10 @@ export function MessagingProvider({ children }: { children: ReactNode }) {
         const from = message.from || ''
         const isFromMe = from.toLowerCase().startsWith(myBareJid.toLowerCase())
 
-        // Crea oggetto messaggio
-        const messageToSave = {
+        // Crea oggetto messaggio (con type any per evitare type checking su BareJID branded type)
+        const messageToSave: any = {
           messageId: message.id || `msg_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
-          conversationJid: contactJid,
+          conversationJid: normalizeJID(contactJid), // Normalizza il JID
           body: message.body,
           timestamp: message.delay?.timestamp || new Date(),
           from: isFromMe ? 'me' as const : 'them' as const,

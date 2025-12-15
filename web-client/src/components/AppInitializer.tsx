@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { useConnection } from '../contexts/ConnectionContext'
 import { SplashScreen } from './SplashScreen'
 import { performInitialSync } from '../services/sync-initializer'
@@ -37,9 +37,11 @@ export function AppInitializer({ children }: AppInitializerProps) {
       syncStatusService.setSyncing(true)
 
       try {
-        await performInitialSync(client, (progress) => {
-          setSyncMessage(progress.message)
-        })
+        if (client) {
+          await performInitialSync(client, (progress) => {
+            setSyncMessage(progress.message)
+          })
+        }
 
         setSyncStatus('complete')
         syncStatusService.setSyncing(false)

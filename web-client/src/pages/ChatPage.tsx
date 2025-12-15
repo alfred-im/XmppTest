@@ -26,7 +26,7 @@ export function ChatPage() {
   const { jid: encodedJid } = useParams<{ jid: string }>()
   const navigate = useNavigate()
   const { client, isConnected, jid: myJid } = useConnection()
-  const { conversations, markAsRead, reloadFromDB } = useConversations()
+  const { conversations, markAsRead } = useConversations()
   const { subscribeToMessages } = useMessaging()
   
   const jid = useMemo(() => encodedJid ? decodeURIComponent(encodedJid) : '', [encodedJid])
@@ -262,7 +262,7 @@ export function ChatPage() {
         role="log"
         aria-label="Messaggi della conversazione"
       >
-        {isLoadingMore && !isPullRefreshing && (
+        {isLoadingMore && (
           <div className="chat-page__load-more" aria-live="polite">
             <div className="chat-page__spinner" aria-hidden="true"></div>
             <span>Caricamento...</span>
