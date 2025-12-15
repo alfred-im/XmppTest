@@ -128,9 +128,14 @@ export async function loadMessagesForContact(
   const { maxResults = PAGINATION.DEFAULT_MESSAGE_LIMIT, afterToken, beforeToken } = options || {}
 
   try {
+    const normalizedContactJid = normalizeJID(contactJid)
+    if (!normalizedContactJid || normalizedContactJid.trim().length === 0) {
+      throw new Error('JID contatto non valido')
+    }
+
     // Query MAM filtrata per contatto specifico
     const result = await client.searchHistory({
-      with: normalizeJID(contactJid),
+      with: normalizedContactJid,
       paging: {
         max: maxResults,
         after: afterToken,
@@ -150,12 +155,21 @@ export async function loadMessagesForContact(
     // Converti TUTTI i messaggi MAMResult in Message (inclusi ping, token, visualizzazioni, ecc.)
     const myJid = client.jid || ''
 
-    const allMessages = result.results.map((msg) =>
-      mamResultToMessage(msg, contactJid, myJid)
-    )
+    const allMessages = result.results
+      .map((msg) => {
+        try {
+          return mamResultToMessage(msg, contactJid, myJid)
+        } catch (error) {
+          console.warn('⚠️ Errore nel convertire messaggio MAM, skip:', error)
+          return null
+        }
+      })
+      .filter((msg): msg is Message => msg !== null)
 
     // Salva TUTTI i messaggi nel database (dati raw, senza alternanza self-chat)
-    await saveMessages(allMessages)
+    if (allMessages.length > 0) {
+      await saveMessages(allMessages)
+    }
 
     // Filtra solo messaggi di chat validi (con body) per la visualizzazione nella UI
     const validMessages = allMessages.filter(msg => msg.body && msg.body.trim().length > 0)

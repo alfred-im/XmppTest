@@ -7,7 +7,6 @@ import { useMessages } from '../hooks/useMessages'
 import { useBackButton } from '../hooks/useBackButton'
 import { isSameDay } from '../utils/date'
 import { MessageItem } from '../components/MessageItem'
-import { isValidJid } from '../utils/jid'
 import { TEXT_LIMITS, PAGINATION } from '../config/constants'
 import './ChatPage.css'
 
@@ -37,10 +36,12 @@ export function ChatPage() {
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const messagesContainerRef = useRef<HTMLDivElement>(null)
 
-  // Validate JID format - redirect if invalid
+  // Validate JID format - redirect if empty or malformed
+  // NON validiamo rigorosamente perché se il JID arriva dalla lista conversazioni,
+  // significa che è nel database e quindi il server l'ha accettato
   useEffect(() => {
-    if (jid && !isValidJid(jid)) {
-      console.error('JID non valido:', jid)
+    if (!jid || jid.trim().length === 0) {
+      console.error('JID vuoto')
       navigate('/conversations', { replace: true })
     }
   }, [jid, navigate])

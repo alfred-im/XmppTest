@@ -97,6 +97,7 @@ export function createJID(jid: string): JID {
 
 /**
  * Crea un BareJID (senza resource) da una stringa
+ * Valida rigorosamente - usare SOLO per input utente
  * @throws {InvalidJIDError} Se il JID non è valido
  */
 export function createBareJID(jid: string): BareJID {
@@ -104,7 +105,7 @@ export function createBareJID(jid: string): BareJID {
   
   // Rimuovi resource se presente
   const bareJid = jid.split('/')[0]
-  return bareJid as BareJID
+  return bareJid.toLowerCase() as BareJID
 }
 
 /**
@@ -143,17 +144,21 @@ export function isValidJID(jid: string): jid is JID {
 
 /**
  * Normalizza un JID rimuovendo la resource e convertendo in lowercase
- * @throws {InvalidJIDError} Se il JID non è valido
+ * NON valida il formato - accetta qualsiasi JID che il server accetta
+ * 
+ * Questo è intenzionale: se un JID arriva da MAM o dal database,
+ * significa che il server l'ha già accettato, quindi è valido per definizione.
  */
 export function normalizeJID(jid: string | JID): BareJID {
   // Se è già un JID validato, trust it
   const jidStr = jid as string
   
+  if (!jidStr || typeof jidStr !== 'string') {
+    return '' as BareJID
+  }
+  
   // Rimuovi resource (tutto dopo /)
   const bareJid = jidStr.split('/')[0]
-  
-  // Valida il formato
-  validateJIDFormat(bareJid)
   
   // Converti in lowercase (RFC 6122: dominio e local sono case-insensitive)
   return bareJid.toLowerCase() as BareJID
@@ -161,13 +166,23 @@ export function normalizeJID(jid: string | JID): BareJID {
 
 /**
  * Parsa un JID nei suoi componenti
- * @throws {InvalidJIDError} Se il JID non è valido
+ * NON valida rigorosamente - accetta anche JID parziali o locali
+ * 
+ * @throws {InvalidJIDError} Solo se il JID è completamente vuoto o malformato
  */
 export function parseJID(jid: string | JID): ParsedJID {
   const jidStr = jid as string
-  validateJIDFormat(jidStr)
+  
+  if (!jidStr || typeof jidStr !== 'string') {
+    throw new InvalidJIDError(jidStr, 'JID vuoto o non stringa')
+  }
 
-  const match = JID_REGEX.exec(jidStr)!
+  const match = JID_REGEX.exec(jidStr.trim())
+  
+  if (!match) {
+    throw new InvalidJIDError(jidStr, 'Formato non parsabile')
+  }
+  
   const [, local, domain, resource] = match
 
   const bare = (local ? `${local}@${domain}` : domain).toLowerCase() as BareJID
@@ -175,7 +190,7 @@ export function parseJID(jid: string | JID): ParsedJID {
 
   return {
     local: local?.toLowerCase(),
-    domain: domain.toLowerCase(),
+    domain: domain?.toLowerCase() || '',
     resource,
     bare,
     full,
@@ -211,7 +226,7 @@ export function getResource(jid: string | JID): string | undefined {
 
 /**
  * Converte un JID in bare JID (rimuove resource)
- * @throws {InvalidJIDError} Se il JID non è valido
+ * NON valida - usa normalizeJID che accetta qualsiasi JID
  */
 export function toBareJID(jid: string | JID): BareJID {
   return normalizeJID(jid)

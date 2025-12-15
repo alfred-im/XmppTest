@@ -74,15 +74,21 @@ function groupMessagesByContact(messages: MAMResult[], myJid: string): Map<strin
 
 // Raggruppa per contatto
 for (const msg of chatMessages) {
-  const contactJid = extractContactJid(msg, myJid)
-  if (!contactJid) {
-    continue // Skip messaggi senza contatto valido
-  }
+  try {
+    const contactJid = extractContactJid(msg, myJid)
+    if (!contactJid || contactJid.trim().length === 0) {
+      console.warn('⚠️ Messaggio con JID vuoto o non valido, skip:', msg.item.message?.from, msg.item.message?.to)
+      continue // Skip messaggi senza contatto valido
+    }
 
-  if (!groups.has(contactJid)) {
-    groups.set(contactJid, [])
+    if (!groups.has(contactJid)) {
+      groups.set(contactJid, [])
+    }
+    groups.get(contactJid)!.push(msg)
+  } catch (error) {
+    console.warn('⚠️ Errore nel processare messaggio MAM, skip:', error, msg)
+    continue // Skip messaggi che causano errori
   }
-  groups.get(contactJid)!.push(msg)
 }
 
   // Per ogni gruppo, prendi il messaggio più recente
@@ -364,7 +370,8 @@ export async function updateConversationOnNewMessage(
 // Determina il JID del contatto
 const contactJid = from.startsWith(myBareJid) ? normalizeJID(to) : normalizeJID(from)
 
-if (!contactJid) {
+if (!contactJid || contactJid.trim().length === 0) {
+  console.warn('⚠️ Messaggio real-time con JID vuoto, skip')
   return // Skip messaggi senza contatto valido
 }
 
