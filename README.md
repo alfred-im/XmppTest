@@ -12,7 +12,9 @@ Alfred è un client XMPP web-based costruito con React 19 + TypeScript + Vite. I
 
 - Apertura chat: < 100ms (cache hit)
 - Lista conversazioni: < 200ms (cache hit)
-- Sync MAM globale: ~2-5s per 1000 messaggi
+- Sync iniziale (DB vuoto): ~5-10s per 100 conversazioni
+- Sync incrementale (DB popolato): ~2-5s per aggiornamenti
+- Avvii successivi: < 5s (solo delta dal marker)
 - Build production: ~15s (code splitting attivo)
 
 ## Feature Implementate (Riferimento Rapido)
@@ -24,10 +26,11 @@ Vedi `PROJECT_MAP.md` per dettagli completi.
 - Lista conversazioni con sync ottimizzata
 - Chat 1-to-1 con real-time messaging
 - vCard (avatar, profilo)
-- Pull-to-refresh
-- MAM (XEP-0313) con paginazione
+- Sync iniziale intelligente (full/incremental)
+- MAM (XEP-0313) con marcatori RSM
 - Push Notifications (XEP-0357) - richiede server con supporto
 - Cache-first con IndexedDB
+- Real-time message updates (no polling)
 
 **In Roadmap** (non iniziato):
 - MUC (XEP-0045)
@@ -58,16 +61,18 @@ Vedi `PROJECT_MAP.md` per architettura dettagliata completa.
 
 **Layer**:
 - UI Layer: Pages, Components
-- Context Layer: XmppContext, ConversationsContext, MessagingContext, AuthContext, ConnectionContext
-- Services Layer: xmpp.ts, messages.ts, conversations.ts, sync.ts, vcard.ts, push-notifications.ts
+- Initialization Layer: AppInitializer (gestisce sync all'avvio)
+- Context Layer: ConnectionContext, ConversationsContext, MessagingContext, AuthContext
+- Services Layer: sync-initializer.ts, messages.ts, conversations.ts, vcard.ts
 - Repository Layer: ConversationRepository, MessageRepository, VCardRepository, MetadataRepository
 - Data Layer: IndexedDB (alfred-xmpp-db) + XMPP Server
 
 **Principi**:
-1. Cache-First: Mostra sempre prima dati locali
-2. Minimal Server Queries: Una query MAM globale, non N query
-3. Offline-First: Funziona senza connessione
-4. Separation of Concerns: Layer ben definiti
+1. **Sync-Once + Listen**: Sincronizzazione solo all'avvio, poi solo messaggi real-time
+2. **Cache-First**: Mostra sempre prima dati locali
+3. **Incremental Sync**: DB vuoto → full sync, DB popolato → solo nuovi messaggi
+4. **Offline-First**: Funziona senza connessione
+5. **Separation of Concerns**: Layer ben definiti
 
 ## Documentazione (Struttura)
 
@@ -109,5 +114,6 @@ MIT License - Vedi file `LICENSE`
 
 ---
 
-**Ultimo aggiornamento**: 2025-12-06  
-**Versione corrente**: 0.9.0
+**Ultimo aggiornamento**: 2025-12-15  
+**Versione corrente**: 1.0.0  
+**Architettura**: Sync-Once + Listen (implementata 15 dicembre 2025)

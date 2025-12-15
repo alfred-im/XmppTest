@@ -2,6 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
+import { AppInitializer } from './components/AppInitializer.tsx'
 
 // Inizializza il debug logger per intercettare tutti i console.log
 import { debugLogger } from './services/debug-logger'
@@ -139,6 +140,8 @@ window.addEventListener('orientationchange', () => {
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App />
+    <AppInitializer>
+      <App />
+    </AppInitializer>
   </StrictMode>,
 )

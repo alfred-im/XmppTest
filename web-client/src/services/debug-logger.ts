@@ -45,6 +45,14 @@ class DebugLogger {
   }
 
   /**
+   * Aggiungi manualmente un log
+   */
+  log(message: string, ...args: any[]) {
+    this.addLog('log', [message, ...args])
+    this.originalConsole.log(message, ...args)
+  }
+
+  /**
    * Intercetta un metodo specifico di console
    */
   private interceptConsole(level: 'log' | 'info' | 'warn' | 'error' | 'debug') {

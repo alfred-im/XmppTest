@@ -35,7 +35,7 @@ export default defineConfig({
             './src/services/messages',
             './src/services/conversations',
             './src/services/conversations-db',
-            './src/services/sync',
+            './src/services/sync-initializer',
           ],
         },
       },

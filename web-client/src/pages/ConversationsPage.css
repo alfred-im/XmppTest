@@ -58,6 +58,26 @@
   gap: 0.5rem;
 }
 
+.conversations-page__sync-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.conversations-page__spinner {
+  animation: spin 1s linear infinite;
+  color: var(--color-primary);
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 /* Connection status indicator */
 .conversations-page__connection-status {
   display: flex;

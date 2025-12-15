@@ -1,74 +1,72 @@
-import { useEffect, useState, useRef } from 'react'
-import { useAuth } from '../contexts/AuthContext'
+import { useEffect, useState, type ReactNode } from 'react'
 import { useConnection } from '../contexts/ConnectionContext'
+import { SplashScreen } from './SplashScreen'
+import { performInitialSync } from '../services/sync-initializer'
+import { syncStatusService } from '../services/sync-status'
+
+interface AppInitializerProps {
+  children: ReactNode
+}
 
 /**
- * Componente che gestisce l'inizializzazione automatica dell'app
- * - Carica credenziali salvate
- * - Tenta auto-login se presenti
- * - Mostra LoginPopup se necessario
+ * Componente wrapper che gestisce la sincronizzazione iniziale
+ * - All'avvio: controlla se DB vuoto → full sync o incremental sync
+ * - Dopo sync: attiva listener real-time e passa al rendering normale
+ * 
+ * Questo è l'UNICO punto dove avviene la sincronizzazione.
+ * Dopo la sync iniziale, l'app riceve solo messaggi real-time.
  */
-export function AppInitializer({ children }: { children: React.ReactNode }) {
-  const { loadSavedCredentials } = useAuth()
-  const { connect } = useConnection()
-  const hasInitialized = useRef(false)
+export function AppInitializer({ children }: AppInitializerProps) {
+  const [syncStatus, setSyncStatus] = useState<'pending' | 'syncing' | 'complete' | 'error'>('pending')
+  const [syncMessage, setSyncMessage] = useState('Connessione...')
+  const [error, setError] = useState<string | null>(null)
+  const { client, isConnected } = useConnection()
 
   useEffect(() => {
-    if (hasInitialized.current) return
-    hasInitialized.current = true
+    if (!client || !isConnected) {
+      setSyncStatus('pending')
+      setSyncMessage('Connessione al server...')
+      syncStatusService.setSyncing(false)
+      return
+    }
 
-    const initialize = async () => {
-      // Carica credenziali salvate
-      const saved = loadSavedCredentials()
-      
-      if (saved) {
-        // Tenta auto-login
-        try {
-          await connect(saved.jid, saved.password)
-        } catch (err) {
-          console.error('Auto-login fallito:', err)
+    async function initializeApp() {
+      setSyncStatus('syncing')
+      setSyncMessage('Sincronizzazione...')
+      setError(null)
+      syncStatusService.setSyncing(true)
+
+      try {
+        if (client) {
+          await performInitialSync(client, (progress) => {
+            setSyncMessage(progress.message)
+          })
         }
+
+        setSyncStatus('complete')
+        syncStatusService.setSyncing(false)
+        console.log('✅ Sync completata, app pronta')
+      } catch (err) {
+        console.error('❌ Errore sync iniziale:', err)
+        setSyncStatus('error')
+        syncStatusService.setSyncing(false)
+        setError(err instanceof Error ? err.message : 'Errore durante la sincronizzazione')
       }
     }
 
-    initialize()
-  }, [loadSavedCredentials, connect])
+    initializeApp()
+  }, [client, isConnected])
 
+  // Mostra splash screen durante sync
+  if (syncStatus !== 'complete') {
+    return (
+      <SplashScreen 
+        message={error || syncMessage}
+        error={!!error}
+      />
+    )
+  }
+
+  // Sync completata: renderizza app normale
   return <>{children}</>
-}
-
-interface AppInitializerWithCallbackProps {
-  children: (props: { isInitializing: boolean; isConnected: boolean; isConnecting: boolean }) => React.ReactNode
-}
-
-export function AppInitializerWithCallback({ children }: AppInitializerWithCallbackProps) {
-  const { loadSavedCredentials } = useAuth()
-  const { connect, isConnected, isConnecting } = useConnection()
-  const [isInitializing, setIsInitializing] = useState(true)
-  const hasInitialized = useRef(false)
-
-  useEffect(() => {
-    if (hasInitialized.current) return
-    hasInitialized.current = true
-
-    const initialize = async () => {
-      setIsInitializing(true)
-
-      const saved = loadSavedCredentials()
-      
-      if (saved) {
-        try {
-          await connect(saved.jid, saved.password)
-        } catch (err) {
-          console.error('Auto-login fallito:', err)
-        }
-      }
-
-      setIsInitializing(false)
-    }
-
-    initialize()
-  }, [loadSavedCredentials, connect])
-
-  return <>{children({ isInitializing, isConnected, isConnecting })}</>
 }
