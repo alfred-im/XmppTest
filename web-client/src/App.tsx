@@ -4,7 +4,7 @@ import { AuthProvider } from './contexts/AuthContext'
 import { ConnectionProvider, useConnection } from './contexts/ConnectionContext'
 import { ConversationsProvider } from './contexts/ConversationsContext'
 import { MessagingProvider } from './contexts/MessagingContext'
-import { AppInitializerWithCallback } from './components/AppInitializer'
+import { AppInitializer } from './components/AppInitializer'
 import { LoginPopup } from './components/LoginPopup'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { SplashScreen } from './components/SplashScreen'
@@ -39,7 +39,7 @@ const PageLoader = () => (
   </div>
 )
 
-function AppRoutes({ isInitializing }: { isInitializing: boolean }) {
+function AppRoutes() {
   const { isConnected } = useConnection()
 
   return (
@@ -59,9 +59,8 @@ function AppRoutes({ isInitializing }: { isInitializing: boolean }) {
       </Suspense>
 
       {/* Popup di login globale - appare sopra le route quando necessario */}
-      {/* Mostrato durante inizializzazione O quando non connesso */}
-      {(isInitializing || !isConnected) && (
-        <LoginPopup isInitializing={isInitializing} />
+      {!isConnected && (
+        <LoginPopup />
       )}
     </>
   )
@@ -91,11 +90,9 @@ function App() {
           <ConversationsProvider>
             <MessagingProvider>
               <HashRouter>
-                <AppInitializerWithCallback>
-                  {({ isInitializing }) => (
-                    <AppRoutes isInitializing={isInitializing} />
-                  )}
-                </AppInitializerWithCallback>
+                <AppInitializer>
+                  <AppRoutes />
+                </AppInitializer>
               </HashRouter>
             </MessagingProvider>
           </ConversationsProvider>

@@ -66,7 +66,7 @@ const validateAndNormalizeJid = (input: string): { valid: boolean; jid?: string;
 }
 
 interface LoginPopupProps {
-  isInitializing: boolean
+  isInitializing?: boolean
 }
 
 export function LoginPopup({ isInitializing }: LoginPopupProps) {

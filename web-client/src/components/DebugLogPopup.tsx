@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { debugLogger } from '../services/debug-logger'
 import type { LogEntry } from '../services/debug-logger'
+import { clearDatabase } from '../services/conversations-db'
 import './DebugLogPopup.css'
 
 interface DebugLogPopupProps {
@@ -11,6 +12,7 @@ export function DebugLogPopup({ onClose }: DebugLogPopupProps) {
   const [logs, setLogs] = useState<LogEntry[]>(debugLogger.getLogs())
   const [filter, setFilter] = useState<string>('all')
   const [autoScroll, setAutoScroll] = useState(true)
+  const [isClearing, setIsClearing] = useState(false)
   const logsEndRef = useRef<HTMLDivElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
 
@@ -37,6 +39,28 @@ export function DebugLogPopup({ onClose }: DebugLogPopupProps) {
   const handleClearLogs = () => {
     if (confirm('Sei sicuro di voler cancellare tutti i log?')) {
       debugLogger.clearLogs()
+    }
+  }
+
+  const handleClearDatabase = async () => {
+    if (!confirm('⚠️ ATTENZIONE: Questa operazione cancellerà TUTTI i dati locali (conversazioni, messaggi, vCard, metadata).\n\nDovrai effettuare una nuova sincronizzazione completa al prossimo avvio.\n\nSei sicuro di voler continuare?')) {
+      return
+    }
+
+    setIsClearing(true)
+    try {
+      await clearDatabase()
+      debugLogger.log('✅ Database svuotato con successo')
+      alert('✅ Database svuotato. L\'app si ricaricherà.')
+      
+      // Ricarica l'app per forzare una nuova sync
+      window.location.reload()
+    } catch (error) {
+      console.error('Errore nello svuotamento database:', error)
+      debugLogger.log(`❌ Errore: ${error instanceof Error ? error.message : 'Errore sconosciuto'}`)
+      alert('❌ Errore nello svuotamento del database')
+    } finally {
+      setIsClearing(false)
     }
   }
 
@@ -226,6 +250,20 @@ export function DebugLogPopup({ onClose }: DebugLogPopupProps) {
                 <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
               </svg>
               Cancella
+            </button>
+            <button 
+              className="debug-log-popup__action-btn debug-log-popup__action-btn--danger-db"
+              onClick={handleClearDatabase}
+              title="Svuota database locale (ATTENZIONE: elimina tutti i dati!)"
+              disabled={isClearing}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+                <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
+                <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
+                <line x1="3" y1="12" x2="21" y2="12"></line>
+              </svg>
+              {isClearing ? 'Svuotamento...' : 'Svuota DB'}
             </button>
           </div>
         </div>

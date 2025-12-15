@@ -1,9 +1,11 @@
 import { createContext, useContext, useEffect, useCallback, useRef } from 'react'
 import type { ReactNode } from 'react'
 import type { ReceivedMessage } from 'stanza/protocol'
-import { handleIncomingMessageAndSync } from '../services/sync'
 import { useConnection } from './ConnectionContext'
 import { useConversations } from './ConversationsContext'
+import { messageRepository } from '../services/repositories'
+import { conversationRepository } from '../services/repositories'
+import { normalizeJID } from '../utils/jid'
 
 type MessageCallback = (message: ReceivedMessage) => void
 
@@ -13,17 +15,41 @@ interface MessagingContextType {
 
 const MessagingContext = createContext<MessagingContextType | undefined>(undefined)
 
+/**
+ * Helper per estrarre JID del contatto da un messaggio
+ */
+function extractContactJid(message: ReceivedMessage, myJid: string): string {
+  const myBareJid = normalizeJID(myJid)
+  const from = message.from || ''
+  const to = message.to || ''
+  
+  // Se il messaggio è da me, il contatto è il destinatario
+  if (from.toLowerCase().startsWith(myBareJid.toLowerCase())) {
+    return normalizeJID(to)
+  }
+  // Altrimenti il contatto è il mittente
+  return normalizeJID(from)
+}
+
+/**
+ * MessagingProvider - Gestisce messaggi in arrivo real-time
+ * 
+ * ARCHITETTURA SEMPLIFICATA:
+ * - NON fa più sync completa dopo ogni messaggio
+ * - Salva direttamente il messaggio nel DB
+ * - L'observer del MessageRepository notifica automaticamente la UI
+ */
 export function MessagingProvider({ children }: { children: ReactNode }) {
   const { client, isConnected, jid } = useConnection()
   const { reloadFromDB } = useConversations()
   const messageCallbacks = useRef<Set<MessageCallback>>(new Set())
 
-  // Gestione messaggi in arrivo
+  // Gestione messaggi in arrivo - SEMPLIFICATO: solo salvataggio diretto
   useEffect(() => {
     if (!client || !isConnected || !jid) return
 
     const handleMessage = async (message: ReceivedMessage) => {
-      console.log('📨 MessagingContext: messaggio ricevuto', { from: message.from, body: message.body })
+      console.log('📨 Messaggio ricevuto:', { from: message.from, body: message.body?.substring(0, 50) })
       
       if (!message.body) {
         console.log('   ⚠️ Messaggio senza body, ignorato')
@@ -31,10 +57,41 @@ export function MessagingProvider({ children }: { children: ReactNode }) {
       }
 
       try {
-        console.log('   🔄 Sincronizzo dal server...')
-        // Sincronizza dal server
-        await handleIncomingMessageAndSync(client, message, jid)
-        console.log('   ✓ Sincronizzazione completata')
+        // Estrai info messaggio
+        const contactJid = extractContactJid(message, jid)
+        const myBareJid = normalizeJID(jid)
+        const from = message.from || ''
+        const isFromMe = from.toLowerCase().startsWith(myBareJid.toLowerCase())
+
+        // Crea oggetto messaggio (con type any per evitare type checking su BareJID branded type)
+        const messageToSave: any = {
+          messageId: message.id || `msg_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+          conversationJid: normalizeJID(contactJid), // Normalizza il JID
+          body: message.body,
+          timestamp: message.delay?.timestamp || new Date(),
+          from: isFromMe ? 'me' as const : 'them' as const,
+          status: 'sent' as const,
+        }
+
+        // Salva nel DB (questo triggera automaticamente l'observer)
+        await messageRepository.saveAll([messageToSave])
+        console.log('   ✅ Messaggio salvato nel DB')
+
+        // Aggiorna conversazione con ultimo messaggio
+        await conversationRepository.update(contactJid, {
+          lastMessage: {
+            body: messageToSave.body,
+            timestamp: messageToSave.timestamp,
+            from: messageToSave.from,
+            messageId: messageToSave.messageId,
+          },
+          updatedAt: messageToSave.timestamp,
+        })
+
+        // Se messaggio è da altri, incrementa unread
+        if (!isFromMe) {
+          await conversationRepository.incrementUnread(contactJid)
+        }
 
         // Aggiorna lista conversazioni
         await reloadFromDB()
@@ -44,7 +101,7 @@ export function MessagingProvider({ children }: { children: ReactNode }) {
           callback(message)
         })
       } catch (error) {
-        console.error('❌ Errore nella gestione messaggio:', error)
+        console.error('❌ Errore nel salvataggio messaggio:', error)
       }
     }
 
