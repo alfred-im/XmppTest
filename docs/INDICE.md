@@ -24,7 +24,7 @@ Indice documenti tecnici per navigazione rapida. Questo documento è per AI, non
 
 - [implementation/README.md](./implementation/README.md) - Overview implementazioni
 - [implementation/login-system.md](./implementation/login-system.md) - Sistema login popup
-- [implementation/sync-system-complete.md](./implementation/sync-system-complete.md) - **Sistema "Sync-Once + Listen"** (v3.0 - 15 dic 2025)
+- [implementation/sync-system-complete.md](./implementation/sync-system-complete.md) - Sistema sync completo
 - [implementation/scrollable-containers.md](./implementation/scrollable-containers.md) - Utility class scroll
 - [implementation/scrollable-containers-implementation.md](./implementation/scrollable-containers-implementation.md) - Dettagli tecnici
 
@@ -63,5 +63,4 @@ Indice documenti tecnici per navigazione rapida. Questo documento è per AI, non
 
 ---
 
-**Ultimo aggiornamento**: 2025-12-15  
-**Architettura corrente**: Sync-Once + Listen (v3.0)
+**Ultimo aggiornamento**: 2025-12-06

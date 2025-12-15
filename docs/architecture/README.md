@@ -28,21 +28,7 @@ Data Layer (IndexedDB + XMPP Server)
 
 ## Principi Chiave
 
-### Architettura "Sync-Once + Listen" (v3.0 - 15 dicembre 2025)
-
-1. **Sync-Once**: Sincronizzazione SOLO all'avvio (full se DB vuoto, incremental se popolato)
-2. **Listen**: Dopo sync iniziale, solo messaggi real-time via listener XMPP
-3. **Cache-First**: Mostra sempre dati locali prima (< 100ms)
-4. **Offline-First**: Funziona completamente senza connessione
-5. **Minimal Server Queries**: 1 sync all'avvio, poi 0 query durante utilizzo
-6. **Separation of Concerns**: Layer ben definiti (UI, Context, Services, Repository, Data)
-
-### Differenze con Architettura Precedente
-
-| Aspetto | Prima (v2.0) | Ora (v3.0) | Miglioramento |
-|---------|--------------|------------|---------------|
-| Punti di sync | 15+ sparsi | 1 (AppInitializer) | **-93%** |
-| Pull-to-refresh | Su tutte le pagine | Eliminato | **-100%** |
-| Sync dopo messaggio | Sempre | Mai | **-100%** |
-| Query server/giorno | Centinaia | ~1-5 | **-95%** |
-| Righe codice sync | ~1700 | ~530 | **-70%** |
+1. **Offline-First**: Cache completa IndexedDB, UI funziona senza connessione
+2. **Cache-First Loading**: Mostra dati locali prima, sync background
+3. **Minimal Server Queries**: Query MAM globale (non N query), cache vCard persistente
+4. **Separation of Concerns**: Layer ben definiti (UI, Context, Services, Repository, Data)
