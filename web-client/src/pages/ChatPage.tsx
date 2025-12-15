@@ -4,6 +4,7 @@ import { useConnection } from '../contexts/ConnectionContext'
 import { useConversations } from '../contexts/ConversationsContext'
 import { useMessaging } from '../contexts/MessagingContext'
 import { useMessages } from '../hooks/useMessages'
+import { usePullToRefresh } from '../hooks/usePullToRefresh'
 import { useBackButton } from '../hooks/useBackButton'
 import { isSameDay } from '../utils/date'
 import { MessageItem } from '../components/MessageItem'
@@ -14,19 +15,14 @@ import './ChatPage.css'
 /**
  * Pagina principale per la visualizzazione e gestione di una chat
  * Utilizza custom hooks per separare le responsabilità:
- * - useMessages: gestione stato e operazioni sui messaggi (cache-first + observer)
- * 
- * ARCHITETTURA "SYNC-ONCE + LISTEN":
- * - Messaggi sincronizzati all'avvio (AppInitializer)
- * - Real-time updates via MessagingContext listener
- * - NO pull-to-refresh (rimosso)
- * - NO sync durante utilizzo
+ * - useMessages: gestione stato e operazioni sui messaggi
+ * - usePullToRefresh: gestione pull-to-refresh
  */
 export function ChatPage() {
   const { jid: encodedJid } = useParams<{ jid: string }>()
   const navigate = useNavigate()
   const { client, isConnected, jid: myJid } = useConnection()
-  const { conversations, markAsRead } = useConversations()
+  const { conversations, markAsRead, reloadFromDB } = useConversations()
   const { subscribeToMessages } = useMessaging()
   
   const jid = useMemo(() => encodedJid ? decodeURIComponent(encodedJid) : '', [encodedJid])
@@ -57,6 +53,7 @@ export function ChatPage() {
     error,
     sendMessage: sendMessageHook,
     loadMoreMessages,
+    reloadAllMessages,
     setError,
   } = useMessages({
     jid,
@@ -77,8 +74,40 @@ export function ChatPage() {
     }
   }, [hasMoreMessages, isLoadingMore, loadMoreMessages])
 
-  // Pull-to-refresh rimosso con architettura "sync-once + listen"
-  // Messaggi sincronizzati all'avvio, poi solo real-time listener
+  // Custom hook per pull-to-refresh
+  const {
+    isRefreshing: isPullRefreshing,
+    pullIndicatorRef,
+    handleTouchStart,
+    handleTouchMove,
+    handleTouchEnd,
+  } = usePullToRefresh({
+    onRefresh: async () => {
+      // Usa la nuova funzione di sincronizzazione completa per questa conversazione
+      // Questa scarica TUTTI i messaggi + vCard del contatto in modo ottimizzato
+      if (client && jid) {
+        try {
+          const { syncSingleConversationComplete } = await import('../services/sync')
+          const result = await syncSingleConversationComplete(client, jid)
+          
+          if (!result.success) {
+            console.error('Errore nella sincronizzazione:', result.error)
+            setError(result.error || 'Errore nella sincronizzazione')
+          } else {
+            // Ricarica messaggi dal database locale (ora sincronizzato)
+            await reloadAllMessages()
+            
+            // Ricarica conversazioni dal database (con vCard aggiornato)
+            await reloadFromDB()
+          }
+        } catch (error) {
+          console.error('Errore durante la sincronizzazione completa:', error)
+          setError(error instanceof Error ? error.message : 'Errore durante la sincronizzazione')
+        }
+      }
+    },
+    enabled: !isLoadingMore,
+  })
 
   // Handle virtual keyboard on mobile - adjust layout only
   useEffect(() => {
@@ -259,10 +288,13 @@ export function ChatPage() {
         className="chat-page__messages scrollable-container"
         ref={messagesContainerRef}
         onScroll={handleScroll}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
         role="log"
         aria-label="Messaggi della conversazione"
       >
-        {isLoadingMore && (
+        {isLoadingMore && !isPullRefreshing && (
           <div className="chat-page__load-more" aria-live="polite">
             <div className="chat-page__spinner" aria-hidden="true"></div>
             <span>Caricamento...</span>
@@ -285,6 +317,26 @@ export function ChatPage() {
         ) : (
           renderedMessages
         )}
+        
+        {/* Pull to refresh indicator (at bottom) */}
+        <div 
+          ref={pullIndicatorRef}
+          className="chat-page__pull-refresh-bottom"
+          style={{ opacity: 0 }}
+          aria-live="polite"
+          aria-label={isPullRefreshing ? 'Ricaricamento in corso' : 'Rilascia per ricaricare'}
+        >
+          {isPullRefreshing ? (
+            <>
+              <div className="chat-page__spinner" aria-hidden="true"></div>
+              <span>Ricaricamento storico...</span>
+            </>
+          ) : (
+            <>
+              <span>↑ Rilascia per ricaricare</span>
+            </>
+          )}
+        </div>
       </main>
 
       {/* Input Area */}

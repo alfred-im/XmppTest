@@ -4,8 +4,6 @@ export interface SyncMetadata {
   lastSync: Date
   lastRSMToken?: string
   conversationTokens?: Record<string, string>
-  isInitialSyncComplete?: boolean
-  initialSyncCompletedAt?: Date
 }
 
 /**

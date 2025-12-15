@@ -7,7 +7,7 @@ export interface LogEntry {
   timestamp: Date
   level: 'log' | 'info' | 'warn' | 'error' | 'debug'
   message: string
-  args: unknown[]
+  args: any[]
 }
 
 class DebugLogger {
@@ -45,20 +45,12 @@ class DebugLogger {
   }
 
   /**
-   * Aggiungi manualmente un log
-   */
-  log(message: string, ...args: unknown[]) {
-    this.addLog('log', [message, ...args])
-    this.originalConsole.log(message, ...args)
-  }
-
-  /**
    * Intercetta un metodo specifico di console
    */
   private interceptConsole(level: 'log' | 'info' | 'warn' | 'error' | 'debug') {
     const original = this.originalConsole[level]
     
-    console[level] = (...args: unknown[]) => {
+    console[level] = (...args: any[]) => {
       // Chiama il console originale
       original(...args)
       
@@ -70,7 +62,7 @@ class DebugLogger {
   /**
    * Aggiunge un log entry alla collezione
    */
-  private addLog(level: 'log' | 'info' | 'warn' | 'error' | 'debug', args: unknown[]) {
+  private addLog(level: 'log' | 'info' | 'warn' | 'error' | 'debug', args: any[]) {
     const entry: LogEntry = {
       timestamp: new Date(),
       level,
@@ -92,7 +84,7 @@ class DebugLogger {
   /**
    * Formatta il messaggio dai parametri
    */
-  private formatMessage(args: unknown[]): string {
+  private formatMessage(args: any[]): string {
     return args.map(arg => {
       if (typeof arg === 'object') {
         try {

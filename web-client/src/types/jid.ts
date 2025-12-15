@@ -41,7 +41,7 @@ export interface ParsedJID {
  * Regex per validare un JID secondo RFC 6122
  * Semplificata ma corretta per i casi comuni
  */
-const JID_REGEX = /^(?:([^@/<>'"]+)@)?([^@/<>'"]+)(?:\/(.+))?$/
+const JID_REGEX = /^(?:([^@/<>'\"]+)@)?([^@/<>'\"]+)(?:\/(.+))?$/
 
 /**
  * Valida il formato di un JID

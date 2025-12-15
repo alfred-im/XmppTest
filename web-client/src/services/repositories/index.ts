@@ -20,7 +20,4 @@ export type { SyncMetadata } from './MetadataRepository'
  * MessageRepository usa eventi per notificare cambiamenti real-time
  */
 import { MessageRepository } from './MessageRepository'
-import { ConversationRepository as ConversationRepo } from './ConversationRepository'
-
 export const messageRepository = new MessageRepository()
-export const conversationRepository = new ConversationRepo()

@@ -1,105 +1,74 @@
-import { useEffect, useState, useRef, useCallback, type ReactNode } from 'react'
+import { useEffect, useState, useRef } from 'react'
+import { useAuth } from '../contexts/AuthContext'
 import { useConnection } from '../contexts/ConnectionContext'
-import { SplashScreen } from './SplashScreen'
-import { performInitialSync } from '../services/sync-initializer'
-import { syncStatusService } from '../services/sync-status'
-
-interface AppInitializerProps {
-  children: ReactNode
-}
 
 /**
- * Componente wrapper che gestisce la sincronizzazione iniziale
- * - Se non connesso: mostra i children (per permettere login)
- * - Dopo connessione: esegue sync (full o incremental)
- * - Durante sync: mostra SplashScreen
- * - Dopo sync: mostra children normalmente
- * 
- * Questo è l'UNICO punto dove avviene la sincronizzazione.
- * Dopo la sync iniziale, l'app riceve solo messaggi real-time.
+ * Componente che gestisce l'inizializzazione automatica dell'app
+ * - Carica credenziali salvate
+ * - Tenta auto-login se presenti
+ * - Mostra LoginPopup se necessario
  */
-export function AppInitializer({ children }: AppInitializerProps) {
-  const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'complete' | 'error'>('idle')
-  const [syncMessage, setSyncMessage] = useState('Sincronizzazione...')
-  const [error, setError] = useState<string | null>(null)
-  const { client, isConnected } = useConnection()
-  const hasSyncedRef = useRef(false)
-  const isSyncingRef = useRef(false)
-
-  const runSync = useCallback(async () => {
-    // Evita sync multipli paralleli
-    if (isSyncingRef.current || !client) return
-
-    isSyncingRef.current = true
-    setSyncStatus('syncing')
-    setSyncMessage('Sincronizzazione...')
-    setError(null)
-    syncStatusService.setSyncing(true)
-
-    try {
-      await performInitialSync(client, (progress) => {
-        setSyncMessage(progress.message)
-      })
-
-      hasSyncedRef.current = true
-      setSyncStatus('complete')
-      syncStatusService.setSyncing(false)
-      console.log('✅ Sync completata, app pronta')
-    } catch (err) {
-      console.error('❌ Errore sync iniziale:', err)
-      setSyncStatus('error')
-      syncStatusService.setSyncing(false)
-      setError(err instanceof Error ? err.message : 'Errore durante la sincronizzazione')
-    } finally {
-      isSyncingRef.current = false
-    }
-  }, [client])
+export function AppInitializer({ children }: { children: React.ReactNode }) {
+  const { loadSavedCredentials } = useAuth()
+  const { connect } = useConnection()
+  const hasInitialized = useRef(false)
 
   useEffect(() => {
-    // Se non connesso, non fare nulla (stato rimane idle)
-    if (!client || !isConnected) {
-      syncStatusService.setSyncing(false)
-      return
-    }
+    if (hasInitialized.current) return
+    hasInitialized.current = true
 
-    // Se già sincronizzato in questa sessione, non risincronizzare
-    if (hasSyncedRef.current) {
-      // Aggiorna stato a complete se necessario (dopo reconnessione)
-      if (syncStatus !== 'complete') {
-        setSyncStatus('complete')
+    const initialize = async () => {
+      // Carica credenziali salvate
+      const saved = loadSavedCredentials()
+      
+      if (saved) {
+        // Tenta auto-login
+        try {
+          await connect(saved.jid, saved.password)
+        } catch (err) {
+          console.error('Auto-login fallito:', err)
+        }
       }
-      return
     }
 
-    // Avvia sync
-    runSync()
-  }, [client, isConnected, runSync, syncStatus])
+    initialize()
+  }, [loadSavedCredentials, connect])
 
-  // Se non connesso, mostra i children (per permettere login via LoginPopup)
-  if (!isConnected) {
-    return <>{children}</>
-  }
-
-  // Se connesso e sync in corso, mostra splash screen
-  if (syncStatus === 'syncing') {
-    return (
-      <SplashScreen 
-        message={syncMessage}
-        error={false}
-      />
-    )
-  }
-
-  // Se errore durante sync, mostra splash screen con errore ma permetti retry
-  if (syncStatus === 'error') {
-    return (
-      <SplashScreen 
-        message={error || 'Errore durante la sincronizzazione'}
-        error={true}
-      />
-    )
-  }
-
-  // Sync completata o idle (prima connessione): renderizza app normale
   return <>{children}</>
+}
+
+interface AppInitializerWithCallbackProps {
+  children: (props: { isInitializing: boolean; isConnected: boolean; isConnecting: boolean }) => React.ReactNode
+}
+
+export function AppInitializerWithCallback({ children }: AppInitializerWithCallbackProps) {
+  const { loadSavedCredentials } = useAuth()
+  const { connect, isConnected, isConnecting } = useConnection()
+  const [isInitializing, setIsInitializing] = useState(true)
+  const hasInitialized = useRef(false)
+
+  useEffect(() => {
+    if (hasInitialized.current) return
+    hasInitialized.current = true
+
+    const initialize = async () => {
+      setIsInitializing(true)
+
+      const saved = loadSavedCredentials()
+      
+      if (saved) {
+        try {
+          await connect(saved.jid, saved.password)
+        } catch (err) {
+          console.error('Auto-login fallito:', err)
+        }
+      }
+
+      setIsInitializing(false)
+    }
+
+    initialize()
+  }, [loadSavedCredentials, connect])
+
+  return <>{children({ isInitializing, isConnected, isConnecting })}</>
 }

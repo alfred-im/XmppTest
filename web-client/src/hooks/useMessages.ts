@@ -1,10 +1,14 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import type { Agent } from 'stanza'
 import {
+  loadMessagesForContact,
   sendMessage as sendMessageService,
+  getLocalMessages,
+  reloadAllMessagesFromServer,
   applySelfChatLogic,
   type Message,
 } from '../services/messages'
+import { mergeMessages } from '../utils/message'
 import { PAGINATION } from '../config/constants'
 import { normalizeJID } from '../utils/jid'
 import type { BareJID } from '../types/jid'
@@ -22,37 +26,49 @@ interface UseMessagesReturn {
   isLoadingMore: boolean
   hasMoreMessages: boolean
   error: string | null
+  firstToken: string | undefined
   sendMessage: (body: string) => Promise<{ success: boolean; error?: string }>
   loadMoreMessages: () => Promise<void>
+  reloadAllMessages: () => Promise<void>
   setError: (error: string | null) => void
 }
 
 /**
  * Custom hook per gestire i messaggi di una conversazione
- * 
- * ARCHITETTURA SEMPLIFICATA:
- * - Carica SOLO da cache locale (sync gestita da AppInitializer)
- * - Usa Observer pattern per aggiornamenti real-time
- * - Paginazione SOLO da cache (scroll up per messaggi vecchi)
- * - NO più sync dal server durante utilizzo
+ * Gestisce caricamento, invio, paginazione e sincronizzazione con il server
  * 
  * @param options - Opzioni di configurazione
  * @param options.jid - JID del contatto per cui gestire i messaggi
  * @param options.client - Client XMPP connesso
  * @param options.isConnected - Flag di connessione
  * @returns Oggetto con stato e funzioni per gestire i messaggi
+ * 
+ * @example
+ * ```tsx
+ * const { messages, sendMessage, isLoading } = useMessages({
+ *   jid: 'user@example.com',
+ *   client,
+ *   isConnected: true
+ * })
+ * ```
  */
 export function useMessages({
   jid,
   client,
+  isConnected,
 }: UseMessagesOptions): UseMessagesReturn {
   const [messagesRaw, setMessagesRaw] = useState<Message[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [hasMoreMessages, setHasMoreMessages] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [firstToken, setFirstToken] = useState<string | undefined>(undefined)
   
   const isMountedRef = useRef(true)
+  
+  // Flag per ignorare notifiche observer durante operazioni di caricamento
+  // (evita doppi refresh quando loadMessagesForContact salva nel DB)
+  const skipObserverRef = useRef(false)
 
   // Applica logica self-chat ai messaggi per visualizzazione corretta
   const messages = useMemo(() => {
@@ -74,34 +90,44 @@ export function useMessages({
   }, [])
 
   // Helper: Update messages in modo safe
-  const safeSetMessages = useCallback((messages: Message[]) => {
+  const safeSetMessages = useCallback((updater: (prev: Message[]) => Message[]) => {
     if (isMountedRef.current) {
-      setMessagesRaw(messages)
+      setMessagesRaw(updater)
     }
   }, [])
 
-  // Carica messaggi dalla cache locale
-  const loadFromCache = useCallback(async () => {
-    if (!jid) return
+  // Carica messaggi iniziali
+  const loadInitialMessages = useCallback(async () => {
+    if (!client || !jid) return
+    if (!isMountedRef.current) return
 
+    // Ignora notifiche observer durante il caricamento iniziale
+    skipObserverRef.current = true
     setIsLoading(true)
     setError(null)
 
     try {
-      const normalizedJid: BareJID = normalizeJID(jid)
-      
-      // Carica ultimi N messaggi dalla cache
-      const cached = await messageRepository.getForConversation(normalizedJid, {
-        limit: PAGINATION.DEFAULT_MESSAGE_LIMIT,
+      // Prima carica dalla cache locale (veloce)
+      const normalizedJid = normalizeJID(jid)
+      const localMessages = await getLocalMessages(normalizedJid, { limit: PAGINATION.DEFAULT_MESSAGE_LIMIT })
+      if (localMessages.length > 0 && isMountedRef.current) {
+        safeSetMessages(() => localMessages)
+        setIsLoading(false)
+      }
+
+      // Poi carica dal server in background
+      const result = await loadMessagesForContact(client, jid, {
+        maxResults: PAGINATION.DEFAULT_MESSAGE_LIMIT,
       })
 
-      if (isMountedRef.current) {
-        safeSetMessages(cached)
-        // Se abbiamo meno messaggi del limit, non ci sono altri messaggi
-        setHasMoreMessages(cached.length >= PAGINATION.DEFAULT_MESSAGE_LIMIT)
-      }
+      if (!isMountedRef.current) return
+
+      // Merge con messaggi esistenti per evitare sostituzione brusca
+      safeSetMessages((prev) => mergeMessages(prev, result.messages))
+      setHasMoreMessages(!result.complete)
+      setFirstToken(result.firstToken)
     } catch (err) {
-      console.error('Errore caricamento messaggi da cache:', err)
+      console.error('Errore nel caricamento messaggi:', err)
       if (isMountedRef.current) {
         setError('Impossibile caricare i messaggi')
       }
@@ -109,18 +135,20 @@ export function useMessages({
       if (isMountedRef.current) {
         setIsLoading(false)
       }
+      // Riabilita notifiche observer
+      skipObserverRef.current = false
     }
-  }, [jid, safeSetMessages])
+  }, [client, jid, safeSetMessages])
 
-  // Carica messaggi iniziali quando cambia jid
+  // Carica messaggi iniziali quando cambia jid o client
   useEffect(() => {
-    if (jid) {
-      loadFromCache()
+    if (client && isConnected && jid) {
+      loadInitialMessages()
     }
-  }, [jid, loadFromCache])
+  }, [client, isConnected, jid, loadInitialMessages])
 
-  // Observer per aggiornamenti real-time dal database
-  // Quando MessagingContext salva un messaggio → Observer notifica → UI aggiornata
+  // Osserva i cambiamenti del database per questa conversazione (pattern Observer)
+  // Quando arriva un messaggio XMPP → viene salvato nel DB → questo listener si attiva → UI aggiornata
   useEffect(() => {
     if (!jid) return
 
@@ -129,19 +157,27 @@ export function useMessages({
     console.log(`👀 useMessages: registro observer per ${normalizedJid}`)
     
     // Callback chiamato quando il database cambia
-    const handleDatabaseChange = async () => {
+    const handleDatabaseChange = async (conversationJid: BareJID) => {
       if (!isMountedRef.current) return
+      
+      // Ignora notifiche durante il caricamento iniziale (evita doppio refresh)
+      if (skipObserverRef.current) {
+        console.log(`⏭️ useMessages: ignoro notifica observer durante caricamento iniziale`)
+        return
+      }
 
-      console.log(`🔄 useMessages: database cambiato, ricarico messaggi...`)
+      console.log(`🔄 useMessages: database cambiato per ${conversationJid}, ricarico messaggi...`)
       
       try {
-        // Ricarica tutti i messaggi della conversazione dalla cache
-        const updated = await messageRepository.getForConversation(normalizedJid)
+        // Ricarica messaggi dal database locale
+        const allMessages = await getLocalMessages(conversationJid)
         
-        console.log(`   - Caricati ${updated.length} messaggi dal DB`)
+        console.log(`   - Caricati ${allMessages.length} messaggi dal DB`)
         
         if (isMountedRef.current) {
-          safeSetMessages(updated)
+          // Merge incrementale invece di sostituzione totale
+          // Questo evita lo "svuotamento" della UI e mantiene i componenti esistenti
+          safeSetMessages((prev) => mergeMessages(prev, allMessages))
         }
       } catch (err) {
         console.error('Errore nel ricaricamento messaggi dopo cambio DB:', err)
@@ -160,30 +196,35 @@ export function useMessages({
     }
   }, [jid, safeSetMessages])
 
-  // Carica più messaggi (paginazione dalla cache locale)
+  // NOTA: L'aggiornamento dei messaggi in tempo reale è gestito interamente
+  // dal pattern Observer implementato sopra (messageRepository.observe).
+  // Quando MessagingContext riceve un messaggio → salva nel DB → 
+  // MessageRepository notifica questo hook → UI si aggiorna.
+  // Non serve un handler diretto client.on('message') qui.
+
+  // Carica più messaggi (paginazione)
   const loadMoreMessages = useCallback(async () => {
-    if (isLoadingMore || !hasMoreMessages || messagesRaw.length === 0) return
+    if (!client || isLoadingMore || !hasMoreMessages || !firstToken) return
     if (!isMountedRef.current) return
 
+    // Ignora notifiche observer durante loadMore
+    skipObserverRef.current = true
     setIsLoadingMore(true)
 
     try {
-      const normalizedJid: BareJID = normalizeJID(jid)
-      const oldestMessage = messagesRaw[0]
-
-      // Carica messaggi più vecchi del primo attuale (dalla cache)
-          const olderMessages = await messageRepository.getForConversation(normalizedJid, {
-        before: oldestMessage.timestamp,
-        limit: PAGINATION.DEFAULT_MESSAGE_LIMIT,
+      // Usa il token RSM corretto per caricare messaggi PRIMA del primo attuale
+      const result = await loadMessagesForContact(client, jid, {
+        maxResults: PAGINATION.DEFAULT_MESSAGE_LIMIT,
+        beforeToken: firstToken,
       })
 
       if (!isMountedRef.current) return
 
-      if (olderMessages.length > 0) {
-        // Aggiungi messaggi più vecchi all'inizio
-        safeSetMessages([...olderMessages, ...messagesRaw])
-        // Se abbiamo meno messaggi del limit, non ci sono altri messaggi
-        setHasMoreMessages(olderMessages.length >= PAGINATION.DEFAULT_MESSAGE_LIMIT)
+      if (result.messages.length > 0) {
+        // Merge invece di semplice concatenazione per evitare duplicati
+        safeSetMessages((prev) => mergeMessages(result.messages, prev))
+        setHasMoreMessages(!result.complete)
+        setFirstToken(result.firstToken)
       } else {
         setHasMoreMessages(false)
       }
@@ -193,10 +234,39 @@ export function useMessages({
       if (isMountedRef.current) {
         setIsLoadingMore(false)
       }
+      // Riabilita notifiche observer
+      skipObserverRef.current = false
     }
-  }, [jid, isLoadingMore, hasMoreMessages, messagesRaw, safeSetMessages])
+  }, [client, jid, isLoadingMore, hasMoreMessages, firstToken, safeSetMessages])
 
-  // Invia un messaggio (semplificato: no sync, solo save)
+  // Ricarica tutti i messaggi dal server
+  const reloadAllMessages = useCallback(async () => {
+    if (!client || !jid) return
+    if (!isMountedRef.current) return
+
+    setError(null)
+
+    try {
+      // Ricarica tutto dal server (salva TUTTI i messaggi nel DB, inclusi ping/token/visualizzazioni)
+      const serverMessages = await reloadAllMessagesFromServer(client, jid)
+
+      if (isMountedRef.current) {
+        // Filtra solo messaggi con body per la visualizzazione nella UI
+        // (i messaggi vuoti rimangono salvati nel DB per altre funzionalità)
+        const messagesToShow = serverMessages.filter(msg => msg.body && msg.body.trim().length > 0)
+        setMessagesRaw(messagesToShow)
+        setHasMoreMessages(false)
+        setFirstToken(undefined)
+      }
+    } catch (err) {
+      console.error('Errore nel reload completo messaggi:', err)
+      if (isMountedRef.current) {
+        setError('Impossibile ricaricare i messaggi')
+      }
+    }
+  }, [client, jid])
+
+  // Invia un messaggio usando il sistema di sincronizzazione
   const sendMessage = useCallback(
     async (body: string): Promise<{ success: boolean; error?: string }> => {
       if (!client || !body.trim()) {
@@ -206,16 +276,27 @@ export function useMessages({
       setError(null)
 
       try {
-        // sendMessageService ora NON fa sync, solo invia e salva nel DB
+        // sendMessageService ora usa il sistema di sincronizzazione:
+        // 1. Invia al server
+        // 2. Aspetta conferma
+        // 3. Sincronizza tutto dal server (scaricando e salvando nel DB)
         const result = await sendMessageService(client, jid, body)
 
         if (!isMountedRef.current) return { success: false }
 
-        if (!result.success) {
+        if (result.success) {
+          // Dopo la sincronizzazione, ricarica tutti i messaggi dal DB locale
+          // (che ora contiene i dati sincronizzati dal server)
+          const normalizedJid = normalizeJID(jid)
+          const allMessages = await getLocalMessages(normalizedJid)
+
+          if (isMountedRef.current) {
+            // Merge incrementale per evitare "flicker" dopo l'invio
+            safeSetMessages((prev) => mergeMessages(prev, allMessages))
+          }
+        } else {
           setError(result.error || 'Invio fallito')
         }
-
-        // L'observer del messageRepository notificherà automaticamente la UI
 
         return result
       } catch (err) {
@@ -227,8 +308,9 @@ export function useMessages({
         return { success: false, error: errorMsg }
       }
     },
-    [client, jid]
+    [client, jid, safeSetMessages]
   )
+
 
   return {
     messages,
@@ -236,8 +318,10 @@ export function useMessages({
     isLoadingMore,
     hasMoreMessages,
     error,
+    firstToken,
     sendMessage,
     loadMoreMessages,
+    reloadAllMessages,
     setError,
   }
 }

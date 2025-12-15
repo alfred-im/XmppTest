@@ -2,34 +2,28 @@ import { useEffect, useState } from 'react'
 import './SplashScreen.css'
 
 interface SplashScreenProps {
-  onFinish?: () => void
-  message?: string
-  error?: boolean
+  onFinish: () => void
 }
 
 /**
  * Splash screen mostrato durante il caricamento iniziale dell'app
  */
-export function SplashScreen({ onFinish, message, error }: SplashScreenProps) {
+export function SplashScreen({ onFinish }: SplashScreenProps) {
   const [isVisible, setIsVisible] = useState(true)
 
   useEffect(() => {
-    // Se c'è una callback onFinish, usa il comportamento auto-dismiss
-    if (onFinish) {
-      // Mostra lo splash screen per almeno 500ms per evitare flash
-      const minDisplayTime = setTimeout(() => {
-        setIsVisible(false)
-        // Aspetta la fine dell'animazione prima di chiamare onFinish
-        setTimeout(() => {
-          onFinish()
-        }, 300) // Durata animazione fade-out
-      }, 500)
+    // Mostra lo splash screen per almeno 500ms per evitare flash
+    const minDisplayTime = setTimeout(() => {
+      setIsVisible(false)
+      // Aspetta la fine dell'animazione prima di chiamare onFinish
+      setTimeout(() => {
+        onFinish()
+      }, 300) // Durata animazione fade-out
+    }, 500)
 
-      return () => {
-        clearTimeout(minDisplayTime)
-      }
+    return () => {
+      clearTimeout(minDisplayTime)
     }
-    // Se non c'è onFinish, rimane visibile (controllato dall'esterno)
   }, [onFinish])
 
   if (!isVisible) {
@@ -46,14 +40,7 @@ export function SplashScreen({ onFinish, message, error }: SplashScreenProps) {
           </svg>
         </div>
         <h1 className="splash-screen__title">Alfred</h1>
-        <p className="splash-screen__subtitle">
-          {message || 'Messaggistica istantanea'}
-        </p>
-        {error && (
-          <p style={{ color: '#ff6b6b', marginTop: '10px', fontSize: '14px' }}>
-            Si è verificato un errore
-          </p>
-        )}
+        <p className="splash-screen__subtitle">Messaggistica istantanea</p>
       </div>
     </div>
   )

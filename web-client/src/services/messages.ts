@@ -10,7 +10,7 @@ import { normalizeJID } from '../utils/jid'
 import type { BareJID } from '../types/jid'
 import { generateTempId } from '../utils/message'
 import { PAGINATION } from '../config/constants'
-import { messageRepository, conversationRepository } from './repositories'
+import { sincronizza } from './sync'
 
 // Re-export per comodità
 export type { Message, MessageStatus } from './conversations-db'
@@ -285,12 +285,8 @@ export async function reloadAllMessagesFromServer(
 }
 
 /**
- * Invia un messaggio al server e salva nel DB locale
- * 
- * ARCHITETTURA SEMPLIFICATA:
- * - Invia messaggio al server XMPP
- * - Salva direttamente nel DB locale
- * - NO sync completa, solo operazione atomica
+ * Invia un messaggio usando il sistema di sincronizzazione
+ * NON scrive nel database immediatamente - aspetta conferma e sincronizza tutto dal server
  */
 export async function sendMessage(
   client: Agent,
@@ -301,42 +297,25 @@ export async function sendMessage(
   const normalizedJid = normalizeJID(toJid)
 
   try {
-    // Invia al server XMPP
-    const messageId = await client.sendMessage({
-      to: normalizedJid,
+    // Usa il sistema di sincronizzazione unificato
+    // Questo invia il messaggio, aspetta conferma e sincronizza tutto dal server
+    const result = await sincronizza(client, {
+      type: 'sendMessage',
+      toJid: normalizedJid,
       body,
-      type: 'chat',
     })
 
-    const finalMessageId = typeof messageId === 'string' ? messageId : tempId
-
-    // Salva nel DB locale
-    await messageRepository.saveAll([{
-      messageId: finalMessageId,
-      conversationJid: normalizedJid,
-      body,
-      timestamp: new Date(),
-      from: 'me',
-      status: 'sent',
-      tempId: tempId,
-    }])
-
-    // Aggiorna conversazione
-    await conversationRepository.update(normalizedJid, {
-      lastMessage: {
-        body,
-        timestamp: new Date(),
-        from: 'me',
-        messageId: finalMessageId,
-      },
-      updatedAt: new Date(),
-    })
-
-    console.log('✅ Messaggio inviato e salvato:', finalMessageId)
+    if (!result.success) {
+      return {
+        tempId,
+        success: false,
+        error: result.error || 'Errore nell\'invio del messaggio',
+      }
+    }
 
     return { tempId, success: true }
   } catch (error) {
-    console.error('❌ Errore nell\'invio del messaggio:', error)
+    console.error('Errore nell\'invio del messaggio:', error)
     return {
       tempId,
       success: false,
@@ -346,8 +325,7 @@ export async function sendMessage(
 }
 
 /**
- * Riprova a inviare un messaggio fallito
- * Semplificato: solo re-invio senza sync
+ * Riprova a inviare un messaggio fallito usando il sistema di sincronizzazione
  */
 export async function retryMessage(
   client: Agent,
@@ -358,9 +336,22 @@ export async function retryMessage(
   }
 
   try {
-    // Re-invia il messaggio
-    const result = await sendMessage(client, message.conversationJid, message.body)
-    return { success: result.success, error: result.error }
+    // Usa il sistema di sincronizzazione per inviare il messaggio
+    // Questo invia, aspetta conferma e sincronizza tutto dal server
+    const result = await sincronizza(client, {
+      type: 'sendMessage',
+      toJid: message.conversationJid,
+      body: message.body,
+    })
+
+    if (!result.success) {
+      return {
+        success: false,
+        error: result.error || 'Errore nel retry del messaggio',
+      }
+    }
+
+    return { success: true }
   } catch (error) {
     console.error('Errore nel retry del messaggio:', error)
     return {

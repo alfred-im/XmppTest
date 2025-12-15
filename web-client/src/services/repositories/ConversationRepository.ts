@@ -200,23 +200,4 @@ export class ConversationRepository {
         : new Date(conv.updatedAt)
     }
   }
-
-  /**
-   * Marca una conversazione come letta (azzera unreadCount)
-   */
-  async markAsRead(jid: string): Promise<void> {
-    await this.update(jid, { unreadCount: 0 })
-  }
-
-  /**
-   * Incrementa il contatore non letti di una conversazione
-   */
-  async incrementUnread(jid: string): Promise<void> {
-    const conversation = await this.getByJid(jid)
-    if (conversation) {
-      await this.update(jid, {
-        unreadCount: conversation.unreadCount + 1,
-      })
-    }
-  }
 }
