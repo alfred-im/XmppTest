@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef, type ReactNode } from 'react'
 import { useConnection } from '../contexts/ConnectionContext'
+import { useConversations } from '../contexts/ConversationsContext'
 import { SplashScreen } from './SplashScreen'
 import { performInitialSync } from '../services/sync-initializer'
 import { syncStatusService } from '../services/sync-status'
@@ -23,6 +24,7 @@ export function AppInitializer({ children }: AppInitializerProps) {
   const [syncMessage, setSyncMessage] = useState('Sincronizzazione...')
   const [error, setError] = useState<string | null>(null)
   const { client, isConnected } = useConnection()
+  const { reloadFromDB } = useConversations()
   const hasSyncedRef = useRef(false)
 
   useEffect(() => {
@@ -48,6 +50,10 @@ export function AppInitializer({ children }: AppInitializerProps) {
           await performInitialSync(client, (progress) => {
             setSyncMessage(progress.message)
           })
+          
+          // Ricarica conversazioni dal DB dopo la sync
+          await reloadFromDB()
+          console.log('✅ Conversazioni ricaricate dal DB')
         }
 
         hasSyncedRef.current = true
@@ -63,7 +69,7 @@ export function AppInitializer({ children }: AppInitializerProps) {
     }
 
     initializeApp()
-  }, [client, isConnected])
+  }, [client, isConnected, reloadFromDB])
 
   // Se non connesso: mostra children (LoginPopup può apparire)
   if (!isConnected) {
