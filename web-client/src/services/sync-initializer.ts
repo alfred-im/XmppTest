@@ -1,8 +1,10 @@
 import type { Agent } from 'stanza'
-import { ConversationRepository } from './repositories/ConversationRepository'
-import { MetadataRepository } from './repositories/MetadataRepository'
 import { downloadAllConversations, enrichWithRoster } from './conversations'
 import { getVCardsForJids } from './vcard'
+
+// Import singleton instances instead of creating new ones
+import { ConversationRepository } from './repositories/ConversationRepository'
+import { MetadataRepository } from './repositories/MetadataRepository'
 
 interface SyncProgress {
   phase: 'check' | 'full' | 'incremental' | 'vcard' | 'complete'
@@ -13,6 +15,7 @@ interface SyncProgress {
 
 type ProgressCallback = (progress: SyncProgress) => void
 
+// Use singleton instances
 const conversationRepo = new ConversationRepository()
 const metadataRepo = new MetadataRepository()
 
