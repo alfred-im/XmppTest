@@ -29,6 +29,14 @@ export default defineConfig({
             './src/pages/ChatPage',
             './src/pages/ConversationsPage',
           ],
+          // Separare i repositories (DEVE essere separato per evitare circular deps)
+          'repositories': [
+            './src/services/repositories/index',
+            './src/services/repositories/ConversationRepository',
+            './src/services/repositories/MessageRepository',
+            './src/services/repositories/MetadataRepository',
+            './src/services/repositories/VCardRepository',
+          ],
           // Separare i servizi
           'services': [
             './src/services/xmpp',
