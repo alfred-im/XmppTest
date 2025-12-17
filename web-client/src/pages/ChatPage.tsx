@@ -96,7 +96,7 @@ export function ChatPage() {
   // Pull-to-refresh rimosso con architettura "sync-once + listen"
   // Messaggi sincronizzati all'avvio, poi solo real-time listener
 
-  // Handle virtual keyboard on mobile - adjust layout only
+  // Handle virtual keyboard on mobile - adjust layout and scroll
   useEffect(() => {
     if (!window.visualViewport) return
 
@@ -107,14 +107,35 @@ export function ChatPage() {
       const viewport = window.visualViewport!
       const keyboardHeight = window.innerHeight - viewport.height
       
+      // Controlla se l'utente era in fondo PRIMA dell'apertura della tastiera
+      const wasAtBottom = wasAtBottomRef.current
+      
       // Aggiorna layout del container
       const inputHeight = 68
       if (keyboardHeight > 50) {
+        // Tastiera aperta
         container.style.bottom = `${inputHeight}px`
         container.style.paddingBottom = `${keyboardHeight}px`
+        
+        // Se l'utente era in fondo, scrolla per mantenere la vista sugli ultimi messaggi
+        if (wasAtBottom) {
+          requestAnimationFrame(() => {
+            container.scrollTop = container.scrollHeight
+          })
+        }
+        // Se NON era in fondo, non fare nulla (mantieni la posizione di lettura)
       } else {
+        // Tastiera chiusa
         container.style.bottom = '68px'
         container.style.paddingBottom = '1rem'
+        
+        // Se l'utente era in fondo, mantieni in fondo anche dopo la chiusura
+        if (wasAtBottom) {
+          requestAnimationFrame(() => {
+            container.scrollTop = container.scrollHeight
+          })
+        }
+        // Se NON era in fondo, non fare nulla
       }
     }
 
