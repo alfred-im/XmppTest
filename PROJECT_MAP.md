@@ -1,7 +1,7 @@
 # Alfred - Mappa Completa del Progetto
 
-**Ultimo aggiornamento**: 2025-12-06  
-**Versione**: 1.0.0
+**Ultimo aggiornamento**: 2025-12-17  
+**Versione**: 1.0.1
 
 ---
 
@@ -190,9 +190,8 @@ State management globale con React Context
 
 | File | Responsabilità | State Gestito |
 |------|----------------|---------------|
-| `XmppContext.tsx` | **CONTEXT PRINCIPALE** - Client XMPP, connessione, eventi | Client, JID, Connessione |
-| `AuthContext.tsx` | Autenticazione e credenziali | JID, Password, Login status |
-| `ConnectionContext.tsx` | Stato connessione XMPP | isConnected, connectionStatus |
+| `ConnectionContext.tsx` | **CONTEXT PRINCIPALE** - Connessione XMPP e auto-login all'avvio | Client, isConnected, isConnecting, JID |
+| `AuthContext.tsx` | Gestione credenziali (salvataggio/caricamento) | JID, Password, Login status |
 | `ConversationsContext.tsx` | Lista conversazioni e sincronizzazione | Conversations[], Sync state |
 | `MessagingContext.tsx` | Gestione messaggi real-time | Message handlers, Typing indicators |
 
@@ -217,7 +216,7 @@ Business logic e integrazione servizi esterni
 | `conversations-db.ts` | Database IndexedDB per conversazioni | idb |
 | `vcard.ts` | Gestione vCard (avatar, profilo) | XMPP XEP-0054 |
 | `push-notifications.ts` | Push Notifications XEP-0357 | Service Worker, XMPP |
-| `auth-storage.ts` | Storage sicuro credenziali | localStorage |
+| `auth-storage.ts` | Storage credenziali per auto-login (localStorage) | localStorage API |
 | `debug-logger.ts` | Intercettazione e raccolta console logs | Browser Console API |
 
 ##### **Repositories (`repositories/`)**
@@ -705,11 +704,21 @@ Documentati in `docs/fixes/known-issues.md`:
 
 ## 🔄 Ultima Revisione
 
-**Data**: 2025-12-15  
-**Branch**: `cursor/database-update-locations-2a3e`  
-**Versione**: Architettura v3.0 "Sync-Once + Listen"
+**Data**: 2025-12-17  
+**Branch**: `cursor/auto-login-functionality-issue-0aa8`  
+**Versione**: Architettura v3.0 "Sync-Once + Listen" + Auto-login fix
 
-**Modifiche Recenti** (v3.0 - 15 dicembre 2025):
+**Modifiche Recenti** (v3.0.1 - 17 dicembre 2025):
+- ✅ **Ripristinato auto-login funzionante**:
+  - ConnectionContext ora gestisce auto-login all'avvio con useEffect
+  - Credenziali migrate da sessionStorage a localStorage per persistenza
+  - LoginPopup riceve prop isInitializing per mostrare spinner durante auto-login
+  - Documenti: XmppContext deprecato (sostituito da ConnectionContext)
+- ✅ **Fix architetturale**:
+  - Logica auto-login persa durante refactoring context ora ripristinata
+  - auth-storage.ts ora usa localStorage invece di sessionStorage
+
+**Modifiche Precedenti** (v3.0 - 15 dicembre 2025):
 - ✅ **Implementata architettura "Sync-Once + Listen"**:
   - Sync SOLO all'avvio (full se DB vuoto, incremental se popolato)
   - Real-time messaging tramite Observer pattern

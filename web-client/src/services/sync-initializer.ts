@@ -153,7 +153,7 @@ async function performIncrementalSync(
     try {
       const { loadMessagesForContact } = await import('./messages')
       
-      let queryOptions: { maxResults: number; afterToken?: string } = {
+      const queryOptions: { maxResults: number; afterToken?: string } = {
         maxResults: 100, // Assume max 100 nuovi messaggi per conversazione
       }
 

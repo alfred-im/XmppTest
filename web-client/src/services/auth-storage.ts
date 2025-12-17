@@ -1,11 +1,11 @@
 /**
- * Servizio per gestire la persistenza delle credenziali durante la sessione del browser.
- * Usa sessionStorage per salvare temporaneamente JID e password.
- * Le credenziali vengono cancellate quando si chiude la tab/browser.
+ * Servizio per gestire la persistenza delle credenziali per auto-login.
+ * Usa localStorage per salvare JID e password tra sessioni browser.
+ * Le credenziali persistono anche dopo chiusura browser per auto-login.
  * 
- * NOTA SICUREZZA: Le credenziali sono salvate in sessionStorage, che viene cancellato
- * alla chiusura della tab/browser. Questo è un compromesso tra sicurezza e UX.
- * Per maggiore sicurezza, considerare l'uso di un sistema di autenticazione più robusto.
+ * NOTA SICUREZZA: Le credenziali sono salvate in localStorage in plain text.
+ * Questo è un compromesso per abilitare auto-login. Per maggiore sicurezza,
+ * considerare l'uso di encryption o token-based authentication.
  */
 
 import { STORAGE_KEYS } from '../config/constants'
@@ -19,24 +19,24 @@ export interface SavedCredentials {
 }
 
 /**
- * Salva le credenziali in sessionStorage
+ * Salva le credenziali in localStorage per auto-login
  */
 export function saveCredentials(jid: string, password: string): void {
   try {
-    sessionStorage.setItem(STORAGE_KEY_JID, jid)
-    sessionStorage.setItem(STORAGE_KEY_PASSWORD, password)
+    localStorage.setItem(STORAGE_KEY_JID, jid)
+    localStorage.setItem(STORAGE_KEY_PASSWORD, password)
   } catch (error) {
     console.error('Errore nel salvataggio delle credenziali:', error)
   }
 }
 
 /**
- * Carica le credenziali salvate da sessionStorage
+ * Carica le credenziali salvate da localStorage
  */
 export function loadCredentials(): SavedCredentials | null {
   try {
-    const jid = sessionStorage.getItem(STORAGE_KEY_JID)
-    const password = sessionStorage.getItem(STORAGE_KEY_PASSWORD)
+    const jid = localStorage.getItem(STORAGE_KEY_JID)
+    const password = localStorage.getItem(STORAGE_KEY_PASSWORD)
     
     if (jid && password) {
       return { jid, password }
@@ -53,8 +53,8 @@ export function loadCredentials(): SavedCredentials | null {
  */
 export function clearCredentials(): void {
   try {
-    sessionStorage.removeItem(STORAGE_KEY_JID)
-    sessionStorage.removeItem(STORAGE_KEY_PASSWORD)
+    localStorage.removeItem(STORAGE_KEY_JID)
+    localStorage.removeItem(STORAGE_KEY_PASSWORD)
   } catch (error) {
     console.error('Errore nella cancellazione delle credenziali:', error)
   }
@@ -65,8 +65,8 @@ export function clearCredentials(): void {
  */
 export function hasSavedCredentials(): boolean {
   try {
-    const jid = sessionStorage.getItem(STORAGE_KEY_JID)
-    const password = sessionStorage.getItem(STORAGE_KEY_PASSWORD)
+    const jid = localStorage.getItem(STORAGE_KEY_JID)
+    const password = localStorage.getItem(STORAGE_KEY_PASSWORD)
     return !!(jid && password)
   } catch (error) {
     console.error('Errore nella verifica delle credenziali:', error)
