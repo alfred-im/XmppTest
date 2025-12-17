@@ -210,7 +210,8 @@ export function ChatPage() {
       container.scrollTo({ top: container.scrollHeight, behavior: 'auto' })
       wasAtBottomRef.current = true
     })
-  }, [isLoading, jid]) // Si attiva quando finisce il caricamento iniziale o cambia chat
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoading, jid]) // Si attiva quando finisce il caricamento iniziale o cambia chat (messages.length è solo guardia)
 
   // Auto-scroll al bottom quando arrivano nuovi messaggi (se l'utente era in fondo)
   useEffect(() => {
