@@ -9,6 +9,7 @@ Indice documenti tecnici per navigazione rapida. Questo documento è per AI, non
 - **[CHANGELOG.md](../CHANGELOG.md)** - Storia modifiche tecniche
 - **[.cursor-rules.md](../.cursor-rules.md)** - Regole sviluppo AI
 - **[TEST_CREDENTIALS.md](../TEST_CREDENTIALS.md)** - Credenziali test
+- **[WISHLIST.md](./WISHLIST.md)** - Funzionalità future desiderate con riferimenti XEP
 
 ---
 
