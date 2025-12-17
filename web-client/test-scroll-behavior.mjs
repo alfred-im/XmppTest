@@ -23,7 +23,7 @@ async function testScrollBehavior() {
   });
   
   try {
-    console.log('📱 Navigazione verso https://alfred-im.github.io/XmppTest/');
+    console.log('📱 Navigazione verso https://alfred-im.github.io/XmppTest/ (PRODUZIONE AGGIORNATA)');
     await page.goto('https://alfred-im.github.io/XmppTest/', {
       waitUntil: 'networkidle',
       timeout: 30000
