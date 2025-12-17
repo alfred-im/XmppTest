@@ -1,9 +1,10 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useContext, useState, useEffect, useCallback } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react'
 import type { ReactNode } from 'react'
 import type { Agent } from 'stanza'
 import { login as xmppLogin } from '../services/xmpp'
 import { useAuth } from './AuthContext'
+import { loadCredentials } from '../services/auth-storage'
 
 interface ConnectionContextType {
   client: Agent | null
@@ -25,6 +26,39 @@ export function ConnectionProvider({ children }: { children: ReactNode }) {
   const [isConnecting, setIsConnecting] = useState(false)
   const [jid, setJid] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const hasAttemptedAutoLogin = useRef(false)
+
+  // Auto-login: tenta connessione automatica con credenziali salvate
+  useEffect(() => {
+    // Esegue solo una volta all'avvio
+    if (hasAttemptedAutoLogin.current) return
+    hasAttemptedAutoLogin.current = true
+
+    const attemptAutoLogin = async () => {
+      console.log('🔄 Controllo credenziali salvate per auto-login...')
+      
+      const savedCredentials = loadCredentials()
+      
+      if (!savedCredentials) {
+        console.log('❌ Nessuna credenziale salvata, auto-login saltato')
+        return
+      }
+
+      console.log('✅ Credenziali trovate, tentativo auto-login per:', savedCredentials.jid)
+      
+      // Tenta auto-login
+      const success = await connect(savedCredentials.jid, savedCredentials.password)
+      
+      if (success) {
+        console.log('✅ Auto-login completato con successo')
+      } else {
+        console.log('❌ Auto-login fallito - credenziali non più valide')
+      }
+    }
+
+    attemptAutoLogin()
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  // Note: connect è stabile (useCallback), non serve nelle deps
 
   // Handler per disconnessione
   useEffect(() => {

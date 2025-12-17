@@ -40,7 +40,7 @@ const PageLoader = () => (
 )
 
 function AppRoutes() {
-  const { isConnected } = useConnection()
+  const { isConnected, isConnecting } = useConnection()
 
   return (
     <>
@@ -60,7 +60,7 @@ function AppRoutes() {
 
       {/* Popup di login globale - appare sopra le route quando necessario */}
       {!isConnected && (
-        <LoginPopup />
+        <LoginPopup isInitializing={isConnecting} />
       )}
     </>
   )
