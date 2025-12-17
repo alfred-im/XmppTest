@@ -120,7 +120,7 @@ export function ChatPage() {
         // Se l'utente era in fondo, scrolla per mantenere la vista sugli ultimi messaggi
         if (wasAtBottom) {
           requestAnimationFrame(() => {
-            container.scrollTop = container.scrollHeight
+            container.scrollTo({ top: container.scrollHeight, behavior: 'auto' })
           })
         }
         // Se NON era in fondo, non fare nulla (mantieni la posizione di lettura)
@@ -132,7 +132,7 @@ export function ChatPage() {
         // Se l'utente era in fondo, mantieni in fondo anche dopo la chiusura
         if (wasAtBottom) {
           requestAnimationFrame(() => {
-            container.scrollTop = container.scrollHeight
+            container.scrollTo({ top: container.scrollHeight, behavior: 'auto' })
           })
         }
         // Se NON era in fondo, non fare nulla
@@ -202,7 +202,7 @@ export function ChatPage() {
 
     // Scroll immediato al bottom all'apertura della chat
     requestAnimationFrame(() => {
-      container.scrollTop = container.scrollHeight
+      container.scrollTo({ top: container.scrollHeight, behavior: 'auto' })
       wasAtBottomRef.current = true
     })
   }, [isLoading, jid]) // Si attiva quando finisce il caricamento iniziale o cambia chat
@@ -216,7 +216,7 @@ export function ChatPage() {
     if (wasAtBottomRef.current) {
       // Usa requestAnimationFrame per assicurarsi che il DOM sia aggiornato
       requestAnimationFrame(() => {
-        container.scrollTop = container.scrollHeight
+        container.scrollTo({ top: container.scrollHeight, behavior: 'auto' })
         // Aggiorna il flag dopo lo scroll
         wasAtBottomRef.current = true
       })
