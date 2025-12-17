@@ -35,6 +35,7 @@ export function ChatPage() {
   const [isSending, setIsSending] = useState(false)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const messagesContainerRef = useRef<HTMLDivElement>(null)
+  const wasAtBottomRef = useRef(true) // Track if user was at bottom before new message
 
   // Validate JID format - redirect if empty or malformed
   // NON validiamo rigorosamente perché se il JID arriva dalla lista conversazioni,
@@ -65,18 +66,32 @@ export function ChatPage() {
     isConnected,
   })
 
+  // Helper function per verificare se scroll è in fondo
+  const isAtBottom = useCallback(() => {
+    const container = messagesContainerRef.current
+    if (!container) return true
+    
+    const scrollBottom = container.scrollHeight - container.scrollTop - container.clientHeight
+    return scrollBottom <= PAGINATION.SCROLL_BOTTOM_THRESHOLD
+  }, [])
+
   // Handler scroll per trigger loadMore quando vicino al top
   const handleScroll = useCallback(() => {
     const container = messagesContainerRef.current
+    if (!container) return
+    
+    // Aggiorna il flag "era in fondo" ogni volta che l'utente scrolla
+    wasAtBottomRef.current = isAtBottom()
+    
+    // Load more quando vicino al top
     if (
-      container &&
       container.scrollTop < PAGINATION.LOAD_MORE_THRESHOLD &&
       hasMoreMessages &&
       !isLoadingMore
     ) {
       loadMoreMessages()
     }
-  }, [hasMoreMessages, isLoadingMore, loadMoreMessages])
+  }, [hasMoreMessages, isLoadingMore, loadMoreMessages, isAtBottom])
 
   // Pull-to-refresh rimosso con architettura "sync-once + listen"
   // Messaggi sincronizzati all'avvio, poi solo real-time listener
@@ -158,6 +173,22 @@ export function ChatPage() {
     textarea.addEventListener('input', adjustHeight)
     return () => textarea.removeEventListener('input', adjustHeight)
   }, [])
+
+  // Auto-scroll al bottom quando arrivano nuovi messaggi (se l'utente era in fondo)
+  useEffect(() => {
+    const container = messagesContainerRef.current
+    if (!container || messages.length === 0) return
+
+    // Se l'utente era in fondo prima del nuovo messaggio, scrolla al bottom
+    if (wasAtBottomRef.current) {
+      // Usa requestAnimationFrame per assicurarsi che il DOM sia aggiornato
+      requestAnimationFrame(() => {
+        container.scrollTop = container.scrollHeight
+        // Aggiorna il flag dopo lo scroll
+        wasAtBottomRef.current = true
+      })
+    }
+  }, [messages.length]) // Si attiva quando cambia il numero di messaggi
 
   // Handler per invio messaggio
   const handleSend = useCallback(async () => {
