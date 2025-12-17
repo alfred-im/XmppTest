@@ -152,7 +152,6 @@ async function performIncrementalSync(
 
     try {
       const { loadMessagesForContact } = await import('./messages')
-      const { messageRepository } = await import('./repositories')
       
       let queryOptions: { maxResults: number; afterToken?: string } = {
         maxResults: 100, // Assume max 100 nuovi messaggi per conversazione
@@ -162,14 +161,10 @@ async function performIncrementalSync(
         // Se c'è un token RSM salvato, usalo
         queryOptions.afterToken = conversationToken
       } else {
-        // Se non c'è token, usa l'ultimo messaggio dal DB locale come riferimento
-        // Questo gestisce il caso del primo incremental sync dopo full sync
-        const lastLocalMessage = await messageRepository.getLastByConversationJid(conv.jid)
-        if (lastLocalMessage) {
-          console.log(`📬 Nessun token per ${conv.jid}, uso timestamp ultimo messaggio locale`)
-          // NON usiamo afterToken perché non abbiamo il token RSM
-          // La query scaricherà tutti i messaggi, ma li de-duplicheremo nel DB
-        }
+        // Se non c'è token (primo incremental sync dopo full sync):
+        // La query scaricherà TUTTI i messaggi per questa conversazione
+        // Il database farà de-duplicazione automatica per messageId
+        console.log(`📬 Nessun token per ${conv.jid}, scarico tutti i messaggi (con de-duplicazione)`)
       }
 
       const result = await loadMessagesForContact(client, conv.jid, queryOptions)
