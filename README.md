@@ -129,6 +129,7 @@ MIT License - Vedi file `LICENSE`
 
 ---
 
-**Ultimo aggiornamento**: 2025-12-15  
-**Versione corrente**: 1.0.0  
-**Architettura**: Sync-Once + Listen (implementata 15 dicembre 2025)
+**Ultimo aggiornamento**: 2025-12-17  
+**Versione corrente**: 1.0.1  
+**Architettura**: Sync-Once + Listen (implementata 15 dicembre 2025)  
+**Auto-login**: Ripristinato e funzionante con localStorage (17 dicembre 2025)
