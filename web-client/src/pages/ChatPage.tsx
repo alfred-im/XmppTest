@@ -20,6 +20,11 @@ import './ChatPage.css'
  * - Real-time updates via MessagingContext listener
  * - NO pull-to-refresh (rimosso)
  * - NO sync durante utilizzo
+ * 
+ * SCROLL BEHAVIOR:
+ * - Parte sempre dal fondo all'apertura
+ * - Auto-scroll solo se utente è "in fondo"
+ * - Gestione tastiera virtuale con tracking posizione
  */
 export function ChatPage() {
   const { jid: encodedJid } = useParams<{ jid: string }>()
