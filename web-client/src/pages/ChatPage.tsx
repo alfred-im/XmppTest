@@ -174,6 +174,18 @@ export function ChatPage() {
     return () => textarea.removeEventListener('input', adjustHeight)
   }, [])
 
+  // Scroll iniziale al bottom quando la chat si carica
+  useEffect(() => {
+    const container = messagesContainerRef.current
+    if (!container || isLoading || messages.length === 0) return
+
+    // Scroll immediato al bottom all'apertura della chat
+    requestAnimationFrame(() => {
+      container.scrollTop = container.scrollHeight
+      wasAtBottomRef.current = true
+    })
+  }, [isLoading, jid]) // Si attiva quando finisce il caricamento iniziale o cambia chat
+
   // Auto-scroll al bottom quando arrivano nuovi messaggi (se l'utente era in fondo)
   useEffect(() => {
     const container = messagesContainerRef.current

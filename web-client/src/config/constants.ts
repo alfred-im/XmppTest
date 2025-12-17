@@ -13,7 +13,7 @@ export const PAGINATION = {
   DEFAULT_MESSAGE_LIMIT: 50,
   DEFAULT_CONVERSATION_LIMIT: 100,
   LOAD_MORE_THRESHOLD: 200, // px from top to trigger load more
-  SCROLL_BOTTOM_THRESHOLD: 150, // px from bottom to consider "at bottom"
+  SCROLL_BOTTOM_THRESHOLD: 50, // px from bottom to consider "at bottom"
 } as const;
 
 // Pull to Refresh
