@@ -61,23 +61,6 @@ Questo documento elenca le funzionalità desiderate per lo sviluppo futuro di Al
 
 ---
 
-### XEP-0384: OMEMO Encryption
-**Riferimento**: [XEP-0384](https://xmpp.org/extensions/xep-0384.html)
-
-**Descrizione**: End-to-end encryption per messaggi 1-to-1 e gruppi, basato su Signal Protocol.
-
-**Benefici**:
-- Privacy e sicurezza messaggi
-- Forward secrecy
-- Standard moderno (alternative a OTR)
-
-**Note implementazione**:
-- Complessità alta
-- Richiede libreria crypto (libsignal)
-- Gestione chiavi e device trust
-
----
-
 ### XEP-0363: HTTP File Upload
 **Riferimento**: [XEP-0363](https://xmpp.org/extensions/xep-0363.html)
 
@@ -121,16 +104,6 @@ Questo documento elenca le funzionalità desiderate per lo sviluppo futuro di Al
 
 ## 🎨 Feature UI/UX
 
-### Dark Mode
-**Descrizione**: Tema scuro per l'interfaccia.
-
-**Benefici**:
-- Comfort visivo in ambienti bui
-- Risparmio batteria (OLED)
-- Standard UI moderno
-
----
-
 ### Emoji Picker
 **Descrizione**: Selettore emoji nativo nell'input messaggi.
 
@@ -168,10 +141,8 @@ Questo documento elenca le funzionalità desiderate per lo sviluppo futuro di Al
 | XEP-0308 Message Correction | ⭐⭐ Media | Bassa | Medio | ✅ Buono |
 | XEP-0363 File Upload | ⭐⭐⭐ Alta | Media | Alto | ✅ Buono |
 | XEP-0045 MUC | ⭐⭐ Media | Alta | Alto | ✅ Ampio |
-| XEP-0384 OMEMO | ⭐⭐ Media | Molto Alta | Alto | ⚠️ Variabile |
-| Dark Mode | ⭐⭐ Media | Bassa | Medio | N/A |
 | Emoji Picker | ⭐ Bassa | Bassa | Basso | N/A |
-| Voice/Video | ⭐ Bassa | Molto Alta | Alto | ⚠️ Limitato |
+| Voice/Video | ⭐⭐ Media | Molto Alta | Alto | ⚠️ Limitato |
 
 ---
 
