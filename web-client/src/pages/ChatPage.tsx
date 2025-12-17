@@ -223,6 +223,26 @@ export function ChatPage() {
     }
   }, [messages.length]) // Si attiva quando cambia il numero di messaggi
 
+  // Mantieni in fondo quando il contenuto cambia (immagini/avatar che caricano)
+  useEffect(() => {
+    const container = messagesContainerRef.current
+    if (!container || messages.length === 0) return
+
+    // Observer per rilevare cambiamenti nel contenuto (immagini che caricano)
+    const resizeObserver = new ResizeObserver(() => {
+      // Solo se l'utente era/è in fondo, mantieni in fondo
+      if (wasAtBottomRef.current) {
+        container.scrollTo({ top: container.scrollHeight, behavior: 'auto' })
+      }
+    })
+
+    resizeObserver.observe(container)
+
+    return () => {
+      resizeObserver.disconnect()
+    }
+  }, [messages.length])
+
   // Handler per invio messaggio
   const handleSend = useCallback(async () => {
     if (!inputValue.trim() || isSending) return
