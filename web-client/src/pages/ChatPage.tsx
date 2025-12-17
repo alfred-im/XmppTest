@@ -20,6 +20,11 @@ import './ChatPage.css'
  * - Real-time updates via MessagingContext listener
  * - NO pull-to-refresh (rimosso)
  * - NO sync durante utilizzo
+ * 
+ * SCROLL BEHAVIOR:
+ * - Parte sempre dal fondo all'apertura
+ * - Auto-scroll solo se utente è "in fondo"
+ * - Gestione tastiera virtuale con tracking posizione
  */
 export function ChatPage() {
   const { jid: encodedJid } = useParams<{ jid: string }>()
@@ -35,6 +40,7 @@ export function ChatPage() {
   const [isSending, setIsSending] = useState(false)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const messagesContainerRef = useRef<HTMLDivElement>(null)
+  const wasAtBottomRef = useRef(true) // Track if user was at bottom before new message
 
   // Validate JID format - redirect if empty or malformed
   // NON validiamo rigorosamente perché se il JID arriva dalla lista conversazioni,
@@ -65,23 +71,37 @@ export function ChatPage() {
     isConnected,
   })
 
+  // Helper function per verificare se scroll è in fondo
+  const isAtBottom = useCallback(() => {
+    const container = messagesContainerRef.current
+    if (!container) return true
+    
+    const scrollBottom = container.scrollHeight - container.scrollTop - container.clientHeight
+    return scrollBottom <= PAGINATION.SCROLL_BOTTOM_THRESHOLD
+  }, [])
+
   // Handler scroll per trigger loadMore quando vicino al top
   const handleScroll = useCallback(() => {
     const container = messagesContainerRef.current
+    if (!container) return
+    
+    // Aggiorna il flag "era in fondo" ogni volta che l'utente scrolla
+    wasAtBottomRef.current = isAtBottom()
+    
+    // Load more quando vicino al top
     if (
-      container &&
       container.scrollTop < PAGINATION.LOAD_MORE_THRESHOLD &&
       hasMoreMessages &&
       !isLoadingMore
     ) {
       loadMoreMessages()
     }
-  }, [hasMoreMessages, isLoadingMore, loadMoreMessages])
+  }, [hasMoreMessages, isLoadingMore, loadMoreMessages, isAtBottom])
 
   // Pull-to-refresh rimosso con architettura "sync-once + listen"
   // Messaggi sincronizzati all'avvio, poi solo real-time listener
 
-  // Handle virtual keyboard on mobile - adjust layout only
+  // Handle virtual keyboard on mobile - adjust layout and scroll
   useEffect(() => {
     if (!window.visualViewport) return
 
@@ -92,14 +112,35 @@ export function ChatPage() {
       const viewport = window.visualViewport!
       const keyboardHeight = window.innerHeight - viewport.height
       
+      // Controlla se l'utente era in fondo PRIMA dell'apertura della tastiera
+      const wasAtBottom = wasAtBottomRef.current
+      
       // Aggiorna layout del container
       const inputHeight = 68
       if (keyboardHeight > 50) {
+        // Tastiera aperta
         container.style.bottom = `${inputHeight}px`
         container.style.paddingBottom = `${keyboardHeight}px`
+        
+        // Se l'utente era in fondo, scrolla per mantenere la vista sugli ultimi messaggi
+        if (wasAtBottom) {
+          requestAnimationFrame(() => {
+            container.scrollTo({ top: container.scrollHeight, behavior: 'auto' })
+          })
+        }
+        // Se NON era in fondo, non fare nulla (mantieni la posizione di lettura)
       } else {
+        // Tastiera chiusa
         container.style.bottom = '68px'
         container.style.paddingBottom = '1rem'
+        
+        // Se l'utente era in fondo, mantieni in fondo anche dopo la chiusura
+        if (wasAtBottom) {
+          requestAnimationFrame(() => {
+            container.scrollTo({ top: container.scrollHeight, behavior: 'auto' })
+          })
+        }
+        // Se NON era in fondo, non fare nulla
       }
     }
 
@@ -158,6 +199,54 @@ export function ChatPage() {
     textarea.addEventListener('input', adjustHeight)
     return () => textarea.removeEventListener('input', adjustHeight)
   }, [])
+
+  // Scroll iniziale al bottom quando la chat si carica
+  useEffect(() => {
+    const container = messagesContainerRef.current
+    if (!container || isLoading || messages.length === 0) return
+
+    // Scroll immediato al bottom all'apertura della chat
+    requestAnimationFrame(() => {
+      container.scrollTo({ top: container.scrollHeight, behavior: 'auto' })
+      wasAtBottomRef.current = true
+    })
+  }, [isLoading, jid]) // Si attiva quando finisce il caricamento iniziale o cambia chat
+
+  // Auto-scroll al bottom quando arrivano nuovi messaggi (se l'utente era in fondo)
+  useEffect(() => {
+    const container = messagesContainerRef.current
+    if (!container || messages.length === 0) return
+
+    // Se l'utente era in fondo prima del nuovo messaggio, scrolla al bottom
+    if (wasAtBottomRef.current) {
+      // Usa requestAnimationFrame per assicurarsi che il DOM sia aggiornato
+      requestAnimationFrame(() => {
+        container.scrollTo({ top: container.scrollHeight, behavior: 'auto' })
+        // Aggiorna il flag dopo lo scroll
+        wasAtBottomRef.current = true
+      })
+    }
+  }, [messages.length]) // Si attiva quando cambia il numero di messaggi
+
+  // Mantieni in fondo quando il contenuto cambia (immagini/avatar che caricano)
+  useEffect(() => {
+    const container = messagesContainerRef.current
+    if (!container || messages.length === 0) return
+
+    // Observer per rilevare cambiamenti nel contenuto (immagini che caricano)
+    const resizeObserver = new ResizeObserver(() => {
+      // Solo se l'utente era/è in fondo, mantieni in fondo
+      if (wasAtBottomRef.current) {
+        container.scrollTo({ top: container.scrollHeight, behavior: 'auto' })
+      }
+    })
+
+    resizeObserver.observe(container)
+
+    return () => {
+      resizeObserver.disconnect()
+    }
+  }, [messages.length])
 
   // Handler per invio messaggio
   const handleSend = useCallback(async () => {
