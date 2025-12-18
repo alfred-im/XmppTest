@@ -1,7 +1,7 @@
 # Alfred - Mappa Completa del Progetto
 
 **Ultimo aggiornamento**: 2025-12-17  
-**Versione**: 1.0.1
+**Versione**: 1.1.0 (XEP-0333 Chat Markers)
 
 ---
 
