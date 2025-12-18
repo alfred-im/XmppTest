@@ -328,13 +328,16 @@ export function ChatPage() {
   // Renderizza i messaggi usando componenti memoizzati
   // MessageItem è wrappato con React.memo, quindi React riusa i componenti
   // esistenti e non ricrea tutto da zero quando la lista cambia
-  const renderedMessages = messages.map((message, index) => {
-    const showDate = index === 0 || !isSameDay(messages[index - 1].timestamp, message.timestamp)
+  // Filtra marker dalla vista (MessageItem li usa per status ma non li renderizza)
+  const visibleMessages = messages.filter((m) => !m.markerType)
+  const renderedMessages = visibleMessages.map((message, index) => {
+    const showDate = index === 0 || !isSameDay(visibleMessages[index - 1].timestamp, message.timestamp)
     return (
       <MessageItem
         key={message.messageId}
         message={message}
         showDate={showDate}
+        allMessages={messages}
       />
     )
   })
