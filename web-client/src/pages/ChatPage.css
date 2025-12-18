@@ -346,6 +346,37 @@
 .chat-page__message-status {
   font-size: 0.75rem;
   line-height: 1;
+  transition: color 200ms ease;
+}
+
+/* XEP-0333 Chat Markers - Spunte stile WhatsApp/Telegram */
+.chat-page__checkmark-pending {
+  font-size: 14px;
+  color: #999;
+}
+
+.chat-page__checkmark-single {
+  font-size: 14px;
+  color: #999;
+}
+
+.chat-page__checkmark-double {
+  font-size: 14px;
+  color: #999;
+  letter-spacing: -4px; /* Sovrappone le due ✓✓ */
+  position: relative;
+}
+
+.chat-page__checkmark-double-blue {
+  font-size: 14px;
+  color: #34B7F1; /* Blu WhatsApp */
+  letter-spacing: -4px; /* Sovrappone le due ✓✓ */
+  position: relative;
+}
+
+.chat-page__checkmark-failed {
+  font-size: 14px;
+  color: #f44336;
 }
 
 /* Input Area */
