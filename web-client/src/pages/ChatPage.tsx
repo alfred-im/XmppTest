@@ -179,6 +179,40 @@ export function ChatPage() {
     }
   }, [jid, client, isConnected, markAsRead])
 
+  // XEP-0333: Invia marker 'displayed' per messaggi non marcati
+  useEffect(() => {
+    if (!client || !isConnected || !jid || messages.length === 0) return
+
+    // Trova messaggi da loro che non hanno ancora un marker displayed
+    const unmarkedMessages = messages.filter((msg) => {
+      // Solo messaggi da loro (non miei)
+      if (msg.from !== 'them') return false
+      // Solo messaggi con body (non marker stessi)
+      if (!msg.body || msg.markerType) return false
+      // Verifica se esiste già un marker per questo messaggio
+      const hasMarker = messages.some(
+        (m) =>
+          m.markerType === 'displayed' &&
+          m.markerFor === msg.messageId
+      )
+      return !hasMarker
+    })
+
+    // Invia marker per ogni messaggio non marcato
+    unmarkedMessages.forEach((msg) => {
+      try {
+        client.markDisplayed({
+          id: msg.messageId,
+          from: jid,
+          type: 'chat',
+        })
+        console.log('📤 Marker displayed inviato per messaggio:', msg.messageId)
+      } catch (error) {
+        console.error('❌ Errore invio marker displayed:', error)
+      }
+    })
+  }, [client, isConnected, jid, messages])
+
   // Auto-focus su input quando la chat si carica
   useEffect(() => {
     if (!isLoading && inputRef.current) {
