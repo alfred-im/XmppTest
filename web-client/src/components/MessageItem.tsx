@@ -47,8 +47,8 @@ function renderCheckmarks(status: string) {
 export const MessageItem = memo(function MessageItem({ message, showDate, allMessages }: MessageItemProps) {
   const isMe = message.from === 'me'
 
-  // Non renderizzare marker come messaggi visibili
-  if (message.markerType) {
+  // Safety: non renderizzare messaggi senza body (marker, receipt, chatState)
+  if (!message.body || message.body.trim().length === 0) {
     return null
   }
 

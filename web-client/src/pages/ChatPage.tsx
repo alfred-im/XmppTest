@@ -328,8 +328,9 @@ export function ChatPage() {
   // Renderizza i messaggi usando componenti memoizzati
   // MessageItem è wrappato con React.memo, quindi React riusa i componenti
   // esistenti e non ricrea tutto da zero quando la lista cambia
-  // Filtra marker dalla vista (MessageItem li usa per status ma non li renderizza)
-  const visibleMessages = messages.filter((m) => !m.markerType)
+  // Filtra messaggi: mostra SOLO quelli con body (testo reale)
+  // Messaggi senza body sono metadata XMPP (marker, receipt, chatState) - non vanno renderizzati
+  const visibleMessages = messages.filter((m) => m.body && m.body.trim().length > 0)
   const renderedMessages = visibleMessages.map((message, index) => {
     const showDate = index === 0 || !isSameDay(visibleMessages[index - 1].timestamp, message.timestamp)
     return (
