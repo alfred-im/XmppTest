@@ -42,12 +42,14 @@ function renderCheckmarks(status: string) {
  * React.memo confronta le props e salta il re-render se non sono cambiate.
  * Questo previene il flash bianco quando la lista messaggi viene aggiornata.
  * 
- * XEP-0333: Supporta chat markers per spunte lettura
+ * XEP-0333: Usa i marker (da allMessages) per determinare quale spunta mostrare
+ * - Marker con body vuoto → non renderizzati
+ * - Marker usati per calcolare status → spunte ✓ ✓✓ ✓✓blu
  */
 export const MessageItem = memo(function MessageItem({ message, showDate, allMessages }: MessageItemProps) {
   const isMe = message.from === 'me'
 
-  // Safety: non renderizzare messaggi senza body (marker, receipt, chatState)
+  // Non renderizzare messaggi senza body (sono marker/metadata, non messaggi di chat)
   if (!message.body || message.body.trim().length === 0) {
     return null
   }
