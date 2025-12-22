@@ -107,10 +107,70 @@ export function MessagingProvider({ children }: { children: ReactNode }) {
       }
     }
 
+    // XEP-0333: Listener per marker 'displayed'
+    const handleDisplayedMarker = async (message: ReceivedMessage) => {
+      if (!message.marker?.id) return
+      
+      console.log('✓✓ Marker displayed ricevuto per messaggio:', message.marker.id)
+      
+      try {
+        const contactJid = normalizeJID(message.from || '')
+        
+        // Salva marker come messaggio speciale
+        const markerMessage: Message = {
+          messageId: `marker_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+          conversationJid: contactJid,
+          body: '',
+          timestamp: new Date(),
+          from: 'them',
+          status: 'sent',
+          markerType: 'displayed',
+          markerFor: message.marker.id,
+        }
+        
+        await messageRepository.saveAll([markerMessage])
+        console.log('   ✅ Marker displayed salvato nel DB')
+      } catch (error) {
+        console.error('❌ Errore nel salvataggio marker displayed:', error)
+      }
+    }
+
+    // XEP-0333: Listener per marker 'acknowledged'
+    const handleAcknowledgedMarker = async (message: ReceivedMessage) => {
+      if (!message.marker?.id) return
+      
+      console.log('✓✓ Marker acknowledged ricevuto per messaggio:', message.marker.id)
+      
+      try {
+        const contactJid = normalizeJID(message.from || '')
+        
+        // Salva marker come messaggio speciale
+        const markerMessage: Message = {
+          messageId: `marker_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+          conversationJid: contactJid,
+          body: '',
+          timestamp: new Date(),
+          from: 'them',
+          status: 'sent',
+          markerType: 'acknowledged',
+          markerFor: message.marker.id,
+        }
+        
+        await messageRepository.saveAll([markerMessage])
+        console.log('   ✅ Marker acknowledged salvato nel DB')
+      } catch (error) {
+        console.error('❌ Errore nel salvataggio marker acknowledged:', error)
+      }
+    }
+
     client.on('message', handleMessage)
+    client.on('marker:displayed', handleDisplayedMarker)
+    client.on('marker:acknowledged', handleAcknowledgedMarker)
 
     return () => {
       client.off('message', handleMessage)
+      client.off('marker:displayed', handleDisplayedMarker)
+      client.off('marker:acknowledged', handleAcknowledgedMarker)
     }
   }, [client, isConnected, jid, reloadFromDB])
 

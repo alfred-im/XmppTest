@@ -27,6 +27,10 @@ export interface Message {
   from: 'me' | 'them'
   status: MessageStatus
   tempId?: string // ID temporaneo per optimistic updates (prima della conferma server)
+  
+  // XEP-0333 Chat Markers
+  markerType?: 'received' | 'displayed' | 'acknowledged'
+  markerFor?: string // messageId del messaggio referenziato
 }
 
 export interface VCardCache {

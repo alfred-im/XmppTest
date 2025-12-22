@@ -1,7 +1,7 @@
 # Alfred - Mappa Completa del Progetto
 
 **Ultimo aggiornamento**: 2025-12-17  
-**Versione**: 1.0.1
+**Versione**: 1.1.0 (XEP-0333 Chat Markers)
 
 ---
 
@@ -358,6 +358,7 @@ index.html
 | XEP-0059 | Result Set Management (RSM) | `sync-initializer.ts` (tokens) |
 | XEP-0054 | vCard-temp | `vcard.ts` |
 | XEP-0357 | Push Notifications | `push-notifications.ts` |
+| XEP-0333 | Chat Markers | `MessagingContext.tsx`, `ChatPage.tsx`, `MessageItem.tsx` |
 | XEP-0030 | Service Discovery | `xmpp.ts`, `push-notifications.ts` |
 | XEP-0077 | In-Band Registration | `xmpp.ts` |
 | XEP-0199 | XMPP Ping | Stanza.js built-in |
@@ -598,6 +599,7 @@ class ConversationRepository {
 - ✅ **Cache-first loading** (IndexedDB)
 - ✅ **Offline support** (Service Worker)
 - ✅ **Push Notifications** (XEP-0357) con abilitazione automatica
+- ✅ **Chat Markers (XEP-0333)** - Spunte di lettura stile WhatsApp/Telegram (✓ sent, ✓✓ displayed, ✓✓ blu acknowledged)
 - ✅ **Typing indicators** (future - base implementata)
 - ✅ **Presence** (online/offline status)
 - ✅ **Debug Logger** (intercetta e visualizza tutti i console.log)
@@ -705,10 +707,20 @@ Documentati in `docs/fixes/known-issues.md`:
 ## 🔄 Ultima Revisione
 
 **Data**: 2025-12-17  
-**Branch**: `cursor/auto-login-functionality-issue-0aa8`  
-**Versione**: Architettura v3.0 "Sync-Once + Listen" + Auto-login fix
+**Branch**: `cursor/message-read-receipts-support-46f8`  
+**Versione**: Architettura v3.0 "Sync-Once + Listen" + XEP-0333 Chat Markers
 
-**Modifiche Recenti** (v3.0.1 - 17 dicembre 2025):
+**Modifiche Recenti** (v3.1 - 17 dicembre 2025):
+- ✅ **Implementato XEP-0333 (Chat Markers)** - Spunte di lettura stile WhatsApp/Telegram:
+  - Schema Message esteso con `markerType` e `markerFor`
+  - Listener per marker `displayed` e `acknowledged` in MessagingContext
+  - Invio automatico marker quando si visualizzano messaggi in ChatPage
+  - UI con spunte: ✓ (sent), ✓✓ grigie (displayed), ✓✓ blu (acknowledged)
+  - CSS stile WhatsApp con `letter-spacing: -4px` per sovrapporre le spunte
+  - Supporto nativo Stanza.js per XEP-0333 (client.markDisplayed, eventi marker:*)
+  - Marker salvati come messaggi speciali nel DB (body vuoto)
+
+**Modifiche Precedenti** (v3.0.1 - 17 dicembre 2025):
 - ✅ **Ripristinato auto-login funzionante**:
   - ConnectionContext ora gestisce auto-login all'avvio con useEffect
   - Credenziali migrate da sessionStorage a localStorage per persistenza

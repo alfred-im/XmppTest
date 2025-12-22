@@ -179,6 +179,40 @@ export function ChatPage() {
     }
   }, [jid, client, isConnected, markAsRead])
 
+  // XEP-0333: Invia marker 'displayed' per messaggi non marcati
+  useEffect(() => {
+    if (!client || !isConnected || !jid || messages.length === 0) return
+
+    // Trova messaggi da loro che non hanno ancora un marker displayed
+    const unmarkedMessages = messages.filter((msg) => {
+      // Solo messaggi da loro (non miei)
+      if (msg.from !== 'them') return false
+      // Solo messaggi con body (non marker stessi)
+      if (!msg.body || msg.markerType) return false
+      // Verifica se esiste già un marker per questo messaggio
+      const hasMarker = messages.some(
+        (m) =>
+          m.markerType === 'displayed' &&
+          m.markerFor === msg.messageId
+      )
+      return !hasMarker
+    })
+
+    // Invia marker per ogni messaggio non marcato
+    unmarkedMessages.forEach((msg) => {
+      try {
+        client.markDisplayed({
+          id: msg.messageId,
+          from: jid,
+          type: 'chat',
+        })
+        console.log('📤 Marker displayed inviato per messaggio:', msg.messageId)
+      } catch (error) {
+        console.error('❌ Errore invio marker displayed:', error)
+      }
+    })
+  }, [client, isConnected, jid, messages])
+
   // Auto-focus su input quando la chat si carica
   useEffect(() => {
     if (!isLoading && inputRef.current) {
@@ -291,9 +325,7 @@ export function ChatPage() {
     return conversation?.displayName || jid.split('@')[0] || 'Chat'
   }, [conversation, jid])
 
-  // Renderizza i messaggi usando componenti memoizzati
-  // MessageItem è wrappato con React.memo, quindi React riusa i componenti
-  // esistenti e non ricrea tutto da zero quando la lista cambia
+  // Renderizza TUTTI i messaggi - MessageItem decide cosa fare in base al tipo
   const renderedMessages = messages.map((message, index) => {
     const showDate = index === 0 || !isSameDay(messages[index - 1].timestamp, message.timestamp)
     return (
@@ -301,6 +333,7 @@ export function ChatPage() {
         key={message.messageId}
         message={message}
         showDate={showDate}
+        allMessages={messages}
       />
     )
   })

@@ -315,11 +315,12 @@ export async function sendMessage(
   const normalizedJid = normalizeJID(toJid)
 
   try {
-    // Invia al server XMPP
+    // Invia al server XMPP con marker markable per XEP-0333
     const messageId = await client.sendMessage({
       to: normalizedJid,
       body,
       type: 'chat',
+      marker: { type: 'markable' },
     })
 
     const finalMessageId = typeof messageId === 'string' ? messageId : tempId
