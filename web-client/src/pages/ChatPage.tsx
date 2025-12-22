@@ -325,14 +325,9 @@ export function ChatPage() {
     return conversation?.displayName || jid.split('@')[0] || 'Chat'
   }, [conversation, jid])
 
-  // Renderizza i messaggi usando componenti memoizzati
-  // MessageItem è wrappato con React.memo, quindi React riusa i componenti
-  // esistenti e non ricrea tutto da zero quando la lista cambia
-  // Filtra: mostra SOLO messaggi con body (testo reale)
-  // I marker (senza body) non si renderizzano MA vengono passati a MessageItem per calcolare le spunte
-  const visibleMessages = messages.filter((m) => m.body && m.body.trim().length > 0)
-  const renderedMessages = visibleMessages.map((message, index) => {
-    const showDate = index === 0 || !isSameDay(visibleMessages[index - 1].timestamp, message.timestamp)
+  // Renderizza TUTTI i messaggi - MessageItem decide cosa fare in base al tipo
+  const renderedMessages = messages.map((message, index) => {
+    const showDate = index === 0 || !isSameDay(messages[index - 1].timestamp, message.timestamp)
     return (
       <MessageItem
         key={message.messageId}
