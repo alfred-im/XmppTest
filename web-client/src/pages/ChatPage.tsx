@@ -41,6 +41,7 @@ export function ChatPage() {
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const messagesContainerRef = useRef<HTMLDivElement>(null)
   const wasAtBottomRef = useRef(true) // Track if user was at bottom before new message
+  const markedMessagesRef = useRef<Set<string>>(new Set()) // Track already marked messages
 
   // Validate JID format - redirect if empty or malformed
   // NON validiamo rigorosamente perché se il JID arriva dalla lista conversazioni,
@@ -189,6 +190,8 @@ export function ChatPage() {
       if (msg.from !== 'them') return false
       // Solo messaggi con body (non marker stessi)
       if (!msg.body || msg.markerType) return false
+      // Skip se già abbiamo inviato un marker per questo messaggio
+      if (markedMessagesRef.current.has(msg.messageId)) return false
       // Verifica se esiste già un marker per questo messaggio
       const hasMarker = messages.some(
         (m) =>
@@ -207,11 +210,18 @@ export function ChatPage() {
           type: 'chat',
         })
         console.log('📤 Marker displayed inviato per messaggio:', msg.messageId)
+        // Traccia che abbiamo inviato il marker
+        markedMessagesRef.current.add(msg.messageId)
       } catch (error) {
         console.error('❌ Errore invio marker displayed:', error)
       }
     })
   }, [client, isConnected, jid, messages])
+  
+  // Pulisci la cache di messaggi marcati quando cambiaconversazione
+  useEffect(() => {
+    markedMessagesRef.current.clear()
+  }, [jid])
 
   // Auto-focus su input quando la chat si carica
   useEffect(() => {

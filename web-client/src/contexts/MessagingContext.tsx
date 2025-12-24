@@ -111,10 +111,22 @@ export function MessagingProvider({ children }: { children: ReactNode }) {
     const handleDisplayedMarker = async (message: ReceivedMessage) => {
       if (!message.marker?.id) return
       
-      console.log('✓✓ Marker displayed ricevuto per messaggio:', message.marker.id)
+      const markerId = message.marker.id
+      console.log('✓✓ Marker displayed ricevuto per messaggio:', markerId)
       
       try {
         const contactJid = normalizeJID(message.from || '')
+        
+        // Verifica se esiste già un marker dello stesso tipo per questo messaggio
+        const existingMessages = await messageRepository.getForConversation(contactJid, { limit: 1000 })
+        const existingMarker = existingMessages.find(
+          (m: Message) => m.markerType === 'displayed' && m.markerFor === markerId
+        )
+        
+        if (existingMarker) {
+          console.log('   ⚠️ Marker displayed già esistente per questo messaggio, skip')
+          return
+        }
         
         // Salva marker come messaggio speciale
         const markerMessage: Message = {
@@ -125,7 +137,7 @@ export function MessagingProvider({ children }: { children: ReactNode }) {
           from: 'them',
           status: 'sent',
           markerType: 'displayed',
-          markerFor: message.marker.id,
+          markerFor: markerId,
         }
         
         await messageRepository.saveAll([markerMessage])
@@ -139,10 +151,22 @@ export function MessagingProvider({ children }: { children: ReactNode }) {
     const handleAcknowledgedMarker = async (message: ReceivedMessage) => {
       if (!message.marker?.id) return
       
-      console.log('✓✓ Marker acknowledged ricevuto per messaggio:', message.marker.id)
+      const markerId = message.marker.id
+      console.log('✓✓ Marker acknowledged ricevuto per messaggio:', markerId)
       
       try {
         const contactJid = normalizeJID(message.from || '')
+        
+        // Verifica se esiste già un marker dello stesso tipo per questo messaggio
+        const existingMessages = await messageRepository.getForConversation(contactJid, { limit: 1000 })
+        const existingMarker = existingMessages.find(
+          (m: Message) => m.markerType === 'acknowledged' && m.markerFor === markerId
+        )
+        
+        if (existingMarker) {
+          console.log('   ⚠️ Marker acknowledged già esistente per questo messaggio, skip')
+          return
+        }
         
         // Salva marker come messaggio speciale
         const markerMessage: Message = {
@@ -153,7 +177,7 @@ export function MessagingProvider({ children }: { children: ReactNode }) {
           from: 'them',
           status: 'sent',
           markerType: 'acknowledged',
-          markerFor: message.marker.id,
+          markerFor: markerId,
         }
         
         await messageRepository.saveAll([markerMessage])

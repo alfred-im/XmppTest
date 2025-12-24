@@ -43,6 +43,11 @@ function mamResultToMessage(msg: MAMResult, conversationJid: string, myJid: stri
   const myBareJid = normalizeJID(myJid)
   const from = msg.item.message?.from || ''
   const fromMe = from.startsWith(myBareJid)
+  
+  // Estrai marker info se presente (XEP-0333)
+  const marker = msg.item.message?.marker
+  const markerType = marker?.type as 'received' | 'displayed' | 'acknowledged' | undefined
+  const markerFor = marker?.id
 
   return {
     messageId: msg.id || `mam_${Date.now()}`,
@@ -52,6 +57,9 @@ function mamResultToMessage(msg: MAMResult, conversationJid: string, myJid: stri
     // La direzione base (sovrascritta da applySelfChatLogic per self-chat)
     from: fromMe ? 'me' : 'them',
     status: 'sent', // Messaggi MAM sono già inviati
+    // XEP-0333: Chat Markers
+    markerType,
+    markerFor,
   }
 }
 

@@ -10,11 +10,27 @@ interface MessageItemProps {
 
 /**
  * Trova il marker più recente per un messaggio specifico
+ * Applica gerarchia: acknowledged > displayed > received
  */
 function findLatestMarker(messageId: string, allMessages: Message[]): Message | undefined {
-  return allMessages
-    .filter((m) => m.markerFor === messageId)
-    .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())[0]
+  const markers = allMessages.filter((m) => m.markerFor === messageId)
+  
+  if (markers.length === 0) return undefined
+  
+  // Definisci priorità marker: acknowledged (3) > displayed (2) > received (1)
+  const priority = (marker: Message): number => {
+    if (marker.markerType === 'acknowledged') return 3
+    if (marker.markerType === 'displayed') return 2
+    if (marker.markerType === 'received') return 1
+    return 0
+  }
+  
+  // Ordina per priorità (più alta prima), poi per timestamp (più recente prima)
+  return markers.sort((a, b) => {
+    const priorityDiff = priority(b) - priority(a)
+    if (priorityDiff !== 0) return priorityDiff
+    return b.timestamp.getTime() - a.timestamp.getTime()
+  })[0]
 }
 
 /**
