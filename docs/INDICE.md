@@ -28,6 +28,7 @@ Indice documenti tecnici per navigazione rapida. Questo documento è per AI, non
 - [implementation/sync-system-complete.md](./implementation/sync-system-complete.md) - **Sistema "Sync-Once + Listen"** (v3.0 - 15 dic 2025)
 - [implementation/scrollable-containers.md](./implementation/scrollable-containers.md) - Utility class scroll
 - [implementation/scrollable-containers-implementation.md](./implementation/scrollable-containers-implementation.md) - Dettagli tecnici
+- [implementation/chat-markers-xep-0333.md](./implementation/chat-markers-xep-0333.md) - **Chat Markers XEP-0333** (strategia rendering, v3.1 - 24 dic 2025)
 
 ## Fixes
 
@@ -64,5 +65,5 @@ Indice documenti tecnici per navigazione rapida. Questo documento è per AI, non
 
 ---
 
-**Ultimo aggiornamento**: 2025-12-15  
-**Architettura corrente**: Sync-Once + Listen (v3.0)
+**Ultimo aggiornamento**: 2025-12-24  
+**Architettura corrente**: Sync-Once + Listen (v3.0) + Chat Markers XEP-0333 (v3.1)

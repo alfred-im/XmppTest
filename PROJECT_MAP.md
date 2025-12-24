@@ -101,6 +101,63 @@
    - Modifiche: sempre tramite server XMPP, poi sincronizzare localmente
    - NON modificare mai direttamente il database locale
    - Benefici: Coerenza dati, sync multi-device, affidabilità, performance
+6. **Rendering Fa Le Scelte**: La UI decide cosa e come mostrare basandosi sui dati grezzi
+   - Dati salvati esattamente come arrivano dal server (no trasformazioni in DB)
+   - Logica di presentazione (filtri, combinazioni, calcoli) avviene durante rendering
+   - Esempio: marker XEP-0333 salvati come messaggi separati, combinati visualmente nel rendering
+
+### Strategia Chat Markers (XEP-0333)
+
+**Implementazione spunte di lettura stile WhatsApp/Telegram**
+
+#### Architettura Dati
+
+**Messaggi nel DB**:
+- Messaggi testuali: `body: "testo"`, `markerType: undefined`
+- Marker: `body: ""`, `markerType: 'displayed'|'acknowledged'`, `markerFor: messageId`
+
+**Fonte dati**:
+- Sincronizzazione MAM: scarica messaggi testuali E marker insieme nella stessa query
+- Eventi real-time: marker `displayed`/`acknowledged` arrivano come eventi separati
+- Invio marker: `client.markDisplayed()` invia al server, poi ritorna via MAM
+
+**Storage**:
+- Tutti salvati come messaggi nel DB (`messages` object store)
+- Marker hanno campi speciali: `markerType` e `markerFor`
+- NO modifica DB: marker salvati esattamente come arrivano dal server
+
+#### Strategia Rendering
+
+**Ciclo rendering messaggi** (`MessageItem.tsx`):
+
+```
+Per ogni messaggio nell'array:
+
+1. HA body con testo?
+   → SÌ: Messaggio normale
+      - Cerca marker con markerFor === messageId
+      - Determina spunta: marker?.markerType || message.status
+      - Renderizza messaggio CON spunta appropriata
+   
+2. È un marker (body vuoto + markerType)?
+   → SÌ: return null (nascosto, applicato solo visivamente)
+   
+3. Altro (body vuoto, no markerType)?
+   → Messaggio sconosciuto, renderizza per debug
+```
+
+**Logica spunte**:
+- `status: 'sent'` → ✓ singola grigia
+- `markerType: 'displayed'` → ✓✓ doppie grigie
+- `markerType: 'acknowledged'` → ✓✓ doppie blu
+
+**Priorità**: Se esiste marker per un messaggio, `markerType` sovrascrive `message.status`.
+
+**Vantaggi strategia**:
+- DB contiene dati grezzi esattamente come dal server
+- Nessuna modifica/mutazione dei dati
+- Logica presentazione separata dai dati
+- Coerenza con principio "Rendering Fa Le Scelte"
 
 ---
 
@@ -193,7 +250,7 @@ State management globale con React Context
 | `ConnectionContext.tsx` | **CONTEXT PRINCIPALE** - Connessione XMPP e auto-login all'avvio | Client, isConnected, isConnecting, JID |
 | `AuthContext.tsx` | Gestione credenziali (salvataggio/caricamento) | JID, Password, Login status |
 | `ConversationsContext.tsx` | Lista conversazioni e sincronizzazione | Conversations[], Sync state |
-| `MessagingContext.tsx` | Gestione messaggi real-time | Message handlers, Typing indicators |
+| `MessagingContext.tsx` | Gestione messaggi real-time (inclusi marker XEP-0333) | Message handlers, Marker handlers |
 
 ##### **Services (`services/`)**
 Business logic e comunicazione con XMPP server
@@ -496,21 +553,29 @@ npm run test:browser:setup  # Install Playwright browsers
 ##### 2. **messages**
 ```typescript
 {
-  id: string              // UUID o stanza ID
-  conversationJid: string // JID conversazione (FK)
-  from: string            // JID mittente
-  to: string              // JID destinatario
-  body: string            // Testo messaggio
-  timestamp: number       // Timestamp invio
-  direction: 'incoming' | 'outgoing'
-  status?: 'pending' | 'sent' | 'delivered' | 'failed'
-  mamId?: string          // MAM archive ID (XEP-0313)
+  messageId: string       // ID dal server o generato locale
+  conversationJid: string // JID bare del contatto (FK)
+  body: string            // Testo messaggio (vuoto per marker)
+  timestamp: Date         // Timestamp messaggio
+  from: 'me' | 'them'     // Direzione
+  status: 'pending' | 'sent' | 'delivered' | 'failed'
+  tempId?: string         // ID temporaneo pre-conferma
+  
+  // XEP-0333 Chat Markers
+  markerType?: 'received' | 'displayed' | 'acknowledged'
+  markerFor?: string      // messageId del messaggio referenziato
 }
 ```
+**Note strategia**:
+- Messaggi testuali: `body !== ''`, `markerType === undefined`
+- Marker: `body === ''`, `markerType !== undefined`, `markerFor` punta al messaggio
+- Marker salvati come messaggi separati, applicati visivamente nel rendering
+
 **Indexes**: 
 - `conversationJid` (non-unique) - Per query per conversazione
 - `timestamp` (non-unique) - Per sorting temporale
-- `mamId` (unique) - Per deduplicazione MAM
+- `conversation-timestamp` (compound) - Query efficienti
+- `tempId` (non-unique) - Lookup messaggi temporanei
 
 ##### 3. **vcards**
 ```typescript
@@ -599,7 +664,10 @@ class ConversationRepository {
 - ✅ **Cache-first loading** (IndexedDB)
 - ✅ **Offline support** (Service Worker)
 - ✅ **Push Notifications** (XEP-0357) con abilitazione automatica
-- ✅ **Chat Markers (XEP-0333)** - Spunte di lettura stile WhatsApp/Telegram (✓ sent, ✓✓ displayed, ✓✓ blu acknowledged)
+- ✅ **Chat Markers (XEP-0333)** - Spunte di lettura stile WhatsApp/Telegram
+  - Marker sincronizzati da MAM come messaggi speciali
+  - Applicazione visiva durante rendering (no modifica DB)
+  - ✓ grigia (sent), ✓✓ grigie (displayed), ✓✓ blu (acknowledged)
 - ✅ **Typing indicators** (future - base implementata)
 - ✅ **Presence** (online/offline status)
 - ✅ **Debug Logger** (intercetta e visualizza tutti i console.log)
@@ -713,12 +781,13 @@ Documentati in `docs/fixes/known-issues.md`:
 **Modifiche Recenti** (v3.1 - 17 dicembre 2025):
 - ✅ **Implementato XEP-0333 (Chat Markers)** - Spunte di lettura stile WhatsApp/Telegram:
   - Schema Message esteso con `markerType` e `markerFor`
-  - Listener per marker `displayed` e `acknowledged` in MessagingContext
-  - Invio automatico marker quando si visualizzano messaggi in ChatPage
+  - Marker sincronizzati da MAM come messaggi speciali (body vuoto, hanno markerType + markerFor)
+  - Marker salvati nel DB locale esattamente come arrivano dal server (no modifica)
+  - Strategia rendering: ciclo messaggi → se testo mostra, se marker cerca referenziato e applica spunta
+  - Invio marker real-time: client.markDisplayed quando si visualizzano messaggi
   - UI con spunte: ✓ (sent), ✓✓ grigie (displayed), ✓✓ blu (acknowledged)
   - CSS stile WhatsApp con `letter-spacing: -4px` per sovrapporre le spunte
-  - Supporto nativo Stanza.js per XEP-0333 (client.markDisplayed, eventi marker:*)
-  - Marker salvati come messaggi speciali nel DB (body vuoto)
+  - Logica applicazione marker interamente nel rendering (MessageItem), no modifica DB
 
 **Modifiche Precedenti** (v3.0.1 - 17 dicembre 2025):
 - ✅ **Ripristinato auto-login funzionante**:
