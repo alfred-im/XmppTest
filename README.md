@@ -25,6 +25,7 @@ Vedi `PROJECT_MAP.md` per dettagli completi.
 - Login XMPP con auto-login
 - Lista conversazioni con sync ottimizzata
 - Chat 1-to-1 con real-time messaging
+- Chat Markers (XEP-0333) - spunte di lettura stile WhatsApp
 - vCard (avatar, profilo)
 - Sync iniziale intelligente (full/incremental)
 - MAM (XEP-0313) con marcatori RSM
@@ -95,7 +96,7 @@ Vedi `PROJECT_MAP.md` per architettura dettagliata completa.
 - `PROJECT_MAP.md` - **LEGGERE ALL'INIZIO DI OGNI SESSIONE** (regola fondamentale)
 - `.cursor-rules.md` - Regole di sviluppo
 - `docs/architecture/` - Analisi architetturali (MAM strategy, conversazioni, performance)
-- `docs/implementation/` - Dettagli implementazioni (login, sync, scrollable containers)
+- `docs/implementation/` - Dettagli implementazioni (login, sync, scrollable containers, chat markers)
 - `docs/decisions/` - ADR (decisioni architetturali)
 - `docs/fixes/` - Analisi fix applicati
 - `docs/design/` - Principi design (brand identity, database architecture)
