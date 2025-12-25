@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { debugLogger } from '../services/debug-logger'
 import type { LogEntry } from '../services/debug-logger'
-import { clearDatabase } from '../services/conversations-db'
+import { clearDatabase, getDB } from '../services/conversations-db'
 import './DebugLogPopup.css'
 
 interface DebugLogPopupProps {
@@ -94,6 +94,50 @@ export function DebugLogPopup({ onClose }: DebugLogPopupProps) {
     } catch (error) {
       console.error('Errore durante la copia negli appunti:', error)
       alert('Impossibile copiare negli appunti')
+    }
+  }
+
+  const handleCopyDatabaseToClipboard = async () => {
+    try {
+      const db = await getDB()
+      
+      // Estrai tutti i dati da tutte le store
+      const tx = db.transaction(['conversations', 'messages', 'vcards', 'metadata'], 'readonly')
+      
+      const conversations = await tx.objectStore('conversations').getAll()
+      const messages = await tx.objectStore('messages').getAll()
+      const vcards = await tx.objectStore('vcards').getAll()
+      const metadata = await tx.objectStore('metadata').getAll()
+      
+      await tx.done
+      
+      // Crea oggetto con tutti i dati
+      const dbSnapshot = {
+        timestamp: new Date().toISOString(),
+        stats: {
+          conversations: conversations.length,
+          messages: messages.length,
+          vcards: vcards.length,
+          metadata: metadata.length,
+        },
+        data: {
+          conversations,
+          messages,
+          vcards,
+          metadata,
+        }
+      }
+      
+      // Serializza in JSON formattato
+      const json = JSON.stringify(dbSnapshot, null, 2)
+      
+      // Copia negli appunti
+      await navigator.clipboard.writeText(json)
+      
+      alert(`✅ Database copiato negli appunti!\n\n📊 Statistiche:\n- ${conversations.length} conversazioni\n- ${messages.length} messaggi\n- ${vcards.length} vCard\n- ${metadata.length} metadata`)
+    } catch (error) {
+      console.error('Errore durante la copia del database:', error)
+      alert('❌ Impossibile copiare il database negli appunti')
     }
   }
 
@@ -215,6 +259,17 @@ export function DebugLogPopup({ onClose }: DebugLogPopupProps) {
                 <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
               </svg>
               Copia
+            </button>
+            <button 
+              className="debug-log-popup__action-btn debug-log-popup__action-btn--db"
+              onClick={handleCopyDatabaseToClipboard}
+              title="Copia tutto il database IndexedDB negli appunti (conversazioni, messaggi, vCard, metadata)"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+                <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
+              </svg>
+              Copia DB
             </button>
             <button 
               className="debug-log-popup__action-btn"
