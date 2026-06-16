@@ -6,9 +6,10 @@ import {
 } from './conversations-db'
 import { normalizeJID } from '../utils/jid'
 import type { BareJID } from '../types/jid'
-import { buildMessageFingerprint, extractStableMessageId, generateTempId } from '../utils/message'
+import { generateTempId } from '../utils/message'
 import { PAGINATION } from '../config/constants'
 import { messageRepository, conversationRepository } from './repositories'
+import { advanceListenerWatermark } from './listener-watermark'
 
 // Re-export per comodità
 export type { Message, MessageStatus } from './conversations-db'
@@ -39,36 +40,16 @@ function extractTimestamp(msg: MAMResult): Date {
  */
 function mamResultToMessage(msg: MAMResult, conversationJid: string, myJid: string): Message {
   const myBareJid = normalizeJID(myJid)
-  const innerMessage = msg.item.message
-  const from = innerMessage?.from || ''
+  const from = msg.item.message?.from || ''
   const fromMe = from.startsWith(myBareJid)
-  const body = innerMessage?.body || ''
-  const timestamp = extractTimestamp(msg)
-  const normalizedJid = normalizeJID(conversationJid)
-  const fromDirection: 'me' | 'them' = fromMe ? 'me' : 'them'
-  const fingerprint = body
-    ? buildMessageFingerprint({
-        conversationJid: normalizedJid,
-        body,
-        from: fromDirection,
-        timestamp,
-      })
-    : undefined
 
   return {
-    // Preferisci ID del messaggio originale, non l'ID archivio MAM
-    messageId: extractStableMessageId(
-      {
-        id: innerMessage?.id,
-        originId: innerMessage?.originId,
-      },
-      fingerprint
-    ) || msg.id || `mam_${Date.now()}`,
-    conversationJid: normalizedJid,
-    body,
-    timestamp,
+    messageId: msg.id || `mam_${Date.now()}`,
+    conversationJid: normalizeJID(conversationJid),
+    body: msg.item.message?.body || '',
+    timestamp: extractTimestamp(msg),
     // La direzione base (sovrascritta da applySelfChatLogic per self-chat)
-    from: fromDirection,
+    from: fromMe ? 'me' : 'them',
     status: 'sent', // Messaggi MAM sono già inviati
   }
 }
@@ -137,6 +118,7 @@ export async function loadMessagesForContact(
     afterToken?: string  // Token per caricare messaggi DOPO questo punto (più recenti)
     beforeToken?: string // Token per caricare messaggi PRIMA di questo punto (più vecchi)
     endBefore?: Date     // Sync boundary T: MAM scarica solo messaggi prima di questo momento
+    startAfter?: Date    // Watermark listener: MAM non riscarica messaggi già coperti dal listener
   }
 ): Promise<{ 
   messages: Message[]
@@ -144,7 +126,7 @@ export async function loadMessagesForContact(
   lastToken?: string   // Token dell'ultimo messaggio (per paginare avanti)
   complete: boolean 
 }> {
-  const { maxResults = PAGINATION.DEFAULT_MESSAGE_LIMIT, afterToken, beforeToken, endBefore } = options || {}
+  const { maxResults = PAGINATION.DEFAULT_MESSAGE_LIMIT, afterToken, beforeToken, endBefore, startAfter } = options || {}
 
   try {
     const normalizedContactJid = normalizeJID(contactJid)
@@ -155,6 +137,7 @@ export async function loadMessagesForContact(
     // Query MAM filtrata per contatto specifico (end = boundary T del handoff sync/listener)
     const result = await client.searchHistory({
       with: normalizedContactJid,
+      start: startAfter,
       end: endBefore,
       paging: {
         max: maxResults,
@@ -315,27 +298,31 @@ export async function sendMessage(
     })
 
     const finalMessageId = typeof messageId === 'string' ? messageId : tempId
+    const timestamp = new Date()
 
     // Salva nel DB locale
     await messageRepository.saveAll([{
       messageId: finalMessageId,
       conversationJid: normalizedJid,
       body,
-      timestamp: new Date(),
+      timestamp,
       from: 'me',
       status: 'sent',
       tempId: tempId,
     }])
 
+    // Avanza watermark listener per evitare duplicati al rientro
+    await advanceListenerWatermark(normalizedJid, timestamp)
+
     // Aggiorna conversazione
     await conversationRepository.update(normalizedJid, {
       lastMessage: {
         body,
-        timestamp: new Date(),
+        timestamp,
         from: 'me',
         messageId: finalMessageId,
       },
-      updatedAt: new Date(),
+      updatedAt: timestamp,
     })
 
     console.log('✅ Messaggio inviato e salvato:', finalMessageId)

@@ -4,6 +4,8 @@ export interface SyncMetadata {
   lastSync: Date
   lastRSMToken?: string
   conversationTokens?: Record<string, string>
+  /** Timestamp ISO per conversazione: messaggi fino a qui sono già stati coperti dal listener */
+  listenerCoveredUntil?: Record<string, string>
   isInitialSyncComplete?: boolean
   initialSyncCompletedAt?: Date
 }

@@ -3,6 +3,7 @@ import { downloadAllConversations, enrichWithRoster } from './conversations'
 import { getVCardsForJids } from './vcard'
 import type { SyncOptions } from './sync-types'
 import { getMamSyncEnd } from './sync-boundary'
+import { getListenerWatermark } from './listener-watermark'
 
 // Import singleton instances from repositories
 import { conversationRepository, metadataRepository } from './repositories'
@@ -71,12 +72,14 @@ async function performFullSync(
       let hasMore = true
       let afterToken: string | undefined
       let lastMessageToken: string | undefined
+      const listenerStart = getListenerWatermark(await metadataRepo.get(), conv.jid)
 
       while (hasMore) {
         const result = await loadMessagesForContact(client, conv.jid, {
           maxResults: 100,
           afterToken,
           endBefore: mamEndBefore,
+          startAfter: listenerStart,
         })
 
         if (result.lastToken) {
@@ -161,10 +164,12 @@ async function performIncrementalSync(
 
     try {
       const { loadMessagesForContact } = await import('./messages')
+      const listenerStart = getListenerWatermark(metadata, conv.jid)
       
-      const queryOptions: { maxResults: number; afterToken?: string; endBefore: Date } = {
+      const queryOptions: { maxResults: number; afterToken?: string; endBefore: Date; startAfter?: Date } = {
         maxResults: 100, // Assume max 100 nuovi messaggi per conversazione
         endBefore: mamEndBefore,
+        startAfter: listenerStart,
       }
 
       if (conversationToken) {
