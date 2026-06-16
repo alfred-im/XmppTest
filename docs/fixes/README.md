@@ -4,20 +4,6 @@ Analisi fix applicati e ottimizzazioni per tracciare problemi risolti e soluzion
 
 ## Fix Documentati
 
-### Pull-to-Refresh Fix
-- **[pull-to-refresh-fix.md](./pull-to-refresh-fix.md)**
-- **Data**: 29 Novembre 2025
-- **Problema**: Pull-to-refresh non funzionava su mobile
-- **Causa**: 
-  - useEffect con dipendenze che cambiano continuamente
-  - Event listeners rimossi e ri-aggiunti ad ogni render
-  - Passive event listeners conflitto con preventDefault
-- **Soluzione**: 
-  - useRef per tutte le variabili di stato
-  - Event listeners registrati una sola volta
-  - passive: false per permettere preventDefault
-- **Status**: ✅ Risolto e testato
-
 ### Profile Page Scroll Conflict Fix
 - **[profile-scroll-conflict-fix.md](./profile-scroll-conflict-fix.md)**
 - **Data**: 30 Novembre 2025
@@ -57,27 +43,23 @@ Analisi fix applicati e ottimizzazioni per tracciare problemi risolti e soluzion
 
 ### Novembre 2025
 
-1. **Pull-to-Refresh Non Funzionante**
-   - Status: ✅ Risolto
-   - Doc: [pull-to-refresh-fix.md](./pull-to-refresh-fix.md)
-
-2. **Conflitto Scroll Pagina Profilo**
+1. **Conflitto Scroll Pagina Profilo**
    - Status: ✅ Risolto
    - Doc: [profile-scroll-conflict-fix.md](./profile-scroll-conflict-fix.md)
 
-3. **Errore Salvataggio Profilo**
+2. **Errore Salvataggio Profilo**
    - Status: ✅ Risolto
    - Doc: [profile-save-error-fix.md](./profile-save-error-fix.md)
 
-4. **Conversazioni Non Aggiornate dopo Invio**
-   - Status: ✅ Risolto tramite sistema sincronizzazione
+3. **Conversazioni Non Aggiornate dopo Invio**
+   - Status: ✅ Risolto tramite architettura "Sync-Once + Listen"
    - Doc: [../implementation/sync-system-complete.md](../implementation/sync-system-complete.md)
 
-5. **Avatar Non Caricati**
+4. **Avatar Non Caricati**
    - Status: ✅ Risolto con vCard caching
    - Doc: Integrato in sync system
 
-6. **Redirect Loop dopo Logout**
+5. **Redirect Loop dopo Logout**
    - Status: ✅ Risolto con flag logoutIntentional
    - Doc: [../implementation/login-system.md](../implementation/login-system.md)
 
@@ -94,11 +76,6 @@ Analisi fix applicati e ottimizzazioni per tracciare problemi risolti e soluzion
    - vCard scaricati in batch paralleli (5 per volta)
    - Riduzione tempo sincronizzazione ~60%
 
-3. **Component Virtualization**
-   - Liste conversazioni con react-window
-   - Rendering solo elementi visibili
-   - Smooth scroll con 1000+ conversazioni
-
 ### Code Quality
 
 1. **TypeScript Strict Mode**
@@ -113,7 +90,7 @@ Analisi fix applicati e ottimizzazioni per tracciare problemi risolti e soluzion
 
 3. **Service Layer**
    - Logica business separata da UI
-   - Dependency injection pattern
+   - Repository pattern per accesso dati
    - Mocking più facile per test
 
 ## Pattern Anti-Bug (Riferimento Rapido)

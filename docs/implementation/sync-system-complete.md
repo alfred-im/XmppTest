@@ -406,11 +406,13 @@ NO SERVER SYNC!
     - **Aggiunto**: Bottone "🗑️ Svuota DB"
     - Chiama `clearDatabase()` con conferma
 
-### File Eliminati (Concettualmente)
+### File Eliminati (v3.0 + cleanup 2026-06)
 
-- ❌ `usePullToRefresh.ts` - Non più necessario (rimosso utilizzo)
-- ❌ `sync.ts` (legacy functions) - Sostituito da sync-initializer.ts
-- ❌ `SyncService.ts` - Logica incorporata in sync-initializer
+- `usePullToRefresh.ts` — feature rimossa con architettura "Sync-Once + Listen"
+- `sync.ts` — sostituito da `sync-initializer.ts`
+- `SyncService.ts` — logica incorporata in `sync-initializer.ts`
+- `src/repositories/` — duplicato non usato di `services/repositories/`
+- `App.css` — stili landing page non più referenziati
 
 ---
 
@@ -555,14 +557,12 @@ npm run build
 
 #### Cosa è Cambiato
 
-**Eliminato**:
-- ❌ Pull-to-refresh (su TUTTE le pagine)
-- ❌ Sync dopo ogni messaggio ricevuto
-- ❌ Sync dopo ogni messaggio inviato
-- ❌ `refreshConversations()` in ConversationsContext
-- ❌ `syncConversation()` in sync.ts
-- ❌ `handleIncomingMessageAndSync()` in sync.ts
-- ❌ `sincronizza()` system
+**Eliminato** (file e funzioni rimossi dal codebase):
+- Pull-to-refresh custom (su tutte le pagine)
+- Sync dopo ogni messaggio ricevuto/inviato
+- `refreshConversations()` in ConversationsContext
+- `sync.ts`, `SyncService.ts`, `usePullToRefresh.ts`
+- `src/repositories/` (duplicato non usato)
 
 **Aggiunto**:
 - ✅ AppInitializer component

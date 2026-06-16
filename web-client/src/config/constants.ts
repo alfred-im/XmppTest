@@ -16,13 +16,6 @@ export const PAGINATION = {
   SCROLL_BOTTOM_THRESHOLD: 1, // px from bottom to consider "at bottom" (minimal tolerance for rounding)
 } as const;
 
-// Pull to Refresh
-export const PULL_TO_REFRESH = {
-  THRESHOLD: 60, // px distance to trigger refresh
-  MAX_DISTANCE: 100, // px max pull distance
-  ANIMATION_DURATION: 300, // ms
-} as const;
-
 // Message Status
 export const MESSAGE_STATUS = {
   PENDING: 'pending',

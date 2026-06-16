@@ -1,8 +1,9 @@
 import type { Agent } from 'stanza'
-import type { MAMResult, ReceivedMessage } from 'stanza/protocol'
-import { saveConversations, updateConversation, saveMetadata, getConversations, type Conversation } from './conversations-db'
+import type { MAMResult } from 'stanza/protocol'
+import { type Conversation } from './conversations-db'
 import { normalizeJID, type BareJID } from '../utils/jid'
 import { PAGINATION } from '../config/constants'
+import { messageRepository } from './repositories'
 
 // Re-export per comodità
 export type { Conversation } from './conversations-db'
@@ -157,9 +158,6 @@ export async function loadConversationsFromServer(
     const myJid = client.jid || ''
     const myBareJid = normalizeJID(myJid)
     
-    // Importa saveMessages dal database
-    const { saveMessages: saveMessagesToDB } = await import('./conversations-db')
-    
     // Converti MAMResult[] in Message[]
     const messages = result.results
       .filter(msg => msg.item.message?.body) // Solo messaggi con body
@@ -179,7 +177,7 @@ export async function loadConversationsFromServer(
     
     // Salva tutti i messaggi nel database
     if (messages.length > 0) {
-      await saveMessagesToDB(messages)
+      await messageRepository.saveAll(messages)
     }
   }
 
@@ -276,40 +274,6 @@ export async function downloadAllConversations(
 }
 
 /**
- * Carica TUTTE le conversazioni dal server usando MAM
- * Ricarica storico completo, elabora tutto e aggiorna database locale
- */
-export async function loadAllConversations(client: Agent): Promise<Conversation[]> {
-  // Scarica tutte le conversazioni dal server
-  const { conversations: uniqueConversations, lastToken } = await downloadAllConversations(client)
-
-  // Carica conversazioni esistenti dal database per mantenere unreadCount
-  const existingConversations = await getConversations()
-  const existingMap = new Map(existingConversations.map((c) => [c.jid, c]))
-
-  // Merge: mantieni unreadCount dalle conversazioni esistenti
-  const mergedConversations = uniqueConversations.map((conv) => {
-    const existing = existingMap.get(conv.jid)
-    return {
-      ...conv,
-      unreadCount: existing?.unreadCount ?? 0, // Mantieni unreadCount esistente o 0
-    }
-  })
-
-  // Salva TUTTE le conversazioni nel database locale
-  await saveConversations(mergedConversations)
-
-  // Aggiorna metadata
-  await saveMetadata({
-    lastSync: new Date(),
-    lastRSMToken: lastToken,
-  })
-
-  return mergedConversations
-}
-
-
-/**
  * Arricchisce conversazioni con dati dal roster (nomi contatti) e vCard (avatar e nomi pubblici)
  * 
  * @param client - Client XMPP
@@ -354,46 +318,4 @@ export async function enrichWithRoster(
     console.error('Errore nel recupero roster/vCard:', error)
     return conversations
   }
-}
-
-/**
- * Aggiorna una conversazione quando arriva un nuovo messaggio
- */
-export async function updateConversationOnNewMessage(
-  message: ReceivedMessage,
-  myJid: string
-): Promise<void> {
-  const myBareJid = normalizeJID(myJid)
-  const from = message.from || ''
-  const to = message.to || ''
-
-// Determina il JID del contatto
-const contactJid = from.startsWith(myBareJid) ? normalizeJID(to) : normalizeJID(from)
-
-if (!contactJid || contactJid.trim().length === 0) {
-  console.warn('⚠️ Messaggio real-time con JID vuoto, skip')
-  return // Skip messaggi senza contatto valido
-}
-
-  // Estrai timestamp
-  const delay = message.delay
-  let timestamp = new Date()
-  if (delay && typeof delay === 'object' && 'stamp' in delay) {
-    const stamp = (delay as { stamp?: string }).stamp
-    if (stamp) {
-      timestamp = new Date(stamp)
-    }
-  }
-
-  // Aggiorna conversazione
-  await updateConversation(contactJid, {
-    jid: contactJid,
-    lastMessage: {
-      body: message.body || '',
-      timestamp,
-      from: from.startsWith(myBareJid) ? 'me' : 'them',
-      messageId: message.id || `${Date.now()}`,
-    },
-    unreadCount: from.startsWith(myBareJid) ? 0 : 1, // Incrementa se è un messaggio ricevuto
-  })
 }

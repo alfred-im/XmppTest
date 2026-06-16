@@ -8,7 +8,6 @@ import { AppInitializer } from './components/AppInitializer'
 import { LoginPopup } from './components/LoginPopup'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { SplashScreen } from './components/SplashScreen'
-import './App.css'
 
 // Lazy load delle pagine per code splitting
 const ConversationsPage = lazy(() => import('./pages/ConversationsPage').then(module => ({ default: module.ConversationsPage })))

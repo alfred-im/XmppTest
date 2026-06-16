@@ -125,7 +125,7 @@ html, body, #root  → overflow: hidden (blocca scroll globale)
 Solo contenitori specifici → overflow-y: auto (possono scrollare)
 ```
 
-**Perché**: Previene il pull-to-refresh nativo del browser su mobile che interferisce con il nostro pull-to-refresh custom.
+**Perché**: Previene il pull-to-refresh nativo del browser su mobile.
 
 **Whitelist Contenitori**:
 - ✅ `.chat-page__messages` - Messaggi chat

@@ -1,9 +1,7 @@
 import type { Agent } from 'stanza'
-import type { MAMResult, ReceivedMessage } from 'stanza/protocol'
+import type { MAMResult } from 'stanza/protocol'
 import {
-  saveMessages,
   getMessagesForConversation,
-  clearMessagesForConversation,
   type Message,
 } from './conversations-db'
 import { normalizeJID } from '../utils/jid'
@@ -168,7 +166,7 @@ export async function loadMessagesForContact(
 
     // Salva TUTTI i messaggi nel database (dati raw, senza alternanza self-chat)
     if (allMessages.length > 0) {
-      await saveMessages(allMessages)
+      await messageRepository.saveAll(allMessages)
     }
 
     // Filtra solo messaggi di chat validi (con body) per la visualizzazione nella UI
@@ -267,35 +265,6 @@ export async function downloadAllMessagesFromServer(
 
   // NON applicare alternanza qui - sarà applicata nella UI sull'array completo
   return allMessages
-}
-
-/**
- * Ricarica completamente tutto lo storico messaggi dal server
- * Scarica prima, poi svuota il database, poi salva i nuovi messaggi
- */
-export async function reloadAllMessagesFromServer(
-  client: Agent,
-  contactJid: string
-): Promise<Message[]> {
-  const normalizedJid = normalizeJID(contactJid)
-  
-  try {
-    // 1. Prima scarica tutti i messaggi dal server (senza salvare)
-    const serverMessages = await downloadAllMessagesFromServer(client, normalizedJid)
-    
-    // 2. Poi svuota il database dei messaggi per questa conversazione
-    await clearMessagesForConversation(normalizedJid)
-    
-    // 3. Infine salva i messaggi scaricati nel database
-    if (serverMessages.length > 0) {
-      await saveMessages(serverMessages)
-    }
-    
-    return serverMessages
-  } catch (error) {
-    console.error('Errore nel reload completo messaggi:', error)
-    throw new Error('Impossibile ricaricare i messaggi dal server')
-  }
 }
 
 /**
@@ -399,34 +368,4 @@ export async function getLocalMessages(
   const messages = await getMessagesForConversation(conversationJid, options)
   // Filtra messaggi vuoti (senza body) - possono essere ping, visualizzazioni, ecc.
   return messages.filter(msg => msg.body && msg.body.trim().length > 0)
-}
-
-/**
- * Gestisce un messaggio ricevuto in real-time usando il sistema di sincronizzazione
- * NON scrive direttamente nel database - sincronizza tutto dal server
- * 
- * @deprecated Usa handleIncomingMessageAndSync da './sync' invece
- * Questa funzione è mantenuta solo per compatibilità con codice esistente
- */
-export async function handleIncomingMessage(
-  message: ReceivedMessage,
-  myJid: string,
-  contactJid: string
-): Promise<Message> {
-  // Estrai timestamp per il messaggio di ritorno (per compatibilità)
-  const timestamp = message.delay?.timestamp || new Date()
-  const myBareJid = normalizeJID(myJid)
-  const from = message.from || ''
-  const fromMe = from.startsWith(myBareJid)
-
-  // Ritorna un messaggio temporaneo per compatibilità
-  // Il vero messaggio sarà caricato dalla sincronizzazione nel contesto XMPP
-  return {
-    messageId: message.id || `incoming_${Date.now()}`,
-    conversationJid: normalizeJID(contactJid),
-    body: message.body || '',
-    timestamp,
-    from: fromMe ? 'me' : 'them',
-    status: 'sent',
-  }
 }
