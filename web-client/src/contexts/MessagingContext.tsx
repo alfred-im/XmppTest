@@ -8,6 +8,7 @@ import { messageRepository } from '../services/repositories'
 import { conversationRepository } from '../services/repositories'
 import { normalizeJID } from '../utils/jid'
 import type { Message } from '../services/conversations-db'
+import { syncBoundaryService } from '../services/sync-boundary'
 
 type MessageCallback = (message: ReceivedMessage) => void
 
@@ -36,21 +37,22 @@ function extractContactJid(message: ReceivedMessage, myJid: string): string {
 /**
  * MessagingProvider - Gestisce messaggi in arrivo real-time
  * 
- * ARCHITETTURA SEMPLIFICATA:
- * - NON fa più sync completa dopo ogni messaggio
- * - Salva direttamente il messaggio nel DB
- * - L'observer del MessageRepository notifica automaticamente la UI
+ * ARCHITETTURA "Sync Boundary Handoff":
+ * - Il listener si attiva SOLO dopo beginHandoff() (momento T)
+ * - Da T in poi salva messaggi real-time nel DB
+ * - La sync MAM copre il passato (fino a T), senza sovrapposizione intenzionale
  */
 export function MessagingProvider({ children }: { children: ReactNode }) {
   const { client, isConnected, jid } = useConnection()
   const { refreshConversation } = useConversations()
   const messageCallbacks = useRef<Set<MessageCallback>>(new Set())
 
-  // Gestione messaggi in arrivo - SEMPLIFICATO: solo salvataggio diretto
+  // Listener registrato alla connessione; elabora messaggi solo dopo beginHandoff() (momento T)
   useEffect(() => {
     if (!client || !isConnected || !jid) return
 
     const handleMessage = async (message: ReceivedMessage) => {
+      if (!syncBoundaryService.isActive()) return
       console.log('📨 Messaggio ricevuto:', { from: message.from, body: message.body?.substring(0, 50) })
       
       if (!message.body) {
@@ -109,6 +111,7 @@ export function MessagingProvider({ children }: { children: ReactNode }) {
 
     // XEP-0333: Listener per marker 'displayed'
     const handleDisplayedMarker = async (message: ReceivedMessage) => {
+      if (!syncBoundaryService.isActive()) return
       if (!message.marker?.id) return
       
       console.log('✓✓ Marker displayed ricevuto per messaggio:', message.marker.id)
@@ -137,6 +140,7 @@ export function MessagingProvider({ children }: { children: ReactNode }) {
 
     // XEP-0333: Listener per marker 'acknowledged'
     const handleAcknowledgedMarker = async (message: ReceivedMessage) => {
+      if (!syncBoundaryService.isActive()) return
       if (!message.marker?.id) return
       
       console.log('✓✓ Marker acknowledged ricevuto per messaggio:', message.marker.id)

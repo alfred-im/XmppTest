@@ -4,6 +4,7 @@ import { useConversations } from '../contexts/ConversationsContext'
 import { SplashScreen } from './SplashScreen'
 import { performInitialSync } from '../services/sync-initializer'
 import { syncStatusService } from '../services/sync-status'
+import { syncBoundaryService } from '../services/sync-boundary'
 
 interface AppInitializerProps {
   children: ReactNode
@@ -12,7 +13,7 @@ interface AppInitializerProps {
 /**
  * Componente wrapper che gestisce la sincronizzazione iniziale
  * - Se non connesso: mostra i children (per permettere login via LoginPopup)
- * - Dopo connessione: esegue sync (full o incremental)
+ * - Dopo connessione: salva boundary T, attiva listener, poi sync (full o incremental) fino a T
  * - Durante sync: mostra SplashScreen sopra i children
  * - Dopo sync: mostra children normalmente
  * 
@@ -31,6 +32,7 @@ export function AppInitializer({ children }: AppInitializerProps) {
     if (!isConnected) {
       hasSyncedRef.current = false
       syncStatusService.setSyncing(false)
+      syncBoundaryService.reset()
       return
     }
 
@@ -50,7 +52,11 @@ export function AppInitializer({ children }: AppInitializerProps) {
 
       try {
         if (client) {
-          await performInitialSync(client, (progress) => {
+          // 1. Salva momento T e attiva listener (passato = sync, futuro = listener)
+          const boundary = syncBoundaryService.beginHandoff(new Date())
+
+          // 2. Sync MAM solo fino a T (il listener copre da T in poi)
+          await performInitialSync(client, { endBefore: boundary }, (progress) => {
             setSyncMessage(progress.message)
           })
           

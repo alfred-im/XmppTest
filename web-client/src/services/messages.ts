@@ -116,6 +116,7 @@ export async function loadMessagesForContact(
     maxResults?: number
     afterToken?: string  // Token per caricare messaggi DOPO questo punto (più recenti)
     beforeToken?: string // Token per caricare messaggi PRIMA di questo punto (più vecchi)
+    endBefore?: Date     // Sync boundary T: MAM scarica solo messaggi prima di questo momento
   }
 ): Promise<{ 
   messages: Message[]
@@ -123,7 +124,7 @@ export async function loadMessagesForContact(
   lastToken?: string   // Token dell'ultimo messaggio (per paginare avanti)
   complete: boolean 
 }> {
-  const { maxResults = PAGINATION.DEFAULT_MESSAGE_LIMIT, afterToken, beforeToken } = options || {}
+  const { maxResults = PAGINATION.DEFAULT_MESSAGE_LIMIT, afterToken, beforeToken, endBefore } = options || {}
 
   try {
     const normalizedContactJid = normalizeJID(contactJid)
@@ -131,9 +132,10 @@ export async function loadMessagesForContact(
       throw new Error('JID contatto non valido')
     }
 
-    // Query MAM filtrata per contatto specifico
+    // Query MAM filtrata per contatto specifico (end = boundary T del handoff sync/listener)
     const result = await client.searchHistory({
       with: normalizedContactJid,
+      end: endBefore,
       paging: {
         max: maxResults,
         after: afterToken,
