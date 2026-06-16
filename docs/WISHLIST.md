@@ -1,6 +1,6 @@
 # Wishlist Funzionalità
 
-**Ultimo aggiornamento**: 2025-12-17
+**Ultimo aggiornamento**: 2026-06-16
 
 Questo documento elenca le funzionalità desiderate per lo sviluppo futuro di Alfred, con riferimenti tecnici alle XEP (XMPP Extension Protocol) rilevanti.
 
@@ -25,25 +25,33 @@ Questo documento elenca le funzionalità desiderate per lo sviluppo futuro di Al
 
 ---
 
-### XEP-0333: Chat Markers
-**Riferimento**: [XEP-0333](https://xmpp.org/extensions/xep-0333.html)
+### XEP-0333: Chat Markers (displayed)
+**Riferimento**: [XEP-0333 v1.0](https://xmpp.org/extensions/xep-0333.html)  
+**Stato**: ✅ Parzialmente implementato (✓ grigia + ✓✓ blu lettura)
 
-**Descrizione**: Indicatori di stato lettura messaggi (spunte). Permette di segnalare quando un messaggio è stato visualizzato, ricevuto o letto dall'interlocutore.
+**Descrizione**: Indicatore “visualizzato” quando l'interlocutore apre la chat. Unico marker in XEP-0333 v1.0 stabile.
 
-**Stati supportati**:
-- `received` - Messaggio ricevuto
-- `displayed` - Messaggio visualizzato/letto
-- `acknowledged` - Messaggio confermato
+**Implementato**:
+- Invio con `<markable/>`
+- `markDisplayed()` all'apertura chat
+- ✓✓ blu su marker `displayed` (origin-id canonico)
 
-**Benefici**:
-- Feedback visivo sullo stato dei messaggi
-- UX simile a WhatsApp/Telegram (spunte blu/grigie)
-- Conferma di ricezione/lettura
+**Non in scope** (rimossi da spec 2024):
+- `received`, `acknowledged` in XEP-0333
 
-**Note implementazione**:
-- Richiede supporto server e client
-- UI: doppia spunta grigia (ricevuto), blu (letto)
-- Privacy: opzione per disabilitare conferme lettura
+**Policy**: [message-states.md](./architecture/message-states.md)
+
+---
+
+### XEP-0184: Message Delivery Receipts (opzionale, non pianificato)
+**Riferimento**: [XEP-0184](https://xmpp.org/extensions/xep-0184.html)  
+**Stato**: ❌ Non in roadmap
+
+**Descrizione**: Conferma che il messaggio è **arrivato sul device** del destinatario (`<received/>` in namespace `urn:xmpp:receipts`). Protocollo **separato** da XEP-0333.
+
+**Perché non è in todo**: la policy attuale usa solo due spunte (inviato + letto). Il passo intermedio “consegnato” (✓✓ grigie stile WhatsApp) richiederebbe XEP-0184 come **seconda integrazione** distinta da `displayed`. Deciso di non implementarlo.
+
+**Nota**: stanza.js può inviare receipt 0184 in automatico; noi non li mostriamo in UI.
 
 ---
 

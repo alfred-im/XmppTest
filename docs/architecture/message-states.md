@@ -87,6 +87,30 @@ Due livelli visivi, allineati a **XEP-0333 v1.0** (solo `markable` + `displayed`
 
 ---
 
+## XEP-0184 vs XEP-0333 — due protocolli, due cose diverse
+
+**Non sono la stessa funzione.** Non vanno confusi né implementati come un unico meccanismo.
+
+| | **XEP-0184** Delivery Receipts | **XEP-0333 v1.0** Displayed Markers |
+|--|------------------------------|-------------------------------------|
+| **Cosa significa** | “Il messaggio è **arrivato** sul mio client/device” | “Ho **visualizzato** il messaggio in chat” |
+| **Chi invia** | Client destinatario, spesso **in automatico** all’arrivo | Client destinatario, quando **apre/legge** la chat |
+| **Stanza XML** | `<received xmlns='urn:xmpp:receipts' id='…'/>` | `<displayed xmlns='urn:xmpp:chat-markers:0' id='…'/>` |
+| **Nella nostra UI** | ❌ **Non implementato** (fuori scope) | ✅ ✓✓ blu |
+| **In XEP-0333 v1.0** | Protocollo **separato** — per questo `received` è stato **rimosso** da 0333 | Unico marker di “lettura” |
+
+### Cosa mettere in todo
+
+| Voce | Todo? |
+|------|-------|
+| `displayed` (lettura, ✓✓ blu) | ✅ Già in scope — implementato |
+| XEP-0184 (consegnato, ✓✓ grigie stile WhatsApp) | ❌ **Non in todo** — deciso esplicitamente di non usarlo |
+| `received` / `acknowledged` in 0333 | ❌ Rimossi dalla spec 2024 — non implementare |
+
+Se in futuro volessi **tre** stati (inviato → consegnato → letto), servirebbero **due integrazioni separate**: XEP-0184 per il passo centrale **e** XEP-0333 `displayed` per il blu. Oggi abbiamo scelto il modello **a due stati**: ✓ grigia + ✓✓ blu.
+
+---
+
 ## Dove vive ogni dato
 
 | Layer | Contenuto |
