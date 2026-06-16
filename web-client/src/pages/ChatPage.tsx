@@ -3,10 +3,12 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useConnection } from '../contexts/ConnectionContext'
 import { useConversations } from '../contexts/ConversationsContext'
 import { useMessaging } from '../contexts/MessagingContext'
+import { useVirtualMessages } from '../contexts/VirtualMessagesContext'
 import { useMessages } from '../hooks/useMessages'
 import { useBackButton } from '../hooks/useBackButton'
 import { isSameDay } from '../utils/date'
 import { MessageItem } from '../components/MessageItem'
+import { getChatItemKey } from '../utils/message-reconcile'
 import { TEXT_LIMITS, PAGINATION } from '../config/constants'
 import './ChatPage.css'
 
@@ -32,6 +34,7 @@ export function ChatPage() {
   const { client, isConnected, jid: myJid } = useConnection()
   const { conversations, markAsRead } = useConversations()
   const { subscribeToMessages } = useMessaging()
+  const { readingUi, receivedUi } = useVirtualMessages()
   
   const jid = useMemo(() => encodedJid ? decodeURIComponent(encodedJid) : '', [encodedJid])
   const conversation = useMemo(() => conversations.find((c) => c.jid === jid), [conversations, jid])
@@ -58,6 +61,7 @@ export function ChatPage() {
   // Custom hook per gestione messaggi
   const {
     messages,
+    dbMessages,
     isLoading,
     isLoadingMore,
     hasMoreMessages,
@@ -65,6 +69,7 @@ export function ChatPage() {
     sendMessage: sendMessageHook,
     loadMoreMessages,
     setError,
+    virtualSendState,
   } = useMessages({
     jid,
     client,
@@ -179,18 +184,14 @@ export function ChatPage() {
     }
   }, [jid, client, isConnected, markAsRead])
 
-  // XEP-0333: Invia marker 'displayed' per messaggi non marcati
+  // XEP-0333: Invia marker 'displayed' per messaggi non marcati (solo messaggi DB)
   useEffect(() => {
-    if (!client || !isConnected || !jid || messages.length === 0) return
+    if (!client || !isConnected || !jid || dbMessages.length === 0) return
 
-    // Trova messaggi da loro che non hanno ancora un marker displayed
-    const unmarkedMessages = messages.filter((msg) => {
-      // Solo messaggi da loro (non miei)
+    const unmarkedMessages = dbMessages.filter((msg) => {
       if (msg.from !== 'them') return false
-      // Solo messaggi con body (non marker stessi)
       if (!msg.body || msg.markerType) return false
-      // Verifica se esiste già un marker per questo messaggio
-      const hasMarker = messages.some(
+      const hasMarker = dbMessages.some(
         (m) =>
           m.markerType === 'displayed' &&
           m.markerFor === msg.messageId
@@ -211,7 +212,7 @@ export function ChatPage() {
         console.error('❌ Errore invio marker displayed:', error)
       }
     })
-  }, [client, isConnected, jid, messages])
+  }, [client, isConnected, jid, dbMessages])
 
   // Auto-focus su input quando la chat si carica
   useEffect(() => {
@@ -330,10 +331,13 @@ export function ChatPage() {
     const showDate = index === 0 || !isSameDay(messages[index - 1].timestamp, message.timestamp)
     return (
       <MessageItem
-        key={message.messageId}
+        key={getChatItemKey(message)}
         message={message}
         showDate={showDate}
-        allMessages={messages}
+        allMessages={dbMessages}
+        readingUi={readingUi}
+        receivedUi={receivedUi}
+        virtualSendState={virtualSendState}
       />
     )
   })

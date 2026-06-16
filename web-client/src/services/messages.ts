@@ -6,10 +6,8 @@ import {
 } from './conversations-db'
 import { normalizeJID } from '../utils/jid'
 import type { BareJID } from '../types/jid'
-import { generateTempId } from '../utils/message'
 import { PAGINATION } from '../config/constants'
-import { messageRepository, conversationRepository } from './repositories'
-import { advanceListenerWatermark } from './listener-watermark'
+import { messageRepository } from './repositories'
 
 // Re-export per comodità
 export type { Message, MessageStatus } from './conversations-db'
@@ -272,71 +270,14 @@ export async function downloadAllMessagesFromServer(
   return allMessages
 }
 
-/**
- * Invia un messaggio al server e salva nel DB locale
- * 
- * ARCHITETTURA SEMPLIFICATA:
- * - Invia messaggio al server XMPP
- * - Salva direttamente nel DB locale
- * - NO sync completa, solo operazione atomica
- */
-export async function sendMessage(
-  client: Agent,
-  toJid: string,
-  body: string
-): Promise<{ tempId: string; success: boolean; error?: string }> {
-  const tempId = generateTempId()
-  const normalizedJid = normalizeJID(toJid)
+export {
+  sendMessage,
+  transmitOutboxEntry,
+  flushOutbox,
+  clearOutboxIfSynced,
+} from './outbox-send'
 
-  try {
-    // Invia al server XMPP con marker markable per XEP-0333
-    const messageId = await client.sendMessage({
-      to: normalizedJid,
-      body,
-      type: 'chat',
-      marker: { type: 'markable' },
-    })
-
-    const finalMessageId = typeof messageId === 'string' ? messageId : tempId
-    const timestamp = new Date()
-
-    // Salva nel DB locale
-    await messageRepository.saveAll([{
-      messageId: finalMessageId,
-      conversationJid: normalizedJid,
-      body,
-      timestamp,
-      from: 'me',
-      status: 'sent',
-      tempId: tempId,
-    }])
-
-    // Avanza watermark listener per evitare duplicati al rientro
-    await advanceListenerWatermark(normalizedJid, timestamp)
-
-    // Aggiorna conversazione
-    await conversationRepository.update(normalizedJid, {
-      lastMessage: {
-        body,
-        timestamp,
-        from: 'me',
-        messageId: finalMessageId,
-      },
-      updatedAt: timestamp,
-    })
-
-    console.log('✅ Messaggio inviato e salvato:', finalMessageId)
-
-    return { tempId, success: true }
-  } catch (error) {
-    console.error('❌ Errore nell\'invio del messaggio:', error)
-    return {
-      tempId,
-      success: false,
-      error: error instanceof Error ? error.message : 'Errore sconosciuto',
-    }
-  }
-}
+import { sendMessage as sendMessageOutbox } from './outbox-send'
 
 /**
  * Riprova a inviare un messaggio fallito
@@ -352,7 +293,7 @@ export async function retryMessage(
 
   try {
     // Re-invia il messaggio
-    const result = await sendMessage(client, message.conversationJid, message.body)
+    const result = await sendMessageOutbox(client, message.conversationJid, message.body, message.tempId)
     return { success: result.success, error: result.error }
   } catch (error) {
     console.error('Errore nel retry del messaggio:', error)

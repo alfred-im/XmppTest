@@ -3,6 +3,7 @@ import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext'
 import { ConnectionProvider, useConnection } from './contexts/ConnectionContext'
 import { ConversationsProvider } from './contexts/ConversationsContext'
+import { VirtualMessagesProvider } from './contexts/VirtualMessagesContext'
 import { MessagingProvider } from './contexts/MessagingContext'
 import { AppInitializer } from './components/AppInitializer'
 import { LoginPopup } from './components/LoginPopup'
@@ -83,18 +84,20 @@ function App() {
     <ErrorBoundary>
       {showSplash && <SplashScreen onFinish={() => setShowSplash(false)} />}
       
-      {/* Context orchestration: Auth → Connection → Conversations → Messaging */}
+      {/* Context orchestration: Auth → Connection → VirtualMessages → Conversations → Messaging */}
       <AuthProvider>
         <ConnectionProvider>
-          <ConversationsProvider>
-            <MessagingProvider>
-              <HashRouter>
-                <AppInitializer>
-                  <AppRoutes />
-                </AppInitializer>
-              </HashRouter>
-            </MessagingProvider>
-          </ConversationsProvider>
+          <VirtualMessagesProvider>
+            <ConversationsProvider>
+              <MessagingProvider>
+                <HashRouter>
+                  <AppInitializer>
+                    <AppRoutes />
+                  </AppInitializer>
+                </HashRouter>
+              </MessagingProvider>
+            </ConversationsProvider>
+          </VirtualMessagesProvider>
         </ConnectionProvider>
       </AuthProvider>
     </ErrorBoundary>

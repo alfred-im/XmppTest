@@ -4,12 +4,11 @@ import type { ReactNode } from 'react'
 import type { ReceivedMessage } from 'stanza/protocol'
 import { useConnection } from './ConnectionContext'
 import { useConversations } from './ConversationsContext'
-import { messageRepository } from '../services/repositories'
+import { useVirtualMessages } from './VirtualMessagesContext'
 import { conversationRepository } from '../services/repositories'
 import { normalizeJID } from '../utils/jid'
-import type { Message } from '../services/conversations-db'
 import { syncBoundaryService } from '../services/sync-boundary'
-import { advanceListenerWatermark } from '../services/listener-watermark'
+import { scheduleConversationMamSync } from '../services/mam-sync'
 
 type MessageCallback = (message: ReceivedMessage) => void
 
@@ -19,50 +18,35 @@ interface MessagingContextType {
 
 const MessagingContext = createContext<MessagingContextType | undefined>(undefined)
 
-/**
- * Helper per estrarre JID del contatto da un messaggio
- */
 function extractContactJid(message: ReceivedMessage, myJid: string): string {
   const myBareJid = normalizeJID(myJid)
   const from = message.from || ''
   const to = message.to || ''
-  
-  // Se il messaggio è da me, il contatto è il destinatario
+
   if (from.toLowerCase().startsWith(myBareJid.toLowerCase())) {
     return normalizeJID(to)
   }
-  // Altrimenti il contatto è il mittente
   return normalizeJID(from)
 }
 
 /**
- * MessagingProvider - Gestisce messaggi in arrivo real-time
- * 
- * ARCHITETTURA "Sync Boundary Handoff":
- * - Il listener si attiva SOLO dopo beginHandoff() (momento T)
- * - Da T in poi salva messaggi real-time nel DB
- * - La sync MAM copre il passato (fino a T), senza sovrapposizione intenzionale
+ * Listener = campanello: aggiorna UI virtuale e schedula MAM.
+ * Il DB messaggi è scritto solo da MAM (mam-sync.ts).
  */
 export function MessagingProvider({ children }: { children: ReactNode }) {
   const { client, isConnected, jid } = useConnection()
   const { refreshConversation } = useConversations()
+  const { addIncomingVirtual, setReadingUi, setReceivedUi } = useVirtualMessages()
   const messageCallbacks = useRef<Set<MessageCallback>>(new Set())
 
-  // Listener registrato alla connessione; elabora messaggi solo dopo beginHandoff() (momento T)
   useEffect(() => {
     if (!client || !isConnected || !jid) return
 
     const handleMessage = async (message: ReceivedMessage) => {
       if (!syncBoundaryService.isActive()) return
-      console.log('📨 Messaggio ricevuto:', { from: message.from, body: message.body?.substring(0, 50) })
-      
-      if (!message.body) {
-        console.log('   ⚠️ Messaggio senza body, ignorato')
-        return
-      }
+      if (!message.body) return
 
       try {
-        // Estrai info messaggio
         const contactJid = extractContactJid(message, jid)
         const myBareJid = normalizeJID(jid)
         const from = message.from || ''
@@ -70,136 +54,90 @@ export function MessagingProvider({ children }: { children: ReactNode }) {
         const timestamp = message.delay?.timestamp || new Date()
         const normalizedContactJid = normalizeJID(contactJid)
 
-        // Crea oggetto messaggio
-        const messageToSave: Message = {
-          messageId: message.id || `msg_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
-          conversationJid: normalizedContactJid,
-          body: message.body,
-          timestamp,
-          from: isFromMe ? 'me' : 'them',
-          status: 'sent',
-        }
+        const virtualId = addIncomingVirtual(
+          normalizedContactJid,
+          message.body,
+          timestamp
+        )
 
-        // Salva nel DB (questo triggera automaticamente l'observer)
-        await messageRepository.saveAll([messageToSave])
-        console.log('   ✅ Messaggio salvato nel DB')
-
-        // Avanza watermark: al prossimo sync MAM non riscarica questo messaggio
-        await advanceListenerWatermark(normalizedContactJid, timestamp)
-
-        // Aggiorna conversazione con ultimo messaggio
         await conversationRepository.update(normalizedContactJid, {
           jid: normalizedContactJid,
           lastMessage: {
-            body: messageToSave.body,
-            timestamp: messageToSave.timestamp,
-            from: messageToSave.from,
-            messageId: messageToSave.messageId,
+            body: message.body,
+            timestamp,
+            from: isFromMe ? 'me' : 'them',
+            messageId: message.id || virtualId,
           },
-          updatedAt: messageToSave.timestamp,
+          updatedAt: timestamp,
         })
 
-        // Se messaggio è da altri, incrementa unread
         if (!isFromMe) {
           await conversationRepository.incrementUnread(normalizedContactJid)
         }
 
-        // Aggiorna lista conversazioni
         await refreshConversation(normalizedContactJid)
+        scheduleConversationMamSync(client, normalizedContactJid, 'message-bell')
 
-        // Notifica subscribers
-        messageCallbacks.current.forEach((callback) => {
-          callback(message)
-        })
+        messageCallbacks.current.forEach((callback) => callback(message))
       } catch (error) {
-        console.error('❌ Errore nel salvataggio messaggio:', error)
+        console.error('❌ Errore gestione campanello messaggio:', error)
       }
     }
 
-    // XEP-0333: Listener per marker 'displayed'
-    const handleDisplayedMarker = async (message: ReceivedMessage) => {
-      if (!syncBoundaryService.isActive()) return
-      if (!message.marker?.id) return
-      
-      console.log('✓✓ Marker displayed ricevuto per messaggio:', message.marker.id)
-      
-      try {
-        const contactJid = normalizeJID(message.from || '')
-        
-        // Salva marker come messaggio speciale
-        const markerMessage: Message = {
-          messageId: `marker_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
-          conversationJid: contactJid,
-          body: '',
-          timestamp: new Date(),
-          from: 'them',
-          status: 'sent',
-          markerType: 'displayed',
-          markerFor: message.marker.id,
-        }
-        
-        await messageRepository.saveAll([markerMessage])
-        console.log('   ✅ Marker displayed salvato nel DB')
-      } catch (error) {
-        console.error('❌ Errore nel salvataggio marker displayed:', error)
-      }
+    const handleDisplayedMarker = (message: ReceivedMessage) => {
+      if (!syncBoundaryService.isActive() || !message.marker?.id) return
+
+      const contactJid = normalizeJID(message.from || '')
+      setReadingUi(message.marker.id)
+      scheduleConversationMamSync(client, contactJid, 'marker-displayed')
     }
 
-    // XEP-0333: Listener per marker 'acknowledged'
-    const handleAcknowledgedMarker = async (message: ReceivedMessage) => {
-      if (!syncBoundaryService.isActive()) return
-      if (!message.marker?.id) return
-      
-      console.log('✓✓ Marker acknowledged ricevuto per messaggio:', message.marker.id)
-      
-      try {
-        const contactJid = normalizeJID(message.from || '')
-        
-        // Salva marker come messaggio speciale
-        const markerMessage: Message = {
-          messageId: `marker_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
-          conversationJid: contactJid,
-          body: '',
-          timestamp: new Date(),
-          from: 'them',
-          status: 'sent',
-          markerType: 'acknowledged',
-          markerFor: message.marker.id,
-        }
-        
-        await messageRepository.saveAll([markerMessage])
-        console.log('   ✅ Marker acknowledged salvato nel DB')
-      } catch (error) {
-        console.error('❌ Errore nel salvataggio marker acknowledged:', error)
-      }
+    const handleAcknowledgedMarker = (message: ReceivedMessage) => {
+      if (!syncBoundaryService.isActive() || !message.marker?.id) return
+
+      const contactJid = normalizeJID(message.from || '')
+      setReadingUi(message.marker.id)
+      scheduleConversationMamSync(client, contactJid, 'marker-acknowledged')
+    }
+
+    const handleReceivedMarker = (message: ReceivedMessage) => {
+      if (!syncBoundaryService.isActive() || !message.marker?.id) return
+
+      const contactJid = normalizeJID(message.from || '')
+      setReceivedUi(message.marker.id)
+      scheduleConversationMamSync(client, contactJid, 'marker-received')
     }
 
     client.on('message', handleMessage)
     client.on('marker:displayed', handleDisplayedMarker)
     client.on('marker:acknowledged', handleAcknowledgedMarker)
+    client.on('marker:received', handleReceivedMarker)
 
     return () => {
       client.off('message', handleMessage)
       client.off('marker:displayed', handleDisplayedMarker)
       client.off('marker:acknowledged', handleAcknowledgedMarker)
+      client.off('marker:received', handleReceivedMarker)
     }
-  }, [client, isConnected, jid, refreshConversation])
+  }, [
+    client,
+    isConnected,
+    jid,
+    refreshConversation,
+    addIncomingVirtual,
+    setReadingUi,
+    setReceivedUi,
+  ])
 
   const subscribeToMessages = useCallback((callback: MessageCallback) => {
     messageCallbacks.current.add(callback)
-    
-    // Ritorna funzione per unsubscribe
     return () => {
       messageCallbacks.current.delete(callback)
     }
   }, [])
 
   return (
-    <MessagingContext.Provider
-      value={{
-        subscribeToMessages,
-      }}
-    >
+    <MessagingContext.Provider value={{ subscribeToMessages }}>
       {children}
     </MessagingContext.Provider>
   )

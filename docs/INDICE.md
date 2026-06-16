@@ -20,6 +20,7 @@ Indice documenti tecnici per navigazione rapida. Questo documento è per AI, non
 - [architecture/mam-global-strategy-explained.md](./architecture/mam-global-strategy-explained.md) - Strategia MAM globale
 - [architecture/mam-performance-long-term.md](./architecture/mam-performance-long-term.md) - Performance MAM
 - [architecture/strategy-comparison.md](./architecture/strategy-comparison.md) - Confronto strategie
+- [architecture/message-states.md](./architecture/message-states.md) - **Stati messaggio UI/synced + spunte** (v4.0 - 16 giu 2026)
 
 ## Implementazione
 
@@ -65,4 +66,4 @@ Indice documenti tecnici per navigazione rapida. Questo documento è per AI, non
 ---
 
 **Ultimo aggiornamento**: 2026-06-16  
-**Architettura corrente**: Sync-Once + Listen (v3.0) + Chat Markers XEP-0333 (v3.1)
+**Architettura corrente**: Virtual UI + MAM-only DB (v4.0) + Chat Markers XEP-0333

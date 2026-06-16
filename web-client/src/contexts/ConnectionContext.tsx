@@ -3,6 +3,7 @@ import { createContext, useContext, useState, useEffect, useCallback, useRef } f
 import type { ReactNode } from 'react'
 import type { Agent } from 'stanza'
 import { login as xmppLogin } from '../services/xmpp'
+import { flushOutbox } from '../services/outbox-send'
 import { useAuth } from './AuthContext'
 import { loadCredentials } from '../services/auth-storage'
 
@@ -97,6 +98,8 @@ export function ConnectionProvider({ children }: { children: ReactNode }) {
       // Senza questo, il server non inoltra i messaggi in tempo reale
       xmppClient.sendPresence()
       console.log('📡 Presenza XMPP inviata - client online')
+
+      await flushOutbox(xmppClient)
       
       // Salva credenziali
       saveAuth(userJid, password)
