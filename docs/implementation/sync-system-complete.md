@@ -53,15 +53,17 @@ Semplificare drasticamente l'architettura di sincronizzazione implementando il p
 
 ## Architettura
 
-### Pattern "Sync-Once + Listen"
+### Pattern "Sync-Once + Listen" con Sync Boundary Handoff
 
 ```
 ┌─────────────────────────────────────────────┐
-│          APP STARTUP                        │
+│          APP STARTUP (connesso)             │
 └─────────────────────────────────────────────┘
                     ↓
         ┌───────────────────┐
         │ AppInitializer    │
+        │ 1. Salva momento T│
+        │ 2. Attiva listener│  ← da T in poi → DB
         └───────────────────┘
                     ↓
         ┌───────────────────┐
@@ -73,29 +75,22 @@ Semplificare drasticamente l'architettura di sincronizzazione implementando il p
     YES ▼                       ▼ NO
 ┌────────────────┐      ┌────────────────┐
 │  FULL SYNC     │      │ INCREMENTAL    │
-│  (tutto)       │      │ (da marker)    │
-│                │      │                │
-│ • Download all │      │ • Check marker │
-│ • Save marker  │      │ • Download new │
-│ • Save to DB   │      │ • Update marker│
+│  MAM end = T   │      │ MAM end = T    │
+│  (passato)     │      │ (da marker)    │
 └────────────────┘      └────────────────┘
         │                       │
         └───────────┬───────────┘
                     ↓
         ┌───────────────────┐
-        │ ATTIVA LISTENERS  │
-        │ client.on('msg')  │
-        └───────────────────┘
-                    ↓
-        ┌───────────────────┐
-        │ Messaggio Ricevuto│
+        │ LISTENER ATTIVO   │
+        │ (da T in poi)     │
         │ → Save DB         │
-        │ → Observer notify │
-        │ → UI aggiornata   │
         └───────────────────┘
                     ↓
         NO MORE SYNC DURING USE!
 ```
+
+**Regola handoff**: sync = passato (MAM fino a T + overlap), listener = futuro (da T). Overlap 5s per skew orologi; de-duplicazione messageId sui doppioni.
 
 ### Componenti Chiave
 
@@ -105,20 +100,26 @@ Componente wrapper che:
 - Mostra splash screen durante sync
 - Passa a app normale dopo sync
 
-#### 2. **sync-initializer.ts** (NUOVO)
+#### 2. **sync-initializer.ts**
 Service che implementa logica biforcuta:
 - `isDatabaseEmpty()` → Check se serve full sync
-- `performFullSync()` → Scarica tutto lo storico
-- `performIncrementalSync()` → Scarica solo nuovi messaggi da marker
+- `performFullSync()` → Scarica tutto lo storico (MAM con `end = T`)
+- `performIncrementalSync()` → Scarica solo nuovi messaggi da marker (MAM con `end = T`)
 - Gestisce progress callbacks per UI
 
-#### 3. **sync-status.ts** (NUOVO)
+#### 3. **sync-boundary.ts**
+Coordina il passaggio di consegne sync/listener:
+- `beginHandoff()` → salva momento T e attiva listener
+- `isActive()` → gate per MessagingContext (elabora solo messaggi da T in poi)
+- `reset()` → alla disconnessione
+
+#### 4. **sync-status.ts**
 Service per stato sync globale:
 - Pattern Observer per notifiche UI
 - `setSyncing(true/false)` per indicatori caricamento
 - Subscribe/unsubscribe per componenti
 
-#### 4. **Metadata con Marker**
+#### 5. **Metadata con Marker**
 ```typescript
 interface SyncMetadata {
   lastSync: Date
@@ -136,28 +137,17 @@ interface SyncMetadata {
 ### 1. Full Sync (DB Vuoto)
 
 ```typescript
-async function performFullSync(client: Agent, onProgress: ProgressCallback) {
-  // 1. Scarica tutte le conversazioni (con saveMessages=true)
-  const { conversations, lastToken } = await downloadAllConversations(client, true)
-  
+// AppInitializer
+const boundary = syncBoundaryService.beginHandoff(new Date()) // T + listener ON
+await performInitialSync(client, { endBefore: boundary })
+
+async function performFullSync(client, options, onProgress) {
+  const { endBefore } = options
+  // 1. Scarica conversazioni (MAM globale con end = T)
+  const { conversations, lastToken } = await downloadAllConversations(client, false, endBefore)
   // 2. Salva conversazioni
-  await conversationRepo.saveAll(conversations)
-  
-  // 3. Scarica vCard per tutti i contatti
-  const jids = conversations.map(c => c.jid)
-  await getVCardsForJids(client, jids, true)
-  
-  // 4. Arricchisci con vCard
-  const enriched = await enrichWithRoster(client, conversations, true)
-  await conversationRepo.saveAll(enriched)
-  
-  // 5. Salva marker
-  await metadataRepo.save({
-    lastSync: new Date(),
-    lastRSMToken: lastToken,
-    isInitialSyncComplete: true,
-    initialSyncCompletedAt: new Date()
-  })
+  // 3. Per ogni conversazione: loadMessagesForContact(..., { endBefore })
+  // 4. vCard + marker
 }
 ```
 
@@ -166,30 +156,12 @@ async function performFullSync(client: Agent, onProgress: ProgressCallback) {
 ### 2. Incremental Sync (DB Popolato)
 
 ```typescript
-async function performIncrementalSync(client: Agent, onProgress: ProgressCallback) {
-  const metadata = await metadataRepo.get()
-  const conversations = await conversationRepo.getAll()
-  
-  // Per ogni conversazione, scarica solo nuovi messaggi
-  for (const conv of conversations) {
-    const lastToken = metadata.conversationTokens?.[conv.jid]
-    
-    if (lastToken) {
-      // Usa afterToken per caricare solo messaggi dopo marker
-      const result = await loadMessagesForContact(client, conv.jid, {
-        afterToken: lastToken,  // ← MARKER
-        maxResults: 100
-      })
-      
-      // Aggiorna marker
-      if (result.lastToken) {
-        await metadataRepo.saveConversationToken(conv.jid, result.lastToken)
-      }
-    }
-  }
-  
-  // Aggiorna metadata globale
-  await metadataRepo.updateLastSync()
+const boundary = syncBoundaryService.beginHandoff(new Date())
+await performInitialSync(client, { endBefore: boundary })
+
+async function performIncrementalSync(client, options, onProgress) {
+  const { endBefore } = options
+  // Per ogni conversazione: loadMessagesForContact(..., { afterToken, endBefore })
 }
 ```
 
@@ -266,19 +238,14 @@ AppInitializer mounted
     ↓
 isDatabaseEmpty() → TRUE
     ↓
-performFullSync()
-    ├─→ "Scaricamento conversazioni..."
-    ├─→ Download all messages (saveMessages=true)
-    ├─→ "Salvate 100 conversazioni..."
-    ├─→ "Caricamento profili contatti..."
-    ├─→ Download vCards (batch 5)
+performFullSync({ endBefore: T })
+    ├─→ "Scaricamento conversazioni..." (MAM end = T)
+    ├─→ Per ogni conversazione: messaggi (MAM end = T)
     └─→ Save marker (lastRSMToken)
     ↓
 Sync completata (5-10s)
     ↓
-Render App normale
-    ↓
-Attiva listener real-time
+Render App normale (listener già attivo da T)
 ```
 
 **Tempo**: ~5-10s per 100 conversazioni con 1000 messaggi
@@ -292,11 +259,11 @@ AppInitializer mounted
     ↓
 isDatabaseEmpty() → FALSE
     ↓
-performIncrementalSync()
+beginHandoff(T) → listener attivo
+    ↓
+performIncrementalSync({ endBefore: T })
     ├─→ "Controllo nuovi messaggi..."
-    ├─→ Load metadata (lastRSMToken)
-    ├─→ For each conversation:
-    │    └─→ Load messages after token
+    ├─→ For each conversation: MAM after token, end = T
     └─→ Update markers
     ↓
 Sync completata (2-5s)
@@ -309,12 +276,12 @@ Render App normale
 ### Scenario 3: Messaggio in Arrivo (Real-Time)
 
 ```
-XMPP message received
+XMPP message received (da T in poi)
     ↓
 client.on('message') event
     ↓
 MessagingContext.handleMessage()
-    ├─→ Extract message data
+    ├─→ if (!syncBoundaryService.isActive()) return
     ├─→ messageRepository.saveAll([msg])
     └─→ conversationRepository.update()
     ↓

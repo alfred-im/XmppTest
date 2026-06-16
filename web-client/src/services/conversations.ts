@@ -229,7 +229,8 @@ export async function loadConversationsFromServer(
  */
 export async function downloadAllConversations(
   client: Agent,
-  saveMessages = false
+  saveMessages = false,
+  endBefore?: Date
 ): Promise<{ conversations: Conversation[]; lastToken?: string }> {
   let allConversations: Conversation[] = []
   let hasMore = true
@@ -241,6 +242,7 @@ export async function downloadAllConversations(
       maxResults: PAGINATION.DEFAULT_CONVERSATION_LIMIT,
       afterToken: lastToken,
       saveMessages, // Passa il parametro saveMessages
+      endDate: endBefore,
     })
 
     // Raggruppa e aggiungi alle conversazioni totali

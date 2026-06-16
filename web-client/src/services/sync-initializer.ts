@@ -1,6 +1,8 @@
 import type { Agent } from 'stanza'
 import { downloadAllConversations, enrichWithRoster } from './conversations'
 import { getVCardsForJids } from './vcard'
+import type { SyncOptions } from './sync-types'
+import { getMamSyncEnd } from './sync-boundary'
 
 // Import singleton instances from repositories
 import { conversationRepository, metadataRepository } from './repositories'
@@ -31,12 +33,15 @@ async function isDatabaseEmpty(): Promise<boolean> {
  */
 async function performFullSync(
   client: Agent,
+  options: SyncOptions,
   onProgress: ProgressCallback
 ): Promise<void> {
+  const { boundary } = options
+  const mamEndBefore = getMamSyncEnd(boundary)
   onProgress({ phase: 'full', message: 'Scaricamento conversazioni...' })
 
-  // 1. Scarica tutte le conversazioni (senza messaggi, solo la lista)
-  const { conversations, lastToken } = await downloadAllConversations(client, false)
+  // 1. Scarica tutte le conversazioni (senza messaggi, solo la lista) fino a T + overlap
+  const { conversations, lastToken } = await downloadAllConversations(client, false, mamEndBefore)
 
   onProgress({
     phase: 'full',
@@ -71,6 +76,7 @@ async function performFullSync(
         const result = await loadMessagesForContact(client, conv.jid, {
           maxResults: 100,
           afterToken,
+          endBefore: mamEndBefore,
         })
 
         if (result.lastToken) {
@@ -119,14 +125,17 @@ async function performFullSync(
  */
 async function performIncrementalSync(
   client: Agent,
+  options: SyncOptions,
   onProgress: ProgressCallback
 ): Promise<void> {
+  const { boundary } = options
+  const mamEndBefore = getMamSyncEnd(boundary)
   onProgress({ phase: 'incremental', message: 'Controllo nuovi messaggi...' })
 
   const metadata = await metadataRepo.get()
   if (!metadata?.lastRSMToken) {
     console.warn('⚠️ Nessun marker trovato, eseguo full sync')
-    return performFullSync(client, onProgress)
+    return performFullSync(client, options, onProgress)
   }
 
   // 1. Carica conversazioni esistenti
@@ -153,8 +162,9 @@ async function performIncrementalSync(
     try {
       const { loadMessagesForContact } = await import('./messages')
       
-      const queryOptions: { maxResults: number; afterToken?: string } = {
+      const queryOptions: { maxResults: number; afterToken?: string; endBefore: Date } = {
         maxResults: 100, // Assume max 100 nuovi messaggi per conversazione
+        endBefore: mamEndBefore,
       }
 
       if (conversationToken) {
@@ -214,6 +224,7 @@ async function performIncrementalSync(
  */
 export async function performInitialSync(
   client: Agent,
+  options: SyncOptions,
   onProgress: ProgressCallback = () => {}
 ): Promise<void> {
   try {
@@ -225,11 +236,11 @@ export async function performInitialSync(
     if (isEmpty) {
       // DB vuoto: full sync
       console.log('🔄 Database vuoto, eseguo full sync...')
-      await performFullSync(client, onProgress)
+      await performFullSync(client, options, onProgress)
     } else {
       // DB popolato: incremental sync
       console.log('📬 Database popolato, eseguo incremental sync...')
-      await performIncrementalSync(client, onProgress)
+      await performIncrementalSync(client, options, onProgress)
     }
 
     onProgress({ phase: 'complete', message: 'Sincronizzazione completata' })

@@ -1,6 +1,6 @@
 # Alfred - Mappa Completa del Progetto
 
-**Ultimo aggiornamento**: 2026-06-16  
+**Ultimo aggiornamento**: 2026-06-16 (Sync Boundary Handoff)  
 **Versione**: 1.1.0 (XEP-0333 Chat Markers)
 
 ---
@@ -257,6 +257,7 @@ Business logic e comunicazione con XMPP server
 
 **ARCHITETTURA "SYNC-ONCE + LISTEN"** (implementata 15 dicembre 2025):
 - **sync-initializer.ts** - UNICO punto di sincronizzazione (all'avvio)
+- **sync-boundary.ts** - Handoff sync/listener: salva momento T, attiva listener, MAM fino a T
 - **sync-status.ts** - Pattern Observer per stato sync (UI indicators)
 - Tutti gli altri services sono "listener-only" durante utilizzo
 
@@ -265,7 +266,8 @@ Business logic e integrazione servizi esterni
 
 | File | Responsabilità | Dipendenze |
 |------|----------------|------------|
-| `sync-initializer.ts` | **SYNC ALL'AVVIO** (full o incremental) | XMPP, Repositories |
+| `sync-initializer.ts` | **SYNC ALL'AVVIO** (full o incremental, MAM fino a boundary T) | XMPP, Repositories |
+| `sync-boundary.ts` | **HANDOFF SYNC/LISTENER** (momento T, gate listener real-time) | - |
 | `sync-status.ts` | **Observer** per stato sync globale | - |
 | `xmpp.ts` | **CORE XMPP** - Connessione, discovery, login/register | Stanza.js |
 | `messages.ts` | Gestione messaggi (invio, NO SYNC) | XMPP, Repositories |
@@ -386,13 +388,18 @@ Non aggiornare queste versioni senza testing completo.
 ```
 index.html
   → main.tsx (React.render)
-    → AppInitializer (SYNC-ONCE: full o incremental)
+    → AppInitializer
+        1. Salva boundary T (momento corrente)
+        2. Attiva listener real-time (da T in poi → DB)
+        3. Sync MAM solo passato (end = T)
       → App.tsx (Contexts + Router)
         → ConversationsPage | ChatPage | ProfilePage
-          └─→ SOLO LISTEN (real-time messages)
+          └─→ LISTEN continua (messaggi da T in poi)
 ```
 
-**Novità v3.0**: `AppInitializer` è il PRIMO componente, gestisce sync iniziale completo PRIMA di renderizzare l'app.
+**Handoff esplicito**: sync copia il passato (MAM fino a T + 5s di margine), listener copia il futuro (da T). Sovrapposizione intenzionale ai bordi; de-duplicazione per messageId.
+
+**Novità v3.0**: `AppInitializer` gestisce sync iniziale PRIMA di renderizzare l'app normale.
 
 ---
 
