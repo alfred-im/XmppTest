@@ -228,7 +228,7 @@
 
 **Impatto**:
 - ✅ Aggiunta classe utility
-- ✅ Ref mantenuto per pull-to-refresh
+- ✅ Ref mantenuto per gestione scroll
 - ✅ Accessibilità ARIA preservata
 
 ---
@@ -549,5 +549,3 @@ Performance impact: Positive (smaller bundle)
 
 **File correlati**:
 - [Guida Utente](./scrollable-containers.md)
-- [Analisi Pre-implementazione](/workspace/ANALISI_SCROLLABLE_CONTAINERS.md)
-- [Pull-to-Refresh Fix](../fixes/pull-to-refresh-fix.md)

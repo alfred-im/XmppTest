@@ -33,7 +33,6 @@ Indice documenti tecnici per navigazione rapida. Questo documento è per AI, non
 ## Fixes
 
 - [fixes/README.md](./fixes/README.md) - Overview fix
-- [fixes/pull-to-refresh-fix.md](./fixes/pull-to-refresh-fix.md) - Fix pull-to-refresh
 - [fixes/profile-save-error-fix.md](./fixes/profile-save-error-fix.md) - Fix errori salvataggio profilo
 - [fixes/profile-scroll-conflict-fix.md](./fixes/profile-scroll-conflict-fix.md) - Fix conflitti scroll
 - [fixes/profile-scroll-fix.md](./fixes/profile-scroll-fix.md) - Fix scroll profilo
@@ -65,5 +64,5 @@ Indice documenti tecnici per navigazione rapida. Questo documento è per AI, non
 
 ---
 
-**Ultimo aggiornamento**: 2025-12-24  
+**Ultimo aggiornamento**: 2026-06-16  
 **Architettura corrente**: Sync-Once + Listen (v3.0) + Chat Markers XEP-0333 (v3.1)

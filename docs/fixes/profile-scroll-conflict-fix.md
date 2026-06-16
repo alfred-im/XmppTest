@@ -93,7 +93,7 @@ document.addEventListener('touchmove', (e) => {
 - Pull-to-refresh nativo ancora bloccato sulla finestra principale
 
 ### ⚠️ Da Testare
-- ChatPage (usa pull-to-refresh custom via `usePullToRefresh`)
+- ChatPage (scroll lista messaggi)
 - ConversationsPage (scroll principale)
 - Comportamento su iOS Safari
 - Comportamento su Android Chrome
@@ -107,12 +107,11 @@ document.addEventListener('touchmove', (e) => {
    - ✅ Scroll con contenuti lunghi (form + avatar + messaggi)
 
 2. **ConversationsPage**:
-   - Pull-to-refresh deve ancora funzionare
    - Scroll normale della lista conversazioni
 
 3. **ChatPage**:
-   - Pull-to-refresh custom (carica messaggi precedenti)
    - Scroll della lista messaggi
+   - Paginazione messaggi precedenti (scroll verso l'alto)
 
 ## Note Tecniche
 
@@ -138,5 +137,4 @@ La soluzione è compatibile con:
 - Issue: Conflitto di scroll nella pagina profilo
 - Branch: `cursor/fix-profile-page-scrolling-conflict-claude-4.5-sonnet-thinking-bdd5`
 - Documentazione correlata:
-  - `docs/fixes/pull-to-refresh-fix.md` (pull-to-refresh system)
-  - `docs/guides/routing-system.md` (page navigation)
+  - `docs/implementation/scrollable-containers.md` (container scrollabili)

@@ -6,6 +6,11 @@ Modifiche rilevanti al progetto per tracciare evoluzione tecnica e decisioni imp
 
 ## [Unreleased]
 
+### Rimosso
+- **Codice morto**: `sync.ts`, `SyncService.ts`, `usePullToRefresh.ts`, `src/repositories/`, `App.css`
+- **Funzioni non usate**: `loadAllConversations`, `updateConversationOnNewMessage`, `reloadAllMessagesFromServer`, `handleIncomingMessage`
+- **Documentazione obsoleta**: `pull-to-refresh-fix.md`, `INTEGRAZIONE_MAPPA_COMPLETATA.md`, riferimenti a sync legacy e pull-to-refresh custom
+
 ### Da Fare
 - Chat di gruppo (MUC - XEP-0045)
 - Crittografia E2E (OMEMO - XEP-0384)

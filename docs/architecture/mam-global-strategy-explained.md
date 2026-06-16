@@ -162,7 +162,7 @@ Risultato: 5 conversazioni trovate (non solo 2!)
 Con RSM (Result Set Management), puoi recuperare TUTTE le pagine:
 
 ```typescript
-async function loadAllConversations(client: Agent): Promise<Conversation[]> {
+async function downloadAllConversations(client: Agent): Promise<Conversation[]> {
   let allConversations = new Map<string, Conversation>()
   let hasMore = true
   let lastToken: string | undefined
@@ -299,7 +299,7 @@ Se vuoi MOSTRARE solo contatti nel roster (ma comunque trovare tutto), puoi filt
 
 ```typescript
 // 1. Trova TUTTE le conversazioni (Strategia A)
-const allConversations = await loadAllConversations(client)
+const allConversations = await downloadAllConversations(client)
 
 // 2. Ottieni roster
 const roster = await client.getRoster()

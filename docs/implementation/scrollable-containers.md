@@ -360,7 +360,6 @@ Verificare:
 
 ### Documenti Correlati
 
-- **[Pull-to-Refresh Fix](../fixes/pull-to-refresh-fix.md)** - Documentazione completa sul fix del pull-to-refresh
 - **[Design Guidelines](../design/README.md)** - Linee guida design generali
 - **[Implementazione Completa](./scrollable-containers-implementation.md)** - Dettagli tecnici implementazione
 

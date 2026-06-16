@@ -1,6 +1,6 @@
 # Alfred - Mappa Completa del Progetto
 
-**Ultimo aggiornamento**: 2025-12-17  
+**Ultimo aggiornamento**: 2026-06-16  
 **Versione**: 1.1.0 (XEP-0333 Chat Markers)
 
 ---
@@ -71,7 +71,7 @@
 ┌──────────────▼──────────────────────┐
 │       Services Layer                │
 │  xmpp.ts, messages.ts,              │
-│  conversations.ts, sync.ts,         │
+│  conversations.ts, sync-initializer.ts, │
 │  push-notifications.ts              │
 └──────────────┬──────────────────────┘
                │
@@ -210,7 +210,7 @@ web-client/
   - Inizializzazione React
   - Inizializzazione Debug Logger (intercetta console.log)
   - Registrazione Service Worker
-  - Gestione touch events (pull-to-refresh, pinch-zoom)
+  - Gestione touch events (blocco overscroll nativo, pinch-zoom)
   - Gestione orientamento schermo
 
 ##### **App Core**
@@ -223,7 +223,7 @@ Pagine principali dell'applicazione (route)
 
 | File | Responsabilità | Route |
 |------|----------------|-------|
-| `ConversationsPage.tsx` | Lista conversazioni con ricerca e pull-to-refresh | `#/` |
+| `ConversationsPage.tsx` | Lista conversazioni con ricerca | `#/` |
 | `ChatPage.tsx` | Vista chat 1-to-1 con messaggi e invio | `#/chat/:jid` |
 | `ProfilePage.tsx` | Profilo utente e modifica vCard | `#/profile` |
 
@@ -276,7 +276,7 @@ Business logic e integrazione servizi esterni
 | `auth-storage.ts` | Storage credenziali per auto-login (localStorage) | localStorage API |
 | `debug-logger.ts` | Intercettazione e raccolta console logs | Browser Console API |
 
-##### **Repositories (`repositories/`)**
+##### **Repositories (`services/repositories/`)**
 Data Access Layer per IndexedDB
 
 **ARCHITETTURA "SYNC-ONCE + LISTEN"**:
@@ -768,7 +768,7 @@ Documentati in `docs/fixes/known-issues.md`:
 - Componenti: Glassmorphism per modal
 - Animazioni: 150-300ms ease-in-out
 
-**CSS Files con colore**: index.css, App.css, ConversationsPage.css, ChatPage.css, NewConversationPopup.css, LoginPopup.css
+**CSS Files con colore**: index.css, ConversationsPage.css, ChatPage.css, NewConversationPopup.css, LoginPopup.css
 
 ---
 
@@ -811,10 +811,12 @@ Documentati in `docs/fixes/known-issues.md`:
   - `AppInitializer.tsx` - Wrapper per sync startup
   - `sync-initializer.ts` - Orchestrazione sync (full/incremental)
   - `sync-status.ts` - Observable sync status per UI
-- ✅ **Rimossi componenti obsoleti**:
-  - `usePullToRefresh.ts` - Feature eliminata
-  - `sync.ts` - Sistema sync vecchio
-  - `SyncService.ts` - Sistema sync vecchio
+- ✅ **Rimossi componenti obsoleti** (eliminati dal codebase):
+  - `usePullToRefresh.ts`
+  - `sync.ts`
+  - `SyncService.ts`
+  - `src/repositories/` (duplicato non usato)
+  - `App.css` (landing page legacy)
 - ✅ **UI improvements**:
   - Loading spinner in ConversationsPage durante sync
   - "Clear DB" button in DebugLogPopup
