@@ -10,7 +10,7 @@ Analisi tecniche implementazioni completate per comprensione dettagli e decision
 - **chat-markers-xep-0333.md** - XEP-0333 livello 3 spunte (✓✓ blu)
 - **scrollable-containers.md** + **scrollable-containers-implementation.md** - Utility scroll
 
-**Policy spunte**: [message-states.md](../architecture/message-states.md)
+**Policy spunte**: [message-states.md](../architecture/message-states.md) (v2.1)
 
 ## Status Implementazioni
 

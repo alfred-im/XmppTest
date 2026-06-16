@@ -24,14 +24,15 @@ Vedi `PROJECT_MAP.md` per dettagli completi.
 **Core Funzionante**:
 - Login XMPP con auto-login
 - Lista conversazioni con sync ottimizzata
-- Chat 1-to-1 con real-time messaging
+- Real-time messaging (campanello → virtual UI → MAM)
 - Spunte WhatsApp 3 livelli: ✓ inviato, ✓✓ grigie (XEP-0184), ✓✓ blu (XEP-0333)
 - vCard (avatar, profilo)
 - Sync iniziale intelligente (full/incremental)
 - MAM (XEP-0313) con marcatori RSM
 - Push Notifications (XEP-0357) - richiede server con supporto
 - Cache-first con IndexedDB
-- Real-time message updates (no polling)
+- Virtual UI + MAM-only DB (nessun duplicato al reload)
+- Push Notifications (XEP-0357) - richiede server con supporto
 
 **In Roadmap** (non iniziato):
 - MUC (XEP-0045)
@@ -77,18 +78,19 @@ Vedi `PROJECT_MAP.md` per architettura dettagliata completa.
 
 **Layer**:
 - UI Layer: Pages, Components
-- Initialization Layer: AppInitializer (gestisce sync all'avvio)
-- Context Layer: ConnectionContext, ConversationsContext, MessagingContext, AuthContext
-- Services Layer: sync-initializer.ts, messages.ts, conversations.ts, vcard.ts
-- Repository Layer: ConversationRepository, MessageRepository, VCardRepository, MetadataRepository
+- Initialization Layer: AppInitializer (sync all'avvio + boundary handoff)
+- Context Layer: ConnectionContext, AuthContext, VirtualMessagesContext, ConversationsContext, MessagingContext
+- Services Layer: sync-initializer.ts, mam-sync.ts, outbox-send.ts, messages.ts, conversations.ts, vcard.ts
+- Repository Layer: MessageRepository, OutboxRepository, ConversationRepository, VCardRepository, MetadataRepository
 - Data Layer: IndexedDB (alfred-xmpp-db) + XMPP Server
 
-**Principi**:
-1. **Sync-Once + Listen**: Sincronizzazione solo all'avvio, poi solo messaggi real-time
-2. **Cache-First**: Mostra sempre prima dati locali
-3. **Incremental Sync**: DB vuoto → full sync, DB popolato → solo nuovi messaggi
-4. **Offline-First**: Funziona senza connessione
-5. **Separation of Concerns**: Layer ben definiti
+**Principi (v4.0)**:
+1. **Virtual UI + MAM-only DB**: campanello aggiorna UI virtuale; solo MAM scrive messaggi nel DB
+2. **Sync-Once all'avvio**: full o incremental MAM fino al boundary T
+3. **MAM incrementale su eventi**: dopo messaggio/receipt/displayed il campanello schedula MAM per conversazione
+4. **Spunte 3 livelli**: XMPP send (✓) + XEP-0184 (✓✓ grigie) + XEP-0333 (✓✓ blu)
+5. **Cache-First / Offline-First**
+6. **origin-id canonico** (XEP-0359) per dedup e correlazione marker
 
 ## Documentazione (Struttura)
 
@@ -96,7 +98,7 @@ Vedi `PROJECT_MAP.md` per architettura dettagliata completa.
 - `PROJECT_MAP.md` - **LEGGERE ALL'INIZIO DI OGNI SESSIONE** (regola fondamentale)
 - `.cursor-rules.md` - Regole di sviluppo
 - `docs/architecture/` - Analisi architetturali (MAM strategy, conversazioni, performance)
-- `docs/implementation/` - Dettagli implementazioni (login, sync, scrollable containers, chat markers)
+- `docs/implementation/` - Dettagli implementazioni (sync v4.0, spunte 0184/0333, login)
 - `docs/decisions/` - ADR (decisioni architetturali)
 - `docs/fixes/` - Analisi fix applicati
 - `docs/design/` - Principi design (brand identity, database architecture)
@@ -130,7 +132,6 @@ MIT License - Vedi file `LICENSE`
 
 ---
 
-**Ultimo aggiornamento**: 2025-12-17  
-**Versione corrente**: 1.0.1  
-**Architettura**: Sync-Once + Listen (implementata 15 dicembre 2025)  
-**Auto-login**: Ripristinato e funzionante con localStorage (17 dicembre 2025)
+**Ultimo aggiornamento**: 2026-06-16  
+**Versione corrente**: 2.1.0  
+**Architettura**: Virtual UI + MAM-only DB v4.0 + Spunte WhatsApp (XEP-0184 + XEP-0333)

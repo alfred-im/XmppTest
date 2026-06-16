@@ -20,13 +20,13 @@ Indice documenti tecnici per navigazione rapida. Questo documento è per AI, non
 - [architecture/mam-global-strategy-explained.md](./architecture/mam-global-strategy-explained.md) - Strategia MAM globale
 - [architecture/mam-performance-long-term.md](./architecture/mam-performance-long-term.md) - Performance MAM
 - [architecture/strategy-comparison.md](./architecture/strategy-comparison.md) - Confronto strategie
-- [architecture/message-states.md](./architecture/message-states.md) - **Stati messaggio + spunte WhatsApp 3 livelli** (v2.0 - 16 giu 2026)
+- [architecture/message-states.md](./architecture/message-states.md) - **Stati messaggio + spunte WhatsApp 3 livelli** (v2.1 - 16 giu 2026)
 
 ## Implementazione
 
 - [implementation/README.md](./implementation/README.md) - Overview implementazioni
 - [implementation/login-system.md](./implementation/login-system.md) - Sistema login popup
-- [implementation/sync-system-complete.md](./implementation/sync-system-complete.md) - **Sistema "Sync-Once + Listen"** (v3.0 - 15 dic 2025)
+- [implementation/sync-system-complete.md](./implementation/sync-system-complete.md) - **Virtual UI + MAM-only DB** (v4.0 - 16 giu 2026)
 - [implementation/scrollable-containers.md](./implementation/scrollable-containers.md) - Utility class scroll
 - [implementation/scrollable-containers-implementation.md](./implementation/scrollable-containers-implementation.md) - Dettagli tecnici
 - [implementation/delivery-receipts-xep-0184.md](./implementation/delivery-receipts-xep-0184.md) - **XEP-0184** livello 2 (✓✓ grigie consegnato)

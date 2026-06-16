@@ -63,16 +63,17 @@
                │
 ┌──────────────▼──────────────────────┐
 │      Context Layer (State)          │
-│  XmppContext, ConversationsContext, │
-│  MessagingContext, AuthContext,     │
-│  ConnectionContext                  │
+│  ConnectionContext, AuthContext,    │
+│  VirtualMessagesContext,            │
+│  ConversationsContext,              │
+│  MessagingContext                   │
 └──────────────┬──────────────────────┘
                │
 ┌──────────────▼──────────────────────┐
 │       Services Layer                │
-│  xmpp.ts, messages.ts,              │
-│  conversations.ts, sync-initializer.ts, │
-│  push-notifications.ts              │
+│  xmpp.ts, outbox-send.ts,           │
+│  mam-sync.ts, messages.ts,          │
+│  sync-initializer.ts, conversations.ts │
 └──────────────┬──────────────────────┘
                │
        ┌───────┴───────┐
@@ -94,17 +95,15 @@
 2. **Cache-First**: Mostra sempre prima i dati locali (IndexedDB)
 3. **Minimal Server Queries**: Massimizza cache, minimizza query XMPP
 4. **Unidirectional Data Flow**: Props down, Events up
-5. **Server as Source of Truth**: Database locale è SOLO sincronizzazione dal server XMPP
-   - Il server XMPP è l'unica fonte di verità
-   - Database locale è cache/sincronizzazione per performance
-   - Direzione sync: DAL server AL database locale (mai il contrario)
-   - Modifiche: sempre tramite server XMPP, poi sincronizzare localmente
-   - NON modificare mai direttamente il database locale
-   - Benefici: Coerenza dati, sync multi-device, affidabilità, performance
+5. **Server as Source of Truth**: Il server XMPP è l'unica fonte di verità per i **messaggi**
+   - Store `messages`: scritto **solo** da MAM (`mam-sync.ts`)
+   - Listener = campanello: virtual UI + schedula MAM (no write diretto messaggi)
+   - Outbox e conversazioni: eccezioni locali (coda invio, preview/unread)
+   - Direzione sync messaggi: DAL server AL database locale (mai il contrario)
 6. **Rendering Fa Le Scelte**: La UI decide cosa e come mostrare basandosi sui dati grezzi
    - Dati salvati esattamente come arrivano dal server (no trasformazioni in DB)
    - Logica di presentazione (filtri, combinazioni, calcoli) avviene durante rendering
-   - Esempio: marker XEP-0333 salvati come messaggi separati, combinati visualmente nel rendering
+   - Esempio: ack XEP-0184 (`markerType: 'receipt'`) e XEP-0333 (`markerType: 'displayed'`) salvati come messaggi separati, combinati in `resolveCheckmarkLevel()`
 
 ### Stati messaggi e spunte (XEP-0184 + XEP-0333)
 
@@ -253,17 +252,19 @@ State management globale con React Context
 |------|----------------|---------------|
 | `ConnectionContext.tsx` | **CONTEXT PRINCIPALE** - Connessione XMPP e auto-login all'avvio | Client, isConnected, isConnecting, JID |
 | `AuthContext.tsx` | Gestione credenziali (salvataggio/caricamento) | JID, Password, Login status |
+| `VirtualMessagesContext.tsx` | UI virtuale messaggi + overlay spunte (`deliveredUi`, `readingUi`) | Virtual messages, overlay sets |
 | `ConversationsContext.tsx` | Lista conversazioni (cache locale) | Conversations[], `refreshConversation` |
 | `MessagingContext.tsx` | Campanello real-time: messaggi, receipt (0184), marker displayed (0333) | Message/receipt/marker handlers |
 
 ##### **Services (`services/`)**
 Business logic e comunicazione con XMPP server
 
-**ARCHITETTURA "SYNC-ONCE + LISTEN"** (implementata 15 dicembre 2025):
-- **sync-initializer.ts** - UNICO punto di sincronizzazione (all'avvio)
-- **sync-boundary.ts** - Handoff sync/listener: salva momento T, attiva listener, MAM fino a T
-- **sync-status.ts** - Pattern Observer per stato sync (UI indicators)
-- Tutti gli altri services sono "listener-only" durante utilizzo
+**ARCHITETTURA "Virtual UI + MAM-only DB"** (v4.0 — giugno 2026):
+- **sync-initializer.ts** — sync full/incremental all'avvio (MAM fino a boundary T)
+- **sync-boundary.ts** — handoff sync/listener: momento T, gate campanello
+- **mam-sync.ts** — **unico writer** store `messages` (anche su eventi campanello)
+- **outbox-send.ts** — coda invio persistente, separata dal DB messaggi
+- **sync-status.ts** — Observer stato sync (UI indicators)
 
 ##### **Services Core**
 Business logic e integrazione servizi esterni
@@ -271,10 +272,12 @@ Business logic e integrazione servizi esterni
 | File | Responsabilità | Dipendenze |
 |------|----------------|------------|
 | `sync-initializer.ts` | **SYNC ALL'AVVIO** (full o incremental, MAM fino a boundary T) | XMPP, Repositories |
-| `sync-boundary.ts` | **HANDOFF SYNC/LISTENER** (momento T, gate listener real-time) | - |
+| `sync-boundary.ts` | **HANDOFF SYNC/LISTENER** (momento T, gate campanello) | - |
+| `mam-sync.ts` | **MAM INCREMENTALE** — unico writer store `messages` | XMPP, MessageRepository |
+| `outbox-send.ts` | **INVIO** — outbox + transmit XMPP (markable + receipt request) | XMPP, OutboxRepository |
 | `sync-status.ts` | **Observer** per stato sync globale | - |
-| `xmpp.ts` | **CORE XMPP** - Connessione, discovery, login/register | Stanza.js |
-| `messages.ts` | Gestione messaggi (invio, NO SYNC) | XMPP, Repositories |
+| `xmpp.ts` | **CORE XMPP** — Connessione, discovery, `sendReceipts`, `chatMarkers` | Stanza.js |
+| `messages.ts` | Parse MAM → Message (testi, receipt, displayed); no invio diretto | Repositories |
 | `conversations.ts` | Gestione conversazioni e roster | XMPP, IndexedDB |
 | `conversations-db.ts` | Database IndexedDB per conversazioni | idb |
 | `vcard.ts` | Gestione vCard (avatar, profilo) | XMPP XEP-0054 |
@@ -285,16 +288,18 @@ Business logic e integrazione servizi esterni
 ##### **Repositories (`services/repositories/`)**
 Data Access Layer per IndexedDB
 
-**ARCHITETTURA "SYNC-ONCE + LISTEN"**:
-- MessageRepository usa **Pattern Observer** per notifiche real-time
-- MetadataRepository gestisce **marker sync** (lastRSMToken, isInitialSyncComplete)
+**ARCHITETTURA v4.0**:
+- MessageRepository: Observer per notifiche UI dopo write MAM
+- OutboxRepository: coda messaggi in uscita (store separato)
+- MetadataRepository: marker RSM sync incrementale
 
 | File | Responsabilità | Ruolo Architettura |
 |------|----------------|-------------------|
-| `ConversationRepository.ts` | CRUD conversazioni su IndexedDB | Cache locale, no sync |
-| `MessageRepository.ts` | CRUD messaggi + **Observer pattern** | Real-time updates, notifiche UI |
+| `ConversationRepository.ts` | CRUD conversazioni su IndexedDB | Preview/unread (anche da campanello) |
+| `MessageRepository.ts` | CRUD messaggi + **Observer pattern** | Scritto solo da `mam-sync.ts` |
+| `OutboxRepository.ts` | CRUD outbox invio | Coda persistente pre-MAM |
 | `VCardRepository.ts` | CRUD vCard cache | Cache profili contatti |
-| `MetadataRepository.ts` | CRUD metadata sync (**marker RSM**) | Tracking sync incrementale |
+| `MetadataRepository.ts` | CRUD metadata sync (RSM token) | Tracking sync incrementale |
 | `index.ts` | Export centrale repositories | - |
 
 ##### **Hooks (`hooks/`)**
@@ -302,7 +307,7 @@ Custom React Hooks
 
 | File | Responsabilità | Note |
 |------|----------------|------|
-| `useMessages.ts` | Hook per gestione messaggi in chat (cache-only) | Observer pattern |
+| `useMessages.ts` | Merge outbox + virtual + DB + overlay spunte | Observer + reconcile |
 | `useBackButton.ts` | Hook per back button Android | - |
 
 ##### **Utils (`utils/`)**
@@ -312,7 +317,9 @@ Utility functions
 |------|----------------|
 | `jid.ts` | Parse e validazione JID XMPP |
 | `date.ts` | Formattazione date e timestamp |
-| `message.ts` | Utility per messaggi (truncate, format) |
+| `message.ts` | Utility per messaggi (truncate, format, tempId) |
+| `message-id.ts` | origin-id canonico (XEP-0359) da stanza/MAM |
+| `checkmark.ts` | `resolveCheckmarkLevel()` — 3 livelli spunte |
 | `image.ts` | Utility per immagini (resize, convert) |
 
 ##### **Config (`config/`)**
@@ -387,23 +394,21 @@ Non aggiornare queste versioni senza testing completo.
   - Offline caching
   - Push notifications handling
 
-### Flow di Inizializzazione ("Sync-Once + Listen")
+### Flow di Inizializzazione (Sync Boundary + Virtual UI)
 
 ```
 index.html
   → main.tsx (React.render)
     → AppInitializer
         1. Salva boundary T (momento corrente)
-        2. Attiva listener real-time (da T in poi → DB)
+        2. Attiva campanello listener (da T in poi → virtual UI + MAM)
         3. Sync MAM solo passato (end = T)
       → App.tsx (Contexts + Router)
         → ConversationsPage | ChatPage | ProfilePage
-          └─→ LISTEN continua (messaggi da T in poi)
+          └─→ campanello continua (eventi da T → overlay → mam-sync)
 ```
 
-**Handoff esplicito**: sync copia il passato (MAM fino a T + 5s di margine), listener copia il futuro (da T). Sovrapposizione intenzionale ai bordi; de-duplicazione per messageId.
-
-**Novità v3.0**: `AppInitializer` gestisce sync iniziale PRIMA di renderizzare l'app normale.
+**Handoff esplicito**: sync copia il passato (MAM fino a T + 5s overlap); campanello gestisce il futuro (virtual UI → `scheduleConversationMamSync`). De-duplicazione per `messageId` (origin-id).
 
 ---
 
@@ -572,6 +577,7 @@ npm run test:browser:setup  # Install Playwright browsers
   from: 'me' | 'them'     // Direzione
   status: 'pending' | 'sent' | 'delivered' | 'failed'
   tempId?: string         // ID temporaneo pre-conferma
+  // Nota: status 'delivered' è legacy/non usato; livello 2 spunta = markerType 'receipt'
   
   // XEP-0184 + XEP-0333 acknowledgements
   markerType?: 'receipt' | 'displayed'
@@ -798,7 +804,7 @@ Documentati in `docs/fixes/known-issues.md`:
   - Livello 3: ✓✓ blu — XEP-0333 `displayed` (`markable` + `markDisplayed()`)
   - Virtual UI + overlay `deliveredUi`/`readingUi`; solo MAM scrive nel DB
   - `markerType: 'receipt' | 'displayed'`, `markerFor` = origin-id canonico
-  - Policy documentata in `docs/architecture/message-states.md` v2.0
+  - Policy documentata in `docs/architecture/message-states.md` v2.1
 
 **Modifiche Precedenti** (v3.1 - 17 dicembre 2025):
 - ✅ **Implementato XEP-0333 (Chat Markers)** — sostituito dal modello 3 livelli v4.0

@@ -72,7 +72,7 @@ markerType: 'receipt'
 markerFor: inner.receipt.id  // origin-id
 ```
 
-`resolveCheckmarkLevel()` usa `markerType === 'receipt'` o `deliveredUi` → ✓✓ grigie.
+- `markerType: 'receipt'` o overlay `deliveredUi` → ✓✓ grigie (non `Message.status: 'delivered'`, che è legacy)
 
 ---
 

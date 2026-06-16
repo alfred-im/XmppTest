@@ -2,7 +2,20 @@
 
 **Ultimo aggiornamento**: 2026-06-16
 
-Questo documento elenca le funzionalità desiderate per lo sviluppo futuro di Alfred, con riferimenti tecnici alle XEP (XMPP Extension Protocol) rilevanti.
+Funzionalità **future** desiderate per Alfred. Le XEP già implementate sono documentate in `docs/implementation/` — non sono wishlist.
+
+---
+
+## ✅ Già implementato (riferimento)
+
+| XEP | Ruolo | Documentazione |
+|-----|-------|----------------|
+| XEP-0184 | Spunte livello 2 (✓✓ grigie — consegnato) | [delivery-receipts-xep-0184.md](./implementation/delivery-receipts-xep-0184.md) |
+| XEP-0333 | Spunte livello 3 (✓✓ blu — lettura) | [chat-markers-xep-0333.md](./implementation/chat-markers-xep-0333.md) |
+| XEP-0313 | MAM — archivio messaggi | [sync-system-complete.md](./implementation/sync-system-complete.md) |
+| XEP-0357 | Push Notifications | `push-notifications.ts` |
+
+**Policy spunte 3 livelli**: [message-states.md](./architecture/message-states.md)
 
 ---
 
@@ -22,36 +35,6 @@ Questo documento elenca le funzionalità desiderate per lo sviluppo futuro di Al
 - Richiede supporto server (conversations.im supporta)
 - Da integrare nel servizio XMPP esistente
 - Sincronizzazione automatica con IndexedDB
-
----
-
-### XEP-0184: Message Delivery Receipts
-**Riferimento**: [XEP-0184](https://xmpp.org/extensions/xep-0184.html)  
-**Stato**: ✅ Implementato (livello 2 — ✓✓ grigie)
-
-**Descrizione**: Conferma consegna sul device del destinatario. Protocollo separato da XEP-0333.
-
-**Implementato**:
-- `receipt: { type: 'request' }` in invio (`outbox-send.ts`)
-- Risposta automatica in ricezione (`sendReceipts: true` in `xmpp.ts`)
-- Listener `receipt` + overlay `deliveredUi` + sync MAM
-
-**Policy**: [delivery-receipts-xep-0184.md](./implementation/delivery-receipts-xep-0184.md)
-
----
-
-### XEP-0333: Chat Markers (displayed)
-**Riferimento**: [XEP-0333 v1.0](https://xmpp.org/extensions/xep-0333.html)  
-**Stato**: ✅ Implementato (livello 3 — ✓✓ blu)
-
-**Descrizione**: Indicatore “visualizzato” quando l'interlocutore apre la chat.
-
-**Implementato**:
-- Invio con `<markable/>`
-- `markDisplayed()` in `ChatPage.tsx`
-- Listener `marker:displayed` + overlay `readingUi` + sync MAM
-
-**Policy**: [chat-markers-xep-0333.md](./implementation/chat-markers-xep-0333.md)
 
 ---
 
@@ -140,12 +123,11 @@ Questo documento elenca le funzionalità desiderate per lo sviluppo futuro di Al
 
 ---
 
-## 📊 Metriche e Priorità
+## 📊 Metriche e Priorità (solo future)
 
 | Funzionalità | Priorità | Complessità | Impatto UX | Supporto Server |
 |--------------|----------|-------------|------------|-----------------|
 | XEP-0280 Carbons | ⭐⭐⭐ Alta | Media | Alto | ✅ Ampio |
-| XEP-0333 Chat Markers | ⭐⭐⭐ Alta | Bassa | Alto | ✅ Ampio |
 | XEP-0308 Message Correction | ⭐⭐ Media | Bassa | Medio | ✅ Buono |
 | XEP-0363 File Upload | ⭐⭐⭐ Alta | Media | Alto | ✅ Buono |
 | XEP-0045 MUC | ⭐⭐ Media | Alta | Alto | ✅ Ampio |

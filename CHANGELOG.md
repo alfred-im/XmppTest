@@ -10,8 +10,9 @@ Modifiche rilevanti al progetto per tracciare evoluzione tecnica e decisioni imp
 - **Spunte WhatsApp 3 livelli**: ✓ inviato, ✓✓ grigie (XEP-0184), ✓✓ blu (XEP-0333)
 - **Virtual UI + MAM-only DB**: listener campanello, outbox, origin-id canonico
 - **XEP-0184**: `receipt request` in invio, listener `receipt`, overlay `deliveredUi`
-- **Documentazione**: `message-states.md` v2.0, `delivery-receipts-xep-0184.md`
+- **Documentazione**: `message-states.md` v2.1, `delivery-receipts-xep-0184.md`, `sync-system-complete.md` v4.0
 - **Sync Boundary Handoff**: all'avvio salva momento T, attiva listener da T, sync MAM fino a T + 5s overlap
+- **Allineamento documentazione**: PROJECT_MAP, README, WISHLIST, architecture README aggiornati a v4.0
 
 ### Rimosso
 - **Codice morto**: `sync.ts`, `SyncService.ts`, `usePullToRefresh.ts`, `src/repositories/`, `App.css`
@@ -30,11 +31,11 @@ Modifiche rilevanti al progetto per tracciare evoluzione tecnica e decisioni imp
 - Crittografia E2E (OMEMO - XEP-0384)
 - Condivisione file (HTTP Upload - XEP-0363)
 - Voice/Video calls (Jingle - XEP-0166)
-- Push notifications
-- PWA con service worker
+- PWA con service worker migliorato
 - Dark mode nativo
 - Emoji picker
 - Markdown support
+- XEP-0280 Message Carbons (multi-device)
 
 ---
 

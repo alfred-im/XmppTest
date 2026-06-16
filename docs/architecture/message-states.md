@@ -1,6 +1,6 @@
 # Stati del messaggio — Policy di sviluppo
 
-**Versione**: 2.0  
+**Versione**: 2.1  
 **Data**: 2026-06-16  
 **Stato**: Policy attiva
 
@@ -32,11 +32,11 @@ Priorità UI: `reading` > `delivered` > `sent`.
 
 | Livello | Standard | Namespace / azione |
 |---------|----------|-------------------|
-| 1 | XMPP core + MAM | Invio stanza; conferma implicita al successo di `client.sendMessage()` |
+| 1 | XMPP core | Invio stanza; ✓ grigia al successo di `client.sendMessage()` (accettazione server) |
 | 2 | [XEP-0184](https://xmpp.org/extensions/xep-0184.html) | `urn:xmpp:receipts` — `<request/>` in invio, `<received id="origin-id"/>` in risposta |
 | 3 | [XEP-0333 v1.0](https://xmpp.org/extensions/xep-0333.html) | `urn:xmpp:chat-markers:0` — `<markable/>` + `<displayed id="origin-id"/>` |
 
-> Il livello 1 **non è un XEP**: è l'accettazione del messaggio da parte del server XMPP (e opzionalmente la presenza in archivio MAM). I livelli 2 e 3 sono **due estensioni separate** con trigger e XML diversi.
+> Il livello 1 **non è un XEP** e **non dipende da MAM**: la ✓ grigia appare quando il server XMPP accetta la stanza (transmit OK / outbox). MAM è la fase `synced` separata — persiste il messaggio nel DB locale ma non determina la spunta livello 1. I livelli 2 e 3 sono **due estensioni separate** con trigger e XML diversi.
 
 ---
 
@@ -78,7 +78,7 @@ LETTURA (XEP-0333) — nostra risposta esplicita
 
 | Flusso | `ui` | `synced` (MAM → DB) |
 |--------|------|---------------------|
-| **Invio** | Virtual + outbox | MAM conferma messaggio |
+| **Invio** | Virtual + outbox → ✓ grigia su transmit OK | MAM persiste messaggio (sostituisce virtual) |
 | **Ricezione** | Campanello messaggio | MAM scarica messaggio |
 | **Consegna** | Campanello receipt → `deliveredUi` | MAM salva `markerType: 'receipt'` |
 | **Lettura** | Campanello displayed → `readingUi` | MAM salva `markerType: 'displayed'` |
@@ -114,6 +114,17 @@ LETTURA (XEP-0333) — nostra risposta esplicita
 | `ChatPage.tsx` | `markDisplayed()` per messaggi da loro |
 | `utils/checkmark.ts` | Risoluzione 3 livelli |
 | `messages.ts` | Parse receipt/displayed da MAM |
+
+---
+
+## `Message.status` vs `CheckmarkLevel` (non confondere)
+
+| Campo | Tipo | Uso attuale |
+|-------|------|-------------|
+| `Message.status` | `'pending' \| 'sent' \| 'delivered' \| 'failed'` | Stato trasmissione messaggio nel DB. `'delivered'` è **legacy/non usato** nel codice attuale |
+| `CheckmarkLevel` | `'pending' \| 'sent' \| 'delivered' \| 'reading' \| 'failed'` | Livello spunta UI risolto da `resolveCheckmarkLevel()` |
+
+Il **livello 2 spunta** (✓✓ grigie) deriva da `markerType: 'receipt'` o overlay `deliveredUi`, **non** da `Message.status === 'delivered'`.
 
 ---
 

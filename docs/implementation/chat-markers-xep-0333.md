@@ -30,7 +30,7 @@ In `outbox-send.ts` insieme a `receipt: { type: 'request' }`.
 
 ## Ricezione (destinatario)
 
-Quando apri la chat, `ChatPage.tsx` invia `displayed` per ogni messaggio da loro non ancora marcato:
+Quando apri la chat, `ChatPage.tsx` invia `displayed` per ogni messaggio da loro **già presente nel DB** (`dbMessages`) e non ancora marcato:
 
 ```typescript
 client.markDisplayed({
@@ -39,6 +39,8 @@ client.markDisplayed({
   type: 'chat',
 })
 ```
+
+> **Nota**: i messaggi ancora solo in virtual UI (appena arrivati via campanello, MAM in corso) non ricevono `markDisplayed` finché MAM non li persiste. In pratica il ritardo è trascurabile; al reload MAM li marca correttamente.
 
 ---
 
