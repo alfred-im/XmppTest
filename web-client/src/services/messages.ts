@@ -6,9 +6,9 @@ import {
 } from './conversations-db'
 import { normalizeJID } from '../utils/jid'
 import type { BareJID } from '../types/jid'
-import { generateTempId } from '../utils/message'
 import { PAGINATION } from '../config/constants'
-import { messageRepository, conversationRepository } from './repositories'
+import { messageRepository } from './repositories'
+import { extractCanonicalMessageIdFromMam } from '../utils/message-id'
 
 // Re-export per comodità
 export type { Message, MessageStatus } from './conversations-db'
@@ -39,17 +39,51 @@ function extractTimestamp(msg: MAMResult): Date {
  */
 function mamResultToMessage(msg: MAMResult, conversationJid: string, myJid: string): Message {
   const myBareJid = normalizeJID(myJid)
-  const from = msg.item.message?.from || ''
+  const inner = msg.item.message
+  const from = inner?.from || ''
   const fromMe = from.startsWith(myBareJid)
+  const mamArchiveId = msg.id
+  const timestamp = extractTimestamp(msg)
+  const normalizedContactJid = normalizeJID(conversationJid)
+
+  // XEP-0333 displayed
+  if (inner?.marker?.type === 'displayed' && inner.marker.id) {
+    return {
+      messageId: `mam-marker-${mamArchiveId ?? Date.now()}`,
+      mamArchiveId,
+      conversationJid: normalizedContactJid,
+      body: '',
+      timestamp,
+      from: fromMe ? 'me' : 'them',
+      status: 'sent',
+      markerType: 'displayed',
+      markerFor: inner.marker.id,
+    }
+  }
+
+  // XEP-0184 delivery receipt
+  if (inner?.receipt?.type === 'received' && inner.receipt.id) {
+    return {
+      messageId: `mam-receipt-${mamArchiveId ?? Date.now()}`,
+      mamArchiveId,
+      conversationJid: normalizedContactJid,
+      body: '',
+      timestamp,
+      from: fromMe ? 'me' : 'them',
+      status: 'sent',
+      markerType: 'receipt',
+      markerFor: inner.receipt.id,
+    }
+  }
 
   return {
-    messageId: msg.id || `mam_${Date.now()}`,
-    conversationJid: normalizeJID(conversationJid),
-    body: msg.item.message?.body || '',
-    timestamp: extractTimestamp(msg),
-    // La direzione base (sovrascritta da applySelfChatLogic per self-chat)
+    messageId: extractCanonicalMessageIdFromMam(msg),
+    mamArchiveId,
+    conversationJid: normalizedContactJid,
+    body: inner?.body || '',
+    timestamp,
     from: fromMe ? 'me' : 'them',
-    status: 'sent', // Messaggi MAM sono già inviati
+    status: 'sent',
   }
 }
 
@@ -117,6 +151,7 @@ export async function loadMessagesForContact(
     afterToken?: string  // Token per caricare messaggi DOPO questo punto (più recenti)
     beforeToken?: string // Token per caricare messaggi PRIMA di questo punto (più vecchi)
     endBefore?: Date     // Sync boundary T: MAM scarica solo messaggi prima di questo momento
+    startAfter?: Date    // Watermark listener: MAM non riscarica messaggi già coperti dal listener
   }
 ): Promise<{ 
   messages: Message[]
@@ -124,7 +159,7 @@ export async function loadMessagesForContact(
   lastToken?: string   // Token dell'ultimo messaggio (per paginare avanti)
   complete: boolean 
 }> {
-  const { maxResults = PAGINATION.DEFAULT_MESSAGE_LIMIT, afterToken, beforeToken, endBefore } = options || {}
+  const { maxResults = PAGINATION.DEFAULT_MESSAGE_LIMIT, afterToken, beforeToken, endBefore, startAfter } = options || {}
 
   try {
     const normalizedContactJid = normalizeJID(contactJid)
@@ -135,6 +170,7 @@ export async function loadMessagesForContact(
     // Query MAM filtrata per contatto specifico (end = boundary T del handoff sync/listener)
     const result = await client.searchHistory({
       with: normalizedContactJid,
+      start: startAfter,
       end: endBefore,
       paging: {
         max: maxResults,
@@ -269,67 +305,14 @@ export async function downloadAllMessagesFromServer(
   return allMessages
 }
 
-/**
- * Invia un messaggio al server e salva nel DB locale
- * 
- * ARCHITETTURA SEMPLIFICATA:
- * - Invia messaggio al server XMPP
- * - Salva direttamente nel DB locale
- * - NO sync completa, solo operazione atomica
- */
-export async function sendMessage(
-  client: Agent,
-  toJid: string,
-  body: string
-): Promise<{ tempId: string; success: boolean; error?: string }> {
-  const tempId = generateTempId()
-  const normalizedJid = normalizeJID(toJid)
+export {
+  sendMessage,
+  transmitOutboxEntry,
+  flushOutbox,
+  clearOutboxIfSynced,
+} from './outbox-send'
 
-  try {
-    // Invia al server XMPP con marker markable per XEP-0333
-    const messageId = await client.sendMessage({
-      to: normalizedJid,
-      body,
-      type: 'chat',
-      marker: { type: 'markable' },
-    })
-
-    const finalMessageId = typeof messageId === 'string' ? messageId : tempId
-
-    // Salva nel DB locale
-    await messageRepository.saveAll([{
-      messageId: finalMessageId,
-      conversationJid: normalizedJid,
-      body,
-      timestamp: new Date(),
-      from: 'me',
-      status: 'sent',
-      tempId: tempId,
-    }])
-
-    // Aggiorna conversazione
-    await conversationRepository.update(normalizedJid, {
-      lastMessage: {
-        body,
-        timestamp: new Date(),
-        from: 'me',
-        messageId: finalMessageId,
-      },
-      updatedAt: new Date(),
-    })
-
-    console.log('✅ Messaggio inviato e salvato:', finalMessageId)
-
-    return { tempId, success: true }
-  } catch (error) {
-    console.error('❌ Errore nell\'invio del messaggio:', error)
-    return {
-      tempId,
-      success: false,
-      error: error instanceof Error ? error.message : 'Errore sconosciuto',
-    }
-  }
-}
+import { sendMessage as sendMessageOutbox } from './outbox-send'
 
 /**
  * Riprova a inviare un messaggio fallito
@@ -345,7 +328,7 @@ export async function retryMessage(
 
   try {
     // Re-invia il messaggio
-    const result = await sendMessage(client, message.conversationJid, message.body)
+    const result = await sendMessageOutbox(client, message.conversationJid, message.body, message.tempId)
     return { success: result.success, error: result.error }
   } catch (error) {
     console.error('Errore nel retry del messaggio:', error)

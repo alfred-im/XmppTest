@@ -1,6 +1,9 @@
 import { openDB } from 'idb'
 import type { DBSchema, IDBPDatabase } from 'idb'
 import { type BareJID } from '../types/jid'
+import type { OutboxEntry } from '../types/outbox'
+
+export type { OutboxEntry } from '../types/outbox'
 
 export interface Conversation {
   jid: BareJID
@@ -27,9 +30,11 @@ export interface Message {
   from: 'me' | 'them'
   status: MessageStatus
   tempId?: string // ID temporaneo per optimistic updates (prima della conferma server)
+  /** UID archivio MAM (per migrazione da vecchi record e paginazione) */
+  mamArchiveId?: string
   
-  // XEP-0333 Chat Markers
-  markerType?: 'received' | 'displayed' | 'acknowledged'
+  // Acknowledgements (markerFor = origin-id del messaggio target)
+  markerType?: 'displayed' | 'receipt'
   markerFor?: string // messageId del messaggio referenziato
 }
 
@@ -70,8 +75,14 @@ interface ConversationsDB extends DBSchema {
     value: {
       lastSync: Date
       lastRSMToken?: string
-      conversationTokens?: Record<string, string> // RSM token per ogni conversazione
+      conversationTokens?: Record<string, string>
+      listenerCoveredUntil?: Record<string, string>
     }
+  }
+  outbox: {
+    key: string
+    value: OutboxEntry
+    indexes: { 'by-conversationJid': string; 'by-status': string }
   }
 }
 
@@ -82,7 +93,7 @@ export async function getDB(): Promise<IDBPDatabase<ConversationsDB>> {
     return dbInstance
   }
 
-  dbInstance = await openDB<ConversationsDB>('conversations-db', 3, {
+  dbInstance = await openDB<ConversationsDB>('conversations-db', 4, {
     upgrade(db, oldVersion) {
       // Versione 1: Store originali
       if (oldVersion < 1) {
@@ -113,6 +124,15 @@ export async function getDB(): Promise<IDBPDatabase<ConversationsDB>> {
           keyPath: 'jid',
         })
         vcardStore.createIndex('by-lastUpdated', 'lastUpdated')
+      }
+
+      // Versione 4: Outbox messaggi in uscita (queued / sending / failed)
+      if (oldVersion < 4) {
+        const outboxStore = db.createObjectStore('outbox', {
+          keyPath: 'tempId',
+        })
+        outboxStore.createIndex('by-conversationJid', 'conversationJid')
+        outboxStore.createIndex('by-status', 'status')
       }
     },
   })

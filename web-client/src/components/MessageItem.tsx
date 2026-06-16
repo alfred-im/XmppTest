@@ -1,34 +1,42 @@
 import { memo } from 'react'
 import { formatDateSeparator, formatMessageTime } from '../utils/date'
 import type { Message } from '../services/messages'
+import type { VirtualMessage } from '../types/ui-message'
+import type { CheckmarkLevel } from '../types/message-states'
+import { resolveCheckmarkLevel } from '../utils/checkmark'
+import { isVirtualMessage } from '../utils/message-reconcile'
+
+type ChatItem = Message | VirtualMessage
 
 interface MessageItemProps {
-  message: Message
+  message: ChatItem
   showDate: boolean
-  allMessages: Message[] // Array completo per cercare marker
+  allMessages: Message[]
+  readingUi: ReadonlySet<string>
+  deliveredUi: ReadonlySet<string>
+  virtualSendState: { sent: ReadonlySet<string>; failed: ReadonlySet<string> }
 }
 
-/**
- * Trova il marker più recente per un messaggio specifico
- */
-function findLatestMarker(messageId: string, allMessages: Message[]): Message | undefined {
-  return allMessages
-    .filter((m) => m.markerFor === messageId)
-    .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())[0]
+function virtualCheckmarkLevel(
+  virtual: VirtualMessage,
+  virtualSendState: MessageItemProps['virtualSendState']
+): CheckmarkLevel {
+  if (virtual.kind !== 'outgoing') return 'sent'
+  const tempId = virtual.tempId
+  if (tempId && virtualSendState.failed.has(tempId)) return 'failed'
+  if (tempId && virtualSendState.sent.has(tempId)) return 'sent'
+  return 'pending'
 }
 
-/**
- * Renderizza le spunte in base allo status del messaggio
- */
-function renderCheckmarks(status: string) {
-  switch (status) {
+function renderCheckmarks(level: CheckmarkLevel) {
+  switch (level) {
     case 'pending':
       return <span className="chat-page__checkmark-pending">🕐</span>
     case 'sent':
       return <span className="chat-page__checkmark-single">✓</span>
-    case 'displayed':
+    case 'delivered':
       return <span className="chat-page__checkmark-double">✓✓</span>
-    case 'acknowledged':
+    case 'reading':
       return <span className="chat-page__checkmark-double-blue">✓✓</span>
     case 'failed':
       return <span className="chat-page__checkmark-failed">✗</span>
@@ -37,27 +45,19 @@ function renderCheckmarks(status: string) {
   }
 }
 
-/**
- * Componente singolo messaggio - memoizzato per evitare re-render inutili.
- * React.memo confronta le props e salta il re-render se non sono cambiate.
- * Questo previene il flash bianco quando la lista messaggi viene aggiornata.
- * 
- * XEP-0333: Gestisce 3 tipi di messaggi:
- * 1. Messaggio testuale (ha body) → renderizza normale
- * 2. Marker (no body, ha markerType) → non renderizza, aggiorna status del messaggio riferito
- * 3. Altro (no body, no markerType) → renderizza per debug
- */
-export const MessageItem = memo(function MessageItem({ message, showDate, allMessages }: MessageItemProps) {
+export const MessageItem = memo(function MessageItem({
+  message,
+  showDate,
+  allMessages,
+  readingUi,
+  deliveredUi,
+  virtualSendState,
+}: MessageItemProps) {
   const isMe = message.from === 'me'
 
-  // CASO 1: Messaggio con body → renderizza normale
-  if (message.body && message.body.trim().length > 0) {
-    // Trova marker per questo messaggio
-    const marker = findLatestMarker(message.messageId, allMessages)
-    
-    // Determina status effettivo (marker ha priorità su status base)
-    const effectiveStatus = marker?.markerType || message.status || 'sent'
-    
+  if (isVirtualMessage(message)) {
+    const checkmark = isMe ? virtualCheckmarkLevel(message, virtualSendState) : undefined
+
     return (
       <div>
         {showDate && (
@@ -72,9 +72,9 @@ export const MessageItem = memo(function MessageItem({ message, showDate, allMes
               <span className="chat-page__message-time">
                 {formatMessageTime(message.timestamp)}
               </span>
-              {isMe && (
-                <span className="chat-page__message-status" aria-label={`Messaggio ${effectiveStatus}`}>
-                  {renderCheckmarks(effectiveStatus)}
+              {isMe && checkmark && (
+                <span className="chat-page__message-status" aria-label={`Messaggio ${checkmark}`}>
+                  {renderCheckmarks(checkmark)}
                 </span>
               )}
             </div>
@@ -84,12 +84,41 @@ export const MessageItem = memo(function MessageItem({ message, showDate, allMes
     )
   }
 
-  // CASO 2: Marker (ha markerType) → non renderizza
+  if (message.body && message.body.trim().length > 0) {
+    const checkmark = isMe
+      ? resolveCheckmarkLevel(message, allMessages, { reading: readingUi, delivered: deliveredUi })
+      : undefined
+
+    return (
+      <div>
+        {showDate && (
+          <div className="chat-page__date-separator">
+            {formatDateSeparator(message.timestamp)}
+          </div>
+        )}
+        <div className={`chat-page__message ${isMe ? 'chat-page__message--me' : 'chat-page__message--them'}`}>
+          <div className="chat-page__message-bubble">
+            <p className="chat-page__message-body">{message.body}</p>
+            <div className="chat-page__message-meta">
+              <span className="chat-page__message-time">
+                {formatMessageTime(message.timestamp)}
+              </span>
+              {isMe && checkmark && (
+                <span className="chat-page__message-status" aria-label={`Messaggio ${checkmark}`}>
+                  {renderCheckmarks(checkmark)}
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   if (message.markerType) {
     return null
   }
 
-  // CASO 3: Altro (no body, no markerType) → renderizza per debug
   return (
     <div>
       {showDate && (

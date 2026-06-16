@@ -1,8 +1,12 @@
 # Riepilogo Implementazione: Login Popup con Preservazione Route
 
-> **⚠️ NOTA:** Questa documentazione descrive l'architettura al 30 novembre 2025 con `XmppContext`.  
-> **Architettura corrente (17 dicembre 2025):** `XmppContext` è stato sostituito da `ConnectionContext` + `AuthContext`.  
-> **Per la versione attuale:** Vedi `docs/fixes/auto-login-fix-2025-12-17.md`
+> **⚠️ DOCUMENTO STORICO (30 novembre 2025)**  
+> Descrive l'architettura con `XmppContext` monolitico, **superata** da:
+> - `ConnectionContext` + `AuthContext` (17 dicembre 2025)
+> - Virtual UI + MAM-only DB v4.0 (16 giugno 2026)  
+> **Per lo stato attuale**: `PROJECT_MAP.md`, `docs/fixes/auto-login-fix-2025-12-17.md`, `ConnectionContext.tsx`, `LoginPopup.tsx`
+
+---
 
 ## ✅ Implementazione Completata il 30 Novembre 2025
 

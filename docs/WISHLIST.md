@@ -1,8 +1,21 @@
 # Wishlist Funzionalità
 
-**Ultimo aggiornamento**: 2025-12-17
+**Ultimo aggiornamento**: 2026-06-16
 
-Questo documento elenca le funzionalità desiderate per lo sviluppo futuro di Alfred, con riferimenti tecnici alle XEP (XMPP Extension Protocol) rilevanti.
+Funzionalità **future** desiderate per Alfred. Le XEP già implementate sono documentate in `docs/implementation/` — non sono wishlist.
+
+---
+
+## ✅ Già implementato (riferimento)
+
+| XEP | Ruolo | Documentazione |
+|-----|-------|----------------|
+| XEP-0184 | Spunte livello 2 (✓✓ grigie — consegnato) | [delivery-receipts-xep-0184.md](./implementation/delivery-receipts-xep-0184.md) |
+| XEP-0333 | Spunte livello 3 (✓✓ blu — lettura) | [chat-markers-xep-0333.md](./implementation/chat-markers-xep-0333.md) |
+| XEP-0313 | MAM — archivio messaggi | [sync-system-complete.md](./implementation/sync-system-complete.md) |
+| XEP-0357 | Push Notifications | `push-notifications.ts` |
+
+**Policy spunte 3 livelli**: [message-states.md](./architecture/message-states.md)
 
 ---
 
@@ -22,28 +35,6 @@ Questo documento elenca le funzionalità desiderate per lo sviluppo futuro di Al
 - Richiede supporto server (conversations.im supporta)
 - Da integrare nel servizio XMPP esistente
 - Sincronizzazione automatica con IndexedDB
-
----
-
-### XEP-0333: Chat Markers
-**Riferimento**: [XEP-0333](https://xmpp.org/extensions/xep-0333.html)
-
-**Descrizione**: Indicatori di stato lettura messaggi (spunte). Permette di segnalare quando un messaggio è stato visualizzato, ricevuto o letto dall'interlocutore.
-
-**Stati supportati**:
-- `received` - Messaggio ricevuto
-- `displayed` - Messaggio visualizzato/letto
-- `acknowledged` - Messaggio confermato
-
-**Benefici**:
-- Feedback visivo sullo stato dei messaggi
-- UX simile a WhatsApp/Telegram (spunte blu/grigie)
-- Conferma di ricezione/lettura
-
-**Note implementazione**:
-- Richiede supporto server e client
-- UI: doppia spunta grigia (ricevuto), blu (letto)
-- Privacy: opzione per disabilitare conferme lettura
 
 ---
 
@@ -132,12 +123,11 @@ Questo documento elenca le funzionalità desiderate per lo sviluppo futuro di Al
 
 ---
 
-## 📊 Metriche e Priorità
+## 📊 Metriche e Priorità (solo future)
 
 | Funzionalità | Priorità | Complessità | Impatto UX | Supporto Server |
 |--------------|----------|-------------|------------|-----------------|
 | XEP-0280 Carbons | ⭐⭐⭐ Alta | Media | Alto | ✅ Ampio |
-| XEP-0333 Chat Markers | ⭐⭐⭐ Alta | Bassa | Alto | ✅ Ampio |
 | XEP-0308 Message Correction | ⭐⭐ Media | Bassa | Medio | ✅ Buono |
 | XEP-0363 File Upload | ⭐⭐⭐ Alta | Media | Alto | ✅ Buono |
 | XEP-0045 MUC | ⭐⭐ Media | Alta | Alto | ✅ Ampio |
@@ -170,6 +160,5 @@ Ogni nuova XEP deve includere:
 
 **Prossimi Passi**:
 1. Implementare XEP-0280 (Carbons) per sync multi-device
-2. Implementare XEP-0333 (Chat Markers) per spunte lettura
-3. Aggiungere XEP-0308 (Message Correction) per edit messaggi
-4. Valutare XEP-0363 (File Upload) dopo testing server
+2. Aggiungere XEP-0308 (Message Correction) per edit messaggi
+3. Valutare XEP-0363 (File Upload) dopo testing server
