@@ -8,6 +8,7 @@ import { normalizeJID } from '../utils/jid'
 import type { BareJID } from '../types/jid'
 import { PAGINATION } from '../config/constants'
 import { messageRepository } from './repositories'
+import { extractCanonicalMessageIdFromMam } from '../utils/message-id'
 
 // Re-export per comodità
 export type { Message, MessageStatus } from './conversations-db'
@@ -38,17 +39,41 @@ function extractTimestamp(msg: MAMResult): Date {
  */
 function mamResultToMessage(msg: MAMResult, conversationJid: string, myJid: string): Message {
   const myBareJid = normalizeJID(myJid)
-  const from = msg.item.message?.from || ''
+  const inner = msg.item.message
+  const from = inner?.from || ''
   const fromMe = from.startsWith(myBareJid)
+  const mamArchiveId = msg.id
+  const timestamp = extractTimestamp(msg)
+  const normalizedContactJid = normalizeJID(conversationJid)
+
+  // Marker XEP-0333 archiviato (displayed / received / acknowledged)
+  if (
+    inner?.marker &&
+    inner.marker.type !== 'markable' &&
+    inner.marker.id &&
+    ['received', 'displayed', 'acknowledged'].includes(inner.marker.type)
+  ) {
+    return {
+      messageId: `mam-marker-${mamArchiveId ?? Date.now()}`,
+      mamArchiveId,
+      conversationJid: normalizedContactJid,
+      body: '',
+      timestamp,
+      from: fromMe ? 'me' : 'them',
+      status: 'sent',
+      markerType: inner.marker.type,
+      markerFor: inner.marker.id,
+    }
+  }
 
   return {
-    messageId: msg.id || `mam_${Date.now()}`,
-    conversationJid: normalizeJID(conversationJid),
-    body: msg.item.message?.body || '',
-    timestamp: extractTimestamp(msg),
-    // La direzione base (sovrascritta da applySelfChatLogic per self-chat)
+    messageId: extractCanonicalMessageIdFromMam(msg),
+    mamArchiveId,
+    conversationJid: normalizedContactJid,
+    body: inner?.body || '',
+    timestamp,
     from: fromMe ? 'me' : 'them',
-    status: 'sent', // Messaggi MAM sono già inviati
+    status: 'sent',
   }
 }
 

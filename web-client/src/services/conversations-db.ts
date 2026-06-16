@@ -30,6 +30,8 @@ export interface Message {
   from: 'me' | 'them'
   status: MessageStatus
   tempId?: string // ID temporaneo per optimistic updates (prima della conferma server)
+  /** UID archivio MAM (per migrazione da vecchi record e paginazione) */
+  mamArchiveId?: string
   
   // XEP-0333 Chat Markers
   markerType?: 'received' | 'displayed' | 'acknowledged'

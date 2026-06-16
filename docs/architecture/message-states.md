@@ -89,10 +89,16 @@ Tre livelli visivi, **indipendenti** dagli stati DB:
 
 | Layer | Contenuto |
 |-------|-----------|
-| **Outbox** (IndexedDB) | Messaggi in uscita: `queued`, `sending`, `failed` |
+| **Outbox** (IndexedDB) | Messaggi in uscita: `queued`, `sending`, `failed`; `stanzaId` = origin-id XMPP |
 | **UI virtuale** (React) | Messaggi e overlay spunte in fase `ui` |
-| **DB messaggi** (IndexedDB) | Solo dati `synced` da MAM |
+| **DB messaggi** (IndexedDB) | Solo dati `synced` da MAM; `messageId` = **origin-id** (non archive UID MAM) |
 | **Metadata sync** | Watermark / token per query MAM |
+
+### Identificatori messaggio
+
+- **`messageId` (locale)** = `origin-id` (XEP-0359) se presente nello stanza archiviato, altrimenti `id` stanza, ultimo fallback archive UID MAM.
+- **`mamArchiveId`** = UID riga archivio MAM (`MAMResult.id`); usato solo per migrazione/paginazione, non per marker.
+- **Marker XEP-0333** referenziano l’origin-id del messaggio target → stesso valore di `messageId` canonico.
 
 ---
 

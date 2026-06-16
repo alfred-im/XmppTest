@@ -10,6 +10,7 @@ import { PAGINATION } from '../config/constants'
 import { normalizeJID } from '../utils/jid'
 import type { BareJID } from '../types/jid'
 import { messageRepository } from '../services/repositories'
+import { outboxRepository } from '../services/repositories/OutboxRepository'
 import { useVirtualMessages } from '../contexts/VirtualMessagesContext'
 import {
   findDbMatch,
@@ -90,7 +91,13 @@ export function useMessages({
       const matchedIds: string[] = []
 
       for (const virtual of convVirtuals) {
-        const match = findDbMatch(virtual, updated)
+        let match = findDbMatch(virtual, updated)
+        if (!match && virtual.tempId) {
+          const outbox = await outboxRepository.getByTempId(virtual.tempId)
+          if (outbox?.stanzaId) {
+            match = updated.find((m) => m.messageId === outbox.stanzaId)
+          }
+        }
         if (match) {
           matchedIds.push(virtual.virtualId)
           if (virtual.tempId) {

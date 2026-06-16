@@ -92,10 +92,16 @@ export class MessageRepository {
 
     try {
       for (const message of messages) {
-        // Traccia conversazioni modificate
         affectedConversations.add(message.conversationJid)
-        
-        // Verifica se esiste già (de-duplicazione per messageId)
+
+        // Migra record salvati con archive UID → origin-id canonico
+        if (message.mamArchiveId && message.mamArchiveId !== message.messageId) {
+          const legacy = await tx.store.get(message.mamArchiveId)
+          if (legacy) {
+            await tx.store.delete(message.mamArchiveId)
+          }
+        }
+
         const existing = await tx.store.get(message.messageId)
         
         if (!existing) {

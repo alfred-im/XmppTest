@@ -4,6 +4,9 @@ import { type Conversation } from './conversations-db'
 import { normalizeJID, type BareJID } from '../utils/jid'
 import { PAGINATION } from '../config/constants'
 import { messageRepository } from './repositories'
+import {
+  extractCanonicalMessageIdFromMam,
+} from '../utils/message-id'
 
 // Re-export per comodità
 export type { Conversation } from './conversations-db'
@@ -166,7 +169,8 @@ export async function loadConversationsFromServer(
         const contactJid = extractContactJid(msg, myJid)
         
         return {
-          messageId: msg.id || `mam_${Date.now()}_${Math.random()}`,
+          messageId: extractCanonicalMessageIdFromMam(msg),
+          mamArchiveId: msg.id,
           conversationJid: contactJid,
           body: extractMessageBody(msg),
           timestamp: extractTimestamp(msg),
@@ -202,7 +206,7 @@ export async function loadConversationsFromServer(
         body: extractMessageBody(msg),
         timestamp: messageTimestamp,
         from: sender,
-        messageId: msg.id,
+        messageId: extractCanonicalMessageIdFromMam(msg),
       },
       unreadCount: 0,
       updatedAt: messageTimestamp,

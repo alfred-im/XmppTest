@@ -9,6 +9,7 @@ import { conversationRepository } from '../services/repositories'
 import { normalizeJID } from '../utils/jid'
 import { syncBoundaryService } from '../services/sync-boundary'
 import { scheduleConversationMamSync } from '../services/mam-sync'
+import { extractCanonicalMessageIdFromStanza } from '../utils/message-id'
 
 type MessageCallback = (message: ReceivedMessage) => void
 
@@ -66,7 +67,7 @@ export function MessagingProvider({ children }: { children: ReactNode }) {
             body: message.body,
             timestamp,
             from: isFromMe ? 'me' : 'them',
-            messageId: message.id || virtualId,
+            messageId: extractCanonicalMessageIdFromStanza(message) || virtualId,
           },
           updatedAt: timestamp,
         })
