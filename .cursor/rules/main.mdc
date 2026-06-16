@@ -1,0 +1,24 @@
+---
+description: Vincolo operativo — leggere regole e documentazione prima di qualsiasi azione
+alwaysApply: true
+---
+
+# Vincolo obbligatorio (leggere per primo)
+
+Prima di **qualsiasi** analisi, modifica al codice, comando o proposta di implementazione, devi **leggere integralmente** e **seguire** il file:
+
+**`.cursor-rules.md`** (root del repository)
+
+Quel file è la fonte autoritativa delle regole di sviluppo. **Non modificarlo.** Non sostituirlo con interpretazioni proprie. In caso di dubbio, fermati e chiedi.
+
+## Documentazione di riferimento (già presente nel repo)
+
+Dopo `.cursor-rules.md`, consulta la documentazione esistente secondo necessità:
+
+| Priorità | File | Quando |
+|----------|------|--------|
+| Obbligatorio all'avvio sessione | `PROJECT_MAP.md` | Architettura, struttura, vincoli del software |
+| Indice navigazione | `docs/INDICE.md` | Trovare documenti tecnici per area (architettura, implementazione, fix, decisioni) |
+| Stato progetto | `README.md` | Contesto generale e feature implementate |
+
+Per approfondimenti tematici, usa `docs/INDICE.md` — non inventare architettura se è già documentata.

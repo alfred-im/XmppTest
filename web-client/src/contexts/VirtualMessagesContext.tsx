@@ -3,6 +3,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
   type ReactNode,
@@ -11,6 +12,7 @@ import type { VirtualMessage } from '../types/ui-message'
 import { normalizeJID } from '../utils/jid'
 import type { BareJID } from '../types/jid'
 import { generateTempId } from '../utils/message'
+import { onAccountChanged } from '../services/account-session'
 
 interface VirtualMessagesContextValue {
   getVirtuals: (conversationJid: string) => VirtualMessage[]
@@ -44,6 +46,14 @@ export function VirtualMessagesProvider({ children }: { children: ReactNode }) {
   )
   const [readingUi, setReadingUiSet] = useState<Set<string>>(() => new Set())
   const [deliveredUi, setDeliveredUiSet] = useState<Set<string>>(() => new Set())
+
+  useEffect(() => {
+    return onAccountChanged(() => {
+      setByConversation(new Map())
+      setReadingUiSet(new Set())
+      setDeliveredUiSet(new Set())
+    })
+  }, [])
 
   const getVirtuals = useCallback(
     (conversationJid: string) => {

@@ -70,3 +70,16 @@
 3. **Cleanup conversazioni**: Rimuovere quelle non più presenti nei risultati MAM
 4. **Ordinamento sempre**: Riordinare dopo ogni merge
 5. **Gestione stati**: Distinguere tra "attiva", "archived", "removed"
+
+---
+
+## Issue risolte (riferimento)
+
+### 6. Conversazioni account precedente visibili dopo cambio account ✅ RISOLTO (v2.2)
+
+**Problema**: DB IndexedDB unico condiviso; al logout la memoria React non si allineava al nuovo account; sync incrementale con token del precedente utente.
+
+**Soluzione**: Un IndexedDB per JID (`conversations-db-{account}`), `switchAccountContext()`, reload context su cambio account. Storico **non** cancellato al logout.
+
+**Doc**: [account-storage-isolation.md](./account-storage-isolation.md)
+

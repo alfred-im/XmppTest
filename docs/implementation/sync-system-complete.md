@@ -15,6 +15,7 @@
 ## Overview
 
 **Data implementazione v4.0**: 16 Giugno 2026  
+**Aggiornamento v2.2**: 17 Giugno 2026 (isolamento IndexedDB per account)  
 **Status**: ✅ Attivo
 
 ### Obiettivo
@@ -240,6 +241,33 @@ cd web-client && npm run build
 
 **Account test**: `testardo@conversations.im` ↔ `testarda@conversations.im`
 
+6. **Cambio account**: logout da testardo, login testarda → solo conversazioni testarda; rientro testardo → storico testardo intatto (nessun wipe DB)
+
+---
+
+## Isolamento storage per account (v2.2)
+
+**Data**: 17 giugno 2026  
+**Status**: ✅ Attivo
+
+Ogni JID utente ha un **proprio** IndexedDB: `conversations-db-{jid_normalizzato}`.
+
+| Evento | IndexedDB | Memoria React |
+|--------|-----------|---------------|
+| Login account A | Apre DB di A | Carica da DB di A |
+| Logout | DB di A resta su disco | Reset via `onAccountChanged` |
+| Login account B | Apre DB di B (indipendente) | Carica da DB di B |
+
+**Componenti**:
+- `conversations-db.ts` — `setAccountContext()`, `getAccountDbName()`, migrazione da `conversations-db` legacy
+- `account-session.ts` — `switchAccountContext()`, `onAccountChanged()`
+- `ConnectionContext.tsx` — imposta contesto su connect / logout / auto-login
+- `ConversationsContext`, `VirtualMessagesContext`, `useMessages` — reload/reset su cambio account
+
+**Sync**: metadata RSM e `conversationTokens` sono **per DB account** — la sync incrementale non riusa token di un altro utente.
+
+**Doc dettagliata**: [../fixes/account-storage-isolation.md](../fixes/account-storage-isolation.md)
+
 ---
 
 ## Evoluzione da v3.0
@@ -251,6 +279,7 @@ cd web-client && npm run build
 | Sync dopo evento | Nessuna | MAM incrementale per conversazione |
 | Spunte | Solo XEP-0333 (2 livelli) | XEP-0184 + XEP-0333 (3 livelli WhatsApp) |
 | messageId canonico | Stanza id / archive UID | origin-id (XEP-0359) |
+| Storage locale | DB condiviso `conversations-db` | DB per account `conversations-db-{jid}` (v2.2) |
 
 ### Cosa resta dalla v3.0
 

@@ -46,4 +46,6 @@ export const TEXT_LIMITS = {
 export const STORAGE_KEYS = {
   JID: 'xmpp_jid',
   PASSWORD: 'xmpp_password',
+  /** JID dell'account che ha ricevuto la migrazione dal DB legacy condiviso */
+  LEGACY_DB_MIGRATED_TO: 'xmpp_legacy_db_migrated_to',
 } as const;

@@ -3,7 +3,10 @@ import { createContext, useContext, useState, useEffect, useCallback } from 'rea
 import type { ReactNode } from 'react'
 import type { Conversation } from '../services/conversations-db'
 import { conversationRepository } from '../services/repositories'
+import { onAccountChanged } from '../services/account-session'
+import { getCurrentAccountJid } from '../services/conversations-db'
 import { normalizeJID } from '../utils/jid'
+import { useConnection } from './ConnectionContext'
 
 interface ConversationsContextType {
   conversations: Conversation[]
@@ -21,42 +24,54 @@ const ConversationsContext = createContext<ConversationsContextType | undefined>
  * 
  * ARCHITETTURA SEMPLIFICATA:
  * - NON carica più dal server (sync gestita da AppInitializer)
- * - Carica solo da cache locale
+ * - Carica solo da cache locale dell'account attivo
  * - Si aggiorna automaticamente quando cambiano i dati (via refreshConversation)
  * - NO più pull-to-refresh o refreshAll
  */
 export function ConversationsProvider({ children }: { children: ReactNode }) {
+  const { jid: accountJid } = useConnection()
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Carica conversazioni dalla cache al mount
-  useEffect(() => {
-    const loadFromCache = async () => {
-      setIsLoading(true)
-      try {
-        const cached = await conversationRepository.getAll()
-        setConversations(cached)
-      } catch (err) {
-        console.error('Errore caricamento cache conversazioni:', err)
-        setError(err instanceof Error ? err.message : 'Errore nel caricamento')
-      } finally {
-        setIsLoading(false)
-      }
+  const loadFromCache = useCallback(async () => {
+    const activeJid = getCurrentAccountJid()
+
+    if (!activeJid) {
+      setConversations([])
+      setError(null)
+      setIsLoading(false)
+      return
     }
 
-    loadFromCache()
+    setIsLoading(true)
+    try {
+      const cached = await conversationRepository.getAll()
+      setConversations(cached)
+      setError(null)
+    } catch (err) {
+      console.error('Errore caricamento cache conversazioni:', err)
+      setError(err instanceof Error ? err.message : 'Errore nel caricamento')
+      setConversations([])
+    } finally {
+      setIsLoading(false)
+    }
   }, [])
+
+  useEffect(() => {
+    void loadFromCache()
+  }, [accountJid, loadFromCache])
+
+  useEffect(() => {
+    return onAccountChanged(() => {
+      void loadFromCache()
+    })
+  }, [loadFromCache])
 
   // Ricarica conversazioni dal DB (chiamato dopo aggiornamenti)
   const reloadFromDB = useCallback(async () => {
-    try {
-      const updated = await conversationRepository.getAll()
-      setConversations(updated)
-    } catch (error) {
-      console.error('Errore ricaricamento conversazioni:', error)
-    }
-  }, [])
+    await loadFromCache()
+  }, [loadFromCache])
 
   const sortConversations = (items: Conversation[]) =>
     [...items].sort(

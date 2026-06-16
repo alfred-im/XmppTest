@@ -23,6 +23,7 @@ Vedi `PROJECT_MAP.md` per dettagli completi.
 
 **Core Funzionante**:
 - Login XMPP con auto-login
+- **Storage IndexedDB isolato per account** (storico conservato al logout)
 - Lista conversazioni con sync ottimizzata
 - Real-time messaging (campanello → virtual UI → MAM)
 - Spunte WhatsApp 3 livelli: ✓ inviato, ✓✓ grigie (XEP-0184), ✓✓ blu (XEP-0333)
@@ -30,9 +31,8 @@ Vedi `PROJECT_MAP.md` per dettagli completi.
 - Sync iniziale intelligente (full/incremental)
 - MAM (XEP-0313) con marcatori RSM
 - Push Notifications (XEP-0357) - richiede server con supporto
-- Cache-first con IndexedDB
+- Cache-first con IndexedDB per account
 - Virtual UI + MAM-only DB (nessun duplicato al reload)
-- Push Notifications (XEP-0357) - richiede server con supporto
 
 **In Roadmap** (non iniziato):
 - MUC (XEP-0045)
@@ -82,11 +82,12 @@ Vedi `PROJECT_MAP.md` per architettura dettagliata completa.
 - Context Layer: ConnectionContext, AuthContext, VirtualMessagesContext, ConversationsContext, MessagingContext
 - Services Layer: sync-initializer.ts, mam-sync.ts, outbox-send.ts, messages.ts, conversations.ts, vcard.ts
 - Repository Layer: MessageRepository, OutboxRepository, ConversationRepository, VCardRepository, MetadataRepository
-- Data Layer: IndexedDB (alfred-xmpp-db) + XMPP Server
+- Data Layer: IndexedDB **per account** (`conversations-db-{jid}`) + XMPP Server
 
-**Principi (v4.0)**:
+**Principi (v4.0 / v2.2)**:
 1. **Virtual UI + MAM-only DB**: campanello aggiorna UI virtuale; solo MAM scrive messaggi nel DB
-2. **Sync-Once all'avvio**: full o incremental MAM fino al boundary T
+2. **Un account = un database locale**: ogni JID ha il proprio IndexedDB; logout non cancella lo storico
+3. **Sync-Once all'avvio**: full o incremental MAM fino al boundary T
 3. **MAM incrementale su eventi**: dopo messaggio/receipt/displayed il campanello schedula MAM per conversazione
 4. **Spunte 3 livelli**: XMPP send (✓) + XEP-0184 (✓✓ grigie) + XEP-0333 (✓✓ blu)
 5. **Cache-First / Offline-First**
@@ -95,8 +96,9 @@ Vedi `PROJECT_MAP.md` per architettura dettagliata completa.
 ## Documentazione (Struttura)
 
 **Documenti Chiave per AI**:
+- `.cursor/rules/main.mdc` - Vincolo operativo Cursor (leggi `.cursor-rules.md` prima di tutto)
 - `PROJECT_MAP.md` - **LEGGERE ALL'INIZIO DI OGNI SESSIONE** (regola fondamentale)
-- `.cursor-rules.md` - Regole di sviluppo
+- `.cursor-rules.md` - Regole di sviluppo (fonte autoritativa)
 - `docs/architecture/` - Analisi architetturali (MAM strategy, conversazioni, performance)
 - `docs/implementation/` - Dettagli implementazioni (sync v4.0, spunte 0184/0333, login)
 - `docs/decisions/` - ADR (decisioni architetturali)
@@ -132,6 +134,6 @@ MIT License - Vedi file `LICENSE`
 
 ---
 
-**Ultimo aggiornamento**: 2026-06-16  
-**Versione corrente**: 2.1.0  
-**Architettura**: Virtual UI + MAM-only DB v4.0 + Spunte WhatsApp (XEP-0184 + XEP-0333)
+**Ultimo aggiornamento**: 2026-06-17  
+**Versione corrente**: 2.2.0  
+**Architettura**: Virtual UI + MAM-only DB v4.0 + IndexedDB per account v2.2 + Spunte WhatsApp (XEP-0184 + XEP-0333)

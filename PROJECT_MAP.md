@@ -1,7 +1,7 @@
 # Alfred - Mappa Completa del Progetto
 
-**Ultimo aggiornamento**: 2026-06-16 (Virtual UI + MAM-only DB + 3 livelli spunte)  
-**Versione**: 2.1.0 (XEP-0184 + XEP-0333)
+**Ultimo aggiornamento**: 2026-06-17 (isolamento storage per account + Virtual UI v4.0)  
+**Versione**: 2.2.0 (per-account IndexedDB + XEP-0184 + XEP-0333)
 
 ---
 
@@ -24,7 +24,8 @@
 **Alfred** è un client web XMPP moderno per messaggistica istantanea, basato su React e TypeScript.
 
 ### Caratteristiche Principali
-- **Offline-First**: Cache locale completa con IndexedDB
+- **Offline-First**: Cache locale completa con IndexedDB **per account**
+- **Multi-account storage**: ogni JID ha il proprio database IndexedDB; lo storico non si perde al logout
 - **Performance**: Apertura chat < 100ms
 - **Modern Stack**: React 19, TypeScript 5, Vite 7
 - **XMPP Protocol**: Stanza.js 12.21.x con supporto MAM (XEP-0313)
@@ -100,7 +101,11 @@
    - Listener = campanello: virtual UI + schedula MAM (no write diretto messaggi)
    - Outbox e conversazioni: eccezioni locali (coda invio, preview/unread)
    - Direzione sync messaggi: DAL server AL database locale (mai il contrario)
-6. **Rendering Fa Le Scelte**: La UI decide cosa e come mostrare basandosi sui dati grezzi
+6. **Un account = un database locale**: IndexedDB partizionato per JID utente (`conversations-db-{account}`)
+   - `account-session.ts` + `setAccountContext()` in `conversations-db.ts`
+   - Logout: reset memoria React, **non** wipe dello storico
+   - Migrazione automatica dal vecchio DB condiviso `conversations-db` (legacy)
+7. **Rendering Fa Le Scelte**: La UI decide cosa e come mostrare basandosi sui dati grezzi
    - Dati salvati esattamente come arrivano dal server (no trasformazioni in DB)
    - Logica di presentazione (filtri, combinazioni, calcoli) avviene durante rendering
    - Esempio: ack XEP-0184 (`markerType: 'receipt'`) e XEP-0333 (`markerType: 'displayed'`) salvati come messaggi separati, combinati in `resolveCheckmarkLevel()`
@@ -171,6 +176,8 @@ Per ogni messaggio nell'array:
 ```
 /workspace/
 ├── .cursor-rules.md          # Regole di sviluppo per AI assistant
+├── .cursor/rules/            # Regole Cursor (main.mdc → punta a .cursor-rules.md)
+│   └── main.mdc
 ├── .github/                   # GitHub Actions per deployment
 │   └── workflows/
 │       └── deploy-pages.yml   # Deploy automatico su GitHub Pages
@@ -235,7 +242,7 @@ Componenti riutilizzabili
 
 | File | Responsabilità |
 |------|----------------|
-| `AppInitializer.tsx` | Inizializzazione app e auto-login |
+| `AppInitializer.tsx` | Sync iniziale post-connessione (full/incremental MAM fino a boundary T) |
 | `LoginPopup.tsx` | Popup di login con glassmorphism |
 | `ConversationsList.tsx` | Lista conversazioni con avatar e preview |
 | `NewConversationPopup.tsx` | Popup per nuova conversazione |
@@ -250,10 +257,10 @@ State management globale con React Context
 
 | File | Responsabilità | State Gestito |
 |------|----------------|---------------|
-| `ConnectionContext.tsx` | **CONTEXT PRINCIPALE** - Connessione XMPP e auto-login all'avvio | Client, isConnected, isConnecting, JID |
-| `AuthContext.tsx` | Gestione credenziali (salvataggio/caricamento) | JID, Password, Login status |
-| `VirtualMessagesContext.tsx` | UI virtuale messaggi + overlay spunte (`deliveredUi`, `readingUi`) | Virtual messages, overlay sets |
-| `ConversationsContext.tsx` | Lista conversazioni (cache locale) | Conversations[], `refreshConversation` |
+| `ConnectionContext.tsx` | **CONTEXT PRINCIPALE** — Connessione XMPP, auto-login, `switchAccountContext()` | Client, isConnected, isConnecting, JID |
+| `AuthContext.tsx` | Gestione credenziali (salvataggio/caricamento localStorage) | Login/logout credenziali |
+| `VirtualMessagesContext.tsx` | UI virtuale messaggi + overlay spunte; reset su `onAccountChanged` | Virtual messages, overlay sets |
+| `ConversationsContext.tsx` | Lista conversazioni (cache locale **account attivo**); reload su cambio JID account | Conversations[], `reloadFromDB` |
 | `MessagingContext.tsx` | Campanello real-time: messaggi, receipt (0184), marker displayed (0333) | Message/receipt/marker handlers |
 
 ##### **Services (`services/`)**
@@ -279,7 +286,8 @@ Business logic e integrazione servizi esterni
 | `xmpp.ts` | **CORE XMPP** — Connessione, discovery, `sendReceipts`, `chatMarkers` | Stanza.js |
 | `messages.ts` | Parse MAM → Message (testi, receipt, displayed); no invio diretto | Repositories |
 | `conversations.ts` | Gestione conversazioni e roster | XMPP, IndexedDB |
-| `conversations-db.ts` | Database IndexedDB per conversazioni | idb |
+| `conversations-db.ts` | IndexedDB **per account** (`setAccountContext`, migrazione legacy) | idb |
+| `account-session.ts` | Switch contesto account: DB attivo + `onAccountChanged` (memoria) | conversations-db, mam-sync |
 | `vcard.ts` | Gestione vCard (avatar, profilo) | XMPP XEP-0054 |
 | `push-notifications.ts` | Push Notifications XEP-0357 | Service Worker, XMPP |
 | `auth-storage.ts` | Storage credenziali per auto-login (localStorage) | localStorage API |
@@ -394,19 +402,22 @@ Non aggiornare queste versioni senza testing completo.
   - Offline caching
   - Push notifications handling
 
-### Flow di Inizializzazione (Sync Boundary + Virtual UI)
+### Flow di Inizializzazione (Sync Boundary + Virtual UI + contesto account)
 
 ```
 index.html
   → main.tsx (React.render)
-    → AppInitializer
+    → ConnectionProvider (setAccountContext da credenziali salvate)
+    → AppInitializer (dopo isConnected)
         1. Salva boundary T (momento corrente)
         2. Attiva campanello listener (da T in poi → virtual UI + MAM)
-        3. Sync MAM solo passato (end = T)
+        3. Sync MAM solo passato (end = T) sul DB dell'account attivo
       → App.tsx (Contexts + Router)
         → ConversationsPage | ChatPage | ProfilePage
           └─→ campanello continua (eventi da T → overlay → mam-sync)
 ```
+
+**Cambio account**: `switchAccountContext(jid)` → apre altro IndexedDB → context React ricaricano → sync su token di quell'account.
 
 **Handoff esplicito**: sync copia il passato (MAM fino a T + 5s overlap); campanello gestisce il futuro (virtual UI → `scheduleConversationMamSync`). De-duplicazione per `messageId` (origin-id).
 
@@ -439,14 +450,20 @@ index.html
 
 ### 2. **IndexedDB (Local)**
 
-**Database**: `alfred-xmpp-db`
-**Stores**:
-- `conversations` - Lista conversazioni
-- `messages` - Tutti i messaggi (con Observer pattern per real-time)
-- `vcards` - Avatar e profili contatti
-- `metadata` - **Marker sync** (lastRSMToken, isInitialSyncComplete)
+**Database per account**: `conversations-db-{jid_normalizzato}` (es. `conversations-db-testardo_conversations_im`)  
+**Legacy (migrazione)**: `conversations-db` — DB condiviso pre-v2.2; copiato al primo login account se dedicato vuoto  
+**Versione schema**: 4 (gestita da `idb` in `upgradeConversationsDB`)
 
-**Gestione**: Tramite `repositories/` layer (Observer pattern su MessageRepository)
+**Stores** (identici in ogni DB account):
+- `conversations` — Lista conversazioni
+- `messages` — Messaggi (Observer pattern; scritto solo da MAM)
+- `vcards` — Avatar e profili contatti
+- `metadata` — Marker sync (chiave `sync`: RSM token, conversationTokens, listenerCoveredUntil)
+- `outbox` — Coda messaggi in uscita
+
+**Contesto attivo**: `setAccountContext(jid)` in `conversations-db.ts`; orchestrato da `account-session.ts` / `ConnectionContext.tsx`  
+**Gestione dati**: `repositories/` (tutte le query usano il DB dell'account corrente via `getDB()`)
+
 
 ### 3. **Service Worker**
 
@@ -545,43 +562,58 @@ npm run test:browser:setup  # Install Playwright browsers
 
 ## 💾 Database e Storage
 
+### Isolamento per account (v2.2)
+
+```
+Login account A  →  conversations-db-A  (storico A)
+Logout           →  memoria React reset, DB A resta su disco
+Login account B  →  conversations-db-B  (storico B, indipendente)
+```
+
+- `getDB()` richiede `currentAccountJid` impostato; errore se nessun account attivo
+- Logout **non** cancella IndexedDB (`clearDatabase()` solo da Debug UI, per account corrente)
+- Documentazione fix: `docs/fixes/account-storage-isolation.md`
+
 ### IndexedDB Structure
 
-**Database Name**: `alfred-xmpp-db`  
-**Version**: Gestita da `idb` (auto-upgrade)
+**Database Name**: `conversations-db-{jid_normalizzato}` per account  
+**Legacy**: `conversations-db` (singolo DB condiviso, solo migrazione)  
+**Version**: 4 (`upgradeConversationsDB` in `conversations-db.ts`)
 
 #### Object Stores
 
 ##### 1. **conversations**
 ```typescript
 {
-  id: string              // JID della conversazione
-  jid: string             // JID XMPP completo
-  name?: string           // Nome dal roster o vCard
-  lastMessage?: string    // Preview ultimo messaggio
-  lastMessageTime?: number // Timestamp ultimo messaggio
-  unreadCount?: number    // Conteggio messaggi non letti
-  avatar?: string         // Avatar URL o base64
-  presence?: string       // Stato presenza (available, away, etc.)
+  jid: BareJID              // JID bare del contatto (primary key)
+  displayName?: string
+  avatarData?: string       // Base64 image
+  avatarType?: string       // MIME type
+  lastMessage: {
+    body: string
+    timestamp: Date
+    from: 'me' | 'them'
+    messageId: string
+  }
+  unreadCount: number
+  updatedAt: Date
 }
 ```
-**Indexes**: `jid` (unique)
+**Indexes**: `by-updatedAt`
 
 ##### 2. **messages**
 ```typescript
 {
-  messageId: string       // ID dal server o generato locale
-  conversationJid: string // JID bare del contatto (FK)
-  body: string            // Testo messaggio (vuoto per marker)
-  timestamp: Date         // Timestamp messaggio
-  from: 'me' | 'them'     // Direzione
+  messageId: string
+  conversationJid: BareJID
+  body: string
+  timestamp: Date
+  from: 'me' | 'them'
   status: 'pending' | 'sent' | 'delivered' | 'failed'
-  tempId?: string         // ID temporaneo pre-conferma
-  // Nota: status 'delivered' è legacy/non usato; livello 2 spunta = markerType 'receipt'
-  
-  // XEP-0184 + XEP-0333 acknowledgements
+  tempId?: string
+  mamArchiveId?: string
   markerType?: 'receipt' | 'displayed'
-  markerFor?: string      // origin-id del messaggio referenziato
+  markerFor?: string        // origin-id messaggio target
 }
 ```
 **Note strategia**:
@@ -590,37 +622,83 @@ npm run test:browser:setup  # Install Playwright browsers
 - Marker salvati come messaggi separati, applicati visivamente nel rendering
 
 **Indexes**: 
-- `conversationJid` (non-unique) - Per query per conversazione
-- `timestamp` (non-unique) - Per sorting temporale
-- `conversation-timestamp` (compound) - Query efficienti
-- `tempId` (non-unique) - Lookup messaggi temporanei
+- `by-conversationJid`
+- `by-timestamp`
+- `by-conversation-timestamp` (compound `[conversationJid, timestamp]`)
+- `by-tempId`
 
 ##### 3. **vcards**
 ```typescript
 {
-  jid: string             // JID utente (primary key)
-  fullName?: string       // Nome completo
-  nickname?: string       // Nickname
-  email?: string          // Email
-  photoType?: string      // MIME type avatar (es. image/jpeg)
-  photoData?: string      // Base64 encoded photo
-  lastUpdated: number     // Timestamp ultimo aggiornamento
+  jid: BareJID
+  fullName?: string
+  nickname?: string
+  photoData?: string
+  photoType?: string
+  email?: string
+  description?: string
+  lastUpdated: Date
 }
 ```
-**Indexes**: `jid` (unique)
+**Indexes**: `by-lastUpdated`
 
 ##### 4. **metadata**
+Record singolo con chiave `'sync'`:
 ```typescript
 {
-  key: string             // Chiave metadato
-  value: any              // Valore (JSON serializzabile)
+  lastSync: Date
+  lastRSMToken?: string
+  conversationTokens?: Record<string, string>
+  listenerCoveredUntil?: Record<string, string>
+  isInitialSyncComplete?: boolean
+  initialSyncCompletedAt?: Date
 }
 ```
-**Keys utilizzate** (Architettura "Sync-Once + Listen"):
-- `lastSync` - Timestamp ultima sync
-- `lastRSMToken` - Token RSM (XEP-0059) per sync incrementale
-- `isInitialSyncComplete` - Flag se sync iniziale completata
-- `initialSyncCompletedAt` - Timestamp completamento sync iniziale
+
+##### 5. **outbox**
+```typescript
+{
+  tempId: string
+  conversationJid: BareJID
+  body: string
+  timestamp: Date
+  status: 'queued' | 'sending' | 'failed'
+  stanzaId?: string
+  lastError?: string
+}
+```
+**Indexes**: `by-conversationJid`, `by-status`
+
+### IndexedDB Structure (deprecato — riferimento storico)
+
+> Il nome `alfred-xmpp-db` e gli schema sotto non riflettono più il codice. Sostituiti da `conversations-db-{account}` e interfacce in `conversations-db.ts` (vedi sopra).
+
+<details>
+<summary>Schema legacy documentato (pre-v2.2)</summary>
+
+**Database Name**: `alfred-xmpp-db`  
+
+##### conversations (legacy)
+```typescript
+{
+  id: string
+  jid: string
+  name?: string
+  lastMessage?: string
+  lastMessageTime?: number
+  unreadCount?: number
+  avatar?: string
+  presence?: string
+}
+```
+
+##### metadata (legacy key/value generico)
+```typescript
+{ key: string; value: any }
+```
+
+</details>
+
 
 ### LocalStorage
 
@@ -639,13 +717,13 @@ npm run test:browser:setup  # Install Playwright browsers
 Tutti gli accessi al database avvengono tramite Repository:
 
 ```typescript
-// Esempio: ConversationRepository
+// Esempio: ConversationRepository (usa getDB() → DB account attivo)
 class ConversationRepository {
   async getAll(): Promise<Conversation[]>
-  async getById(jid: string): Promise<Conversation | undefined>
-  async save(conversation: Conversation): Promise<void>
+  async getByJid(jid: string): Promise<Conversation | null>
+  async saveAll(conversations: Conversation[]): Promise<void>
+  async update(jid: string, updates: Partial<Conversation>): Promise<void>
   async delete(jid: string): Promise<void>
-  async search(query: string): Promise<Conversation[]>
 }
 ```
 
@@ -679,7 +757,8 @@ class ConversationRepository {
 - ✅ **vCard** (avatar, profilo utente)
 - ✅ **MAM (Message Archive Management)** per storico messaggi (solo all'avvio)
 - ✅ **Paginazione messaggi** (load more da cache)
-- ✅ **Cache-first loading** (IndexedDB)
+- ✅ **Cache-first loading** (IndexedDB per account)
+- ✅ **Isolamento storage multi-account** (un DB IndexedDB per JID; storico conservato al logout)
 - ✅ **Offline support** (Service Worker)
 - ✅ **Push Notifications** (XEP-0357) con abilitazione automatica
 - ✅ **Delivery Receipts (XEP-0184)** + **Chat Markers (XEP-0333)** — Spunte WhatsApp 3 livelli
@@ -712,6 +791,7 @@ Documentati in `docs/fixes/known-issues.md`:
 2. **Password Storage**: Plain text in localStorage (encryption planned)
 3. ~~**MAM Performance**: Sync iniziale può essere lenta con molti messaggi~~ ✅ RISOLTO v3.0 (sync incremental)
 4. **Profile Photo**: Alcuni server XMPP non supportano vCard photo
+5. ~~**Conversazioni account precedente visibili dopo cambio account**~~ ✅ RISOLTO v2.2 (IndexedDB per account — vedi `docs/fixes/account-storage-isolation.md`)
 
 ### 🔍 Testing Status
 
@@ -793,9 +873,18 @@ Documentati in `docs/fixes/known-issues.md`:
 
 ## 🔄 Ultima Revisione
 
-**Data**: 2026-06-16  
-**Branch**: `cursor/fix-duplicate-messages-efc7`  
-**Versione**: Architettura v4.0 Virtual UI + MAM-only DB + Spunte WhatsApp 3 livelli
+**Data**: 2026-06-17  
+**Versione**: 2.2.0 — Isolamento IndexedDB per account + architettura v4.0 Virtual UI
+
+**Modifiche Recenti** (v2.2 - 17 giugno 2026):
+- ✅ **Isolamento storage per account XMPP**:
+  - Un IndexedDB per JID: `conversations-db-{account}`
+  - `account-session.ts`, `switchAccountContext()`, `onAccountChanged()`
+  - Logout: reset memoria React, **nessun wipe** dello storico locale
+  - Migrazione automatica da `conversations-db` legacy
+  - Fix: conversazioni di un account non più visibili nell'altro
+  - Doc: `docs/fixes/account-storage-isolation.md`
+- ✅ **Cursor rules**: `.cursor/rules/main.mdc` → obbligo lettura `.cursor-rules.md`
 
 **Modifiche Recenti** (v4.0 - 16 giugno 2026):
 - ✅ **Spunte WhatsApp 3 livelli** (XEP-0184 + XEP-0333):

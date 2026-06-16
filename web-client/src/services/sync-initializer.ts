@@ -4,9 +4,13 @@ import { getVCardsForJids } from './vcard'
 import type { SyncOptions } from './sync-types'
 import { getMamSyncEnd } from './sync-boundary'
 import { getListenerWatermark } from './listener-watermark'
+import { clearDatabase } from './conversations-db'
+import { normalizeJID } from '../utils/jid'
+import { STORAGE_KEYS } from '../config/constants'
+import type { SyncMetadata } from './repositories/MetadataRepository'
 
 // Import singleton instances from repositories
-import { conversationRepository, metadataRepository } from './repositories'
+import { conversationRepository, metadataRepository, messageRepository } from './repositories'
 
 interface SyncProgress {
   phase: 'check' | 'full' | 'incremental' | 'vcard' | 'complete'
@@ -29,6 +33,69 @@ async function isDatabaseEmpty(): Promise<boolean> {
   return conversations.length === 0
 }
 
+function getClientOwnerJid(client: Agent): string {
+  if (!client.jid) {
+    throw new Error('Client XMPP senza JID')
+  }
+  return normalizeJID(client.jid)
+}
+
+function withOwnerJid(
+  metadata: Partial<SyncMetadata> | null,
+  client: Agent
+): SyncMetadata {
+  return {
+    ...metadata,
+    lastSync: metadata?.lastSync ?? new Date(),
+    ownerJid: getClientOwnerJid(client),
+  } as SyncMetadata
+}
+
+/**
+ * Se il DB locale non appartiene all'account connesso, lo svuota prima della sync.
+ * Ripara anche copie duplicate del DB legacy su account sbagliati.
+ * @returns true se serve una full sync (DB vuoto, reset, o primo allineamento owner)
+ */
+async function ensureAccountDatabaseIntegrity(client: Agent): Promise<boolean> {
+  const currentOwner = getClientOwnerJid(client)
+  const metadata = await metadataRepo.get()
+  const legacyMigratedTo = localStorage.getItem(STORAGE_KEYS.LEGACY_DB_MIGRATED_TO)
+
+  let needsReset = false
+
+  if (metadata?.ownerJid && metadata.ownerJid !== currentOwner) {
+    console.warn(
+      `⚠️ DB locale di ${metadata.ownerJid}, accesso come ${currentOwner} — reset`
+    )
+    needsReset = true
+  } else if (
+    !metadata?.ownerJid &&
+    legacyMigratedTo &&
+    legacyMigratedTo !== currentOwner
+  ) {
+    const conversations = await conversationRepo.getAll()
+    if (conversations.length > 0) {
+      console.warn(
+        `⚠️ DB copiato dal legacy di ${legacyMigratedTo}, non di ${currentOwner} — reset`
+      )
+      needsReset = true
+    }
+  }
+
+  if (needsReset) {
+    await clearDatabase()
+    return true
+  }
+
+  if (!metadata?.ownerJid) {
+    console.log(`🔄 Primo allineamento owner per ${currentOwner} — full sync`)
+    await metadataRepo.save(withOwnerJid(metadata, client))
+    return true
+  }
+
+  return false
+}
+
 /**
  * Esegue full sync: scarica tutto lo storico
  */
@@ -49,8 +116,22 @@ async function performFullSync(
     message: `Trovate ${conversations.length} conversazioni...`,
   })
 
-  // 2. Salva conversazioni
+  // 2. Salva conversazioni e rimuovi quelle assenti sul server (dati legacy spurii)
   await conversationRepo.saveAll(conversations)
+
+  const serverJids = new Set(conversations.map((c) => c.jid))
+  const localConversations = await conversationRepo.getAll()
+  const staleJids = localConversations
+    .filter((c) => !serverJids.has(c.jid))
+    .map((c) => c.jid)
+
+  if (staleJids.length > 0) {
+    console.log(`🧹 Rimuovo ${staleJids.length} conversazioni non presenti sul server`)
+    await conversationRepo.deleteMany(staleJids)
+    for (const jid of staleJids) {
+      await messageRepository.clearForConversation(jid)
+    }
+  }
 
   // 3. Per ogni conversazione, scarica i messaggi e ottieni il token individuale
   onProgress({ phase: 'full', message: 'Scaricamento messaggi...' })
@@ -113,7 +194,7 @@ async function performFullSync(
 
   // 6. Salva metadata con marker globale E token individuali
   await metadataRepo.save({
-    lastSync: new Date(),
+    ...withOwnerJid(null, client),
     lastRSMToken: lastToken,
     conversationTokens, // Salva i token individuali per ogni conversazione
     isInitialSyncComplete: true,
@@ -203,11 +284,11 @@ async function performIncrementalSync(
         if (result.lastToken) {
           const currentMetadata = await metadataRepo.get()
           await metadataRepo.save({
-            ...currentMetadata!,
+            ...withOwnerJid(currentMetadata, client),
             conversationTokens: {
               ...currentMetadata?.conversationTokens,
-              [conv.jid]: result.lastToken
-            }
+              [conv.jid]: result.lastToken,
+            },
           })
         }
       }
@@ -218,7 +299,8 @@ async function performIncrementalSync(
   }
 
   // 3. Aggiorna metadata globale
-  await metadataRepo.updateLastSync()
+  const currentMetadata = await metadataRepo.get()
+  await metadataRepo.save(withOwnerJid({ ...currentMetadata, lastSync: new Date() }, client))
 
   console.log(`✅ Incremental sync completata: ${totalNewMessages} nuovi messaggi`)
 }
@@ -235,8 +317,10 @@ export async function performInitialSync(
   try {
     onProgress({ phase: 'check', message: 'Controllo stato database...' })
 
+    const forceFullSync = await ensureAccountDatabaseIntegrity(client)
+
     // 1. Controlla se DB è vuoto
-    const isEmpty = await isDatabaseEmpty()
+    const isEmpty = forceFullSync || (await isDatabaseEmpty())
 
     if (isEmpty) {
       // DB vuoto: full sync

@@ -4,10 +4,11 @@ Indice documenti tecnici per navigazione rapida. Questo documento è per AI, non
 
 ## Documenti Root
 
+- **[.cursor/rules/main.mdc](../.cursor/rules/main.mdc)** - Vincolo Cursor: obbligo lettura `.cursor-rules.md` + puntatori documentazione
 - **[PROJECT_MAP.md](../PROJECT_MAP.md)** - **LEGGERE ALL'INIZIO DI OGNI SESSIONE** (regola fondamentale)
 - **[README.md](../README.md)** - Stato progetto e riferimenti
 - **[CHANGELOG.md](../CHANGELOG.md)** - Storia modifiche tecniche
-- **[.cursor-rules.md](../.cursor-rules.md)** - Regole sviluppo AI
+- **[.cursor-rules.md](../.cursor-rules.md)** - Regole sviluppo AI (fonte autoritativa, non modificare)
 - **[TEST_CREDENTIALS.md](../TEST_CREDENTIALS.md)** - Credenziali test
 - **[WISHLIST.md](./WISHLIST.md)** - Funzionalità future desiderate con riferimenti XEP
 
@@ -25,8 +26,8 @@ Indice documenti tecnici per navigazione rapida. Questo documento è per AI, non
 ## Implementazione
 
 - [implementation/README.md](./implementation/README.md) - Overview implementazioni
-- [implementation/login-system.md](./implementation/login-system.md) - Sistema login popup
-- [implementation/sync-system-complete.md](./implementation/sync-system-complete.md) - **Virtual UI + MAM-only DB** (v4.0 - 16 giu 2026)
+- [implementation/login-system.md](./implementation/login-system.md) - Sistema login popup (⚠️ storico — vedi nota in file)
+- [implementation/sync-system-complete.md](./implementation/sync-system-complete.md) - **Virtual UI + MAM-only DB + isolamento account** (v4.0 / v2.2)
 - [implementation/scrollable-containers.md](./implementation/scrollable-containers.md) - Utility class scroll
 - [implementation/scrollable-containers-implementation.md](./implementation/scrollable-containers-implementation.md) - Dettagli tecnici
 - [implementation/delivery-receipts-xep-0184.md](./implementation/delivery-receipts-xep-0184.md) - **XEP-0184** livello 2 (✓✓ grigie consegnato)
@@ -35,6 +36,8 @@ Indice documenti tecnici per navigazione rapida. Questo documento è per AI, non
 ## Fixes
 
 - [fixes/README.md](./fixes/README.md) - Overview fix
+- [fixes/account-storage-isolation.md](./fixes/account-storage-isolation.md) - **Isolamento IndexedDB per account** (17 giu 2026)
+- [fixes/auto-login-fix-2025-12-17.md](./fixes/auto-login-fix-2025-12-17.md) - Fix auto-login ConnectionContext
 - [fixes/profile-save-error-fix.md](./fixes/profile-save-error-fix.md) - Fix errori salvataggio profilo
 - [fixes/profile-scroll-conflict-fix.md](./fixes/profile-scroll-conflict-fix.md) - Fix conflitti scroll
 - [fixes/profile-scroll-fix.md](./fixes/profile-scroll-fix.md) - Fix scroll profilo
@@ -50,6 +53,7 @@ Indice documenti tecnici per navigazione rapida. Questo documento è per AI, non
 
 - [decisions/README.md](./decisions/README.md) - Overview decisioni
 - [decisions/no-message-deletion.md](./decisions/no-message-deletion.md) - Decisione no message deletion
+- [decisions/no-modify-source-data.md](./decisions/no-modify-source-data.md) - Regola: non modificare la fonte dati
 
 ## Archivio
 
@@ -66,5 +70,5 @@ Indice documenti tecnici per navigazione rapida. Questo documento è per AI, non
 
 ---
 
-**Ultimo aggiornamento**: 2026-06-16  
-**Architettura corrente**: Virtual UI + MAM-only DB (v4.0) + Spunte WhatsApp (XEP-0184 + XEP-0333)
+**Ultimo aggiornamento**: 2026-06-17  
+**Architettura corrente**: Virtual UI + MAM-only DB (v4.0) + IndexedDB per account (v2.2) + Spunte WhatsApp (XEP-0184 + XEP-0333)

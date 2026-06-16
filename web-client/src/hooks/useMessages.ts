@@ -11,6 +11,8 @@ import { normalizeJID } from '../utils/jid'
 import type { BareJID } from '../types/jid'
 import { messageRepository } from '../services/repositories'
 import { outboxRepository } from '../services/repositories/OutboxRepository'
+import { onAccountChanged } from '../services/account-session'
+import { getCurrentAccountJid } from '../services/conversations-db'
 import { useVirtualMessages } from '../contexts/VirtualMessagesContext'
 import {
   findDbMatch,
@@ -164,6 +166,20 @@ export function useMessages({
       }
     }
   }, [jid, safeSetMessages, reconcileAfterDbChange])
+
+  useEffect(() => {
+    return onAccountChanged(() => {
+      safeSetMessages([])
+      setHasMoreMessages(true)
+      setSentTempIds(new Set())
+      setFailedTempIds(new Set())
+      setError(null)
+      setIsLoading(false)
+      if (jid && getCurrentAccountJid()) {
+        void loadFromCache()
+      }
+    })
+  }, [jid, safeSetMessages, loadFromCache])
 
   useEffect(() => {
     if (jid) {

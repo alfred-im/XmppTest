@@ -4,6 +4,8 @@ import type { ReactNode } from 'react'
 import type { Agent } from 'stanza'
 import { login as xmppLogin } from '../services/xmpp'
 import { flushOutbox } from '../services/outbox-send'
+import { switchAccountContext } from '../services/account-session'
+import { normalizeJID } from '../utils/jid'
 import { useAuth } from './AuthContext'
 import { loadCredentials } from '../services/auth-storage'
 
@@ -22,6 +24,16 @@ const ConnectionContext = createContext<ConnectionContextType | undefined>(undef
 
 export function ConnectionProvider({ children }: { children: ReactNode }) {
   const { login: saveAuth, logout: clearAuth } = useAuth()
+  const didInitAccountContext = useRef(false)
+
+  if (!didInitAccountContext.current) {
+    const savedCredentials = loadCredentials()
+    if (savedCredentials) {
+      switchAccountContext(normalizeJID(savedCredentials.jid))
+    }
+    didInitAccountContext.current = true
+  }
+
   const [client, setClient] = useState<Agent | null>(null)
   const [isConnected, setIsConnected] = useState(false)
   const [isConnecting, setIsConnecting] = useState(false)
@@ -79,6 +91,9 @@ export function ConnectionProvider({ children }: { children: ReactNode }) {
   }, [client, isConnected])
 
   const connect = useCallback(async (userJid: string, password: string): Promise<{ success: boolean; error?: string }> => {
+    const normalizedJid = normalizeJID(userJid)
+    switchAccountContext(normalizedJid)
+
     setIsConnecting(true)
     setError(null)
 
@@ -90,6 +105,11 @@ export function ConnectionProvider({ children }: { children: ReactNode }) {
       }
 
       const xmppClient = result.client
+      const connectedJid = normalizeJID(result.jid || userJid)
+      if (connectedJid !== normalizedJid) {
+        switchAccountContext(connectedJid)
+      }
+
       setClient(xmppClient)
       setIsConnected(true)
       setJid(result.jid || userJid)
@@ -110,12 +130,15 @@ export function ConnectionProvider({ children }: { children: ReactNode }) {
       const errorMessage = err instanceof Error ? err.message : 'Errore di connessione'
       setError(errorMessage)
       clearAuth()
+      switchAccountContext(null)
       setIsConnecting(false)
       return { success: false, error: errorMessage }
     }
   }, [saveAuth, clearAuth])
 
   const disconnect = useCallback(() => {
+    switchAccountContext(null)
+
     if (client) {
       client.disconnect()
     }

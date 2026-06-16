@@ -21,13 +21,13 @@ UI Layer (Pages, Components)
 Context Layer (ConnectionContext, AuthContext, VirtualMessagesContext,
                ConversationsContext, MessagingContext)
     ↓
-Services Layer (xmpp.ts, outbox-send.ts, mam-sync.ts, messages.ts,
-                sync-initializer.ts, conversations.ts, vcard.ts)
+Services Layer (xmpp.ts, outbox-send.ts, mam-sync.ts, account-session.ts,
+                messages.ts, sync-initializer.ts, conversations.ts, vcard.ts)
     ↓
 Repository Layer (MessageRepository, OutboxRepository, ConversationRepository,
                   VCardRepository, MetadataRepository)
     ↓
-Data Layer (IndexedDB + XMPP Server)
+Data Layer (IndexedDB per account + XMPP Server)
 ```
 
 ## Principi Chiave
@@ -39,8 +39,10 @@ Data Layer (IndexedDB + XMPP Server)
 3. **Spunte WhatsApp 3 livelli**: inviato (XMPP) + XEP-0184 + XEP-0333
 4. **origin-id canonico** per marker e dedup (XEP-0359)
 5. **Cache-First / Offline-First**
+6. **Un account = un IndexedDB** (`conversations-db-{jid}`); storico conservato al logout (v2.2)
 
-Vedi [message-states.md](./message-states.md) per policy completa.
+Vedi [message-states.md](./message-states.md) per policy completa.  
+Vedi [../fixes/account-storage-isolation.md](../fixes/account-storage-isolation.md) per isolamento account.
 
 ### Evoluzione architetturale
 
@@ -51,3 +53,4 @@ Vedi [message-states.md](./message-states.md) per policy completa.
 | Persistenza messaggi real-time | Sync completa | Save diretto listener | Campanello → MAM |
 | Sync dopo evento campanello | Sempre (full) | Nessuna | MAM incrementale per conversazione |
 | Spunte | — | XEP-0333 (2 livelli) | XEP-0184 + XEP-0333 (3 livelli) |
+| Storage locale | — | DB condiviso | DB per account (v2.2) |

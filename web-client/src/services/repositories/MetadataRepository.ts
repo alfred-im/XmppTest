@@ -1,6 +1,8 @@
 import { getDB } from '../conversations-db'
 
 export interface SyncMetadata {
+  /** JID dell'account proprietario di questo database locale */
+  ownerJid?: string
   lastSync: Date
   lastRSMToken?: string
   conversationTokens?: Record<string, string>

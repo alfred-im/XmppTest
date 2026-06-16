@@ -2,7 +2,7 @@
 
 Principi design e decisioni architetturali design-related. Documento per AI.
 
-**Note**: Informazioni brand e architettura database sono state integrate in `PROJECT_MAP.md` nella sezione Design System e Principi Architetturali.
+**Note**: Brand identity e architettura database (incluso **IndexedDB per account** v2.2) sono in `PROJECT_MAP.md` — sezioni Design System, Database e Storage, Principi Architetturali.
 
 ## Principi CSS (Riferimento Rapido)
 

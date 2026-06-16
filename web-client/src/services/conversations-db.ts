@@ -2,6 +2,8 @@ import { openDB } from 'idb'
 import type { DBSchema, IDBPDatabase } from 'idb'
 import { type BareJID } from '../types/jid'
 import type { OutboxEntry } from '../types/outbox'
+import { normalizeJID } from '../utils/jid'
+import { STORAGE_KEYS } from '../config/constants'
 
 export type { OutboxEntry } from '../types/outbox'
 
@@ -73,6 +75,7 @@ interface ConversationsDB extends DBSchema {
   metadata: {
     key: string
     value: {
+      ownerJid?: string
       lastSync: Date
       lastRSMToken?: string
       conversationTokens?: Record<string, string>
@@ -86,57 +89,230 @@ interface ConversationsDB extends DBSchema {
   }
 }
 
+const LEGACY_DB_NAME = 'conversations-db'
+const ACCOUNT_STORE_NAMES = ['conversations', 'metadata', 'messages', 'vcards', 'outbox'] as const
+
 let dbInstance: IDBPDatabase<ConversationsDB> | null = null
+let dbInstanceAccount: string | null = null
+let currentAccountJid: string | null = null
+
+function upgradeConversationsDB(db: IDBPDatabase<ConversationsDB>, oldVersion: number): void {
+  if (oldVersion < 1) {
+    const conversationStore = db.createObjectStore('conversations', {
+      keyPath: 'jid',
+    })
+    conversationStore.createIndex('by-updatedAt', 'updatedAt')
+    db.createObjectStore('metadata')
+  }
+
+  if (oldVersion < 2) {
+    const messagesStore = db.createObjectStore('messages', {
+      keyPath: 'messageId',
+    })
+    messagesStore.createIndex('by-conversationJid', 'conversationJid')
+    messagesStore.createIndex('by-timestamp', 'timestamp')
+    messagesStore.createIndex('by-conversation-timestamp', ['conversationJid', 'timestamp'])
+    messagesStore.createIndex('by-tempId', 'tempId', { unique: false })
+  }
+
+  if (oldVersion < 3) {
+    const vcardStore = db.createObjectStore('vcards', {
+      keyPath: 'jid',
+    })
+    vcardStore.createIndex('by-lastUpdated', 'lastUpdated')
+  }
+
+  if (oldVersion < 4) {
+    const outboxStore = db.createObjectStore('outbox', {
+      keyPath: 'tempId',
+    })
+    outboxStore.createIndex('by-conversationJid', 'conversationJid')
+    outboxStore.createIndex('by-status', 'status')
+  }
+}
+
+export function getAccountDbName(ownerJid: string): string {
+  const safe = normalizeJID(ownerJid).replace(/[@./]/g, '_')
+  return `${LEGACY_DB_NAME}-${safe}`
+}
+
+export function getCurrentAccountJid(): string | null {
+  return currentAccountJid
+}
+
+/**
+ * Seleziona quale database IndexedDB usare. Ogni account ha il proprio DB.
+ */
+export function setAccountContext(ownerJid: string | null): void {
+  if (ownerJid === currentAccountJid) {
+    return
+  }
+
+  currentAccountJid = ownerJid
+
+  if (dbInstance) {
+    dbInstance.close()
+    dbInstance = null
+    dbInstanceAccount = null
+  }
+}
+
+async function databaseExists(name: string): Promise<boolean> {
+  if (typeof indexedDB.databases === 'function') {
+    const databases = await indexedDB.databases()
+    return databases.some((db) => db.name === name)
+  }
+
+  try {
+    const db = await openDB(name)
+    db.close()
+    return true
+  } catch {
+    return false
+  }
+}
+
+async function copyObjectStore(
+  from: IDBPDatabase<ConversationsDB>,
+  to: IDBPDatabase<ConversationsDB>,
+  storeName: (typeof ACCOUNT_STORE_NAMES)[number]
+): Promise<void> {
+  if (!from.objectStoreNames.contains(storeName)) {
+    return
+  }
+
+  const records = await from.getAll(storeName)
+  if (records.length === 0) {
+    return
+  }
+
+  const tx = to.transaction(storeName, 'readwrite')
+  for (const record of records) {
+    await tx.store.put(record)
+  }
+  await tx.done
+}
+
+async function deleteDatabaseByName(name: string): Promise<void> {
+  await new Promise<void>((resolve, reject) => {
+    const request = indexedDB.deleteDatabase(name)
+    request.onsuccess = () => resolve()
+    request.onerror = () => reject(request.error ?? new Error(`Impossibile eliminare ${name}`))
+    request.onblocked = () => {
+      console.warn(`⚠️ Eliminazione ${name} bloccata — database ancora aperto`)
+      resolve()
+    }
+  })
+}
+
+async function stampOwnerOnMetadata(
+  db: IDBPDatabase<ConversationsDB>,
+  ownerJid: string
+): Promise<void> {
+  const tx = db.transaction('metadata', 'readwrite')
+  const existing = await tx.store.get('sync')
+  await tx.store.put(
+    {
+      ...(existing ?? { lastSync: new Date() }),
+      ownerJid,
+      lastSync:
+        existing?.lastSync instanceof Date
+          ? existing.lastSync
+          : existing?.lastSync
+            ? new Date(existing.lastSync)
+            : new Date(),
+    },
+    'sync'
+  )
+  await tx.done
+}
+
+/**
+ * Migra il vecchio DB condiviso verso il DB dedicato del primo account che accede.
+ * Eseguita una sola volta in assoluto; il legacy viene eliminato dopo la copia.
+ */
+async function migrateLegacyDatabaseIfNeeded(
+  targetDbName: string,
+  ownerJid: string
+): Promise<void> {
+  if (targetDbName === LEGACY_DB_NAME) {
+    return
+  }
+
+  const legacyMigratedTo = localStorage.getItem(STORAGE_KEYS.LEGACY_DB_MIGRATED_TO)
+  if (legacyMigratedTo) {
+    return
+  }
+
+  const targetExists = await databaseExists(targetDbName)
+  if (targetExists) {
+    const existing = await openDB<ConversationsDB>(targetDbName, 4, {
+      upgrade: upgradeConversationsDB,
+    })
+    const conversationCount = await existing.count('conversations')
+    existing.close()
+
+    if (conversationCount > 0) {
+      return
+    }
+  }
+
+  const legacyExists = await databaseExists(LEGACY_DB_NAME)
+  if (!legacyExists) {
+    return
+  }
+
+  const legacy = await openDB<ConversationsDB>(LEGACY_DB_NAME, 4)
+  const legacyConversationCount = await legacy.count('conversations')
+  if (legacyConversationCount === 0) {
+    legacy.close()
+    return
+  }
+
+  console.log(`📦 Migrazione storico da ${LEGACY_DB_NAME} a ${targetDbName} (${ownerJid})...`)
+  const target = await openDB<ConversationsDB>(targetDbName, 4, {
+    upgrade: upgradeConversationsDB,
+  })
+
+  for (const storeName of ACCOUNT_STORE_NAMES) {
+    await copyObjectStore(legacy, target, storeName)
+  }
+
+  await stampOwnerOnMetadata(target, ownerJid)
+  legacy.close()
+  target.close()
+
+  localStorage.setItem(STORAGE_KEYS.LEGACY_DB_MIGRATED_TO, ownerJid)
+  await deleteDatabaseByName(LEGACY_DB_NAME)
+  console.log(`✅ Storico migrato in ${targetDbName}; legacy ${LEGACY_DB_NAME} rimosso`)
+}
+
+async function openAccountDatabase(ownerJid: string): Promise<IDBPDatabase<ConversationsDB>> {
+  const dbName = getAccountDbName(ownerJid)
+  await migrateLegacyDatabaseIfNeeded(dbName, ownerJid)
+
+  return openDB<ConversationsDB>(dbName, 4, {
+    upgrade: upgradeConversationsDB,
+  })
+}
 
 export async function getDB(): Promise<IDBPDatabase<ConversationsDB>> {
-  if (dbInstance) {
+  if (!currentAccountJid) {
+    throw new Error('Nessun account attivo: impossibile aprire il database locale')
+  }
+
+  if (dbInstance && dbInstanceAccount === currentAccountJid) {
     return dbInstance
   }
 
-  dbInstance = await openDB<ConversationsDB>('conversations-db', 4, {
-    upgrade(db, oldVersion) {
-      // Versione 1: Store originali
-      if (oldVersion < 1) {
-        // Store per conversazioni
-        const conversationStore = db.createObjectStore('conversations', {
-          keyPath: 'jid',
-        })
-        conversationStore.createIndex('by-updatedAt', 'updatedAt')
+  if (dbInstance) {
+    dbInstance.close()
+    dbInstance = null
+    dbInstanceAccount = null
+  }
 
-        // Store per metadata
-        db.createObjectStore('metadata')
-      }
-
-      // Versione 2: Aggiungi store messaggi
-      if (oldVersion < 2) {
-        const messagesStore = db.createObjectStore('messages', {
-          keyPath: 'messageId',
-        })
-        messagesStore.createIndex('by-conversationJid', 'conversationJid')
-        messagesStore.createIndex('by-timestamp', 'timestamp')
-        messagesStore.createIndex('by-conversation-timestamp', ['conversationJid', 'timestamp'])
-        messagesStore.createIndex('by-tempId', 'tempId', { unique: false })
-      }
-
-      // Versione 3: Aggiungi store vcard
-      if (oldVersion < 3) {
-        const vcardStore = db.createObjectStore('vcards', {
-          keyPath: 'jid',
-        })
-        vcardStore.createIndex('by-lastUpdated', 'lastUpdated')
-      }
-
-      // Versione 4: Outbox messaggi in uscita (queued / sending / failed)
-      if (oldVersion < 4) {
-        const outboxStore = db.createObjectStore('outbox', {
-          keyPath: 'tempId',
-        })
-        outboxStore.createIndex('by-conversationJid', 'conversationJid')
-        outboxStore.createIndex('by-status', 'status')
-      }
-    },
-  })
-
+  dbInstance = await openAccountDatabase(currentAccountJid)
+  dbInstanceAccount = currentAccountJid
   return dbInstance
 }
 
@@ -270,10 +446,13 @@ export async function removeConversations(jids: string[]): Promise<void> {
 
 export async function clearDatabase(): Promise<void> {
   const db = await getDB()
-  const tx = db.transaction(['conversations', 'metadata', 'messages'], 'readwrite')
-  await tx.objectStore('conversations').clear()
-  await tx.objectStore('metadata').clear()
-  await tx.objectStore('messages').clear()
+  const storeNames = ['conversations', 'metadata', 'messages', 'vcards', 'outbox'] as const
+  const tx = db.transaction(storeNames, 'readwrite')
+
+  for (const storeName of storeNames) {
+    await tx.objectStore(storeName).clear()
+  }
+
   await tx.done
 }
 

@@ -16,7 +16,13 @@ Architecture Decision Records per tracciare decisioni importanti e motivazioni. 
 - Benefici limitati per utenti finali
 - Alternative esistenti (hide conversation)
 
-### 2. MAM Global Strategy
+### 2. No Modify Source Data
+- **[no-modify-source-data.md](./no-modify-source-data.md)**
+- **Data**: Dicembre 2025
+- **Status**: Regola maestra
+- **Summary**: Non modificare/eliminare dati in IndexedDB come scorciatoia; filtrare in lettura/rendering
+
+### 3. MAM Global Strategy
 - **Status**: ✅ Accettata  
 - **Summary**: Usare query MAM globale invece di N query per contatto
 
@@ -28,7 +34,7 @@ Architecture Decision Records per tracciare decisioni importanti e motivazioni. 
 
 Dettagli: [../architecture/mam-global-strategy-explained.md](../architecture/mam-global-strategy-explained.md)
 
-### 3. HashRouter vs BrowserRouter
+### 4. HashRouter vs BrowserRouter
 - **Status**: ✅ Accettata
 - **Summary**: Usare HashRouter per GitHub Pages compatibility
 
@@ -38,10 +44,10 @@ Dettagli: [../architecture/mam-global-strategy-explained.md](../architecture/mam
 - HashRouter funziona out-of-the-box
 - Nessun 404 su refresh
 
-Dettagli: [../guides/routing-system.md](../guides/routing-system.md)
+Dettagli: `PROJECT_MAP.md` (HashRouter in App.tsx), `README.md`
 
-### 4. IndexedDB per Cache
-- **Status**: ✅ Accettata
+### 5. IndexedDB per Cache
+- **Status**: ✅ Accettata  
 - **Summary**: Usare IndexedDB invece di localStorage
 
 **Perché**:
@@ -50,7 +56,20 @@ Dettagli: [../guides/routing-system.md](../guides/routing-system.md)
 - Tipi: Supporta binary (avatar) direttamente
 - Scalabilità: Gestisce migliaia di messaggi
 
-### 5. Stanza.js vs Alternative
+### 6. IndexedDB per account (v2.2)
+- **Status**: ✅ Accettata (17 giugno 2026)
+- **Summary**: Un database IndexedDB per JID utente (`conversations-db-{account}`)
+
+**Perché**:
+- Cambio account senza mescolare conversazioni/messaggi/token sync
+- Storico locale conservato al logout (nessun wipe)
+- Migrazione automatica dal DB legacy condiviso `conversations-db`
+- Alternativa scartata: wipe al logout (inaccettabile con storico lungo)
+- Alternativa futura possibile: `ownerJid` nello schema su DB unico
+
+Dettagli: [../fixes/account-storage-isolation.md](../fixes/account-storage-isolation.md), `PROJECT_MAP.md` sezione Database
+
+### 7. Stanza.js vs Alternative
 - **Status**: ✅ Accettata
 - **Summary**: Usare Stanza.js per XMPP
 

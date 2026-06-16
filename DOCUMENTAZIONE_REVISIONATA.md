@@ -39,6 +39,14 @@ Mantenuto: Analisi tecniche, ADR, Pattern codebase, Storia problemi/soluzioni, R
 - 16 file totali cambiati
 - -2608 righe, +477 righe → Riduzione netta 2131 righe (-82%)
 
+## Aggiornamento 2026-06-17
+
+Allineamento documentazione a **isolamento IndexedDB per account (v2.2)**:
+- `PROJECT_MAP.md`, `README.md`, `CHANGELOG.md`, `docs/INDICE.md`
+- `docs/fixes/account-storage-isolation.md` (nuovo)
+- `docs/implementation/sync-system-complete.md`, `docs/decisions/README.md`
+- Schema legacy `alfred-xmpp-db` conservato in PROJECT_MAP come riferimento storico (sezione collapsible)
+
 ## File Mantenuti Invariati
 
 Analisi tecniche dettagliate non modificate:

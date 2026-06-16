@@ -11,6 +11,15 @@ const MAX_RETRIES = 3
 const timers = new Map<string, ReturnType<typeof setTimeout>>()
 const inflight = new Set<string>()
 
+/** Azzera timer e richieste MAM pendenti (es. logout / cambio account). */
+export function resetMamSyncState(): void {
+  for (const timer of timers.values()) {
+    clearTimeout(timer)
+  }
+  timers.clear()
+  inflight.clear()
+}
+
 function mamStartReference(): Date {
   const now = Date.now()
   return new Date(Math.floor(now / 1000) * 1000 - MAM_LOOKBACK_MS)

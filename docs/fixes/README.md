@@ -39,6 +39,13 @@ Analisi fix applicati e ottimizzazioni per tracciare problemi risolti e soluzion
 - **[known-issues.md](./known-issues.md)**
 - Lista problemi noti con workaround/soluzioni
 
+### Account Storage Isolation (v2.2)
+- **[account-storage-isolation.md](./account-storage-isolation.md)**
+- **Data**: 17 Giugno 2026
+- **Problema**: Conversazioni di un account visibili dopo login con altro JID (DB condiviso + memoria non resettata)
+- **Soluzione**: IndexedDB per account, `account-session.ts`, migrazione legacy, logout senza wipe
+- **Status**: ✅ Risolto
+
 ## Bug Risolti Storici
 
 ### Novembre 2025
@@ -62,6 +69,10 @@ Analisi fix applicati e ottimizzazioni per tracciare problemi risolti e soluzion
 5. **Redirect Loop dopo Logout**
    - Status: ✅ Risolto con flag logoutIntentional
    - Doc: [../implementation/login-system.md](../implementation/login-system.md)
+
+6. **Conversazioni account precedente dopo cambio account**
+   - Status: ✅ Risolto v2.2 (IndexedDB per account)
+   - Doc: [account-storage-isolation.md](./account-storage-isolation.md)
 
 ## Ottimizzazioni Applicate
 

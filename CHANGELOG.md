@@ -7,6 +7,23 @@ Modifiche rilevanti al progetto per tracciare evoluzione tecnica e decisioni imp
 ## [Unreleased]
 
 ### Aggiunto
+- **Isolamento storage per account XMPP** (v2.2):
+  - Un IndexedDB per JID: `conversations-db-{account}`
+  - `account-session.ts`: `switchAccountContext()`, `onAccountChanged()`
+  - Migrazione automatica da DB legacy condiviso `conversations-db`
+  - Storico locale **conservato al logout** (nessun wipe)
+- **Cursor project rules**: `.cursor/rules/main.mdc` — vincolo lettura `.cursor-rules.md`
+- **Documentazione**: `docs/fixes/account-storage-isolation.md`; aggiornati PROJECT_MAP, INDICE, README, sync-system-complete
+
+### Corretti
+- **Cambio account**: conversazioni e messaggi del precedente account non più visibili dopo logout/login con altro JID
+- **ConversationsContext**: ricarica da DB dell'account attivo (`accountJid` da ConnectionContext)
+- **Memoria React**: reset virtual messages e cache UI su `onAccountChanged` senza cancellare IndexedDB
+
+### Rimosso (approccio scartato)
+- ~~Wipe IndexedDB al logout~~ — incompatibile con storico lungo; sostituito da DB per account
+
+### Aggiunto (batch v4.0 — giugno 2026)
 - **Spunte WhatsApp 3 livelli**: ✓ inviato, ✓✓ grigie (XEP-0184), ✓✓ blu (XEP-0333)
 - **Virtual UI + MAM-only DB**: listener campanello, outbox, origin-id canonico
 - **XEP-0184**: `receipt request` in invio, listener `receipt`, overlay `deliveredUi`
