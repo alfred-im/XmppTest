@@ -1,18 +1,4 @@
 {
-  "apps": [
-    {
-      "dir": "bridge-xmpp",
-      "app": "alfred-im-bridge-xmpp",
-      "config": "fly.toml",
-      "dockerfile": "Dockerfile.bridge-xmpp",
-      "region": "fra"
-    },
-    {
-      "dir": "bridge-matrix",
-      "app": "alfred-im-bridge-matrix",
-      "config": "fly.bridge-matrix.toml",
-      "dockerfile": "Dockerfile.bridge-matrix",
-      "region": "fra"
-    }
-  ]
+  "app": "alfred-im-bridges",
+  "region": "fra"
 }

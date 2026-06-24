@@ -638,7 +638,7 @@ Le seguenti domande erano basate sull'assunzione "client XMPP classico" e sono *
 | D-040 | 2026-06-24 | Prima iter. 10: **testare** deploy Supabase + Fly.io | 🟡 GH Pages ok; Supabase/Fly in attesa |
 | D-041 | 2026-06-24 | Test Supabase via **MCP** o dashboard (CLI opzionale) | ✅ |
 | D-042 | 2026-06-24 | **Nessuna CLI obbligatoria** — config in repo, runtime in cloud | ✅ |
-| D-043 | 2026-06-24 | Fly deploy: **config + Dockerfile in root**, Fly legge repo (no GitHub Actions token) | ✅ |
+| D-044 | 2026-06-24 | Fly: **un’app** `alfred-im-bridges`, due demoni nello stesso container | ✅ |
 
 ---
 
@@ -683,29 +683,21 @@ La CLI (e MCP per Supabase) sono **strumenti opzionali** per sviluppo e smoke te
 
 ---
 
-### Fly.io — Fly legge repo dalla root (monorepo)
+### Fly.io — un’app, due demoni bridge
 
 | File (root) | Ruolo |
 |-------------|-------|
-| `fly.bridge-xmpp.toml` / `fly.bridge-matrix.toml` | Config Fly per ciascuna app |
-| `Dockerfile.bridge-xmpp` / `Dockerfile.bridge-matrix` | Build da root, sorgente in `bridge-*/` |
-| `deploy/fly-bridges.json` | Indice app → config → dockerfile |
-| `scripts/fly-deploy-all.sh` | Helper deploy da root (opzionale agente) |
+| `fly.toml` | App unica: `alfred-im-bridges` |
+| `Dockerfile` | Immagine con XMPP + Matrix |
+| `scripts/start-bridges.sh` | Avvia entrambi i demoni |
 
-**Modello**: Fly collegato a GitHub legge la **root** e cerca i nomi **`fly.toml`** e **`Dockerfile`** (esatti). I file `fly.bridge-*.toml` servono per la seconda app (Matrix); il Launch del pannello passa `--copy-config` senza `--config`, quindi serve `fly.toml` in root.
-
-| File root (Launch pannello) | Ruolo |
-|-----------------------------|-------|
-| `fly.toml` | Config app XMPP — **nome obbligatorio** per `--copy-config` |
-| `Dockerfile` | Build XMPP — **nome obbligatorio** per scanner Fly |
-| `fly.bridge-matrix.toml` + `Dockerfile.bridge-matrix` | Seconda app Matrix (deploy con config esplicita) |
+**Modello**: un’installazione Alfred = **un’app Fly** con **due demoni** (XMPP :8080, Matrix :8081). Fly Launch legge `fly.toml` + `Dockerfile` in root.
 
 | Check | Esito |
 |-------|-------|
-| `fly.toml` / `Dockerfile` | ✅ Nomi standard Fly Launch (`--copy-config`) |
-| Due container separati | ✅ un’app Fly per bridge |
-| GitHub Actions custom Fly | ❌ rimosso — deploy via Fly |
-| App deployate su Fly | 🟡 dopo collegamento repo + deploy Fly |
+| Un’app, due demoni | ✅ |
+| Launch pannello Fly | ✅ `fly.toml` + `Dockerfile` in root |
+| Deploy completato | 🟡 dopo Launch Fly |
 
 ---
 

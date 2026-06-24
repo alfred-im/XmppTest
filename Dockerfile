@@ -3,13 +3,18 @@ FROM python:3.12-slim
 WORKDIR /app
 
 ENV PYTHONUNBUFFERED=1
-ENV PORT=8080
+ENV XMPP_PORT=8080
+ENV MATRIX_PORT=8081
 
-COPY bridge-xmpp/requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+COPY bridge-xmpp/requirements.txt bridge-xmpp-requirements.txt
+COPY bridge-matrix/requirements.txt bridge-matrix-requirements.txt
+RUN pip install --no-cache-dir -r bridge-xmpp-requirements.txt -r bridge-matrix-requirements.txt
 
-COPY bridge-xmpp/ .
+COPY bridge-xmpp/ bridge-xmpp/
+COPY bridge-matrix/ bridge-matrix/
+COPY scripts/start-bridges.sh /start.sh
+RUN chmod +x /start.sh
 
-EXPOSE 8080
+EXPOSE 8080 8081
 
-CMD ["python", "main.py"]
+CMD ["/start.sh"]
