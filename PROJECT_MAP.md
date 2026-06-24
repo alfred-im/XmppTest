@@ -1,6 +1,6 @@
 # Alfred - Mappa Completa del Progetto
 
-**Ultimo aggiornamento**: 2026-06-24 (Fly: config + Dockerfile in root, Fly legge repo)  
+**Ultimo aggiornamento**: 2026-06-24 (Fly bridge live: xmpptest.fly.dev)  
 **Versione**: 2.2.0 (per-account IndexedDB + XEP-0184 + XEP-0333)
 
 ---
@@ -432,7 +432,19 @@ index.html
 
 ## 🌐 Servizi Esterni
 
-### 1. **XMPP Server**
+### 1. **Fly.io — Bridge Alfred (Alpha bootstrap)**
+
+**App Fly**: `xmpptest` (region `fra`)  
+**URL**: https://xmpptest.fly.dev  
+**Health XMPP**: `GET /health` → 200  
+
+Un’app Fly, due demoni Python nello stesso container (`scripts/start-bridges.sh`):
+- XMPP bridge → porta 8080 (esposta su HTTPS)
+- Matrix bridge → porta 8081 (solo interno al container, Alpha)
+
+Config deploy in root: `fly.toml`, `Dockerfile`. Fly collegato a GitHub legge il repo — no GitHub Actions custom per bridge.
+
+### 2. **XMPP Server** (legacy web-client)
 
 **Server di Default**:
 - **Domain**: `jabber.hot-chilli.net`
