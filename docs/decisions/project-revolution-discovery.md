@@ -1,8 +1,19 @@
 # Rivoluzione Alfred — Discovery Q&A
 
-**Stato**: 🟡 In corso — Iterazione 7 (revisione contraddizioni iter. 1–6)  
-**Creato**: 2026-06-24  
-**Fase**: **Documentazione strategica** — livello alto + roadmap **Alpha** incrementale.
+**Stato**: 🟡 In corso — Iterazione 8 (modello servizio; priorità deploy)  
+
+### Prossima priorità (utente)
+
+**Subito dopo** allineamento documentazione: **accedere ai servizi di deploy** (Supabase, Fly.io, GitHub Pages, …) e **testare che tutto sia configurato e funzionante**.
+
+| Servizio | Scopo | Test da fare |
+|----------|-------|--------------|
+| **Supabase** | Piattaforma | Progetto esistente, auth, DB, API |
+| **Fly.io** | Bridge Python | App create, deploy, secrets |
+| **GitHub Pages** | Flutter Web | Build + URL funzionante |
+| _altri_ | _da elencare_ | _accesso e smoke test_ |
+
+_Stato deploy: non ancora verificato in questa sessione._
 
 **Glossario**: **Piattaforma** = Supabase.
 
@@ -24,9 +35,30 @@
 
 **Alfred viene riscritto da zero.** Il `web-client/` React **muore del tutto** (tag `legacy/web-client-final` @ `6e792eb`). Nuovo stack: **Flutter Web** + **Piattaforma (Supabase)** + **due bridge Python** (XMPP + Matrix) su **Fly.io**. Inbox unificata, chat separate per protocollo, brand grafico **identico** all'attuale.
 
-**Alfred è un servizio di chat federato**, non un client XMPP/Matrix. L'utente ha un'**identità Alfred**; XMPP e Matrix sono solo **mezzi di comunicazione** verso l'esterno.
+**Alfred è un servizio di chat federato** — **non un client generico** XMPP/Matrix.
 
-### Modello identità (fondamentale — Iterazione 5)
+**Analogia vincolante**: Alfred è come **Gmail** o **Facebook Messenger**:
+- Esiste un **servizio** (Alfred) con la sua piattaforma
+- L'app web ufficiale serve **solo quel servizio** — non puoi usarla per un altro provider
+- Fai login **sul servizio Alfred**, non su un server XMPP/Matrix a scelta
+
+### Account Alfred vs Contatti — due cose diverse
+
+| | **Account Alfred** | **Contatti** |
+|---|-------------------|--------------|
+| **Cos'è** | La tua identità sul **servizio** Alfred | Persone con cui chatti |
+| **Login** | ✅ Solo con account Alfred | ❌ Non si fa login sui contatti |
+| **Multi** | Puoi avere **più account Alfred** (stile Thunderbird / più caselle Gmail) | Rubrica unificata |
+| **Tipi** | Solo Alfred | **Interni** Alfred + esterni **XMPP** + esterni **Matrix** |
+| **UI** | Switch account Alfred | Lista contatti unificata, senza badge protocollo |
+
+**Aggiungere un contatto** XMPP o Matrix **non** è "collegare un account protocollo". È aggiungere qualcuno alla rubrica — da rete XMPP, da rete Matrix, o contatto **interno** al servizio Alfred.
+
+### Daemon = servizio condiviso, non personale
+
+I bridge Python su Fly.io sono **daemon del servizio Alfred** — sempre attivi, usati da **tutte** le persone sulla piattaforma. Non sono daemon personali che si accendono al tuo login. È ovvio per definizione: un demone di servizio con migliaia di utenti sopra.
+
+### Modello identità (login)
 
 ```
 Utente
@@ -222,7 +254,7 @@ Oltre alla prima tappa messaggi, l'Alpha nel suo insieme include anche (definizi
 | Area | Funzionalità |
 |------|--------------|
 | Auth | Login sulla **piattaforma** |
-| Contatti | Lista **unificata** — come l'inbox; **senza** indicazione protocollo in UI |
+| Contatti | Lista **unificata**: interni Alfred + esterni XMPP + esterni Matrix — **senza** badge protocollo in UI |
 | Conversazioni | Vista conversazione + creazione |
 | Profilo | Pagina profilo **Alfred** (unico profilo utente — vedi Iterazione 6) |
 | Protocollo | XMPP in Alpha; Matrix in architettura — scope Alpha Matrix TBD |
@@ -306,6 +338,8 @@ Oltre alla prima tappa messaggi, l'Alpha nel suo insieme include anche (definizi
 
 ---
 
+### Federazione esterna — dominio unico
+
 **Risposta**: mi presento fuori come **`me@alfred.im`** — **un solo dominio** `alfred.im`. Non due server o domini diversi per protocollo.
 
 _(Vedi sezione "Identità verso il mondo esterno" in cima.)_
@@ -328,7 +362,7 @@ _(Vedi sezione "Identità verso il mondo esterno" in cima.)_
 
 ---
 
-### Federazione esterna — dominio unico
+### Alpha vs "prototipo minimo"
 
 **Risposta**: quanto elencato prima era la **prima versione (Alpha)**, non un minimo. Si definisce **incrementalmente**.
 
@@ -337,41 +371,36 @@ _(Vedi sezione "Identità verso il mondo esterno" in cima.)_
 - Compatibilità **XMPP** obbligatoria
 - **Matrix**: non definito — utente non conosce ancora Matrix
 
-**Principio card XMPP**: documentato in sezione dedicata — facciata federata completa verso fuori, logica reale sulla piattaforma.
+**Principio card XMPP**: facciata federata completa verso fuori, logica reale sulla piattaforma.
 
 ---
 
----
+## Iterazione 8 — Correzioni audit (feedback utente)
 
-## Contraddizioni iterazioni 1–6 — audit e risoluzioni
+### C1 e C2 — non erano contraddizioni tue
 
-> Revisione esplicita delle ambiguità nate nelle prime iterazioni, quando il modello Alfred non era ancora chiaro.
+**C1 — errore mio**: avevo confuso **account Alfred** (login sul servizio) con **contatti** (rubrica: interni, XMPP, Matrix). Non c'è contraddizione tra "identità solo Alfred per il login" e "posso aggiungere contatti da XMPP/Matrix". Sono due livelli diversi.
 
-### C1. "Aggiungi account XMPP/Matrix" vs identità solo Alfred
+| Cosa avevo scritto male (Iter. 3) | Realtà |
+|-----------------------------------|--------|
+| "Utente aggiunge account protocollo" | ❌ **Errore di formalizzazione** — intendevi **contatti**, non account |
+| "Identità solo Alfred" | ✅ Corretto — login solo sul **servizio** |
 
-| Iterazione | Diceva |
-|------------|--------|
-| 3 (L2, L3) | Dopo login piattaforma, utente **aggiunge account** protocollo; bridge attivi per account aggiunti |
-| 5 | **Nessuna** identità XMPP; login solo Alfred; XMPP = trasporto |
-
-**Contraddizione**: modello "client che collega JID" vs "servizio federato Alfred".
-
-**Risoluzione ✅**: vince **Iterazione 5**. Non esiste "collegare XMPP". Esiste identità **Alfred**; i bridge la federano verso l'esterno. Le formulazioni Iter. 3 su "aggiunta account protocollo" sono **obsolete**.
+**C2 — domanda senza senso**: chiedere se i bridge sono "legati all'account utente" non aveva senso. I daemon sono **del servizio**, sempre attivi, per tutti gli utenti. Non è mai stato un disaccordo tuo — era una mia domanda mal posta (Iter. 3).
 
 ---
 
-### C2. Bridge attivi solo se serve vs sempre attivi
+## Audit iterazioni 1–7 — errori di formalizzazione (non contraddizioni utente)
 
-| Iterazione | Diceva |
-|------------|--------|
-| 3 (L3) | Se non aggiungi Matrix, Matrix non ti riguarda |
-| 4 | I **due bridge sono sempre attivi**; routing per contatto |
+> Molte voci sotto sono **errori miei** nel tradurre le tue risposte, non conflitti tra ciò che hai detto.
 
-**Contraddizione**: bridge come servizio permanente vs bridge legati all'utente.
+### ~~C1~~ → Riformulato: account vs contatti
 
-**Risoluzione ✅**: vince **Iterazione 4**. I bridge girano **sempre** su Fly.io. Il messaggio passa da uno o l'altro in base al **contatto**, non alla configurazione utente.
+Vedi sezione Iterazione 8 sopra. **Chiuso.**
 
----
+### ~~C2~~ → Ritirato: domanda nonsensical
+
+Il daemon è del **servizio**, non dell'utente. **Chiuso** — non era ambiguità tua.
 
 ### C3. Protocollo visibile in UI vs invisibile
 
@@ -507,7 +536,8 @@ Le seguenti domande erano basate sull'assunzione "client XMPP classico" e sono *
 
 - ~~L2b: più account XMPP?~~ → sostituita da **multi-account Alfred**
 - ~~G2: password XMPP?~~ → **non esiste**; solo password Alfred
-- ~~L2: collegare identità XMPP dopo login?~~ → **non esiste** identità XMPP utente
+- ~~L2: collegare identità XMPP dopo login?~~ → **non esiste** login protocollo
+- ~~Iter. 3: "aggiunta account protocollo"~~ → **errore formalizzazione**; erano **contatti**
 
 ---
 
@@ -549,6 +579,10 @@ Le seguenti domande erano basate sull'assunzione "client XMPP classico" e sono *
 | D-032 | 2026-06-24 | **Alpha v1**: invio/ricezione/lettura messaggi, XMPP | ✅ |
 | D-033 | 2026-06-24 | **Principio card** federazione XMPP | ✅ Vincolante |
 | D-034 | 2026-06-24 | Protocollo **mai visibile in UI** | ✅ |
+| D-035 | 2026-06-24 | Alfred = **servizio** (Gmail/Messenger), non client generico | ✅ |
+| D-036 | 2026-06-24 | **Account Alfred** (login) ≠ **Contatti** (interni + XMPP + Matrix) | ✅ |
+| D-037 | 2026-06-24 | Daemon = **servizio condiviso**, sempre attivo per tutti | ✅ |
+| D-038 | 2026-06-24 | **Priorità**: test deploy servizi dopo allineamento doc | 🟡 Prossimo step |
 
 ---
 
@@ -588,5 +622,6 @@ Le seguenti domande erano basate sull'assunzione "client XMPP classico" e sono *
 | 4 | 2026-06-24 | Bridge sempre attivi; routing contatti; monorepo; brand |
 | 5 | 2026-06-24 | Identità Alfred federata; multi-account; no password XMPP; librerie slixmpp + matrix-nio |
 | 6 | 2026-06-24 | Contatti unificati; `@alfred.im`; Alpha v1 messaggi; principio card; push no; offline TBD |
-| 7 | 2026-06-24 | Audit contraddizioni; protocollo invisibile in UI; web solo online |
-| 8 | _prossima_ | Alpha tappe 2+, Matrix, XEP Alpha |
+| 7 | 2026-06-24 | Audit contraddizioni; protocollo invisibile; web online |
+| 8 | 2026-06-24 | Servizio ≠ client; account ≠ contatti; daemon servizio; priorità deploy |
+| 9 | _prossima_ | **Test deploy** Supabase / Fly.io / GH Pages |
