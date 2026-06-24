@@ -1,6 +1,6 @@
 # Alfred - Mappa Completa del Progetto
 
-**Ultimo aggiornamento**: 2026-06-24 (Alpha full stack — client Supabase + schema dominio ✅)  
+**Ultimo aggiornamento**: 2026-06-24 (RPC `list_conversations` inbox — un round-trip)  
 **Versione repository**: 3.1.0-alpha (client Flutter live con piattaforma; bridge esclusi)
 
 ---
@@ -887,12 +887,12 @@ class ConversationRepository {
 
 ## 📊 Stato Corrente
 
-### Stack su `main` (2026-06-24, post-merge PR #108)
+### Stack su `main` (2026-06-24, post-merge PR #109/#110)
 
 | Componente | Stato |
 |------------|-------|
 | `client/` (Flutter) | 🟢 Auth, contatti, chat realtime, profilo, multi-account |
-| `supabase/` | 🟢 Schema dominio + RLS + RPC + outbox (bridge-ready) |
+| `supabase/` | 🟢 Schema dominio + RLS + RPC (`list_conversations` inbox) + outbox |
 | `bridge-xmpp/` · `bridge-matrix/` | 🟡 Stub Fly.io health — **esclusi da questa implementazione** |
 | `web-client/` (React) | ❌ Rimosso — tag `legacy/web-client-final` |
 
