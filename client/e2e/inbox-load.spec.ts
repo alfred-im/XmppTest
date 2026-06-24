@@ -6,7 +6,7 @@ const BASE_URL =
 async function enableFlutterAccessibility(page: import('@playwright/test').Page) {
   const a11y = page.getByRole('button', { name: 'Enable accessibility' });
   if (await a11y.isVisible().catch(() => false)) {
-    await a11y.click();
+    await a11y.click({ force: true });
     await page.waitForTimeout(500);
   }
 }
