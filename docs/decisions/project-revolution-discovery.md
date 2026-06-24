@@ -618,8 +618,8 @@ Le seguenti domande erano basate sull'assunzione "client XMPP classico" e sono *
 | D-010 | 2026-06-24 | web-client React eliminato | ✅ |
 | D-011 | 2026-06-24 | Web hosting = deploy facile (GH Pages ok) | ✅ |
 | D-012 | 2026-06-24 | Tag `legacy/web-client-final` @ `6e792eb` | ✅ |
-| D-049 | 2026-06-24 | Client Flutter mock in `client/` + deploy Pages | ✅ |
-| D-050 | 2026-06-24 | PR #107/#108 mergiate; solo branch `main` | ✅ |
+| D-049 | 2026-06-24 | Client Flutter in `client/` + deploy Pages → **Alpha produzione Supabase** (PR #109) | ✅ |
+| D-050 | 2026-06-24 | PR Alpha #108–#114 mergiate; registro `alpha-pr-registry.md` | ✅ |
 | D-051 | 2026-06-24 | **Bridge sempre stateless** — stato solo in piattaforma | ✅ |
 | D-013 | 2026-06-24 | Chat separate in inbox (no associazione cross-protocollo) | ✅ |
 | D-014 | 2026-06-24 | Login solo piattaforma | ✅ |
@@ -681,9 +681,10 @@ La CLI (e MCP per Supabase) sono **strumenti opzionali** per sviluppo e smoke te
 | Check | Esito |
 |-------|-------|
 | URL live | https://alfred-im.github.io/XmppTest/ |
-| Client | **Flutter** (`client/`) — UI mock chat |
+| Client | **Flutter** (`client/`) — Alpha Supabase (auth, chat, contatti, multi-account) |
 | Workflow | `.github/workflows/deploy-pages.yml` |
 | Build | `flutter build web --release --base-href "/XmppTest/"` |
+| Passkeys | `bundle.js` obbligatorio in `index.html` (PR #110) |
 | SPA fallback | `index.html` copiato come `404.html` |
 | `web-client/` React | Rimosso — tag `legacy/web-client-final` |
 
@@ -698,7 +699,7 @@ Deploy produzione su ogni push a `main` che tocca `client/` o il workflow.
 | Progetto cloud | `tvwpoxxcqwphryvuyqzu` — **ACTIVE_HEALTHY** (region `eu-west-1`) |
 | URL API | https://tvwpoxxcqwphryvuyqzu.supabase.co |
 | Auth health | ✅ **200** (GoTrue) |
-| Migrazioni cloud | `20260624000000_alfred_bootstrap` + `20260624180000_platform_agent_smoke` |
+| Migrazioni cloud | `20260624000000` … `20260624220000` (dominio + `list_conversations`) — vedi `alpha-pr-registry.md` |
 | `pgcrypto` | ✅ installato (v1.3) |
 | MCP Supabase (agente) | ✅ `execute_sql`, `apply_migration`, `list_tables` |
 | REST API (anon) | ✅ **200** — lettura tabella smoke |

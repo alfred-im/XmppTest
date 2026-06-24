@@ -24,6 +24,7 @@ Recupero codice legacy: `git checkout legacy/web-client-final -- web-client/`
 ## Architettura
 
 - [architecture/alpha-full-stack.md](./architecture/alpha-full-stack.md) - **🟢 Alpha completa** — client + Supabase, senza bridge (2026-06-24)
+- [architecture/alpha-pr-registry.md](./architecture/alpha-pr-registry.md) - **Registro PR Alpha #108–#114** — cosa documentare dopo ogni merge
 - [architecture/conversations-analysis.md](./architecture/conversations-analysis.md) - Analisi conversazioni XMPP
 - [architecture/mam-global-strategy-explained.md](./architecture/mam-global-strategy-explained.md) - Strategia MAM globale
 - [architecture/mam-performance-long-term.md](./architecture/mam-performance-long-term.md) - Performance MAM
@@ -43,7 +44,8 @@ Recupero codice legacy: `git checkout legacy/web-client-final -- web-client/`
 ## Fixes
 
 - [fixes/README.md](./fixes/README.md) - Overview fix
-- [fixes/account-storage-isolation.md](./fixes/account-storage-isolation.md) - **Isolamento IndexedDB per account** (17 giu 2026)
+- [fixes/flutter-inbox-stability.md](./fixes/flutter-inbox-stability.md) - **Fix inbox Flutter** — race auth + ChangeNotifierProxyProvider (PR #113/#114)
+- [fixes/account-storage-isolation.md](./fixes/account-storage-isolation.md) - **Isolamento IndexedDB per account** (17 giu 2026, legacy React)
 - [fixes/auto-login-fix-2025-12-17.md](./fixes/auto-login-fix-2025-12-17.md) - Fix auto-login ConnectionContext
 - [fixes/profile-save-error-fix.md](./fixes/profile-save-error-fix.md) - Fix errori salvataggio profilo
 - [fixes/profile-scroll-conflict-fix.md](./fixes/profile-scroll-conflict-fix.md) - Fix conflitti scroll
@@ -79,6 +81,6 @@ Recupero codice legacy: `git checkout legacy/web-client-final -- web-client/`
 
 ---
 
-**Ultimo aggiornamento**: 2026-06-24 (post-merge PR #108)  
-**Client live**: Flutter mock @ https://alfred-im.github.io/XmppTest/  
+**Ultimo aggiornamento**: 2026-06-24 (sync documentazione PR Alpha #108–#114)  
+**Client live**: Flutter + Supabase @ https://alfred-im.github.io/XmppTest/  
 **Legacy (riferimento doc)**: React @ `legacy/web-client-final`

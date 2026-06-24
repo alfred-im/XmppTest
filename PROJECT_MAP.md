@@ -1,6 +1,6 @@
 # Alfred - Mappa Completa del Progetto
 
-**Ultimo aggiornamento**: 2026-06-24 (fix race auth inbox web)  
+**Ultimo aggiornamento**: 2026-06-24 (sync documentazione PR Alpha #108–#114)  
 **Versione repository**: 3.1.0-alpha (client Flutter live con piattaforma; bridge esclusi)
 
 ---
@@ -31,7 +31,7 @@
 | **Bridge** | `bridge-xmpp/` · `bridge-matrix/` — **stub** (health Fly.io only, non implementati) |
 | **Client legacy** | `web-client/` rimosso da `main` — tag `legacy/web-client-final` @ `6e792eb` |
 | **Recupero legacy** | `git checkout legacy/web-client-final -- web-client/` |
-| **Branch** | Solo `main` (feature branch PR #107/#108 mergiate e eliminate) |
+| **Branch** | `main` — PR Alpha #108–#114 mergiate (registro: `docs/architecture/alpha-pr-registry.md`) |
 
 **Stack su `main`**: `client/` · `supabase/` · `bridge-xmpp/` · `bridge-matrix/`
 
@@ -41,7 +41,7 @@ La documentazione sotto che cita `web-client/` descrive il **client React storic
 
 ## 📌 Panoramica Progetto
 
-**Alfred** è una piattaforma di messaggistica in migrazione verso **Flutter + Supabase + bridge Python**. Su `main` c’è il **primo client Flutter** (solo grafica mock); login, messaggi reali e sync arriveranno con la piattaforma.
+**Alfred** è una piattaforma di messaggistica in migrazione verso **Flutter + Supabase + bridge Python**. Su `main` il **client Flutter** è collegato a Supabase (auth, contatti, chat realtime, profilo, multi-account).
 
 ### Caratteristiche attuali (client Flutter + piattaforma)
 
@@ -61,8 +61,8 @@ La documentazione sotto che cita `web-client/` descrive il **client React storic
 | Categoria | Tecnologia | Note |
 |-----------|------------|------|
 | Client | Flutter 3.44.x / Dart 3.12 | `client/` |
-| Piattaforma | Supabase (Postgres, Auth) | Bootstrap — schema dominio TODO |
-| Bridge | Python 3.12 + aiohttp | Fly.io — health OK, federazione TODO |
+| Piattaforma | Supabase (Postgres, Auth, Realtime, Storage) | Schema dominio + RLS + RPC implementati |
+| Bridge | Python 3.12 + aiohttp | Fly.io — health OK, federazione non implementata |
 | CI | GitHub Actions | Deploy Pages da `client/` |
 
 ### Riferimento legacy (tag `legacy/web-client-final`)
@@ -245,7 +245,7 @@ Per ogni messaggio nell'array:
 │   └── archive/               # Ricerca XMPP e documenti storici
 ├── bridge-matrix/             # Bridge Python Matrix (demone, no fly.toml locale)
 ├── bridge-xmpp/               # Bridge Python XMPP (demone, no fly.toml locale)
-├── client/                    # Flutter (web + desktop/mobile scaffold) — UI chat mock
+├── client/                    # Flutter (web + desktop/mobile scaffold) — client produzione Alpha
 ├── .github/workflows/
 │   └── deploy-pages.yml       # Deploy Flutter web su GitHub Pages (/XmppTest/)
 ├── supabase/                  # Config + migrazioni piattaforma Alfred
@@ -887,22 +887,29 @@ class ConversationRepository {
 
 ## 📊 Stato Corrente
 
-### Stack su `main` (2026-06-24, post-merge PR #109/#110)
+### Stack su `main` (2026-06-24, post-merge PR #108–#114)
 
 | Componente | Stato |
 |------------|-------|
 | `client/` (Flutter) | 🟢 Auth, contatti, chat realtime, profilo, multi-account |
-| `supabase/` | 🟢 Schema dominio + RLS + RPC (`list_conversations` inbox) + outbox |
-| `bridge-xmpp/` · `bridge-matrix/` | 🟡 Stub Fly.io health — **esclusi da questa implementazione** |
+| `supabase/` | 🟢 Schema dominio + RLS + RPC (`list_conversations`) + outbox |
+| `bridge-xmpp/` · `bridge-matrix/` | 🟡 Stub Fly.io health — federazione non implementata |
 | `web-client/` (React) | ❌ Rimosso — tag `legacy/web-client-final` |
 
-### ✅ Client Flutter — implementato (mock)
+### ✅ Client Flutter — implementato (Alpha produzione)
 
-- Layout conversazioni + chat (responsive)
-- Tema brand `#2D2926`
-- Dati mock (`MockData`)
-- Widget test base
-- Deploy automatico GitHub Pages
+- Auth Supabase (login/registrazione, profilo auto-creato)
+- Multi-account Thunderbird (`SharedPreferences` + switch refresh token) — PR #111
+- Contatti unificati (interni + federati in rubrica)
+- Inbox via RPC `list_conversations` (un round-trip) — PR #112
+- Chat realtime testo (Supabase Postgres + Realtime) — PR #109
+- Stabilità inbox web: `waitForSupabaseSessionReady` + `ChangeNotifierProxyProvider` — PR #113/#114
+- Deploy GitHub Pages con passkeys bundle — PR #110
+- Layout conversazioni + chat responsive, tema `#2D2926`
+- Test: unit, widget, e2e Playwright inbox, SQL smoke, CI analyze+test+build
+
+**Architettura dettagliata**: `docs/architecture/alpha-full-stack.md`  
+**Registro PR**: `docs/architecture/alpha-pr-registry.md`
 
 ### 🚧 Prossimi passi (post-Alpha client+platform)
 
@@ -969,30 +976,26 @@ Documentati in `docs/fixes/known-issues.md`:
 
 | Area | Copertura | Note |
 |------|-----------|------|
-| **E2E Tests** | ⚠️ Parziale | Playwright tests esistenti ma non completi |
-| **Unit Tests** | ✅ Base | `test/unit/` modelli, storage |
-| **Widget Tests** | ✅ Base | `test/widget/` bolle, logo |
+| **E2E Tests** | ✅ Parziale | Playwright `e2e/inbox-load.spec.ts` (PR #114) |
+| **Unit Tests** | ✅ Base | `test/unit/` modelli, storage, RPC parsing |
+| **Widget Tests** | ✅ Base | `test/widget/` bolle, logo, provider listen |
 | **SQL Smoke** | ✅ | `supabase/tests/schema_smoke.sql` |
 | **CI** | ✅ | `flutter analyze` + `flutter test` in deploy-pages |
 | **Integration Tests** | ❌ Nessuna | Pianificati per Q1 2026 |
 | **Manual Testing** | ✅ Completo | Testing manuale su feature implementate |
 
-### 📈 Performance Metrics
+### 📈 Performance (Alpha Flutter — online-only)
 
-**Target Performance** (da README.md):
-- ⚡ Apertura chat: < 100ms (cache hit)
-- ⚡ Lista conversazioni: < 200ms (cache hit)
-- ⚡ Invio messaggio: < 500ms (network)
+**Nota**: metriche legacy IndexedDB/XMPP non si applicano al client Flutter su `main`.
 
-**Ottimizzazioni Implementate** (Architettura v3.0):
-1. **Sync-Once + Listen**: 1 sync all'avvio, poi 0 query server durante utilizzo (~95% riduzione query)
-2. **Cache-first loading** (IndexedDB): < 100ms apertura chat
-3. **Observer pattern**: Real-time updates senza polling
-4. **Code splitting** per vendor libraries
-5. **Lazy loading** messaggi con pagination (da cache)
-6. **Debounced search** input
-7. **Eliminato pull-to-refresh**: -100% overhead inutile
-8. Virtualized list (future)
+| Area | Comportamento |
+|------|---------------|
+| Inbox | Un round-trip RPC `list_conversations` |
+| Chat | Realtime Supabase su canale `messages-{conversationId}` |
+| Invio | Optimistic UI + RPC `send_message` |
+| Web | Online-only (D-031) — nessuna cache offline |
+
+**Ottimizzazioni legacy React** (tag `legacy/web-client-final`): sync-once, cache-first IndexedDB — vedi sezione legacy sotto.
 
 ### 🔒 Security Status
 
@@ -1049,14 +1052,20 @@ Documentati in `docs/fixes/known-issues.md`:
 ## 🔄 Ultima Revisione
 
 **Data**: 2026-06-24  
-**Versione**: 3.0.0-alpha — Client Flutter mock + rimozione web-client + deploy Pages
+**Versione**: 3.1.0-alpha — Client Flutter + Supabase su `main`
 
-**Modifiche Recenti** (v3.0.0-alpha - 24 giugno 2026):
-- ✅ **Client Flutter** in `client/`: UI mock chat, brand Alfred, responsive
-- ✅ **GitHub Pages**: Flutter live @ https://alfred-im.github.io/XmppTest/
-- ✅ **Rimosso `web-client/`** da `main` — tag `legacy/web-client-final`
-- ✅ **PR #107, #108** mergiate; branch feature eliminati
-- ✅ Documentazione allineata a stack attivo
+**Modifiche Recenti** (v3.1.0-alpha — 24 giugno 2026):
+- ✅ **PR #109**: app completa Flutter + schema dominio Supabase
+- ✅ **PR #110**: passkeys `bundle.js` — fix schermo bianco Pages
+- ✅ **PR #111**: multi-account switch senza logout forzato
+- ✅ **PR #112**: RPC `list_conversations` inbox un round-trip
+- ✅ **PR #113**: fix race auth web (`waitForSupabaseSessionReady`)
+- ✅ **PR #114**: `ChangeNotifierProxyProvider` — fix UI inbox bloccata
+- ✅ Documentazione: `alpha-pr-registry.md`, `flutter-inbox-stability.md`, sync PROJECT_MAP/CHANGELOG
+
+**Modifiche precedenti** (v3.0.0-alpha — 24 giugno 2026):
+- ✅ **PR #108**: UI chat Flutter + deploy Pages
+- ✅ Rimosso `web-client/` — tag `legacy/web-client-final`
 
 **Modifiche legacy** (v2.2 / v4.0 — giugno 2026, client React al tag):
 - ✅ **Isolamento storage per account XMPP**:

@@ -2,7 +2,8 @@
 
 **Data**: 2026-06-24  
 **Scope**: App completa **senza bridge** (XMPP/Matrix restano stub Fly.io)  
-**Stato**: Implementato su branch `cursor/full-app-no-bridges-3a6e`
+**Stato**: Implementato e mergiato su `main` (PR #109–#114)  
+**Registro PR**: [alpha-pr-registry.md](./alpha-pr-registry.md)
 
 ---
 
@@ -58,14 +59,13 @@ client/lib/
 
 - Scope Alpha: pochi controller globali (`Auth`, `Conversations`, `Contacts`, `Profile`)
 - `ProxyProvider` ricrea controller al cambio `userId` (switch account) senza boilerplate
-- **`ChangeNotifierProxyProvider`** (non `ProxyProvider`) per inbox/contatti/profilo — altrimenti `notifyListeners()` del controller non aggiorna la UI
-- Coerente con dimensione progetto mock precedente
+- **`ChangeNotifierProxyProvider`** (non `ProxyProvider`) per inbox/contatti/profilo — altrimenti `notifyListeners()` del controller non aggiorna la UI (fix PR #114; vedi `docs/fixes/flutter-inbox-stability.md`)
 
 ### 2.3 Flusso bootstrap
 
-1. `main()` → `Supabase.initialize(publishableKey)` → `waitForSupabaseSessionReady()` (attende idratazione auth; `recoverSession` interno è fire-and-forget)
+1. `main()` → `Supabase.initialize(publishableKey)` → `waitForSupabaseSessionReady()` (attende idratazione auth; fix race PR #113)
 2. `MultiProvider` registra controller; `AuthController.initialize()` imposta `sessionReady`
-3. `ProxyProvider` crea `ConversationsController` solo se `sessionReady && userId`
+3. `ChangeNotifierProxyProvider` crea `ConversationsController` solo se `sessionReady && userId`
 4. `AppShell` → `AuthScreen` se non autenticato, altrimenti `HomeScreen`
 
 ### 2.4 Multi-account
@@ -223,11 +223,12 @@ Vedi `docs/decisions/bridge-stateless.md`.
 
 | Livello | Path | Cosa verifica |
 |---------|------|---------------|
-| Unit | `client/test/unit/` | Modelli, utils, account storage |
-| Widget | `client/test/widget/` | MessageBubble, AlfredLogo |
+| Unit | `client/test/unit/` | Modelli, utils, account storage, parsing RPC |
+| Widget | `client/test/widget/` | MessageBubble, AlfredLogo, `ChangeNotifierProxyProvider` listen |
+| E2E | `client/e2e/` | Playwright — inbox load senza interazione (`inbox-load.spec.ts`) |
 | SQL smoke | `supabase/tests/schema_smoke.sql` | Tabelle + RPC presenti |
 | Build | `flutter build web` | Compilazione release GitHub Pages |
-| CI | `.github/workflows/deploy-pages.yml` | test + build su PR/main |
+| CI | `.github/workflows/deploy-pages.yml` | analyze + test + build su PR/main |
 
 ---
 
@@ -280,4 +281,4 @@ Vedi README ufficiale `supabase_flutter`. Test E2E: `client/e2e/pages-smoke.spec
 
 ---
 
-**Riferimenti**: `PROJECT_MAP.md`, `docs/decisions/project-revolution-discovery.md`, `docs/decisions/bridge-stateless.md`
+**Riferimenti**: `PROJECT_MAP.md`, `docs/architecture/alpha-pr-registry.md`, `docs/decisions/project-revolution-discovery.md`, `docs/decisions/bridge-stateless.md`

@@ -1,0 +1,62 @@
+# Registro PR Alpha Flutter (main)
+
+**Ultimo aggiornamento**: 2026-06-24  
+**Scope**: PR mergiate su `main` dopo migrazione Flutter — riferimento per allineamento documentazione.
+
+Documento per AI. Ogni PR deve riflettersi in: `PROJECT_MAP.md`, `CHANGELOG.md`, `docs/architecture/alpha-full-stack.md` (e fix dedicato se applicabile).
+
+---
+
+## Tabella PR → feature → documentazione
+
+| PR | Titolo / commit | Cosa introduce | Dove documentato |
+|----|-----------------|----------------|------------------|
+| **#108** | UI chat Flutter mock | Layout conversazioni + chat, tema Alfred, deploy Pages | `CHANGELOG` [3.0.0-alpha], `PROJECT_MAP` client Flutter |
+| **#109** | App completa senza bridge | Auth, contatti, chat realtime Supabase, profilo, schema dominio, RPC base | `alpha-full-stack.md`, `PROJECT_MAP` stato Alpha |
+| **#110** | Passkeys bundle.js | Fix schermo bianco GitHub Pages (`passkeys_web`) | `alpha-full-stack.md` §6, `client/web/index.html` |
+| **#111** | Multi-account switch | `AccountStorageService`, switch senza logout, Aggiungi account | `alpha-full-stack.md` §2.4, `CHANGELOG` multi-account |
+| **#112** | `list_conversations` RPC | Inbox un round-trip, nome peer lato server | `alpha-full-stack.md` §2.5, migrazione `20260624220000` |
+| **#113** | Fix race auth inbox | `waitForSupabaseSessionReady`, `sessionReady` gate, timeout load | `alpha-full-stack.md` §2.3, `fixes/flutter-inbox-stability.md` |
+| **#114** | Fix provider listen | `ChangeNotifierProxyProvider` per inbox/contatti/profilo | `alpha-full-stack.md` §2.2, `fixes/flutter-inbox-stability.md` |
+| **#115** | GIF in chat | `content_type`, `media_url`, bucket `chat-media` | *branch `cursor/gif-conversation-support-bf39` — non su main* |
+
+---
+
+## Checklist allineamento doc (post-PR)
+
+Dopo ogni merge su `main`:
+
+1. **`PROJECT_MAP.md`** — stato corrente, caratteristiche, contraddizioni (no "mock" se produzione)
+2. **`CHANGELOG.md`** — voce in `[Unreleased]` con numero PR
+3. **`docs/architecture/alpha-full-stack.md`** — sezione client o piattaforma interessata
+4. **`docs/INDICE.md`** — data ultimo aggiornamento
+5. **`README.md`** / **`client/README.md`** — se cambia stato utente-dev
+6. **Fix dedicato** (`docs/fixes/`) — solo per bug/regressioni non ovvie
+7. **Questo registro** — nuova riga in tabella
+
+---
+
+## Migrazioni Supabase (cloud `tvwpoxxcqwphryvuyqzu`)
+
+| File | PR correlata | Contenuto |
+|------|--------------|-----------|
+| `20260624000000_alfred_bootstrap.sql` | pre-#109 | Bootstrap piattaforma |
+| `20260624180000_platform_agent_smoke.sql` | pre-#109 | Smoke test agente |
+| `20260624200000_alfred_domain_schema.sql` | #109 | Schema dominio, RLS, RPC base |
+| `20260624210000_rpc_grants_hardening.sql` | #109 | Grant RPC authenticated |
+| `20260624220000_list_conversations_rpc.sql` | #112 | RPC inbox |
+| `20260624230000_message_gif_support.sql` | #115 | GIF — *solo se PR #115 mergiata* |
+
+---
+
+## Documenti legacy (non aggiornare per PR Flutter)
+
+I file sotto descrivono il **client React** (`legacy/web-client-final`). Non vanno estesi per feature Flutter — usare `alpha-full-stack.md`.
+
+- `docs/implementation/*` (eccetto note storiche)
+- `docs/architecture/message-states.md`, `mam-*.md`, `strategy-comparison.md`
+- `docs/fixes/account-storage-isolation.md` (IndexedDB XMPP)
+
+---
+
+**Riferimenti**: `PROJECT_MAP.md`, `docs/architecture/alpha-full-stack.md`, `CHANGELOG.md`

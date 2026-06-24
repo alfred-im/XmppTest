@@ -6,18 +6,18 @@ Traccia lo stato del progetto Alfred per continuità del lavoro. NON è document
 
 ## Stato attuale (2026-06-24)
 
-Migrazione verso **Flutter + Supabase + bridge Python** (`docs/decisions/project-revolution-discovery.md`). PR #107 e #108 mergiate su `main`; branch feature eliminati.
+Migrazione verso **Flutter + Supabase + bridge Python** (`docs/decisions/project-revolution-discovery.md`). PR Alpha **#108–#114** mergiate su `main` (registro: `docs/architecture/alpha-pr-registry.md`).
 
 | Componente | Stato |
 |------------|-------|
-| **`client/`** (Flutter) | App completa collegata a Supabase — live su GitHub Pages |
+| **`client/`** (Flutter) | App completa Supabase — auth, chat realtime, contatti, multi-account |
 | **`supabase/`** | Schema dominio Alfred (profiles, contacts, messages, outbox, …) |
 | **`bridge-xmpp/`** · **`bridge-matrix/`** | Stub health Fly.io — logica **non** implementata |
 | **`web-client/`** (React) | **Rimosso** — tag `legacy/web-client-final` |
 
 ### URL live
 
-**https://alfred-im.github.io/XmppTest/** — client Flutter collegato a Supabase (auth, chat, contatti).
+**https://alfred-im.github.io/XmppTest/** — client Flutter + Supabase (auth, chat, contatti, multi-account).
 
 ### Client legacy React
 
@@ -49,6 +49,8 @@ Deploy automatico su push a `main` via `.github/workflows/deploy-pages.yml`.
 | File | Contenuto |
 |------|-----------|
 | `PROJECT_MAP.md` | Mappa progetto (leggere a ogni sessione) |
+| `docs/architecture/alpha-full-stack.md` | Architettura Alpha Flutter + Supabase |
+| `docs/architecture/alpha-pr-registry.md` | Registro PR Alpha → feature → documentazione |
 | `docs/decisions/project-revolution-discovery.md` | Visione e Alpha |
 | `docs/INDICE.md` | Indice per area |
 

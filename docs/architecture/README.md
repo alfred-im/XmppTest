@@ -2,9 +2,14 @@
 
 Analisi architetturali per comprensione sistema e decisioni implementative. Documento per AI.
 
-> **Nota (2026-06-24)**: documentazione relativa al **client React legacy** (`web-client/`, tag `legacy/web-client-final`). Riferimento per il nuovo stack Flutter/Supabase.
+> **Nota (2026-06-24)**: per il **client Flutter attivo** su `main`, documento primario: **[alpha-full-stack.md](./alpha-full-stack.md)** e registro PR **[alpha-pr-registry.md](./alpha-pr-registry.md)**. I documenti MAM/spunte sotto descrivono il **client React legacy** (`legacy/web-client-final`).
 
-## Documenti Disponibili
+## Documenti Alpha Flutter (main)
+
+- **alpha-full-stack.md** — Architettura completa client + Supabase
+- **alpha-pr-registry.md** — PR #108–#114 → feature → checklist documentazione
+
+## Documenti Legacy React (riferimento)
 
 ### Analisi MAM e Sincronizzazione
 - **message-states.md** - **Policy spunte WhatsApp 3 livelli** + virtual UI + MAM-only DB (v2.1)

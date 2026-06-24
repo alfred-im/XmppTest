@@ -4,6 +4,14 @@ Analisi fix applicati e ottimizzazioni per tracciare problemi risolti e soluzion
 
 ## Fix Documentati
 
+### Flutter Inbox Stability (PR #113 + #114)
+- **[flutter-inbox-stability.md](./flutter-inbox-stability.md)**
+- **Data**: 24 Giugno 2026
+- **Problema**: Inbox bloccata su rotella all'avvio; UI non aggiornata fino a interazione utente
+- **Causa**: Race auth web + `ProxyProvider` non ascolta `notifyListeners()`
+- **Soluzione**: `waitForSupabaseSessionReady` + `ChangeNotifierProxyProvider`
+- **Status**: ✅ Risolto — test widget + e2e Playwright
+
 ### Profile Page Scroll Conflict Fix
 - **[profile-scroll-conflict-fix.md](./profile-scroll-conflict-fix.md)**
 - **Data**: 30 Novembre 2025

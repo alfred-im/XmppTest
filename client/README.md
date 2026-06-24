@@ -11,7 +11,16 @@ Client ufficiale Alfred — multi-piattaforma (web, mobile, desktop).
 | **Live** | https://alfred-im.github.io/XmppTest/ |
 | **Layout** | Lista conversazioni + chat (stile WhatsApp Web) |
 | **Brand** | `#2D2926` |
-| **Inbox** | RPC `list_conversations` — un round-trip |
+| **Inbox** | RPC `list_conversations` — un round-trip (PR #112) |
+| **Multi-account** | Switch Thunderbird via `SharedPreferences` (PR #111) |
+| **Pages** | Richiede script passkeys in `web/index.html` (PR #110) |
+
+## Test
+
+```bash
+flutter test                    # unit + widget
+cd client && npx playwright test e2e/   # e2e (inbox-load)
+```
 
 ## Sviluppo
 
@@ -46,7 +55,9 @@ lib/
 
 ## Architettura client
 
-Vedi `docs/architecture/alpha-full-stack.md` — flussi auth, inbox, realtime, multi-account.
+- `docs/architecture/alpha-full-stack.md` — flussi auth, inbox, realtime, multi-account
+- `docs/architecture/alpha-pr-registry.md` — registro PR Alpha e checklist documentazione
+- `docs/fixes/flutter-inbox-stability.md` — fix stabilità inbox (PR #113/#114)
 
 ## Prossimi passi
 

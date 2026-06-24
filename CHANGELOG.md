@@ -23,27 +23,47 @@ Modifiche rilevanti al progetto per tracciare evoluzione tecnica e decisioni imp
 
 ## [Unreleased]
 
-### Aggiunto (2026-06-24 — inbox performance)
-- **RPC `list_conversations()`**: inbox completa in un round-trip (display name risolto server-side)
-- Migrazione `20260624220000_list_conversations_rpc.sql` — applicata su progetto cloud
+### Documentazione (2026-06-24 — sync PR Alpha #108–#114)
+- **`docs/architecture/alpha-pr-registry.md`**: registro PR → feature → documenti da aggiornare
+- **`docs/fixes/flutter-inbox-stability.md`**: fix PR #113/#114 (race auth + ChangeNotifierProxyProvider)
+- Allineati PROJECT_MAP, CHANGELOG, INDICE, README, `alpha-full-stack.md`, discovery doc
+
+### Alpha Flutter — PR #114 (fix provider listen)
+- **`ChangeNotifierProxyProvider`** al posto di `ProxyProvider` per Conversations/Contacts/Profile
+- Test widget `conversations_provider_listen_test.dart` + e2e `inbox-load.spec.ts`
+
+### Alpha Flutter — PR #113 (fix inbox auth race)
+- **`waitForSupabaseSessionReady()`** dopo `Supabase.initialize` prima delle RPC
+- `ConversationsController`: realtime dopo primo load; timeout 30s; UI errore + Riprova
+- Gate `sessionReady` su `ProxyProvider`/`ChangeNotifierProxyProvider` in `main.dart`
+
+### Alpha Flutter — PR #112 (inbox performance)
+- **RPC `list_conversations()`**: inbox completa in un round-trip (display name server-side)
+- Migrazione `20260624220000_list_conversations_rpc.sql`
 - Client: `ConversationService` usa RPC; `Conversation.fromListRpcRow`
-- Test: `schema_smoke.sql` + unit test parsing payload RPC
 
-### Corretti (2026-06-24 — inbox rotella infinita fino a interazione)
-- **Provider**: `ChangeNotifierProxyProvider` al posto di `ProxyProvider` per Conversations/Contacts/Profile — la UI non ascoltava `notifyListeners()`
-- Test widget + e2e Playwright inbox senza digitare nella ricerca
+### Alpha Flutter — PR #111 (multi-account)
+- Switch account: persist refresh token; `tokenRefreshed`; flusso **Aggiungi account**
+- Ripristino sessione se switch fallisce
 
-### Corretti (2026-06-24 — inbox bloccata all'avvio)
-- **Race auth web**: attendere `waitForSupabaseSessionReady()` dopo `Supabase.initialize` prima delle RPC
-- **ConversationsController**: realtime dopo primo load; timeout 30s; UI errore + Riprova
-- **ProxyProvider**: crea controller inbox/contatti solo con `sessionReady`
+### Alpha Flutter — PR #110 (GitHub Pages)
+- Script passkeys `bundle.js` in `client/web/index.html` — fix schermo bianco
 
-### Corretti (2026-06-24 — multi-account)
-- **Switch account**: persist refresh token prima del cambio; ascolto `tokenRefreshed`
-- **Aggiungi account**: flusso dedicato (`prepareAddAccount` + `AuthScreen`) senza revocare sessioni esistenti
-- Ripristino sessione precedente se switch fallisce; SnackBar errore
+### Alpha Flutter — PR #109 (app completa + piattaforma)
+- Client Flutter collegato a Supabase: auth, contatti, chat realtime, profilo
+- Schema dominio `20260624200000_alfred_domain_schema.sql` + RLS + RPC base
+- Documentazione: `docs/architecture/alpha-full-stack.md`
 
-### Aggiunto
+### Alpha Flutter — PR #108 (UI chat base)
+- Layout conversazioni + chat, tema Alfred, workflow deploy Pages
+
+---
+
+### Legacy React (pre-3.0.0-alpha) — storico
+
+Le voci sotto riguardano il client React (`legacy/web-client-final`), non il Flutter su `main`.
+
+### Corretti (2026-06-24 — multi-account XMPP)
 - **Isolamento storage per account XMPP** (v2.2):
   - Un IndexedDB per JID: `conversations-db-{account}`
   - `account-session.ts`: `switchAccountContext()`, `onAccountChanged()`
