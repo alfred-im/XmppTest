@@ -48,7 +48,7 @@ La documentazione sotto che cita `web-client/` descrive il **client React storic
 - **Auth Alfred**: login/registrazione Supabase GoTrue, profilo auto-creato
 - **Multi-account**: switch Thunderbird via `SharedPreferences` + `setSession`
 - **Contatti unificati**: interni Alfred + esterni XMPP/Matrix (protocollo solo routing)
-- **Conversazioni + chat realtime**: Supabase Postgres + Realtime
+- **Conversazioni + chat realtime**: Supabase Postgres + Realtime; inbox via RPC `list_conversations` (un round-trip)
 - **Messaggistica interna**: utente↔utente stessa istanza — completa
 - **Messaggistica federata**: outbox `queued` — attende bridge (non implementato)
 - **Profilo Alfred**: display name, bio, username

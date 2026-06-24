@@ -150,6 +150,7 @@ bridge_jobs (coda generica bridge)
 | RPC | Responsabilità |
 |-----|----------------|
 | `search_profiles` | Trova utenti Alfred per username/display_name |
+| `list_conversations` | Inbox completa in un round-trip (nome, preview, unread) |
 | `get_or_create_direct_conversation` | Chat 1:1 interna idempotente |
 | `get_or_create_conversation_from_contact` | Apre chat da rubrica (qualsiasi protocollo) |
 | `send_message` | Validazione partecipante + body non vuoto |
