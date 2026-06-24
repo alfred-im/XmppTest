@@ -18,6 +18,12 @@ class AppShell extends StatelessWidget {
       );
     }
 
+    if (!auth.sessionReady) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     if (!auth.isAuthenticated) {
       return const AuthScreen();
     }

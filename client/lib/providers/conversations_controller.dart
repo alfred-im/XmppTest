@@ -12,13 +12,14 @@ class ConversationsController extends ChangeNotifier {
     required this.userId,
     ConversationService? conversationService,
   }) : _conversationService = conversationService ?? ConversationService() {
-    load();
-    _channel = _conversationService.subscribeToConversationList(userId, load);
+    unawaited(_bootstrap());
   }
 
   final String userId;
   final ConversationService _conversationService;
   RealtimeChannel? _channel;
+  int _loadGeneration = 0;
+  bool _realtimeAttached = false;
 
   List<Conversation> conversations = [];
   bool isLoading = true;
@@ -42,15 +43,41 @@ class ConversationsController extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> _bootstrap() async {
+    await load();
+    _attachRealtime();
+  }
+
+  void _attachRealtime() {
+    if (_realtimeAttached) return;
+    _realtimeAttached = true;
+    _channel = _conversationService.subscribeToConversationList(userId, load);
+  }
+
   Future<void> load() async {
+    final generation = ++_loadGeneration;
+    isLoading = true;
+    error = null;
+    notifyListeners();
+
     try {
-      conversations = await _conversationService.fetchConversations();
+      final loaded = await _conversationService
+          .fetchConversations()
+          .timeout(const Duration(seconds: 30));
+      if (generation != _loadGeneration) return;
+      conversations = loaded;
       error = null;
+    } on TimeoutException {
+      if (generation != _loadGeneration) return;
+      error = 'Timeout caricamento conversazioni. Riprova.';
     } catch (e) {
+      if (generation != _loadGeneration) return;
       error = e.toString();
     } finally {
-      isLoading = false;
-      notifyListeners();
+      if (generation == _loadGeneration) {
+        isLoading = false;
+        notifyListeners();
+      }
     }
   }
 

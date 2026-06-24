@@ -1,6 +1,6 @@
 # Alfred - Mappa Completa del Progetto
 
-**Ultimo aggiornamento**: 2026-06-24 (RPC `list_conversations` inbox — un round-trip)  
+**Ultimo aggiornamento**: 2026-06-24 (fix race auth inbox web)  
 **Versione repository**: 3.1.0-alpha (client Flutter live con piattaforma; bridge esclusi)
 
 ---

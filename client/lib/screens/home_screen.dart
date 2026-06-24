@@ -40,7 +40,9 @@ class _HomeScreenState extends State<HomeScreen> {
       context,
       MaterialPageRoute(builder: (_) => const ContactsScreen()),
     );
-    if (conversationId != null && mounted) {
+    if (!mounted) return;
+    await context.read<ConversationsController?>()?.load();
+    if (conversationId != null) {
       setState(() {
         _selectedId = conversationId;
         _showListOnMobile = false;
@@ -133,7 +135,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final conversations = context.watch<ConversationsController>();
+    final conversations = context.watch<ConversationsController?>();
+    if (conversations == null) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     final width = MediaQuery.sizeOf(context).width;
     final isWide = width >= _breakpoint;
     final selected = _findSelected(conversations);
@@ -148,6 +156,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 selectedId: _selectedId,
                 conversations: conversations.filteredConversations,
                 isLoading: conversations.isLoading,
+                error: conversations.error,
+                onRetry: conversations.load,
                 onSelected: (id) => setState(() => _selectedId = id),
                 onSearchChanged: conversations.setSearchQuery,
                 onMenuTap: _showAccountMenu,
@@ -174,6 +184,8 @@ class _HomeScreenState extends State<HomeScreen> {
           selectedId: _selectedId,
           conversations: conversations.filteredConversations,
           isLoading: conversations.isLoading,
+          error: conversations.error,
+          onRetry: conversations.load,
           onSelected: (id) => setState(() {
             _selectedId = id;
             _showListOnMobile = false;

@@ -28,6 +28,7 @@ class AlfredApp extends StatelessWidget {
         ),
         ProxyProvider<AuthController, ConversationsController?>(
           update: (_, auth, previous) {
+            if (!auth.sessionReady) return null;
             final userId = auth.userId;
             if (userId == null) return null;
             if (previous?.userId == userId) return previous;
@@ -36,6 +37,7 @@ class AlfredApp extends StatelessWidget {
         ),
         ProxyProvider<AuthController, ContactsController?>(
           update: (_, auth, previous) {
+            if (!auth.sessionReady) return null;
             final userId = auth.userId;
             if (userId == null) return null;
             if (previous?.ownerId == userId) return previous;

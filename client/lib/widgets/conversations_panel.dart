@@ -14,6 +14,8 @@ class ConversationsPanel extends StatefulWidget {
     required this.onSearchChanged,
     required this.onMenuTap,
     required this.onContactsTap,
+    this.error,
+    this.onRetry,
     this.showBackButton = false,
     this.onBack,
   });
@@ -25,6 +27,8 @@ class ConversationsPanel extends StatefulWidget {
   final ValueChanged<String> onSearchChanged;
   final VoidCallback onMenuTap;
   final VoidCallback onContactsTap;
+  final String? error;
+  final VoidCallback? onRetry;
   final bool showBackButton;
   final VoidCallback? onBack;
 
@@ -69,7 +73,32 @@ class _ConversationsPanelState extends State<ConversationsPanel> {
           Expanded(
             child: widget.isLoading
                 ? const Center(child: CircularProgressIndicator())
-                : widget.conversations.isEmpty
+                : widget.error != null
+                    ? Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                widget.error!,
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  color: AlfredColors.textSecondary,
+                                ),
+                              ),
+                              if (widget.onRetry != null) ...[
+                                const SizedBox(height: 16),
+                                FilledButton(
+                                  onPressed: widget.onRetry,
+                                  child: const Text('Riprova'),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                      )
+                    : widget.conversations.isEmpty
                     ? const Center(
                         child: Text(
                           'Nessuna conversazione.\nAggiungi un contatto per iniziare.',
