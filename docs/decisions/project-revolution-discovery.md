@@ -608,6 +608,8 @@ Le seguenti domande erano basate sull'assunzione "client XMPP classico" e sono *
 | D-010 | 2026-06-24 | web-client React eliminato | ✅ |
 | D-011 | 2026-06-24 | Web hosting = deploy facile (GH Pages ok) | ✅ |
 | D-012 | 2026-06-24 | Tag `legacy/web-client-final` @ `6e792eb` | ✅ |
+| D-049 | 2026-06-24 | Client Flutter mock in `client/` + deploy Pages | ✅ |
+| D-050 | 2026-06-24 | PR #107/#108 mergiate; solo branch `main` | ✅ |
 | D-013 | 2026-06-24 | Chat separate in inbox (no associazione cross-protocollo) | ✅ |
 | D-014 | 2026-06-24 | Login solo piattaforma | ✅ |
 | D-015 | 2026-06-24 | ~~Bridge attivi per account aggiunti~~ → **Bridge sempre attivi; routing per contatto** | ✅ Corretto iter.4 |
@@ -663,16 +665,18 @@ La CLI (e MCP per Supabase) sono **strumenti opzionali** per sviluppo e smoke te
 
 ## Risultati test deploy (2026-06-24)
 
-### GitHub Pages — ⚠️ Legacy (client rimosso da `main`)
+### GitHub Pages — ✅ OK (Flutter, 2026-06-24)
 
 | Check | Esito |
 |-------|-------|
-| URL storico | https://alfred-im.github.io/XmppTest/ (ultimo deploy 2026-06-16) |
-| `web-client/` su `main` | **Rimosso** — tag `legacy/web-client-final` |
-| Workflow `deploy-pages.yml` | **Rimosso** |
-| Build locale legacy | Al tag: `git checkout legacy/web-client-final` poi `npm ci && npm run build` in `web-client/` |
+| URL live | https://alfred-im.github.io/XmppTest/ |
+| Client | **Flutter** (`client/`) — UI mock chat |
+| Workflow | `.github/workflows/deploy-pages.yml` |
+| Build | `flutter build web --release --base-href "/XmppTest/"` |
+| SPA fallback | `index.html` copiato come `404.html` |
+| `web-client/` React | Rimosso — tag `legacy/web-client-final` |
 
-Il deploy Pages serviva il client React; il prossimo client Flutter avrà workflow dedicato.
+Deploy produzione su ogni push a `main` che tocca `client/` o il workflow.
 
 ---
 

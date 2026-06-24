@@ -1,7 +1,7 @@
 # Alfred - Mappa Completa del Progetto
 
-**Ultimo aggiornamento**: 2026-06-24 (client Flutter UI mock + deploy Pages ✅)  
-**Versione repository**: 3.0.0-alpha (migrazione Flutter/Supabase in corso)
+**Ultimo aggiornamento**: 2026-06-24 (merge PR #108 — Flutter su Pages, pulizia branch ✅)  
+**Versione repository**: 3.0.0-alpha (client Flutter mock live; backend da collegare)
 
 ---
 
@@ -20,50 +20,75 @@
 
 ---
 
-## ⚠️ Stato repository — client legacy rimosso
-
-La cartella **`web-client/` non è più presente su `main`**. È stata eliminata dopo la rivoluzione architetturale documentata in `docs/decisions/project-revolution-discovery.md`.
+## ⚠️ Stato repository (2026-06-24)
 
 | Elemento | Dettaglio |
 |----------|-----------|
-| **Ultimo snapshot con codice** | Tag git `legacy/web-client-final` @ commit `6e792eb` |
-| **Recupero** | `git checkout legacy/web-client-final -- web-client/` |
-| **Deploy legacy** | GitHub Pages (`alfred-im.github.io/XmppTest/`) — workflow rimosso |
-| **Documentazione sotto** | Sezioni su `web-client/` restano come **riferimento storico** per il nuovo client Flutter |
+| **Client attivo** | `client/` — Flutter, UI mock chat |
+| **URL live** | https://alfred-im.github.io/XmppTest/ |
+| **Deploy** | `.github/workflows/deploy-pages.yml` — Flutter web, `base-href` `/XmppTest/` |
+| **Client legacy** | `web-client/` rimosso da `main` — tag `legacy/web-client-final` @ `6e792eb` |
+| **Recupero legacy** | `git checkout legacy/web-client-final -- web-client/` |
+| **Branch** | Solo `main` (feature branch PR #107/#108 mergiate e eliminate) |
 
-**Stack attivo su `main`**: `client/` (Flutter — UI mock) · `supabase/` · `bridge-xmpp/` · `bridge-matrix/`
+**Stack su `main`**: `client/` · `supabase/` · `bridge-xmpp/` · `bridge-matrix/`
+
+La documentazione sotto che cita `web-client/` descrive il **client React storico** — riferimento per tradurre feature nel Flutter.
 
 ---
 
 ## 📌 Panoramica Progetto
 
-**Alfred** è una piattaforma di messaggistica istantanea in migrazione verso **Flutter + Supabase + bridge Python**. Il client React XMPP (`web-client/`) è stato ritirato da `main`; la documentazione legacy descrive pattern e feature da riportare nel nuovo software.
+**Alfred** è una piattaforma di messaggistica in migrazione verso **Flutter + Supabase + bridge Python**. Su `main` c’è il **primo client Flutter** (solo grafica mock); login, messaggi reali e sync arriveranno con la piattaforma.
 
-### Caratteristiche Principali
-- **Offline-First**: Cache locale completa con IndexedDB **per account**
-- **Multi-account storage**: ogni JID ha il proprio database IndexedDB; lo storico non si perde al logout
-- **Performance**: Apertura chat < 100ms
-- **Modern Stack**: React 19, TypeScript 5, Vite 7
-- **XMPP Protocol**: Stanza.js 12.21.x con supporto MAM (XEP-0313)
-- **Push Notifications**: XEP-0357 con abilitazione automatica
-- **Progressive Web App**: Service Worker per offline support
+### Caratteristiche attuali (client Flutter)
 
-### Tecnologie Core
-| Categoria | Tecnologia | Versione |
-|-----------|------------|----------|
-| Frontend | React | 19.2.0 |
-| Language | TypeScript | 5.9.3 |
-| Build Tool | Vite | 7.2.4 |
-| Router | React Router | 7.9.6 |
-| XMPP | Stanza.js | 12.21.0 |
-| Database | IndexedDB (idb) | 8.0.3 |
-| Testing | Playwright | 1.57.0 |
+- **UI chat mock**: lista conversazioni + pannello messaggi, layout responsive (desktop/mobile)
+- **Brand Alfred**: `#2D2926`, bolle stile WhatsApp, spunte mock
+- **Multi-piattaforma**: scaffold web + Android + iOS + desktop (solo web deployato oggi)
+- **Dati**: statici in `MockData` — nessun Supabase, nessun bridge
+- **Deploy web**: GitHub Pages automatico su push a `main`
+
+### Tecnologie attive su `main`
+
+| Categoria | Tecnologia | Note |
+|-----------|------------|------|
+| Client | Flutter 3.44.x / Dart 3.12 | `client/` |
+| Piattaforma | Supabase (Postgres, Auth) | Bootstrap — schema dominio TODO |
+| Bridge | Python 3.12 + aiohttp | Fly.io — health OK, federazione TODO |
+| CI | GitHub Actions | Deploy Pages da `client/` |
+
+### Riferimento legacy (tag `legacy/web-client-final`)
+
+Il client React aveva: offline-first IndexedDB per account, XMPP diretto (Stanza.js), MAM, spunte XEP-0184/0333, PWA. Vedi sezione [Client legacy](#client-legacy-react-web-client--rimosso-da-main) e `docs/`.
 
 ---
 
 ## 🏗️ Architettura
 
-### Layer Architecture
+### Target (Alpha — da completare)
+
+```
+┌─────────────────────────────┐
+│   Flutter (client/)         │  ← UI; parla solo con piattaforma
+└──────────────┬──────────────┘
+               │
+┌──────────────▼──────────────┐
+│   Supabase (piattaforma)    │  ← Auth, Postgres, Realtime
+└──────┬──────────────┬───────┘
+       │              │
+┌──────▼──────┐ ┌─────▼──────┐
+│ bridge XMPP │ │bridge Matrix│  ← Fly.io, sempre attivi
+└─────────────┘ └────────────┘
+```
+
+**Stato implementazione**: solo il box Flutter ha codice UI (mock). Supabase e bridge sono bootstrap.
+
+### Legacy — client React (tag `legacy/web-client-final`)
+
+> Diagramma e layer sotto descrivono l’architettura del client rimosso — utile per MAM, spunte, sync.
+
+### Layer Architecture (legacy React)
 
 ```
 ┌─────────────────────────────────────┐
@@ -564,9 +589,33 @@ Config deploy in root: `fly.toml` (due `[[services]]`), `Dockerfile`. Fly colleg
 
 ## 🔧 Build e Testing
 
-> **Legacy**: comandi e configurazione sotto si riferiscono al client React rimosso. Recupero: `git checkout legacy/web-client-final`.
+### Client Flutter (`client/`)
 
-### Script NPM (client legacy al tag `legacy/web-client-final`)
+```bash
+cd client
+flutter pub get
+flutter analyze
+flutter test
+flutter run -d chrome
+flutter build web --release --base-href "/XmppTest/"
+```
+
+| Step | Tool | Output |
+|------|------|--------|
+| Dev | `flutter run -d chrome` | Hot reload locale |
+| Test | `flutter test` | Widget test in `test/` |
+| Prod web | `flutter build web --base-href "/XmppTest/"` | `client/build/web/` |
+| Deploy | GitHub Actions `deploy-pages.yml` | https://alfred-im.github.io/XmppTest/ |
+
+Workflow CI: build + copia `index.html` → `404.html` (SPA su Pages).
+
+---
+
+### Client legacy React (tag `legacy/web-client-final`)
+
+> Recupero: `git checkout legacy/web-client-final`
+
+### Script NPM (legacy)
 
 ```bash
 # Development
@@ -822,20 +871,34 @@ class ConversationRepository {
 
 ## 📊 Stato Corrente
 
-### Stack su `main` (2026-06-24)
+### Stack su `main` (2026-06-24, post-merge PR #108)
 
 | Componente | Stato |
 |------------|-------|
-| `client/` (Flutter) | 🟡 UI mock chat — no backend |
+| `client/` (Flutter) | 🟡 UI mock chat live su GitHub Pages — no backend |
 | `supabase/` | 🟡 Bootstrap (pgcrypto + smoke test) |
 | `bridge-xmpp/` · `bridge-matrix/` | 🟡 Deploy Fly OK, logica bridge TODO |
 | `web-client/` (React) | ❌ Rimosso — tag `legacy/web-client-final` |
 
-Vedi `docs/decisions/project-revolution-discovery.md` per roadmap Alpha.
+### ✅ Client Flutter — implementato (mock)
 
-### ✅ Funzionalità implementate (client legacy — tag `legacy/web-client-final`)
+- Layout conversazioni + chat (responsive)
+- Tema brand `#2D2926`
+- Dati mock (`MockData`)
+- Widget test base
+- Deploy automatico GitHub Pages
 
-> Riferimento per il nuovo client Flutter. Codice non più su `main`.
+### 🚧 Prossimi passi (Alpha)
+
+- Login piattaforma Supabase
+- Schema dominio (utenti, contatti, conversazioni, messaggi)
+- Collegamento client ↔ Supabase Realtime
+- Bridge XMPP (slixmpp) ↔ piattaforma
+- Matrix (scope Alpha TBD)
+
+Vedi `docs/decisions/project-revolution-discovery.md`.
+
+### ✅ Funzionalità legacy (tag `legacy/web-client-final` — riferimento)
 
 **Architettura v3.0 "Sync-Once + Listen" (15 dicembre 2025)**:
 - ✅ **Sync iniziale** (full o incremental) all'avvio
@@ -864,7 +927,7 @@ Vedi `docs/decisions/project-revolution-discovery.md` per roadmap Alpha.
 - ✅ **Presence** (online/offline status)
 - ✅ **Debug Logger** (intercetta e visualizza tutti i console.log)
 
-### 🚧 In Development / Roadmap
+### 🚧 Roadmap legacy (non su `main` — da riportare in Flutter)
 
 - 🚧 **Chat di gruppo (MUC)** - XEP-0045
 - 🚧 **OMEMO (E2E Encryption)** - XEP-0384
@@ -949,7 +1012,7 @@ Documentati in `docs/fixes/known-issues.md`:
 - Gradient: `linear-gradient(135deg, #2D2926, #4a433e)`
 - Contrasto: 15.8:1 con bianco (WCAG AAA)
 
-**Logo**: Spunta (✓) in cerchio - SVG in `SplashScreen.tsx`
+**Logo**: Spunta (✓) in cerchio — `client/lib/widgets/alfred_logo.dart` (Flutter); legacy in `SplashScreen.tsx` al tag
 
 **Typography**: 
 - Font Family: 'Inter', 'SF Pro Display', system-ui
@@ -967,10 +1030,17 @@ Documentati in `docs/fixes/known-issues.md`:
 
 ## 🔄 Ultima Revisione
 
-**Data**: 2026-06-17  
-**Versione**: 2.2.0 — Isolamento IndexedDB per account + architettura v4.0 Virtual UI
+**Data**: 2026-06-24  
+**Versione**: 3.0.0-alpha — Client Flutter mock + rimozione web-client + deploy Pages
 
-**Modifiche Recenti** (v2.2 - 17 giugno 2026):
+**Modifiche Recenti** (v3.0.0-alpha - 24 giugno 2026):
+- ✅ **Client Flutter** in `client/`: UI mock chat, brand Alfred, responsive
+- ✅ **GitHub Pages**: Flutter live @ https://alfred-im.github.io/XmppTest/
+- ✅ **Rimosso `web-client/`** da `main` — tag `legacy/web-client-final`
+- ✅ **PR #107, #108** mergiate; branch feature eliminati
+- ✅ Documentazione allineata a stack attivo
+
+**Modifiche legacy** (v2.2 / v4.0 — giugno 2026, client React al tag):
 - ✅ **Isolamento storage per account XMPP**:
   - Un IndexedDB per JID: `conversations-db-{account}`
   - `account-session.ts`, `switchAccountContext()`, `onAccountChanged()`

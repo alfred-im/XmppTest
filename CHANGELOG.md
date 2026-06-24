@@ -4,6 +4,22 @@ Modifiche rilevanti al progetto per tracciare evoluzione tecnica e decisioni imp
 
 ---
 
+## [3.0.0-alpha] - 2026-06-24
+
+### Aggiunto
+- **Client Flutter** (`client/`): UI mock chat, tema Alfred, layout responsive
+- **Deploy GitHub Pages**: workflow Flutter, URL https://alfred-im.github.io/XmppTest/
+- **Scaffold multi-piattaforma**: web, Android, iOS, Linux, macOS, Windows
+
+### Rimosso
+- **`web-client/`** React da `main` (recuperabile: tag `legacy/web-client-final` @ `6e792eb`)
+- Workflow Pages per build React (sostituito da Flutter)
+
+### Documentazione
+- Aggiornati PROJECT_MAP, README, INDICE, discovery doc, client/README
+
+---
+
 ## [Unreleased]
 
 ### Aggiunto

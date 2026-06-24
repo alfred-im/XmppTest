@@ -2,11 +2,12 @@
 
 Indice documenti tecnici per navigazione rapida. Questo documento è per AI, non per utenti.
 
-## ⚠️ Client legacy rimosso da `main`
+## ⚠️ Client attivo: Flutter (`client/`)
 
-La cartella **`web-client/` non è più nel repository**. Molti documenti sotto citano ancora percorsi come `/workspace/web-client/...` — descrivono il client React **al tag `legacy/web-client-final`** (`6e792eb`). Conservati come riferimento per tradurre logica nel client Flutter.
+- **Live**: https://alfred-im.github.io/XmppTest/
+- **Legacy React**: rimosso da `main` — percorsi `web-client/` nei doc sotto = tag `legacy/web-client-final` (`6e792eb`)
 
-Recupero codice: `git checkout legacy/web-client-final -- web-client/`
+Recupero codice legacy: `git checkout legacy/web-client-final -- web-client/`
 
 ## Documenti Root
 
@@ -77,6 +78,6 @@ Recupero codice: `git checkout legacy/web-client-final -- web-client/`
 
 ---
 
-**Ultimo aggiornamento**: 2026-06-24  
-**Architettura attiva**: Flutter + Supabase + bridge (Alpha)  
-**Legacy (riferimento doc)**: React XMPP @ tag `legacy/web-client-final` — `web-client/` rimosso da `main`
+**Ultimo aggiornamento**: 2026-06-24 (post-merge PR #108)  
+**Client live**: Flutter mock @ https://alfred-im.github.io/XmppTest/  
+**Legacy (riferimento doc)**: React @ `legacy/web-client-final`
