@@ -1,31 +1,18 @@
 # Rivoluzione Alfred — Discovery Q&A
 
-**Stato**: 🟡 In corso — Iterazione 9+ (vincolo infra confermato)  
+**Stato**: 🟡 In corso — test deploy Supabase / Fly.io / GitHub Pages  
 
-### Vincolo infrastruttura — confermato prima della prossima iterazione
+### Prima della prossima iterazione — test deploy
 
-**Decisione utente**: restiamo su **Supabase** e **Fly.io**. Non si cambia piattaforma prima di proseguire.
+**Decisione utente**: prima di proseguire, **testare** **Supabase** e **Fly.io** (non "restare" — verificare che deploy e accesso funzionino).
 
-| Componente | Piattaforma | Ruolo | Stato |
-|------------|-------------|-------|-------|
-| **Piattaforma** (auth, DB, realtime, storage, edge) | **Supabase** | Backend istanza Alfred | ✅ **Confermato** |
-| **Bridge** XMPP + Matrix (Python) | **Fly.io** | Daemon istanza Alfred | ✅ **Confermato** |
-| Client Flutter Web | GitHub Pages _(o deploy facile equivalente)_ | UI | 🟡 già accettato in prototipo |
+| Servizio | Scopo | Test |
+|----------|-------|------|
+| **Supabase** | Piattaforma | Progetto, auth, DB, API |
+| **Fly.io** | Bridge Python | App, deploy, secrets |
+| **GitHub Pages** | Flutter Web | Build + URL |
 
-Questo è il **pairing fisso** dello stack per ogni installazione Alfred, fino a nuova decisione esplicita.
-
-### Prossima priorità (utente)
-
-**Subito dopo** allineamento documentazione: **accedere ai servizi di deploy** (Supabase, Fly.io, GitHub Pages, …) e **testare che tutto sia configurato e funzionante**.
-
-| Servizio | Scopo | Test da fare |
-|----------|-------|--------------|
-| **Supabase** | Piattaforma | Progetto esistente, auth, DB, API |
-| **Fly.io** | Bridge Python | App create, deploy, secrets |
-| **GitHub Pages** | Flutter Web | Build + URL funzionante |
-| _altri_ | _da elencare_ | _accesso e smoke test_ |
-
-_Stato deploy: non ancora verificato in questa sessione._
+_Stato deploy: vedi sezione **Risultati test deploy** in fondo._
 
 **Glossario**: **Piattaforma** = Supabase.
 
@@ -646,6 +633,7 @@ Le seguenti domande erano basate sull'assunzione "client XMPP classico" e sono *
 | D-037 | 2026-06-24 | Daemon = **per istanza**, sempre attivo | ✅ |
 | D-038 | 2026-06-24 | **Priorità**: test deploy servizi dopo allineamento doc | 🟡 Prossimo step |
 | D-039 | 2026-06-24 | **N istanze** Alfred nel mondo, ognuna col proprio dominio | ✅ |
+| D-040 | 2026-06-24 | Prima iter. 10: **testare** deploy Supabase + Fly.io | 🟡 In corso |
 
 ---
 
@@ -662,7 +650,7 @@ Le seguenti domande erano basate sull'assunzione "client XMPP classico" e sono *
 - [x] Multi-account Alfred
 - [x] Librerie bridge Python (proposta)
 - [x] Contatti unificati (protocollo solo interno)
-- [x] Modello stack self-hosted (Mastodon)
+- [x] Test deploy avviato (vedi risultati sotto)
 - [x] Dominio per istanza (non SaaS globale)
 - [x] Profilo Alfred unico
 - [x] Push escluso
@@ -688,5 +676,6 @@ Le seguenti domande erano basate sull'assunzione "client XMPP classico" e sono *
 | 6 | 2026-06-24 | Contatti unificati; `@alfred.im`; Alpha v1 messaggi; principio card; push no; offline TBD |
 | 7 | 2026-06-24 | Audit contraddizioni; protocollo invisibile; web online |
 | 8 | 2026-06-24 | Servizio ≠ client; account ≠ contatti; daemon servizio; priorità deploy |
-| 9 | 2026-06-24 | Stack OSS self-hosted; analogia Mastodon; alfred.im = istanza esempio |
-| 10 | _prossima_ | **Test deploy** istanza; Alpha tappe 2+ |
+| 9 | 2026-06-24 | Stack OSS self-hosted; analogia Mastodon |
+| 9+ | 2026-06-24 | **Supabase + Fly.io** confermati come infra dello stack |
+| 10 | _prossima_ | Test deploy Supabase / Fly.io / GH Pages |
