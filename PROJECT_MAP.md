@@ -179,13 +179,9 @@ Per ogni messaggio nell'array:
 ├── .cursor/rules/            # Regole Cursor (main.mdc → punta a .cursor-rules.md)
 │   └── main.mdc
 ├── deploy/                    # Manifest deploy (fly-bridges.json)
-├── fly.toml                   # Config Fly root (nome standard — Launch pannello)
-├── Dockerfile                 # Build Fly root (nome standard — Launch pannello)
-├── fly.bridge-xmpp.toml       # Alias/config esplicita bridge XMPP
-├── fly.bridge-matrix.toml     # Config Fly root — app bridge Matrix
-├── Dockerfile.bridge-xmpp     # Build Fly da root (sorgente in bridge-xmpp/)
-├── Dockerfile.bridge-matrix     # Build Fly da root (sorgente in bridge-matrix/)
-├── scripts/                   # fly-deploy-all.sh, fly-bootstrap.sh
+├── fly.toml                   # Un’app Fly, due demoni bridge
+├── Dockerfile                 # Build XMPP + Matrix
+├── scripts/start-bridges.sh   # Avvio entrambi i demoni
 ├── .github/                   # GitHub Actions per deployment
 │   └── workflows/
 │       └── deploy-pages.yml   # Deploy automatico su GitHub Pages (client legacy)
@@ -196,8 +192,8 @@ Per ogni messaggio nell'array:
 │   ├── decisions/             # Architecture Decision Records
 │   ├── fixes/                 # Analisi bug fix
 │   └── archive/               # Ricerca XMPP e documenti storici
-├── bridge-matrix/             # Bridge Python Matrix (fly.toml, Dockerfile)
-├── bridge-xmpp/               # Bridge Python XMPP (fly.toml, Dockerfile)
+├── bridge-matrix/             # Bridge Python Matrix (demone, no fly.toml locale)
+├── bridge-xmpp/               # Bridge Python XMPP (demone, no fly.toml locale)
 ├── client/                    # Flutter Web (placeholder Alpha)
 ├── supabase/                  # Config + migrazioni piattaforma Alfred
 ├── README.md                  # Documentazione principale

@@ -1,11 +1,12 @@
-app = "alfred-im-bridge-xmpp"
+app = "alfred-im-bridges"
 primary_region = "fra"
 
 [build]
   dockerfile = "Dockerfile"
 
 [env]
-  SERVICE_NAME = "alfred-bridge-xmpp"
+  XMPP_PORT = "8080"
+  MATRIX_PORT = "8081"
 
 [http_service]
   internal_port = 8080
@@ -24,4 +25,4 @@ primary_region = "fra"
 
 [[vm]]
   size = "shared-cpu-1x"
-  memory = "256mb"
+  memory = "512mb"

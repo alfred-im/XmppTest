@@ -8,7 +8,7 @@ import os
 from aiohttp import web
 
 SERVICE_NAME = "alfred-bridge-matrix"
-PORT = int(os.environ.get("PORT", "8080"))
+PORT = int(os.environ.get("MATRIX_PORT", "8081"))
 
 
 async def health(_request: web.Request) -> web.Response:

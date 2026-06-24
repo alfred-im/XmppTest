@@ -8,7 +8,7 @@ import os
 from aiohttp import web
 
 SERVICE_NAME = "alfred-bridge-xmpp"
-PORT = int(os.environ.get("PORT", "8080"))
+PORT = int(os.environ.get("XMPP_PORT", os.environ.get("PORT", "8080")))
 
 
 async def health(_request: web.Request) -> web.Response:
