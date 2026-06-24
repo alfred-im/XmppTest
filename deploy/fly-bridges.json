@@ -1,4 +1,5 @@
 {
-  "app": "alfred-im-bridges",
-  "region": "fra"
+  "app": "xmpptest",
+  "region": "fra",
+  "url": "https://xmpptest.fly.dev"
 }

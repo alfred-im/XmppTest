@@ -1,4 +1,4 @@
-app = "alfred-im-bridges"
+app = "xmpptest"
 primary_region = "fra"
 
 [build]

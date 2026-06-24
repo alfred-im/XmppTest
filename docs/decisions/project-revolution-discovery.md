@@ -1,6 +1,6 @@
 # Rivoluzione Alfred — Discovery Q&A
 
-**Stato**: 🟡 In corso — test deploy Supabase / Fly.io / GitHub Pages  
+**Stato**: 🟡 In corso — test deploy Supabase; **Fly.io ✅**  
 
 ### Prima della prossima iterazione — test deploy
 
@@ -638,7 +638,8 @@ Le seguenti domande erano basate sull'assunzione "client XMPP classico" e sono *
 | D-040 | 2026-06-24 | Prima iter. 10: **testare** deploy Supabase + Fly.io | 🟡 GH Pages ok; Supabase/Fly in attesa |
 | D-041 | 2026-06-24 | Test Supabase via **MCP** o dashboard (CLI opzionale) | ✅ |
 | D-042 | 2026-06-24 | **Nessuna CLI obbligatoria** — config in repo, runtime in cloud | ✅ |
-| D-044 | 2026-06-24 | Fly: **un’app** `alfred-im-bridges`, due demoni nello stesso container | ✅ |
+| D-044 | 2026-06-24 | Fly: **un’app** con due demoni bridge nello stesso container | ✅ |
+| D-045 | 2026-06-24 | App Fly live **`xmpptest`** → https://xmpptest.fly.dev | ✅ |
 
 ---
 
@@ -683,21 +684,24 @@ La CLI (e MCP per Supabase) sono **strumenti opzionali** per sviluppo e smoke te
 
 ---
 
-### Fly.io — un’app, due demoni bridge
-
-| File (root) | Ruolo |
-|-------------|-------|
-| `fly.toml` | App unica: `alfred-im-bridges` |
-| `Dockerfile` | Immagine con XMPP + Matrix |
-| `scripts/start-bridges.sh` | Avvia entrambi i demoni |
-
-**Modello**: un’installazione Alfred = **un’app Fly** con **due demoni** (XMPP :8080, Matrix :8081). Fly Launch legge `fly.toml` + `Dockerfile` in root.
+### Fly.io — ✅ OK (2026-06-24)
 
 | Check | Esito |
 |-------|-------|
-| Un’app, due demoni | ✅ |
-| Launch pannello Fly | ✅ `fly.toml` + `Dockerfile` in root |
-| Deploy completato | 🟡 dopo Launch Fly |
+| URL | https://xmpptest.fly.dev |
+| Health XMPP | `GET /health` → **200** `{"status":"ok","service":"alfred-bridge-xmpp"}` |
+| App Fly | `xmpptest` (region `fra`) |
+| Modello | Un’app, due demoni (`start-bridges.sh`) |
+| Config repo | `fly.toml` + `Dockerfile` in root |
+| Matrix :8081 | Interno al container — non esposto su HTTPS pubblico (Alpha bootstrap) |
+
+**Modello deploy**: un’installazione Alfred = **un’app Fly** con **due demoni** (XMPP :8080, Matrix :8081). Fly collegato a GitHub legge `fly.toml` + `Dockerfile` in root.
+
+| File (root) | Ruolo |
+|-------------|-------|
+| `fly.toml` | App `xmpptest` |
+| `Dockerfile` | Immagine con XMPP + Matrix |
+| `scripts/start-bridges.sh` | Avvia entrambi i demoni |
 
 ---
 
@@ -707,7 +711,7 @@ La CLI (e MCP per Supabase) sono **strumenti opzionali** per sviluppo e smoke te
 |----------|-------|------------------------|
 | **GitHub Pages** | ✅ OK | — |
 | **Supabase** | 📁 File in repo | Verifica progetto + migrazioni da dashboard/MCP |
-| **Fly.io** | 📁 File in repo | Collegamento Fly↔GitHub + deploy automatico |
+| **Fly.io** | ✅ OK | https://xmpptest.fly.dev/health |
 
 _Fly legge config e Dockerfile dalla root del repo — nessun secret GitHub Actions._
 
@@ -726,7 +730,7 @@ _Fly legge config e Dockerfile dalla root del repo — nessun secret GitHub Acti
 - [x] Multi-account Alfred
 - [x] Librerie bridge Python (proposta)
 - [x] Contatti unificati (protocollo solo interno)
-- [x] Test deploy avviato (vedi risultati sotto)
+- [x] Test deploy Fly.io ✅ (xmpptest.fly.dev)
 - [x] Dominio per istanza (non SaaS globale)
 - [x] Profilo Alfred unico
 - [x] Push escluso
