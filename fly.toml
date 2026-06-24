@@ -33,7 +33,7 @@ primary_region = "fra"
     method = "GET"
     path = "/health"
 
-# Matrix bridge — porta dedicata (8081 → 8081)
+# Matrix bridge — porta dedicata 8081 (TLS → interno 8081)
 [[services]]
   internal_port = 8081
   protocol = "tcp"
@@ -44,11 +44,6 @@ primary_region = "fra"
 
   [[services.ports]]
     port = 8081
-    handlers = ["http"]
-    force_https = true
-
-  [[services.ports]]
-    port = 8082
     handlers = ["tls", "http"]
 
   [[services.http_checks]]

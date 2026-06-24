@@ -640,7 +640,7 @@ Le seguenti domande erano basate sull'assunzione "client XMPP classico" e sono *
 | D-042 | 2026-06-24 | **Nessuna CLI obbligatoria** — config in repo, runtime in cloud | ✅ |
 | D-044 | 2026-06-24 | Fly: **un’app** con due demoni bridge nello stesso container | ✅ |
 | D-045 | 2026-06-24 | App Fly live **`xmpptest`** → https://xmpptest.fly.dev | ✅ |
-| D-046 | 2026-06-24 | Matrix esposto: **secondo `[[services]]`**, porta dedicata 8081/8082 | ✅ |
+| D-046 | 2026-06-24 | Matrix esposto: secondo `[[services]]`, porta **8081** dedicata | ✅ |
 
 ---
 
@@ -698,10 +698,18 @@ La CLI (e MCP per Supabase) sono **strumenti opzionali** per sviluppo e smoke te
 | Bridge | URL health | Porta Fly |
 |--------|------------|-----------|
 | **XMPP** | https://xmpptest.fly.dev/health | 443 → interno 8080 |
-| **Matrix** | https://xmpptest.fly.dev:8082/health | 8082 TLS → interno 8081 |
-| Matrix (HTTP) | http://xmpptest.fly.dev:8081/health | 8081 → redirect HTTPS |
+| **Matrix** | https://xmpptest.fly.dev:8081/health | 8081 TLS → interno 8081 |
 
 _Risposta attesa: `{"status":"ok","service":"alfred-bridge-xmpp"}` / `alfred-bridge-matrix`._
+
+**Test eseguiti dall’agente (post-merge PR #102)**
+
+| Endpoint | Esito | Note |
+|----------|-------|------|
+| https://xmpptest.fly.dev/health | ✅ **200** | XMPP OK |
+| https://xmpptest.fly.dev:8081/health | 🟡 in attesa | Porta TCP aperta; health dopo **redeploy Fly** con nuovo `fly.toml` |
+
+Fly collegato a GitHub deve rileggere `main` e ridistribuire. Fino al redeploy resta attiva la config precedente (solo 443).
 
 **Perché Matrix non era raggiungibile prima**: un solo `[http_service]` su 8080 — Fly non pubblicava la 8081. Risolto con secondo blocco `[[services]]`.
 
@@ -721,7 +729,7 @@ _Risposta attesa: `{"status":"ok","service":"alfred-bridge-xmpp"}` / `alfred-bri
 |----------|-------|------------------------|
 | **GitHub Pages** | ✅ OK | — |
 | **Supabase** | 📁 File in repo | Verifica progetto + migrazioni da dashboard/MCP |
-| **Fly.io** | ✅ OK | XMPP `/health` + Matrix `:8082/health` |
+| **Fly.io** | 🟡 OK XMPP / Matrix post-redeploy | XMPP ✅; Matrix `:8081` dopo redeploy Fly |
 
 _Fly legge config e Dockerfile dalla root del repo — nessun secret GitHub Actions._
 

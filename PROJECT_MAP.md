@@ -441,7 +441,7 @@ Un’app Fly, due demoni Python nello stesso container (`scripts/start-bridges.s
 | Bridge | Porta interna | Esposizione pubblica | Health test |
 |--------|---------------|----------------------|-------------|
 | XMPP | 8080 | `https://xmpptest.fly.dev` (443) | `/health` |
-| Matrix | 8081 | `https://xmpptest.fly.dev:8082` (TLS), `:8081` HTTP | `/health` |
+| Matrix | 8081 | `https://xmpptest.fly.dev:8081` | `/health` |
 
 Config deploy in root: `fly.toml` (due `[[services]]`), `Dockerfile`. Fly collegato a GitHub legge il repo — no GitHub Actions custom per bridge.
 
