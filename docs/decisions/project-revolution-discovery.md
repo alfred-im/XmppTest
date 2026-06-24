@@ -1,9 +1,12 @@
 # Rivoluzione Alfred — Discovery Q&A
 
-**Stato**: 🟡 In corso — Iterazione 2 (ruoli componenti e workflow definiti)  
+**Stato**: 🟡 In corso — Iterazione 3 (modello inbox, auth, server, sicurezza)  
 **Creato**: 2026-06-24  
+**Fase**: **Prototipo** — scelte infrastrutturali non critiche se funzionano; priorità al documento e alla logica.  
 **Obiettivo**: Allinearsi su visione, scope e vincoli **prima** di toccare codice o architettura.  
 **Regola**: Nessuna implementazione finché non dici esplicitamente di iniziare. Fino ad allora: solo questo documento, top-down.
+
+**Glossario**: **Piattaforma** = Supabase (termine usato dall'utente).
 
 ---
 
@@ -36,7 +39,8 @@
 ```
                     ┌─────────────────────────────┐
                     │   Flutter Web (client UI)    │
-                    │   hosting: Fly.io (proposta) │
+                    │   hosting: deploy più facile │
+                    │   (es. GitHub Pages — proto) │
                     └──────────────┬──────────────┘
                                    │ Auth, DB, Realtime,
                                    │ Storage, Edge Functions
@@ -67,7 +71,7 @@
 | **Piattaforma / server applicativo** | Supabase | Auth, database, realtime, storage, edge functions — **tutto** il backend applicativo | Supabase Cloud |
 | **Bridge XMPP** | Python | Ascolta rete XMPP **e** piattaforma; normalizza e scambia eventi bidirezionalmente | Fly.io |
 | **Bridge Matrix** | Python | Ascolta rete Matrix **e** piattaforma; normalizza e scambia eventi bidirezionalmente | Fly.io |
-| **Client** | Flutter **Web** | UI unica; inbox unificata XMPP + Matrix | Fly.io _(proposta — vedi nota hosting)_ |
+| **Client** | Flutter **Web** | UI unica; inbox unificata; chat sempre separate per protocollo | Deploy più facile _(prototipo: GitHub Pages ok)_ |
 | **Server XMPP / Matrix** | Terzi o self-hosted | Infrastruttura protocollo **esterna** ai bridge; i bridge non sono autosufficienti | Fuori scope Alfred |
 
 ### Terminologia: i daemon sono **bridge**
@@ -86,23 +90,17 @@ Conferma tecnica: sì, sono **protocol bridge services** (o **sync daemons**).
 
 Il **server dell'applicazione** è Supabase. I bridge sono **adattatori di protocollo**, non applicazioni autosufficienti.
 
-### Hosting Flutter Web — chi serve il web?
+### Hosting Flutter Web (fase prototipo)
 
-**Chiarimento**: Supabase gestisce il **backend** (API, dati, auth, realtime, file). **Non** ospita il bundle HTML/JS/CSS di Flutter Web — non è un hosting per SPA.
+**Vincolo utente**: dove mettiamo il web **non è un problema** in questa fase. Serve un **link funzionante**; deploy il più semplice possibile.
 
-**"Gestito dalla piattaforma"** in senso architetturale:
-- **Logica e dati** → Supabase (la piattaforma applicativa).
-- **File statici del client web** → serve un web server separato.
+| Layer | Dove | Nota |
+|-------|------|------|
+| Logica e dati | **Piattaforma** (Supabase) | Auth, DB, Realtime, Storage, Edge |
+| Bundle Flutter Web | Hosting statico separato | **GitHub Pages** già funzionante — candidato naturale per il prototipo |
+| Bridge Python | Fly.io | Invariato |
 
-**Proposta (da approvare)**:
-
-| Opzione | Pro | Contro |
-|---------|-----|--------|
-| **Fly.io** _(consigliata)_ | Stesso provider dei bridge; un solo ecosistema deploy; TLS e dominio unificati | Terza app Fly da gestire |
-| Cloudflare Pages / Vercel | Ottimo per static SPA, CDN globale | Provider diverso da Fly |
-| GitHub Pages | Già usato oggi | Meno adatto a stack Supabase-centric; si abbandona con la rivoluzione |
-
-**Raccomandazione**: **Fly.io** anche per Flutter Web — tre app Fly (`alfred-web`, `bridge-xmpp`, `bridge-matrix`), una piattaforma Supabase. Tutto sotto il concetto di "stack Alfred", con Supabase come cuore applicativo.
+**Decisione prototipo**: hosting web = **il più facile** (GitHub Pages accettabile). Migrabile in seguito senza cambiare architettura.
 
 ---
 
@@ -124,14 +122,14 @@ Il **server dell'applicazione** è Supabase. I bridge sono **adattatori di proto
 | Area | Stato | Note |
 |------|-------|------|
 | A. Visione e obiettivo | ✅ | Riscrittura totale, multi-protocollo |
-| B. Prodotto e piattaforme | 🟡 | Flutter Web confermato; mobile/desktop TBD |
-| C. Architettura e stack | 🟡 | Supabase + bridge + Flutter; dettaglio schema dati TBD |
-| D. Infrastruttura e deploy | 🟡 | Fly.io bridge + web (proposta); Supabase backend |
-| E. XMPP e Matrix | 🟡 | Inbox unica; ordine implementazione TBD (top-down prima) |
+| B. Prodotto e piattaforme | 🟡 | Flutter Web; fase prototipo |
+| C. Architettura e stack | 🟡 | Piattaforma + bridge + Flutter; schema dati da dettagliare |
+| D. Infrastruttura e deploy | 🟡 | Fly.io bridge; web = deploy facile (GH Pages ok) |
+| E. XMPP e Matrix | 🟡 | Inbox unica, chat separate; account aggiunti dall'utente |
 | F. UX / UI e brand | ⬜ | Flutter = nuova UI; brand da approfondire |
-| G. Sicurezza e privacy | ⬜ | E2EE, credenziali protocollo |
-| H. Scope e priorità | 🟡 | Documento prima; poi pezzi; v1 minimo TBD |
-| I. Vincoli e non-obiettivi | 🟡 | web-client React muore; tag git legacy |
+| G. Sicurezza e privacy | 🟡 | **No E2EE** in prototipo; credenziali protocollo TBD |
+| H. Scope e priorità | 🟡 | Prototipo; documento prima; poi pezzi |
+| I. Vincoli e non-obiettivi | ✅ | web-client muore; tag legacy applicato |
 | J. Successo e metriche | ⬜ | Criteri completamento TBD |
 
 ---
@@ -204,62 +202,95 @@ Supabase = **piattaforma applicativa** e fonte di verità dei dati.
 
 ---
 
-## Iterazione 3 — Prossime domande (top-down)
+## Iterazione 3 — Risposte formalizzate
 
-### Livello 1 — Modello dati unificato (inbox unica)
+### L1. Inbox unificata — chat separate
 
-**L1.** Come rappresentiamo una conversazione nella inbox unificata?
+**Risposta**: Inbox **unica** (un solo elenco), ma le chat XMPP e Matrix restano **sempre separate**. **Nessuna associazione** tra thread di protocolli diversi.
 
-- Ogni chat ha un `protocol: xmpp | matrix` visibile in UI?
-- Un contatto può esistere su **entrambi** i protocolli come un'unica "persona" o sono sempre thread separati?
+**Analogia**: come due indirizzi email diversi della stessa persona — conviveno nella stessa casella (inbox), ma sono conversazioni distinte.
+
+**Implicazioni modello dati**:
+- Ogni conversazione ha un `protocol` (`xmpp` | `matrix`) — visibile in UI.
+- **Non** esiste entità "contatto unificato" che raggruppa XMPP + Matrix.
+- **Non** si fondono thread cross-protocollo.
+- Ordinamento inbox: per attività recente, indipendentemente dal protocollo.
+
+---
+
+### L2. Auth — solo piattaforma
+
+**Risposta**: **Non esiste login di protocollo** lato client. L'utente fa login **solo sulla piattaforma** (Supabase).
+
+**Flusso**:
+1. Registrazione / login account Alfred sulla piattaforma.
+2. Dopo l'accesso, l'utente **aggiunge** account protocollo (XMPP, Matrix) tramite la piattaforma.
+3. I bridge usano quegli account collegati per parlare con i server esterni.
+
+**L2b** (più account stesso protocollo — es. due JID XMPP): _non ancora risposto — Iterazione 4_
+
+---
+
+### L3. Server protocollo — chiarimento domanda + risposta
+
+**La domanda mal posta era**: "usiamo server nostri fissi o l'utente sceglie?"
+
+**Riformulazione**: I server XMPP e Matrix **esistono già** nel mondo reale e girano in modo indipendente da Alfred. Alfred **non li ospita**. I bridge si connettono ai server **degli account che l'utente ha aggiunto**.
+
+**Risposta formalizzata**:
+- Se l'utente **non aggiunge** un account Matrix, il sistema Matrix **non lo riguarda** (nessun bridge attivo per lui su Matrix).
+- Stesso ragionamento per XMPP.
+- Non c'è una scelta astratta "server del progetto": c'è **aggiunta account** su piattaforma, ognuno con il proprio server (JID XMPP → server XMPP di quel JID; account Matrix → homeserver di quell'account).
+
+```
+Utente Alfred (piattaforma)
+    ├── Account XMPP aggiunto  → bridge XMPP ↔ server di quel JID
+    └── Account Matrix aggiunto → bridge Matrix ↔ homeserver di quell'account
+```
+
+---
+
+### G1. Crittografia
+
+**Risposta**: **Niente encryption** (E2EE fuori scope — OMEMO, Megolm, ecc.).
+
+---
+
+### G2. Credenziali protocollo
+
+**Risposta**: _non esplicitata — deduzione logica: vivono sulla **piattaforma** (aggiunta account post-login), non nel client. Dettaglio storage (tabella cifrata, secrets, ecc.) — Iterazione 4._
+
+---
+
+### D6. Hosting Flutter Web
+
+**Risposta**: **Va bene ovunque**, deploy **più facile possibile**. GitHub Pages già funziona — **usabile per il prototipo**. Unico requisito: **fornire il link** all'app.
+
+- [x] Deploy facile (GitHub Pages ok in prototipo)
+- [ ] Fly.io per web — _non richiesto_
+- [ ] Vincolo provider — _nessuno in questa fase_
+
+---
+
+## Iterazione 4 — Prossime domande (top-down)
+
+---
+
+### L2b. Più account stesso protocollo
+
+Un utente Alfred può aggiungere **due account XMPP** (o due Matrix)?
 
 **Risposta**: _da compilare_
 
 ---
 
-### Livello 2 — Auth e identità
+### G2. Dettaglio credenziali protocollo
 
-**L2.** L'utente Alfred si registra **solo su Supabase** (account Alfred), poi collega account XMPP/Matrix?
+Quando l'utente aggiunge un account XMPP/Matrix sulla piattaforma, dove salviamo password/token?
 
-oppure
-
-- Usa direttamente credenziali XMPP/Matrix senza account Alfred separato?
-
-**L2b.** Un utente Alfred può collegare **più account** dello stesso protocollo (es. due JID XMPP)?
-
-**Risposta**: _da compilare_
-
----
-
-### Livello 3 — Server protocollo
-
-**L3.** In v1 gli utenti si connettono a:
-
-- [ ] Server predefiniti da noi (es. jabber.hot-chilli.net + un homeserver Matrix)
-- [ ] Server scelti dall'utente (JID / homeserver custom)
-- [ ] Entrambe le modalità
-
-**Risposta**: _da compilare_
-
----
-
-### Livello 4 — Sicurezza
-
-**G1.** E2EE (OMEMO / Megolm) in v1: must-have, v2, o fuori scope iniziale?
-
-**G2.** Credenziali XMPP/Matrix: dove le memorizziamo? (Supabase vault cifrato, segreti solo sui bridge, …)
-
-**Risposta**: _da compilare_
-
----
-
-### Livello 5 — Hosting web (conferma proposta)
-
-**D6.** Confermi **Fly.io** per servire Flutter Web (oltre ai due bridge)?
-
-- [ ] Sì, Fly.io per tutto il compute (web + bridge)
-- [ ] Preferisco altro per il web: _______________
-- [ ] Valutiamo dopo
+- [ ] Piattaforma (DB Supabase — tabella account collegati)
+- [ ] Solo sui bridge (mai in DB centrale)
+- [ ] Non importa in prototipo — decidiamo dopo
 
 **Risposta**: _da compilare_
 
@@ -281,6 +312,30 @@ oppure
 
 ---
 
+### Livello 8 — Prototipo minimo
+
+**P1.** Per il **primo prototipo** funzionante, qual è il minimo?
+
+Esempio: _"Login piattaforma + aggiunta 1 account XMPP + inbox con 1 chat + invio messaggio"_
+
+**Risposta**: _da compilare_
+
+---
+
+### Livello 9 — Ordine pezzi
+
+**P2.** Quale pezzo prima? (scegli un ordine indicativo)
+
+- [ ] Piattaforma (schema DB + auth)
+- [ ] Bridge XMPP
+- [ ] Bridge Matrix
+- [ ] Client Flutter Web
+- [ ] Tutto insieme minimalmente
+
+**Risposta**: _da compilare_
+
+---
+
 ## Log decisioni
 
 | # | Data | Decisione | Motivazione | Stato |
@@ -295,8 +350,13 @@ oppure
 | D-008 | 2026-06-24 | Flutter parla **solo con Supabase** | Separazione client / protocolli | ✅ |
 | D-009 | 2026-06-24 | Workflow **documento prima**, poi pezzi | Top-down; implementazione su comando esplicito | ✅ |
 | D-010 | 2026-06-24 | `web-client/` React **eliminato** | Nessun parallelo con legacy | ✅ |
-| D-011 | 2026-06-24 | Hosting web: **Fly.io proposto** | Supabase non ospita SPA; stesso provider dei bridge | 🟡 Proposta |
-| D-012 | 2026-06-24 | Tag git `legacy/web-client-final` @ `6e792eb` | Ultimo stato del web-client prima della rimozione | 🟡 Da applicare |
+| D-011 | 2026-06-24 | Hosting web: **deploy più facile** | Prototipo; GitHub Pages ok; serve solo un link | ✅ |
+| D-012 | 2026-06-24 | Tag git `legacy/web-client-final` @ `6e792eb` | Ultimo stato del web-client prima della rimozione | ✅ |
+| D-013 | 2026-06-24 | Inbox unica, chat **sempre separate** | Nessuna associazione cross-protocollo (modello "due email") | ✅ |
+| D-014 | 2026-06-24 | Login **solo piattaforma** | Nessun login protocollo nel client; account aggiunti dopo | ✅ |
+| D-015 | 2026-06-24 | Server protocollo = **infra esterna** | Bridge attivi solo per account aggiunti dall'utente | ✅ |
+| D-016 | 2026-06-24 | **No E2EE** in prototipo | OMEMO/Megolm fuori scope | ✅ |
+| D-017 | 2026-06-24 | Fase **prototipo** | Scelte infra non bloccanti; focus su logica e documento | ✅ |
 
 ---
 
@@ -308,15 +368,18 @@ oppure
 - [x] Supabase full-stack backend (C3)
 - [x] Workflow documento → pezzi (H)
 - [x] Legacy web-client policy (D5, I1)
-- [ ] Modello dati inbox unificata (L1)
-- [ ] Auth e identità utente (L2)
-- [ ] Server protocollo v1 (L3)
-- [ ] Sicurezza E2EE e credenziali (G)
-- [ ] Conferma hosting Flutter Web (D6)
+- [x] Modello dati inbox unificata (L1)
+- [x] Auth piattaforma-only (L2)
+- [ ] Più account stesso protocollo (L2b)
+- [x] Modello server / account aggiunti (L3)
+- [x] No E2EE (G1)
+- [ ] Dettaglio storage credenziali (G2)
+- [x] Hosting web prototipo (D6)
 - [ ] Struttura repository (D4)
 - [ ] Brand / UX (F)
+- [ ] Prototipo minimo (P1)
+- [ ] Ordine pezzi (P2)
 - [ ] Criteri di successo (J)
-- [ ] Ordine pezzi implementativi e v1 minimo
 - [ ] Brief approvato ("ok, procediamo")
 
 ---
@@ -328,4 +391,5 @@ oppure
 | 0 | 2026-06-24 | Documento creato |
 | 1 | 2026-06-24 | Visione: Flutter + Supabase + 2 daemon Python su Fly.io |
 | 2 | 2026-06-24 | Supabase full; bridge confermati; Flutter Web; inbox unica; legacy muore; workflow top-down |
-| 3 | _prossima_ | Modello dati, auth, server protocollo, sicurezza, hosting web |
+| 3 | 2026-06-24 | Chat separate in inbox unica; login piattaforma; server = account aggiunti; no E2EE; web = deploy facile |
+| 4 | _prossima_ | L2b, G2, repo, brand, prototipo minimo, ordine pezzi |
