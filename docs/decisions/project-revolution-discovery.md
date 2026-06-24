@@ -1,6 +1,18 @@
 # Rivoluzione Alfred — Discovery Q&A
 
-**Stato**: 🟡 In corso — Iterazione 9 (modello stack self-hosted, analogia Mastodon)  
+**Stato**: 🟡 In corso — Iterazione 9+ (vincolo infra confermato)  
+
+### Vincolo infrastruttura — confermato prima della prossima iterazione
+
+**Decisione utente**: restiamo su **Supabase** e **Fly.io**. Non si cambia piattaforma prima di proseguire.
+
+| Componente | Piattaforma | Ruolo | Stato |
+|------------|-------------|-------|-------|
+| **Piattaforma** (auth, DB, realtime, storage, edge) | **Supabase** | Backend istanza Alfred | ✅ **Confermato** |
+| **Bridge** XMPP + Matrix (Python) | **Fly.io** | Daemon istanza Alfred | ✅ **Confermato** |
+| Client Flutter Web | GitHub Pages _(o deploy facile equivalente)_ | UI | 🟡 già accettato in prototipo |
+
+Questo è il **pairing fisso** dello stack per ogni installazione Alfred, fino a nuova decisione esplicita.
 
 ### Prossima priorità (utente)
 
