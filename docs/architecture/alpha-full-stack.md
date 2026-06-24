@@ -225,6 +225,16 @@ flutter build web \
   --dart-define=SUPABASE_ANON_KEY=...
 ```
 
+### Web: script Passkeys obbligatorio
+
+`supabase_flutter` include `passkeys_web`. Senza `bundle.js` in `client/web/index.html` l'app crasha a schermo bianco su GitHub Pages.
+
+```html
+<script src="https://github.com/corbado/flutter-passkeys/releases/download/2.5.0/bundle.js"></script>
+```
+
+Vedi README ufficiale `supabase_flutter`. Test E2E: `client/e2e/pages-smoke.spec.ts` (Playwright).
+
 ---
 
 ## 7. Limitazioni Alpha (senza bridge)
