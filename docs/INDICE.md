@@ -51,6 +51,7 @@ Indice documenti tecnici per navigazione rapida. Questo documento è per AI, non
 
 ## Decisioni Architetturali (ADR)
 
+- [decisions/project-revolution-discovery.md](./decisions/project-revolution-discovery.md) - **🟡 Discovery Q&A rivoluzione progetto** (iterazioni in corso)
 - [decisions/README.md](./decisions/README.md) - Overview decisioni
 - [decisions/no-message-deletion.md](./decisions/no-message-deletion.md) - Decisione no message deletion
 - [decisions/no-modify-source-data.md](./decisions/no-modify-source-data.md) - Regola: non modificare la fonte dati
