@@ -29,6 +29,11 @@ Modifiche rilevanti al progetto per tracciare evoluzione tecnica e decisioni imp
 - Client: `ConversationService` usa RPC; `Conversation.fromListRpcRow`
 - Test: `schema_smoke.sql` + unit test parsing payload RPC
 
+### Corretti (2026-06-24 — multi-account)
+- **Switch account**: persist refresh token prima del cambio; ascolto `tokenRefreshed`
+- **Aggiungi account**: flusso dedicato (`prepareAddAccount` + `AuthScreen`) senza revocare sessioni esistenti
+- Ripristino sessione precedente se switch fallisce; SnackBar errore
+
 ### Aggiunto
 - **Isolamento storage per account XMPP** (v2.2):
   - Un IndexedDB per JID: `conversations-db-{account}`

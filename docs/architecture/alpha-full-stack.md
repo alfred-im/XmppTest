@@ -71,10 +71,14 @@ client/lib/
 | Componente | Ruolo |
 |------------|-------|
 | `AccountStorageService` | Persiste lista `{userId, email, refreshToken, displayName}` in `SharedPreferences` |
-| `AuthService.switchAccount()` | `supabase.auth.setSession(refreshToken)` |
-| Menu account in `HomeScreen` | Lista account salvati + switch + logout |
+| `AuthService.switchAccount()` | Salva sessione corrente → `setSession(refreshToken)` → aggiorna storage |
+| `AuthService.persistCurrentSession()` | Su `tokenRefreshed` e prima di switch/login add-account |
+| `AuthScreen` (`addingAccount: true`) | Login secondo account senza `signOut` sul primo |
+| Menu account in `HomeScreen` | Switch, **Aggiungi account**, Esci (solo account attivo) |
 
 **Scelta**: refresh token in locale (web) — accettabile per Alpha; encryption pianificata post-Alpha.
+
+**Fix switch**: non usare **Esci** per aggiungere un secondo account (revoca sessione server); usare **Aggiungi account**.
 
 ### 2.5 Caricamento inbox (lista chat)
 
