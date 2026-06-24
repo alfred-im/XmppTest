@@ -48,6 +48,7 @@ class ChatPanel extends StatelessWidget {
           ChatInputBar(
             enabled: !messagesController.isSending,
             onSend: messagesController.send,
+            onSendGif: messagesController.sendGif,
           ),
         ],
       ),

@@ -28,7 +28,10 @@ BEGIN
 
   -- Funzioni RPC
   IF to_regprocedure('public.send_message(uuid,text,text)') IS NULL THEN
-    RAISE EXCEPTION 'Missing RPC send_message';
+    RAISE EXCEPTION 'Missing RPC send_message (text overload)';
+  END IF;
+  IF to_regprocedure('public.send_message(uuid,text,text,public.message_content_type,text)') IS NULL THEN
+    RAISE EXCEPTION 'Missing RPC send_message (media overload)';
   END IF;
   IF to_regprocedure('public.mark_conversation_read(uuid)') IS NULL THEN
     RAISE EXCEPTION 'Missing RPC mark_conversation_read';

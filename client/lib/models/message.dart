@@ -1,5 +1,7 @@
 enum MessageStatus { sent, delivered, read, pending, failed }
 
+enum MessageContentType { text, gif }
+
 MessageStatus messageStatusFromDelivery(String? value) {
   switch (value) {
     case 'delivered':
@@ -15,6 +17,15 @@ MessageStatus messageStatusFromDelivery(String? value) {
   }
 }
 
+MessageContentType messageContentTypeFromString(String? value) {
+  switch (value) {
+    case 'gif':
+      return MessageContentType.gif;
+    default:
+      return MessageContentType.text;
+  }
+}
+
 class ChatMessage {
   const ChatMessage({
     required this.id,
@@ -24,6 +35,8 @@ class ChatMessage {
     this.status = MessageStatus.sent,
     this.createdAt,
     this.senderId,
+    this.contentType = MessageContentType.text,
+    this.mediaUrl,
   });
 
   final String id;
@@ -33,6 +46,15 @@ class ChatMessage {
   final MessageStatus status;
   final DateTime? createdAt;
   final String? senderId;
+  final MessageContentType contentType;
+  final String? mediaUrl;
+
+  bool get isGif =>
+      contentType == MessageContentType.gif &&
+      mediaUrl != null &&
+      mediaUrl!.isNotEmpty;
+
+  bool get hasRenderableContent => body.isNotEmpty || isGif;
 
   factory ChatMessage.fromJson({
     required Map<String, dynamic> json,
@@ -41,12 +63,14 @@ class ChatMessage {
     final createdAt = DateTime.parse(json['created_at'] as String);
     return ChatMessage(
       id: json['id'] as String,
-      body: json['body'] as String,
-      timeLabel: '', // filled by UI via formatMessageTime
+      body: json['body'] as String? ?? '',
+      timeLabel: '',
       isMine: json['sender_id'] == currentUserId,
       status: messageStatusFromDelivery(json['delivery_status'] as String?),
       createdAt: createdAt,
       senderId: json['sender_id'] as String?,
+      contentType: messageContentTypeFromString(json['content_type'] as String?),
+      mediaUrl: json['media_url'] as String?,
     );
   }
 }

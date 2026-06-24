@@ -110,7 +110,20 @@ client/lib/
 4. Per protocollo `internal`: delivery immediata via Realtime
 5. Per `xmpp`/`matrix`: status `pending` + riga `outbox` (bridge futuro)
 
-### 2.8 Spunte lettura (Alpha interna)
+### 2.8 GIF in chat
+
+1. Utente seleziona file `.gif` (`ChatInputBar` + `file_picker`)
+2. `MessageMediaService.uploadGif` → bucket Supabase `chat-media` (`{userId}/{uuid}.gif`)
+3. RPC `send_message` con `content_type=gif` e `media_url` pubblico
+4. `MessageBubble` renderizza `Image.network` (placeholder durante upload ottimistico)
+5. Preview inbox: `[GIF]` (trigger `on_message_inserted`)
+
+**Scelte**:
+- Storage pubblico per URL semplici in Realtime (Alpha); signed URL post-Alpha se serve
+- Solo `image/gif`, max 10 MB — bucket RLS: upload solo in cartella `auth.uid()`
+- `body` può essere vuoto per GIF; `mark_conversation_read` include `content_type=gif`
+
+### 2.9 Spunte lettura (Alpha interna)
 
 - `mark_conversation_read` RPC apertura chat
 - Aggiorna `unread_count`, inserisce `message_read_receipts`, promuove `delivery_status` a `read` per messaggi propri
@@ -129,6 +142,7 @@ client/lib/
 | `20260624200000_alfred_domain_schema.sql` | Schema dominio, RLS, trigger, RPC base |
 | `20260624210000_rpc_grants_hardening.sql` | Grant EXECUTE RPC solo `authenticated` |
 | `20260624220000_list_conversations_rpc.sql` | RPC inbox un round-trip |
+| `20260624230000_message_gif_support.sql` | `content_type`, `media_url`, bucket `chat-media`, RPC media |
 
 ### 3.2 Modello dati
 
@@ -136,11 +150,12 @@ client/lib/
 auth.users 1──1 profiles
 profiles 1──* contacts (owner)
 profiles *──* conversations (via conversation_participants)
-conversations 1──* messages
+conversations 1──* messages (content_type, media_url opzionale)
 messages 1──* message_read_receipts
-messages 1──0..1 outbox (se federato)
+messages 1──0..1 outbox (se federato; payload include content_type/media_url)
 profiles 1──* sync_cursors
 bridge_jobs (coda generica bridge)
+storage.chat-media (GIF upload, path `{userId}/{uuid}.gif`)
 ```
 
 ### 3.3 Enum
@@ -148,6 +163,7 @@ bridge_jobs (coda generica bridge)
 | Tipo | Valori | Uso |
 |------|--------|-----|
 | `contact_protocol` | internal, xmpp, matrix | Routing interno (invisibile UI) |
+| `message_content_type` | text, gif | Tipo contenuto messaggio |
 | `message_delivery_status` | pending…failed | Spunte + outbox |
 | `queue_status` | queued…failed | Outbox / bridge_jobs |
 
@@ -174,7 +190,7 @@ bridge_jobs (coda generica bridge)
 | `list_conversations` | Inbox completa in un round-trip (nome, preview, unread) |
 | `get_or_create_direct_conversation` | Chat 1:1 interna idempotente |
 | `get_or_create_conversation_from_contact` | Apre chat da rubrica (qualsiasi protocollo) |
-| `send_message` | Validazione partecipante + body non vuoto |
+| `send_message` | Validazione partecipante; testo (`body` non vuoto) o GIF (`media_url`) |
 | `mark_conversation_read` | Unread + read receipts |
 
 **Scelta**: logica critica in RPC `SECURITY DEFINER` — il client non può bypassare RLS con insert diretti malformati.
@@ -184,7 +200,7 @@ bridge_jobs (coda generica bridge)
 | Trigger | Evento | Azione |
 |---------|--------|--------|
 | `on_auth_user_created` | INSERT `auth.users` | Crea `profiles` da metadata signup |
-| `messages_after_insert` | INSERT `messages` | Preview, unread, outbox se federato |
+| `messages_after_insert` | INSERT `messages` | Preview (`[GIF]` se gif), unread, outbox se federato |
 
 ### 3.8 RLS
 

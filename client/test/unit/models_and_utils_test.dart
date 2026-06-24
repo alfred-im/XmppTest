@@ -16,6 +16,14 @@ void main() {
     });
   });
 
+  group('MessageContentType', () {
+    test('maps content type strings', () {
+      expect(messageContentTypeFromString('gif'), MessageContentType.gif);
+      expect(messageContentTypeFromString('text'), MessageContentType.text);
+      expect(messageContentTypeFromString(null), MessageContentType.text);
+    });
+  });
+
   group('ContactProtocol', () {
     test('parses protocol names', () {
       expect(contactProtocolFromString('xmpp'), ContactProtocol.xmpp);
@@ -85,6 +93,23 @@ void main() {
       );
       expect(incoming.isMine, isFalse);
       expect(incoming.status, MessageStatus.read);
+    });
+
+    test('parses gif messages', () {
+      final gif = ChatMessage.fromJson(
+        json: {
+          'id': '3',
+          'body': '',
+          'content_type': 'gif',
+          'media_url': 'https://example.com/fun.gif',
+          'created_at': DateTime.now().toUtc().toIso8601String(),
+          'sender_id': 'user-b',
+          'delivery_status': 'sent',
+        },
+        currentUserId: 'user-a',
+      );
+      expect(gif.isGif, isTrue);
+      expect(gif.hasRenderableContent, isTrue);
     });
   });
 }

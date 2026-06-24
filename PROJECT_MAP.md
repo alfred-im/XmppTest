@@ -1,6 +1,6 @@
 # Alfred - Mappa Completa del Progetto
 
-**Ultimo aggiornamento**: 2026-06-24 (sync documentazione PR Alpha #108–#114)  
+**Ultimo aggiornamento**: 2026-06-24 (PR Alpha #108–#115: docs sync + GIF chat)  
 **Versione repository**: 3.1.0-alpha (client Flutter live con piattaforma; bridge esclusi)
 
 ---
@@ -31,7 +31,7 @@
 | **Bridge** | `bridge-xmpp/` · `bridge-matrix/` — **stub** (health Fly.io only, non implementati) |
 | **Client legacy** | `web-client/` rimosso da `main` — tag `legacy/web-client-final` @ `6e792eb` |
 | **Recupero legacy** | `git checkout legacy/web-client-final -- web-client/` |
-| **Branch** | `main` — PR Alpha #108–#114 mergiate (registro: `docs/architecture/alpha-pr-registry.md`) |
+| **Branch** | `main` — PR Alpha #108–#115 mergiate (registro: `docs/architecture/alpha-pr-registry.md`) |
 
 **Stack su `main`**: `client/` · `supabase/` · `bridge-xmpp/` · `bridge-matrix/`
 
@@ -49,7 +49,8 @@ La documentazione sotto che cita `web-client/` descrive il **client React storic
 - **Multi-account**: switch Thunderbird via `SharedPreferences` + `setSession`
 - **Contatti unificati**: interni Alfred + esterni XMPP/Matrix (protocollo solo routing)
 - **Conversazioni + chat realtime**: Supabase Postgres + Realtime; inbox via RPC `list_conversations` (un round-trip)
-- **Messaggistica interna**: utente↔utente stessa istanza — completa
+- **GIF in chat**: upload su bucket Supabase `chat-media` → `messages.content_type=gif` + `media_url`; preview inbox `[GIF]`
+- **Messaggistica interna**: utente↔utente stessa istanza — completa (testo + GIF)
 - **Messaggistica federata**: outbox `queued` — attende bridge (non implementato)
 - **Profilo Alfred**: display name, bio, username
 - **Spunte lettura**: `mark_conversation_read` + `delivery_status`
@@ -265,7 +266,7 @@ Per ogni messaggio nell'array:
 | **Entry** | `lib/main.dart` → `AppShell` (auth gate) → `HomeScreen` |
 | **State** | Provider (`AuthController`, `ConversationsController`, `ContactsController`, `MessagesController`) |
 | **Backend** | `supabase_flutter` — REST + Realtime + RPC |
-| **Dipendenze** | `provider`, `intl`, `uuid`, `shared_preferences`, `supabase_flutter` |
+| **Dipendenze** | `provider`, `intl`, `uuid`, `shared_preferences`, `file_picker`, `supabase_flutter` |
 | **Config** | `lib/config/app_config.dart` — override `--dart-define=SUPABASE_URL` |
 | **Test** | `test/unit/`, `test/widget/` — CI esegue `flutter test` |
 | **Build web** | `flutter build web --release --base-href "/XmppTest/"` |
@@ -274,7 +275,7 @@ Per ogni messaggio nell'array:
 client/lib/
 ├── config/          # AppConfig (Supabase URL/key)
 ├── models/          # Conversation, ChatMessage, Contact, UserProfile, SavedAccount
-├── services/        # auth, contact, conversation, message, profile, account storage
+├── services/        # auth, contact, conversation, message, message_media, profile, account storage
 ├── providers/       # ChangeNotifier controllers
 ├── screens/         # AppShell, Auth, Home, Contacts, Profile
 ├── theme/           # AlfredColors, AlfredTheme
@@ -887,12 +888,12 @@ class ConversationRepository {
 
 ## 📊 Stato Corrente
 
-### Stack su `main` (2026-06-24, post-merge PR #108–#114)
+### Stack su `main` (2026-06-24, post-merge PR #108–#115)
 
 | Componente | Stato |
 |------------|-------|
-| `client/` (Flutter) | 🟢 Auth, contatti, chat realtime, profilo, multi-account |
-| `supabase/` | 🟢 Schema dominio + RLS + RPC (`list_conversations`) + outbox |
+| `client/` (Flutter) | 🟢 Auth, contatti, chat realtime (testo + GIF), profilo, multi-account |
+| `supabase/` | 🟢 Schema dominio + RLS + RPC + storage `chat-media` + outbox |
 | `bridge-xmpp/` · `bridge-matrix/` | 🟡 Stub Fly.io health — federazione non implementata |
 | `web-client/` (React) | ❌ Rimosso — tag `legacy/web-client-final` |
 
@@ -902,7 +903,7 @@ class ConversationRepository {
 - Multi-account Thunderbird (`SharedPreferences` + switch refresh token) — PR #111
 - Contatti unificati (interni + federati in rubrica)
 - Inbox via RPC `list_conversations` (un round-trip) — PR #112
-- Chat realtime testo (Supabase Postgres + Realtime) — PR #109
+- Chat realtime testo + GIF (Supabase Postgres + Realtime + Storage) — PR #109/#115
 - Stabilità inbox web: `waitForSupabaseSessionReady` + `ChangeNotifierProxyProvider` — PR #113/#114
 - Deploy GitHub Pages con passkeys bundle — PR #110
 - Layout conversazioni + chat responsive, tema `#2D2926`
@@ -1060,6 +1061,7 @@ Documentati in `docs/fixes/known-issues.md`:
 - ✅ **PR #111**: multi-account switch senza logout forzato
 - ✅ **PR #112**: RPC `list_conversations` inbox un round-trip
 - ✅ **PR #113**: fix race auth web (`waitForSupabaseSessionReady`)
+- ✅ **PR #115**: GIF in chat (`content_type`, `media_url`, bucket `chat-media`)
 - ✅ **PR #114**: `ChangeNotifierProxyProvider` — fix UI inbox bloccata
 - ✅ Documentazione: `alpha-pr-registry.md`, `flutter-inbox-stability.md`, sync PROJECT_MAP/CHANGELOG
 

@@ -18,7 +18,7 @@ Documento per AI. Ogni PR deve riflettersi in: `PROJECT_MAP.md`, `CHANGELOG.md`,
 | **#112** | `list_conversations` RPC | Inbox un round-trip, nome peer lato server | `alpha-full-stack.md` §2.5, migrazione `20260624220000` |
 | **#113** | Fix race auth inbox | `waitForSupabaseSessionReady`, `sessionReady` gate, timeout load | `alpha-full-stack.md` §2.3, `fixes/flutter-inbox-stability.md` |
 | **#114** | Fix provider listen | `ChangeNotifierProxyProvider` per inbox/contatti/profilo | `alpha-full-stack.md` §2.2, `fixes/flutter-inbox-stability.md` |
-| **#115** | GIF in chat | `content_type`, `media_url`, bucket `chat-media` | *branch `cursor/gif-conversation-support-bf39` — non su main* |
+| **#115** | GIF in chat | `content_type`, `media_url`, bucket `chat-media` | `alpha-full-stack.md` §2.8, migrazione `20260624230000` |
 
 ---
 
@@ -45,7 +45,7 @@ Dopo ogni merge su `main`:
 | `20260624200000_alfred_domain_schema.sql` | #109 | Schema dominio, RLS, RPC base |
 | `20260624210000_rpc_grants_hardening.sql` | #109 | Grant RPC authenticated |
 | `20260624220000_list_conversations_rpc.sql` | #112 | RPC inbox |
-| `20260624230000_message_gif_support.sql` | #115 | GIF — *solo se PR #115 mergiata* |
+| `20260624230000_message_gif_support.sql` | #115 | GIF — `content_type`, `media_url`, bucket `chat-media` |
 
 ---
 

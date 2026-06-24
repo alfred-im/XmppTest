@@ -28,6 +28,12 @@ Modifiche rilevanti al progetto per tracciare evoluzione tecnica e decisioni imp
 - **`docs/fixes/flutter-inbox-stability.md`**: fix PR #113/#114 (race auth + ChangeNotifierProxyProvider)
 - Allineati PROJECT_MAP, CHANGELOG, INDICE, README, `alpha-full-stack.md`, discovery doc
 
+### Alpha Flutter — PR #115 (GIF in chat)
+- **Messaggi GIF**: `messages.content_type` (`text`|`gif`), `messages.media_url`
+- Migrazione `20260624230000_message_gif_support.sql` — applicata su progetto cloud
+- Storage bucket `chat-media` (solo `image/gif`, 10 MB, RLS per cartella utente)
+- Client: `MessageMediaService`, picker GIF in `ChatInputBar`, rendering in `MessageBubble`
+
 ### Alpha Flutter — PR #114 (fix provider listen)
 - **`ChangeNotifierProxyProvider`** al posto di `ProxyProvider` per Conversations/Contacts/Profile
 - Test widget `conversations_provider_listen_test.dart` + e2e `inbox-load.spec.ts`
@@ -35,11 +41,11 @@ Modifiche rilevanti al progetto per tracciare evoluzione tecnica e decisioni imp
 ### Alpha Flutter — PR #113 (fix inbox auth race)
 - **`waitForSupabaseSessionReady()`** dopo `Supabase.initialize` prima delle RPC
 - `ConversationsController`: realtime dopo primo load; timeout 30s; UI errore + Riprova
-- Gate `sessionReady` su `ProxyProvider`/`ChangeNotifierProxyProvider` in `main.dart`
+- Gate `sessionReady` su `ChangeNotifierProxyProvider` in `main.dart`
 
 ### Alpha Flutter — PR #112 (inbox performance)
 - **RPC `list_conversations()`**: inbox completa in un round-trip (display name server-side)
-- Migrazione `20260624220000_list_conversations_rpc.sql`
+- Migrazione `20260624220000_list_conversations_rpc.sql` — applicata su progetto cloud
 - Client: `ConversationService` usa RPC; `Conversation.fromListRpcRow`
 
 ### Alpha Flutter — PR #111 (multi-account)
