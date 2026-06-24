@@ -10,7 +10,7 @@ Il repository è in **migrazione** dalla rivoluzione documentata in `docs/decisi
 
 | Componente | Stato |
 |------------|-------|
-| **`client/`** (Flutter) | Da implementare (cartella vuota) |
+| **`client/`** (Flutter) | UI mock chat (web + scaffold multi-piattaforma) |
 | **`supabase/`** | Piattaforma — bootstrap schema |
 | **`bridge-xmpp/`** · **`bridge-matrix/`** | Demoni Python su Fly.io (health OK) |
 | **`web-client/`** (React) | **Rimosso da `main`** |
@@ -47,6 +47,17 @@ Flutter (client/)  →  Supabase (piattaforma)  →  bridge XMPP + bridge Matrix
 | Indice | `docs/INDICE.md` | Navigazione per area |
 
 **Nota sui percorsi `web-client/` nei doc**: molti file in `docs/` citano ancora il client React — sono **riferimenti storici** validi al tag `legacy/web-client-final`.
+
+## Build e preview locale (Flutter)
+
+```bash
+cd client
+flutter pub get
+flutter run -d chrome          # dev
+flutter build web --release --base-href "/XmppTest/"
+```
+
+**GitHub Pages**: https://alfred-im.github.io/XmppTest/ — deploy automatico su push a `main` (cartella `client/`).
 
 ## Infrastruttura cloud (bootstrap)
 

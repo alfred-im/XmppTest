@@ -1,6 +1,6 @@
 # Alfred - Mappa Completa del Progetto
 
-**Ultimo aggiornamento**: 2026-06-24 (rimozione `web-client/` da main ✅)  
+**Ultimo aggiornamento**: 2026-06-24 (client Flutter UI mock + deploy Pages ✅)  
 **Versione repository**: 3.0.0-alpha (migrazione Flutter/Supabase in corso)
 
 ---
@@ -31,7 +31,7 @@ La cartella **`web-client/` non è più presente su `main`**. È stata eliminata
 | **Deploy legacy** | GitHub Pages (`alfred-im.github.io/XmppTest/`) — workflow rimosso |
 | **Documentazione sotto** | Sezioni su `web-client/` restano come **riferimento storico** per il nuovo client Flutter |
 
-**Stack attivo su `main`**: `client/` (Flutter, da implementare) · `supabase/` · `bridge-xmpp/` · `bridge-matrix/`
+**Stack attivo su `main`**: `client/` (Flutter — UI mock) · `supabase/` · `bridge-xmpp/` · `bridge-matrix/`
 
 ---
 
@@ -207,13 +207,38 @@ Per ogni messaggio nell'array:
 │   └── archive/               # Ricerca XMPP e documenti storici
 ├── bridge-matrix/             # Bridge Python Matrix (demone, no fly.toml locale)
 ├── bridge-xmpp/               # Bridge Python XMPP (demone, no fly.toml locale)
-├── client/                    # Flutter Web (placeholder Alpha)
+├── client/                    # Flutter (web + desktop/mobile scaffold) — UI chat mock
+├── .github/workflows/
+│   └── deploy-pages.yml       # Deploy Flutter web su GitHub Pages (/XmppTest/)
 ├── supabase/                  # Config + migrazioni piattaforma Alfred
 ├── README.md                  # Documentazione principale
 ├── CHANGELOG.md               # Change log del progetto
 ├── LICENSE                    # Licenza MIT
 ├── TEST_CREDENTIALS.md        # Credenziali di test
 └── PROCEDURA_REVISIONE_GENERALE.md  # Procedura di revisione
+```
+
+### Client Flutter (`/workspace/client`)
+
+**Stato**: UI mock chat (dati fittizi) — **nessun backend** ancora collegato.
+
+| Elemento | Dettaglio |
+|----------|-----------|
+| **Entry** | `lib/main.dart` → `HomeScreen` |
+| **Layout** | Lista conversazioni + pannello chat (responsive, stile WhatsApp Web) |
+| **Brand** | `#2D2926`, header Alfred, bolle messaggio, spunte mock |
+| **Piattaforme** | Web, Android, iOS, Linux, macOS, Windows (scaffold `flutter create`) |
+| **Build web** | `flutter build web --release --base-href "/XmppTest/"` |
+| **Deploy** | GitHub Pages — https://alfred-im.github.io/XmppTest/ (workflow su `main`) |
+
+```
+client/lib/
+├── main.dart
+├── theme/           # AlfredColors, AlfredTheme
+├── models/          # Conversation, ChatMessage
+├── data/            # MockData
+├── screens/         # HomeScreen
+└── widgets/         # ConversationsPanel, ChatPanel, MessageBubble, …
 ```
 
 ### Client legacy React (`web-client/`) — RIMOSSO DA MAIN
@@ -801,7 +826,7 @@ class ConversationRepository {
 
 | Componente | Stato |
 |------------|-------|
-| `client/` (Flutter) | ⬜ Placeholder — da implementare |
+| `client/` (Flutter) | 🟡 UI mock chat — no backend |
 | `supabase/` | 🟡 Bootstrap (pgcrypto + smoke test) |
 | `bridge-xmpp/` · `bridge-matrix/` | 🟡 Deploy Fly OK, logica bridge TODO |
 | `web-client/` (React) | ❌ Rimosso — tag `legacy/web-client-final` |
