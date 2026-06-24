@@ -6,6 +6,7 @@ import 'package:uuid/uuid.dart';
 
 import '../models/message.dart';
 import '../services/conversation_service.dart';
+import '../services/message_media_service.dart';
 import '../services/message_service.dart';
 import '../services/supabase_bootstrap.dart';
 import '../utils/date_format.dart';
@@ -15,8 +16,10 @@ class MessagesController extends ChangeNotifier {
     required this.conversationId,
     required this.userId,
     MessageService? messageService,
+    MessageMediaService? messageMediaService,
     ConversationService? conversationService,
   })  : _messageService = messageService ?? MessageService(),
+        _messageMediaService = messageMediaService ?? const MessageMediaService(),
         _conversationService = conversationService ?? ConversationService() {
     _init();
   }
@@ -24,6 +27,7 @@ class MessagesController extends ChangeNotifier {
   final String conversationId;
   final String userId;
   final MessageService _messageService;
+  final MessageMediaService _messageMediaService;
   final ConversationService _conversationService;
   final _uuid = const Uuid();
 
@@ -63,6 +67,8 @@ class MessagesController extends ChangeNotifier {
       status: message.status,
       createdAt: at,
       senderId: message.senderId,
+      contentType: message.contentType,
+      mediaUrl: message.mediaUrl,
     );
   }
 
@@ -84,29 +90,68 @@ class MessagesController extends ChangeNotifier {
 
   Future<void> send(String body) async {
     if (body.trim().isEmpty || isSending) return;
-    isSending = true;
-    notifyListeners();
-
-    final clientId = _uuid.v4();
-    final optimistic = ChatMessage(
-      id: clientId,
-      body: body.trim(),
-      timeLabel: formatMessageTime(DateTime.now()),
-      isMine: true,
-      status: MessageStatus.sent,
-      createdAt: DateTime.now(),
-      senderId: userId,
-    );
-    messages = [...messages, optimistic];
-    notifyListeners();
-
-    try {
-      final saved = await _messageService.sendMessage(
+    await _sendOptimistic(
+      optimistic: ChatMessage(
+        id: _uuid.v4(),
+        body: body.trim(),
+        timeLabel: formatMessageTime(DateTime.now()),
+        isMine: true,
+        status: MessageStatus.sent,
+        createdAt: DateTime.now(),
+        senderId: userId,
+      ),
+      send: (clientId) => _messageService.sendMessage(
         conversationId: conversationId,
         body: body,
         currentUserId: userId,
         clientMessageId: clientId,
-      );
+      ),
+    );
+  }
+
+  Future<void> sendGif(Uint8List bytes) async {
+    if (bytes.isEmpty || isSending) return;
+    final clientId = _uuid.v4();
+    await _sendOptimistic(
+      optimistic: ChatMessage(
+        id: clientId,
+        body: '',
+        timeLabel: formatMessageTime(DateTime.now()),
+        isMine: true,
+        status: MessageStatus.pending,
+        createdAt: DateTime.now(),
+        senderId: userId,
+        contentType: MessageContentType.gif,
+        mediaUrl: 'pending://$clientId',
+      ),
+      send: (id) async {
+        final mediaUrl = await _messageMediaService.uploadGif(
+          bytes: bytes,
+          userId: userId,
+        );
+        return _messageService.sendGif(
+          conversationId: conversationId,
+          mediaUrl: mediaUrl,
+          currentUserId: userId,
+          clientMessageId: id,
+        );
+      },
+    );
+  }
+
+  Future<void> _sendOptimistic({
+    required ChatMessage optimistic,
+    required Future<ChatMessage> Function(String clientId) send,
+  }) async {
+    isSending = true;
+    notifyListeners();
+
+    final clientId = optimistic.id;
+    messages = [...messages, optimistic];
+    notifyListeners();
+
+    try {
+      final saved = await send(clientId);
       messages = messages
           .map((m) => m.id == clientId ? _withTimeLabel(saved) : m)
           .toList();
@@ -123,6 +168,8 @@ class MessagesController extends ChangeNotifier {
                     status: MessageStatus.failed,
                     createdAt: m.createdAt,
                     senderId: userId,
+                    contentType: m.contentType,
+                    mediaUrl: m.mediaUrl,
                   )
                 : m,
           )

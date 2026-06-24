@@ -24,7 +24,7 @@ class MessageService {
             currentUserId: currentUserId,
           ),
         )
-        .where((m) => m.body.isNotEmpty)
+        .where((m) => m.hasRenderableContent)
         .toList();
   }
 
@@ -40,6 +40,30 @@ class MessageService {
         'p_conversation_id': conversationId,
         'p_body': body,
         'p_client_message_id': clientMessageId,
+        'p_content_type': 'text',
+      },
+    );
+
+    return ChatMessage.fromJson(
+      json: row as Map<String, dynamic>,
+      currentUserId: currentUserId,
+    );
+  }
+
+  Future<ChatMessage> sendGif({
+    required String conversationId,
+    required String mediaUrl,
+    required String currentUserId,
+    required String clientMessageId,
+  }) async {
+    final row = await supabase.rpc(
+      'send_message',
+      params: {
+        'p_conversation_id': conversationId,
+        'p_body': '',
+        'p_client_message_id': clientMessageId,
+        'p_content_type': 'gif',
+        'p_media_url': mediaUrl,
       },
     );
 
@@ -72,7 +96,7 @@ class MessageService {
               json: record,
               currentUserId: currentUserId,
             );
-            if (message.body.isEmpty) return;
+            if (!message.hasRenderableContent) return;
             onMessage(message);
           },
         )

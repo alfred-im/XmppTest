@@ -28,4 +28,27 @@ void main() {
     expect(find.text('12:30'), findsOneWidget);
     expect(find.byIcon(Icons.done_all), findsOneWidget);
   });
+
+  testWidgets('MessageBubble renders gif image', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AlfredTheme.light,
+        home: const Scaffold(
+          body: MessageBubble(
+            message: ChatMessage(
+              id: '2',
+              body: '',
+              timeLabel: '12:31',
+              isMine: false,
+              contentType: MessageContentType.gif,
+              mediaUrl: 'https://example.com/test.gif',
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(find.byType(Image), findsOneWidget);
+    expect(find.text('12:31'), findsOneWidget);
+  });
 }
