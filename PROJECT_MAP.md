@@ -904,13 +904,12 @@ class ConversationRepository {
 - Widget test base
 - Deploy automatico GitHub Pages
 
-### 🚧 Prossimi passi (Alpha)
+### 🚧 Prossimi passi (post-Alpha client+platform)
 
-- Login piattaforma Supabase
-- Schema dominio (utenti, contatti, conversazioni, messaggi)
-- Collegamento client ↔ Supabase Realtime
-- Bridge XMPP (slixmpp) ↔ piattaforma
-- Matrix (scope Alpha TBD)
+- Implementazione bridge XMPP (slixmpp) — consume `outbox`/`sync_cursors`
+- Bridge Matrix (matrix-nio)
+- Spunte XEP-0184/0333 via bridge
+- Encryption token multi-account
 
 Vedi `docs/decisions/project-revolution-discovery.md`.
 
@@ -971,7 +970,10 @@ Documentati in `docs/fixes/known-issues.md`:
 | Area | Copertura | Note |
 |------|-----------|------|
 | **E2E Tests** | ⚠️ Parziale | Playwright tests esistenti ma non completi |
-| **Unit Tests** | ❌ Nessuna | Pianificati per Q1 2026 |
+| **Unit Tests** | ✅ Base | `test/unit/` modelli, storage |
+| **Widget Tests** | ✅ Base | `test/widget/` bolle, logo |
+| **SQL Smoke** | ✅ | `supabase/tests/schema_smoke.sql` |
+| **CI** | ✅ | `flutter analyze` + `flutter test` in deploy-pages |
 | **Integration Tests** | ❌ Nessuna | Pianificati per Q1 2026 |
 | **Manual Testing** | ✅ Completo | Testing manuale su feature implementate |
 
