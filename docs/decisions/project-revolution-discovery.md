@@ -633,7 +633,73 @@ Le seguenti domande erano basate sull'assunzione "client XMPP classico" e sono *
 | D-037 | 2026-06-24 | Daemon = **per istanza**, sempre attivo | ✅ |
 | D-038 | 2026-06-24 | **Priorità**: test deploy servizi dopo allineamento doc | 🟡 Prossimo step |
 | D-039 | 2026-06-24 | **N istanze** Alfred nel mondo, ognuna col proprio dominio | ✅ |
-| D-040 | 2026-06-24 | Prima iter. 10: **testare** deploy Supabase + Fly.io | 🟡 In corso |
+| D-040 | 2026-06-24 | Prima iter. 10: **testare** deploy Supabase + Fly.io | 🟡 GH Pages ok; Supabase/Fly in attesa token |
+
+---
+
+## Risultati test deploy (2026-06-24)
+
+### GitHub Pages — ✅ OK
+
+| Check | Esito |
+|-------|-------|
+| URL live | https://alfred-im.github.io/XmppTest/ |
+| HTTP | **200** |
+| Workflow CI | Ultimo deploy **success** su `main` (2026-06-16) |
+| Build locale `web-client` | **OK** (`npm ci` + `npm run build`) |
+| Config repo | Pages attivo, `build_type: workflow`, branch `main` |
+
+**Link funzionante** — requisito prototipo soddisfatto per il client React legacy.
+
+---
+
+### Supabase — ⏸️ In attesa connessione (CLI + **MCP**)
+
+| Check | Esito |
+|-------|-------|
+| CLI installata | ✅ `supabase` 2.107.0 |
+| `supabase projects list` | ❌ Nessun access token |
+| **MCP Supabase** in questa sessione | ❌ Non connesso (nessun tool MCP disponibile) |
+| Progetto / schema nel repo | ❌ Cartella `supabase/` non ancora creata |
+
+**Supabase ha un MCP server ufficiale** — preferibile per test e gestione piattaforma da Cursor (progetti, tabelle, config, query). Docs: [supabase.com/docs/guides/ai-tools/mcp](https://supabase.com/docs/guides/ai-tools/mcp)
+
+**Per completare il test Supabase** (scegli uno o più):
+
+1. **MCP (consigliato in Cursor)** — Settings → Tools & MCP → aggiungi server Supabase (OAuth login o PAT in `.cursor/mcp.json` con `@supabase/mcp-server-supabase`). Poi rieseguire test deploy da agente.
+2. **CLI** — `supabase login` oppure env `SUPABASE_ACCESS_TOKEN`
+3. **Locale** — con `supabase start`, MCP su `http://localhost:54321/mcp`
+
+Verifiche post-connessione: progetto esiste, auth, DB, URL/API key dell'istanza.
+
+---
+
+### Fly.io — ⏸️ In attesa credenziali
+
+| Check | Esito |
+|-------|-------|
+| CLI installata | ✅ `flyctl` v0.4.60 |
+| `fly auth whoami` | ❌ Nessun access token |
+| `fly.toml` / app nel repo | ❌ Non ancora creati |
+| App deployate | ❌ Non verificabile senza login |
+
+**Per completare il test** (una delle due):
+1. `fly auth login` (interattivo) — oppure
+2. Variabile d'ambiente `FLY_API_TOKEN` (token da [Fly.io → Account → Access Tokens](https://fly.io/user/personal_access_tokens))
+
+Poi verificare: `fly apps list`, creazione smoke app, deploy bridge placeholder.
+
+---
+
+### Riepilogo
+
+| Servizio | Stato | Azione richiesta |
+|----------|-------|------------------|
+| **GitHub Pages** | ✅ Funzionante | Nessuna |
+| **Supabase** | ⏸️ Bloccato | Fornire `SUPABASE_ACCESS_TOKEN` o login |
+| **Fly.io** | ⏸️ Bloccato | Fornire `FLY_API_TOKEN` o login |
+
+_Dopo i token, rieseguire smoke test su Supabase e Fly.io._
 
 ---
 
@@ -677,5 +743,5 @@ Le seguenti domande erano basate sull'assunzione "client XMPP classico" e sono *
 | 7 | 2026-06-24 | Audit contraddizioni; protocollo invisibile; web online |
 | 8 | 2026-06-24 | Servizio ≠ client; account ≠ contatti; daemon servizio; priorità deploy |
 | 9 | 2026-06-24 | Stack OSS self-hosted; analogia Mastodon |
-| 9+ | 2026-06-24 | **Supabase + Fly.io** confermati come infra dello stack |
-| 10 | _prossima_ | Test deploy Supabase / Fly.io / GH Pages |
+| 9+ | 2026-06-24 | Prima iter. 10: **testare** deploy Supabase + Fly.io |
+| 10 | 2026-06-24 | Test deploy eseguito — vedi risultati |
