@@ -1,6 +1,6 @@
 # Alfred - Mappa Completa del Progetto
 
-**Ultimo aggiornamento**: 2026-06-17 (isolamento storage per account + Virtual UI v4.0)  
+**Ultimo aggiornamento**: 2026-06-24 (scaffold deploy: supabase + bridge Fly.io)  
 **Versione**: 2.2.0 (per-account IndexedDB + XEP-0184 + XEP-0333)
 
 ---
