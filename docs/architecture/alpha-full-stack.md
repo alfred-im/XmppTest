@@ -62,9 +62,10 @@ client/lib/
 
 ### 2.3 Flusso bootstrap
 
-1. `main()` → `Supabase.initialize(publishableKey)`
-2. `MultiProvider` registra controller
-3. `AppShell` → `AuthScreen` se non autenticato, altrimenti `HomeScreen`
+1. `main()` → `Supabase.initialize(publishableKey)` → `waitForSupabaseSessionReady()` (attende idratazione auth; `recoverSession` interno è fire-and-forget)
+2. `MultiProvider` registra controller; `AuthController.initialize()` imposta `sessionReady`
+3. `ProxyProvider` crea `ConversationsController` solo se `sessionReady && userId`
+4. `AppShell` → `AuthScreen` se non autenticato, altrimenti `HomeScreen`
 
 ### 2.4 Multi-account
 

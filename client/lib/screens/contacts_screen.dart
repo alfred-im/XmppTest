@@ -23,7 +23,8 @@ class _ContactsScreenState extends State<ContactsScreen> {
   }
 
   Future<void> _startChat(Contact contact) async {
-    final conversations = context.read<ConversationsController>();
+    final conversations = context.read<ConversationsController?>();
+    if (conversations == null) return;
     final conversationId = await conversations.openFromContact(contact.id);
     if (!mounted) return;
     Navigator.pop(context, conversationId);

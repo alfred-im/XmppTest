@@ -29,6 +29,11 @@ Modifiche rilevanti al progetto per tracciare evoluzione tecnica e decisioni imp
 - Client: `ConversationService` usa RPC; `Conversation.fromListRpcRow`
 - Test: `schema_smoke.sql` + unit test parsing payload RPC
 
+### Corretti (2026-06-24 — inbox bloccata all'avvio)
+- **Race auth web**: attendere `waitForSupabaseSessionReady()` dopo `Supabase.initialize` prima delle RPC
+- **ConversationsController**: realtime dopo primo load; timeout 30s; UI errore + Riprova
+- **ProxyProvider**: crea controller inbox/contatti solo con `sessionReady`
+
 ### Corretti (2026-06-24 — multi-account)
 - **Switch account**: persist refresh token prima del cambio; ascolto `tokenRefreshed`
 - **Aggiungi account**: flusso dedicato (`prepareAddAccount` + `AuthScreen`) senza revocare sessioni esistenti

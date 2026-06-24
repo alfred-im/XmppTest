@@ -25,6 +25,7 @@ class AuthController extends ChangeNotifier {
   UserProfile? profile;
   List<SavedAccount> savedAccounts = [];
   bool isLoading = true;
+  bool sessionReady = false;
   String? error;
 
   bool get isAuthenticated => _authService.isAuthenticated;
@@ -34,6 +35,8 @@ class AuthController extends ChangeNotifier {
   Future<void> initialize() async {
     savedAccounts = await _authService.savedAccounts();
     await _loadProfile();
+    sessionReady = true;
+    notifyListeners();
   }
 
   /// Prima di aggiungere un altro account: salva la sessione corrente.
