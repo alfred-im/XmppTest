@@ -1,6 +1,6 @@
 # Rivoluzione Alfred — Discovery Q&A
 
-**Stato**: 🟡 In corso — test deploy Supabase; **Fly.io ✅**  
+**Stato**: 🟡 In corso — test deploy **Supabase**; **Fly.io ✅** (bridge live)  
 
 ### Prima della prossima iterazione — test deploy
 
@@ -9,7 +9,7 @@
 | Servizio | Scopo | Test |
 |----------|-------|------|
 | **Supabase** | Piattaforma (cloud) | Progetto attivo, config in repo |
-| **Fly.io** | Bridge Python (cloud) | App attive, config in repo |
+| **Fly.io** | Bridge Python (cloud) | ✅ `xmpptest` live — XMPP + Matrix |
 | **GitHub Pages** | Flutter Web | Build + URL |
 
 **Modello deploy** (chiarimento utente): Supabase e Fly.io **non richiedono la CLI locale** per committare i file né per funzionare. La configurazione vive nel **repository**; i servizi girano **in cloud**. Deploy/gestione via CI, dashboard, MCP — la CLI è opzionale per sviluppo locale.
@@ -635,12 +635,14 @@ Le seguenti domande erano basate sull'assunzione "client XMPP classico" e sono *
 | D-037 | 2026-06-24 | Daemon = **per istanza**, sempre attivo | ✅ |
 | D-038 | 2026-06-24 | **Priorità**: test deploy servizi dopo allineamento doc | 🟡 Prossimo step |
 | D-039 | 2026-06-24 | **N istanze** Alfred nel mondo, ognuna col proprio dominio | ✅ |
-| D-040 | 2026-06-24 | Prima iter. 10: **testare** deploy Supabase + Fly.io | 🟡 GH Pages ok; Supabase/Fly in attesa |
+| D-040 | 2026-06-24 | Test deploy Supabase + Fly.io | 🟡 Supabase in attesa; **Fly ✅** |
 | D-041 | 2026-06-24 | Test Supabase via **MCP** o dashboard (CLI opzionale) | ✅ |
 | D-042 | 2026-06-24 | **Nessuna CLI obbligatoria** — config in repo, runtime in cloud | ✅ |
+| D-043 | 2026-06-24 | Fly deploy: config + Dockerfile in root; Fly legge repo (no GitHub Actions token) | ✅ |
 | D-044 | 2026-06-24 | Fly: **un’app** con due demoni bridge nello stesso container | ✅ |
 | D-045 | 2026-06-24 | App Fly live **`xmpptest`** → https://xmpptest.fly.dev | ✅ |
 | D-046 | 2026-06-24 | Matrix esposto: secondo `[[services]]`, porta **8081** dedicata | ✅ |
+| D-047 | 2026-06-24 | **PR Fly #103** (`app/fly-io`): chiudere senza merge — ripristinerebbe solo `[http_service]` | ✅ |
 
 ---
 
@@ -652,7 +654,7 @@ Le seguenti domande erano basate sull'assunzione "client XMPP classico" e sono *
 | **Cosa committi** | `supabase/` (migrazioni, config, edge functions) | `fly.toml`, Dockerfile, codice bridge |
 | **CLI locale necessaria?** | ❌ No | ❌ No |
 | **Come si deploya** | Dashboard, MCP, CI | **Fly legge il repo** (config + Dockerfile in root) |
-| **Per funzionare** | Progetto cloud + file repo allineati | Un’app Fly `xmpptest`, due servizi (443→XMPP, 8081/8082→Matrix) |
+| **Per funzionare** | Progetto cloud + file repo allineati | Un’app Fly `xmpptest`, due demoni, due `[[services]]` (443→XMPP, 8081→Matrix) |
 
 La CLI (e MCP per Supabase) sono **strumenti opzionali** per sviluppo e smoke test — non parte del modello runtime.
 
@@ -685,41 +687,77 @@ La CLI (e MCP per Supabase) sono **strumenti opzionali** per sviluppo e smoke te
 
 ---
 
-### Fly.io — ✅ OK (aggiornato 2026-06-24)
+### Fly.io — ✅ OK (2026-06-24, verificato)
 
 | Check | Esito |
 |-------|-------|
 | App Fly | `xmpptest` (region `fra`) |
-| Modello | Un’app, due demoni (`start-bridges.sh`), **due servizi Fly** |
+| Modello | **Un’app**, due demoni (`start-bridges.sh`), **due servizi Fly** |
 | Config repo | `fly.toml` (due `[[services]]`) + `Dockerfile` in root |
+| Deploy | Fly collegato a GitHub **legge il repo** — no GitHub Actions custom, no token utente |
 
-**Endpoint test (due porte — Opzione A)**
+**Endpoint live (test agente 2026-06-24)**
 
-| Bridge | URL health | Porta Fly |
-|--------|------------|-----------|
-| **XMPP** | https://xmpptest.fly.dev/health | 443 → interno 8080 |
-| **Matrix** | https://xmpptest.fly.dev:8081/health | 8081 TLS → interno 8081 |
+| Bridge | URL health | Esito |
+|--------|------------|-------|
+| **XMPP** | https://xmpptest.fly.dev/health | ✅ **200** `alfred-bridge-xmpp` |
+| **Matrix** | https://xmpptest.fly.dev:8081/health | ✅ **200** `alfred-bridge-matrix` |
 
-_Risposta attesa: `{"status":"ok","service":"alfred-bridge-xmpp"}` / `alfred-bridge-matrix`._
+**Mappatura porte**
 
-**Test eseguiti dall’agente (post-merge PR #102)**
-
-| Endpoint | Esito | Note |
-|----------|-------|------|
-| https://xmpptest.fly.dev/health | ✅ **200** | XMPP OK |
-| https://xmpptest.fly.dev:8081/health | 🟡 in attesa | Porta TCP aperta; health dopo **redeploy Fly** con nuovo `fly.toml` |
-
-Fly collegato a GitHub deve rileggere `main` e ridistribuire. Fino al redeploy resta attiva la config precedente (solo 443).
-
-**Perché Matrix non era raggiungibile prima**: un solo `[http_service]` su 8080 — Fly non pubblicava la 8081. Risolto con secondo blocco `[[services]]`.
-
-**Nota Fly multi-porta**: due servizi pubblici sulla stessa app; Fly può richiedere IPv4 dedicato (doc ufficiale esempio multi-port). Se Launch segnala IP, va allocato lato Fly (agente).
+| Bridge | Porta interna (container) | Esposizione Fly |
+|--------|---------------------------|-----------------|
+| XMPP | 8080 | HTTPS 443 |
+| Matrix | 8081 | HTTPS **8081** (porta dedicata) |
 
 | File (root) | Ruolo |
 |-------------|-------|
-| `fly.toml` | Due `[[services]]`: XMPP (443) + Matrix (8081/8082) |
-| `Dockerfile` | Immagine con XMPP + Matrix |
-| `scripts/start-bridges.sh` | Avvia entrambi i demoni |
+| `fly.toml` | Due `[[services]]`: XMPP (443→8080) + Matrix (8081→8081) |
+| `Dockerfile` | Build immagine con `bridge-xmpp/` + `bridge-matrix/` |
+| `scripts/start-bridges.sh` | Avvia entrambi i demoni in background |
+| `deploy/fly-bridges.json` | Indice URL e porte (riferimento agente) |
+
+**PR Fly #103 — non mergeare**
+
+Dopo Launch, il bot `app/fly-io` apre **PR #103** (`Fly.io Launch config files`) con un `fly.toml` generato al Launch: contiene solo `[http_service]` su 8080. **Chiudere senza merge** — annullerebbe l’esposizione Matrix. Su `main` c’è già la config corretta (due servizi).
+
+---
+
+## Deploy Fly.io — cronologia e lesson learned (2026-06-24)
+
+### Vincoli operativi (decisi in sessione)
+
+| Vincolo | Significato |
+|---------|-------------|
+| **Zero azioni utente** | Niente token da incollare, niente comandi da PC, niente config manuale in dashboard |
+| **Fly legge il repo** | Deploy via collegamento Fly↔GitHub; config committata in root |
+| **Agente scrive tutto** | Codice, `fly.toml`, test, documentazione |
+| **Metodo Fly standard** | No GitHub Actions custom con `FLY_API_TOKEN` |
+
+### Percorso tentato (cosa NON ha funzionato)
+
+| Tentativo | Problema |
+|-----------|----------|
+| Due app Fly separate (`alfred-im-bridge-xmpp` / `-matrix`) | Monorepo: Launch dalla root non trova Dockerfile; complessità doppia app |
+| GitHub Actions + `FLY_API_TOKEN` | Contrario al modello “Fly legge repo”; token non disponibile all’agente |
+| `fly.bridge-*.toml` + `Dockerfile.bridge-*` in root | Fly Launch (`--copy-config`) cerca **`fly.toml`** e **`Dockerfile`** (nomi esatti) |
+| Solo `[http_service]` su 8080 | XMPP OK; Matrix gira ma **non esposto** su internet |
+| Merge PR #103 Fly | Ripristinerebbe config Launch obsoleta (solo XMPP) |
+
+### Soluzione finale (validata)
+
+1. **Un’app Fly** `xmpptest` — due demoni nello **stesso container** (non due app Fly)
+2. **`fly.toml` + `Dockerfile`** in root (nomi standard per Launch pannello)
+3. **Due `[[services]]`** — Opzione A concordata: porta dedicata per Matrix (**8081**)
+4. Launch/deploy dal **pannello Fly** collegato a GitHub su `main`
+
+### Errori tipici risolti
+
+| Errore Fly | Causa | Fix |
+|------------|-------|-----|
+| `Could not find a Dockerfile` | Launch dalla root senza `Dockerfile` standard | `Dockerfile` in root |
+| Idem con config custom | Launch cerca `fly.toml`, non `fly.bridge-xmpp.toml` | `fly.toml` in root |
+| Matrix non raggiungibile | Un solo `[http_service]` | Secondo `[[services]]` su 8081 |
 
 ---
 
@@ -729,7 +767,7 @@ Fly collegato a GitHub deve rileggere `main` e ridistribuire. Fino al redeploy r
 |----------|-------|------------------------|
 | **GitHub Pages** | ✅ OK | — |
 | **Supabase** | 📁 File in repo | Verifica progetto + migrazioni da dashboard/MCP |
-| **Fly.io** | 🟡 OK XMPP / Matrix post-redeploy | XMPP ✅; Matrix `:8081` dopo redeploy Fly |
+| **Fly.io** | ✅ OK | XMPP + Matrix health verificati |
 
 _Fly legge config e Dockerfile dalla root del repo — nessun secret GitHub Actions._
 
@@ -748,7 +786,7 @@ _Fly legge config e Dockerfile dalla root del repo — nessun secret GitHub Acti
 - [x] Multi-account Alfred
 - [x] Librerie bridge Python (proposta)
 - [x] Contatti unificati (protocollo solo interno)
-- [x] Test deploy Fly.io ✅ (xmpptest.fly.dev)
+- [x] Test deploy Fly.io ✅ (XMPP + Matrix su xmpptest.fly.dev)
 - [x] Dominio per istanza (non SaaS globale)
 - [x] Profilo Alfred unico
 - [x] Push escluso
@@ -776,4 +814,5 @@ _Fly legge config e Dockerfile dalla root del repo — nessun secret GitHub Acti
 | 8 | 2026-06-24 | Servizio ≠ client; account ≠ contatti; daemon servizio; priorità deploy |
 | 9 | 2026-06-24 | Stack OSS self-hosted; analogia Mastodon |
 | 9+ | 2026-06-24 | Prima iter. 10: **testare** deploy Supabase + Fly.io |
-| 10 | 2026-06-24 | Test deploy eseguito — vedi risultati |
+| 10 | 2026-06-24 | Test deploy GitHub Pages + Fly; Supabase file in repo |
+| 11 | 2026-06-24 | Fly: un’app due demoni; due porte; PR #103 da chiudere; bridge live ✅ |
