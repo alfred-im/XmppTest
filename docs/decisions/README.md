@@ -80,6 +80,17 @@ Dettagli: [../fixes/account-storage-isolation.md](../fixes/account-storage-isola
 - Plugin ecosystem
 - Documentazione completa
 
+### 8. Bridge stateless (2026-06-24)
+- **[bridge-stateless.md](./bridge-stateless.md)**
+- **Status**: ✅ Accettata — regola vincolante
+- **Summary**: I bridge XMPP/Matrix non tengono stato di business; tutto su Supabase
+
+**Perché**:
+- Scale-out con load balancer + N repliche
+- Crash/restart senza perdita dati
+- Coerente con “piattaforma = fonte di verità” e principio card
+- Evita sync token e cursori solo in RAM
+
 ## Decisioni In Valutazione
 
 - **Virtual Scrolling**: Liste > 100 elementi (react-window vs react-virtualized)

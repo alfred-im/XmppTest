@@ -58,6 +58,7 @@ Recupero codice legacy: `git checkout legacy/web-client-final -- web-client/`
 
 ## Decisioni Architetturali (ADR)
 
+- [decisions/bridge-stateless.md](./decisions/bridge-stateless.md) - **Bridge stateless — stato solo in piattaforma** (vincolante)
 - [decisions/project-revolution-discovery.md](./decisions/project-revolution-discovery.md) - **🟡 Discovery Q&A rivoluzione progetto** (iterazioni in corso)
 - [decisions/README.md](./decisions/README.md) - Overview decisioni
 - [decisions/no-message-deletion.md](./decisions/no-message-deletion.md) - Decisione no message deletion

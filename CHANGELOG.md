@@ -7,6 +7,7 @@ Modifiche rilevanti al progetto per tracciare evoluzione tecnica e decisioni imp
 ## [3.0.0-alpha] - 2026-06-24
 
 ### Aggiunto
+- **ADR bridge stateless** (D-051): bridge senza stato di business; verità su Supabase — `docs/decisions/bridge-stateless.md`
 - **Client Flutter** (`client/`): UI mock chat, tema Alfred, layout responsive
 - **Deploy GitHub Pages**: workflow Flutter, URL https://alfred-im.github.io/XmppTest/
 - **Scaffold multi-piattaforma**: web, Android, iOS, Linux, macOS, Windows

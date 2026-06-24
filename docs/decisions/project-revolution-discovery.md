@@ -95,7 +95,7 @@ Su **una** istanza installata, l'utente:
 
 ### Daemon = per istanza, non per utente
 
-I bridge Python sono **daemon dell'istanza Alfred** — sempre attivi per **tutti** gli utenti **su quell'installazione**. Non sono personali al login. Un'installazione = un paio di bridge (XMPP + Matrix) in run continuo.
+I bridge Python sono **worker dell'istanza Alfred** — pool sempre disponibile per **tutti** gli utenti **su quell'installazione**. Non sono personali al login. Stato di business su **piattaforma** (vedi D-051 / `bridge-stateless.md`); le repliche sono intercambiabili.
 
 ### Modello identità (login, per istanza)
 
@@ -157,6 +157,16 @@ Server federato esterno          Bridge XMPP Alfred          Piattaforma
 ```
 
 **In sintesi**: **facciata federata** = client XMPP pieno; **implementazione reale** = piattaforma Alfred.
+
+### Principio bridge stateless (vincolante, 2026-06-24)
+
+> I bridge **non** conservano stato di business. Sync token, cursori, outbox, lock job → **solo Supabase**.
+
+- Processi **replicabili** dietro load balancer
+- Connessioni XMPP/Matrix **effimere** o cache rigenerabile
+- Crash di un worker = nessuna perdita dati
+
+Dettaglio: [bridge-stateless.md](./bridge-stateless.md) · Decisione **D-051**
 
 ### Architettura target
 
@@ -610,6 +620,7 @@ Le seguenti domande erano basate sull'assunzione "client XMPP classico" e sono *
 | D-012 | 2026-06-24 | Tag `legacy/web-client-final` @ `6e792eb` | ✅ |
 | D-049 | 2026-06-24 | Client Flutter mock in `client/` + deploy Pages | ✅ |
 | D-050 | 2026-06-24 | PR #107/#108 mergiate; solo branch `main` | ✅ |
+| D-051 | 2026-06-24 | **Bridge sempre stateless** — stato solo in piattaforma | ✅ |
 | D-013 | 2026-06-24 | Chat separate in inbox (no associazione cross-protocollo) | ✅ |
 | D-014 | 2026-06-24 | Login solo piattaforma | ✅ |
 | D-015 | 2026-06-24 | ~~Bridge attivi per account aggiunti~~ → **Bridge sempre attivi; routing per contatto** | ✅ Corretto iter.4 |

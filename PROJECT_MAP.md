@@ -78,9 +78,11 @@ Il client React aveva: offline-first IndexedDB per account, XMPP diretto (Stanza
 └──────┬──────────────┬───────┘
        │              │
 ┌──────▼──────┐ ┌─────▼──────┐
-│ bridge XMPP │ │bridge Matrix│  ← Fly.io, sempre attivi
+│ bridge XMPP │ │bridge Matrix│  ← Fly.io, worker stateless (stato in Supabase)
 └─────────────┘ └────────────┘
 ```
+
+**Regola vincolante**: i bridge **non** tengono stato di business — vedi `docs/decisions/bridge-stateless.md`.
 
 **Stato implementazione**: solo il box Flutter ha codice UI (mock). Supabase e bridge sono bootstrap.
 

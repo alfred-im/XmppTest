@@ -26,7 +26,7 @@ async def run_http_server() -> None:
 
 async def main() -> None:
     await run_http_server()
-    # TODO: matrix-nio client + Supabase platform sync
+    # TODO: matrix-nio + job da piattaforma (ADR: bridge-stateless — no stato locale)
     while True:
         await asyncio.sleep(3600)
 
