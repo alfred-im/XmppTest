@@ -23,6 +23,13 @@ Modifiche rilevanti al progetto per tracciare evoluzione tecnica e decisioni imp
 
 ## [Unreleased]
 
+### Aggiunto (2026-06-24 — GIF in chat)
+- **Messaggi GIF**: `messages.content_type` (`text`|`gif`), `messages.media_url`
+- Migrazione `20260624230000_message_gif_support.sql` — applicata su progetto cloud
+- Storage bucket `chat-media` (solo `image/gif`, 10 MB, RLS per cartella utente)
+- Client: `MessageMediaService`, picker GIF in `ChatInputBar`, rendering in `MessageBubble`
+- Documentazione: PROJECT_MAP, `alpha-full-stack.md`, INDICE, README
+
 ### Aggiunto (2026-06-24 — inbox performance)
 - **RPC `list_conversations()`**: inbox completa in un round-trip (display name risolto server-side)
 - Migrazione `20260624220000_list_conversations_rpc.sql` — applicata su progetto cloud

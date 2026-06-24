@@ -79,6 +79,6 @@ Recupero codice legacy: `git checkout legacy/web-client-final -- web-client/`
 
 ---
 
-**Ultimo aggiornamento**: 2026-06-24 (post-merge PR #108)  
-**Client live**: Flutter mock @ https://alfred-im.github.io/XmppTest/  
+**Ultimo aggiornamento**: 2026-06-24 (post-merge PR #108; GIF chat PR #115)  
+**Client live**: Flutter + Supabase @ https://alfred-im.github.io/XmppTest/  
 **Legacy (riferimento doc)**: React @ `legacy/web-client-final`

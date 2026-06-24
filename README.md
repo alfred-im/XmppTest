@@ -10,14 +10,14 @@ Migrazione verso **Flutter + Supabase + bridge Python** (`docs/decisions/project
 
 | Componente | Stato |
 |------------|-------|
-| **`client/`** (Flutter) | App completa collegata a Supabase — live su GitHub Pages |
+| **`client/`** (Flutter) | App completa collegata a Supabase — chat testo + GIF, live su GitHub Pages |
 | **`supabase/`** | Schema dominio Alfred (profiles, contacts, messages, outbox, …) |
 | **`bridge-xmpp/`** · **`bridge-matrix/`** | Stub health Fly.io — logica **non** implementata |
 | **`web-client/`** (React) | **Rimosso** — tag `legacy/web-client-final` |
 
 ### URL live
 
-**https://alfred-im.github.io/XmppTest/** — client Flutter collegato a Supabase (auth, chat, contatti).
+**https://alfred-im.github.io/XmppTest/** — client Flutter collegato a Supabase (auth, chat testo/GIF, contatti).
 
 ### Client legacy React
 
