@@ -1,6 +1,6 @@
 # Alfred - Mappa Completa del Progetto
 
-**Ultimo aggiornamento**: 2026-06-24 (deploy Fly: manifest + script, no dashboard)  
+**Ultimo aggiornamento**: 2026-06-24 (Fly: config + Dockerfile in root, Fly legge repo)  
 **Versione**: 2.2.0 (per-account IndexedDB + XEP-0184 + XEP-0333)
 
 ---
@@ -178,12 +178,15 @@ Per ogni messaggio nell'array:
 ├── .cursor-rules.md          # Regole di sviluppo per AI assistant
 ├── .cursor/rules/            # Regole Cursor (main.mdc → punta a .cursor-rules.md)
 │   └── main.mdc
-├── deploy/                    # Manifest deploy (es. fly-bridges.json)
-├── scripts/                   # fly-bootstrap.sh, fly-deploy-all.sh
+├── deploy/                    # Manifest deploy (fly-bridges.json)
+├── fly.bridge-xmpp.toml       # Config Fly root — app bridge XMPP
+├── fly.bridge-matrix.toml     # Config Fly root — app bridge Matrix
+├── Dockerfile.bridge-xmpp     # Build Fly da root (sorgente in bridge-xmpp/)
+├── Dockerfile.bridge-matrix     # Build Fly da root (sorgente in bridge-matrix/)
+├── scripts/                   # fly-deploy-all.sh, fly-bootstrap.sh
 ├── .github/                   # GitHub Actions per deployment
 │   └── workflows/
-│       ├── deploy-pages.yml   # Deploy automatico su GitHub Pages
-│       └── deploy-fly-bridges.yml  # Deploy bridge via manifest (no config dashboard)
+│       └── deploy-pages.yml   # Deploy automatico su GitHub Pages (client legacy)
 ├── docs/                      # Documentazione tecnica per AI (35 file)
 │   ├── architecture/          # Analisi architetturali
 │   ├── implementation/        # Dettagli implementativi
