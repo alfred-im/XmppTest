@@ -1,6 +1,6 @@
 # Alfred - Mappa Completa del Progetto
 
-**Ultimo aggiornamento**: 2026-06-24 (Fly: due servizi, Matrix esposto :8082)  
+**Ultimo aggiornamento**: 2026-06-24 (Fly bridge documentato: xmpptest, XMPP+Matrix ✅)  
 **Versione**: 2.2.0 (per-account IndexedDB + XEP-0184 + XEP-0333)
 
 ---
@@ -443,7 +443,9 @@ Un’app Fly, due demoni Python nello stesso container (`scripts/start-bridges.s
 | XMPP | 8080 | `https://xmpptest.fly.dev` (443) | `/health` |
 | Matrix | 8081 | `https://xmpptest.fly.dev:8081` | `/health` |
 
-Config deploy in root: `fly.toml` (due `[[services]]`), `Dockerfile`. Fly collegato a GitHub legge il repo — no GitHub Actions custom per bridge.
+Config deploy in root: `fly.toml` (due `[[services]]`), `Dockerfile`. Fly collegato a GitHub legge il repo.
+
+**Test live (2026-06-24)**: XMPP `/health` ✅ 200 · Matrix `:8081/health` ✅ 200. PR Fly #103 (`app/fly-io`): chiudere senza merge.
 
 ### 2. **XMPP Server** (legacy web-client)
 
