@@ -638,6 +638,7 @@ Le seguenti domande erano basate sull'assunzione "client XMPP classico" e sono *
 | D-040 | 2026-06-24 | Prima iter. 10: **testare** deploy Supabase + Fly.io | 🟡 GH Pages ok; Supabase/Fly in attesa |
 | D-041 | 2026-06-24 | Test Supabase via **MCP** o dashboard (CLI opzionale) | ✅ |
 | D-042 | 2026-06-24 | **Nessuna CLI obbligatoria** — config in repo, runtime in cloud | ✅ |
+| D-043 | 2026-06-24 | Deploy Fly = **metodo standard** (`fly launch`/`fly deploy`), no GitHub Actions custom | ✅ |
 
 ---
 
@@ -648,8 +649,8 @@ Le seguenti domande erano basate sull'assunzione "client XMPP classico" e sono *
 | **Dove gira** | Cloud Supabase | Cloud Fly.io |
 | **Cosa committi** | `supabase/` (migrazioni, config, edge functions) | `fly.toml`, Dockerfile, codice bridge |
 | **CLI locale necessaria?** | ❌ No | ❌ No |
-| **Come si deploya** | Dashboard, MCP, CI, `supabase link` in pipeline | **Solo file repo**: manifest + script + GitHub Actions (no architettura in dashboard) |
-| **Per funzionare** | Progetto cloud + file repo allineati | Secret `FLY_API_TOKEN` su GitHub + file repo allineati |
+| **Come si deploya** | Dashboard, MCP, CI, `supabase link` in pipeline | **Metodo standard Fly**: `fly launch` / `fly deploy` (no GitHub Actions custom) |
+| **Per funzionare** | Progetto cloud + file repo allineati | Account Fly + `fly.toml` in repo + deploy da sottocartella bridge |
 
 La CLI (e MCP per Supabase) sono **strumenti opzionali** per sviluppo e smoke test — non parte del modello runtime.
 
@@ -682,29 +683,34 @@ La CLI (e MCP per Supabase) sono **strumenti opzionali** per sviluppo e smoke te
 
 ---
 
-### Fly.io — due container, tutto in repo (no dashboard)
+### Fly.io — metodo standard Fly (monorepo)
 
 | File | Ruolo |
 |------|-------|
-| `deploy/fly-bridges.json` | Manifest: quale cartella → quale app Fly |
-| `bridge-xmpp/fly.toml` + `Dockerfile` | Container XMPP |
-| `bridge-matrix/fly.toml` + `Dockerfile` | Container Matrix |
-| `scripts/fly-bootstrap.sh` | Crea app Fly se mancanti (CLI, idempotente) |
-| `scripts/fly-deploy-all.sh` | Bootstrap + deploy di entrambi |
-| `.github/workflows/deploy-fly-bridges.yml` | CI: esegue `fly-deploy-all.sh` su push |
+| `fly.bridge-xmpp.toml` / `fly.bridge-matrix.toml` | Config Fly in root (Launch con `--config` + `--path`) |
+| `bridge-xmpp/fly.toml` + `Dockerfile` | Sorgente + config locale bridge XMPP |
+| `bridge-matrix/fly.toml` + `Dockerfile` | Sorgente + config locale bridge Matrix |
+| `deploy/fly-bridges.json` | Indice app → cartella → config |
+| `scripts/fly-deploy-all.sh` | Helper: `fly deploy ./bridge-*` (standard Fly monorepo) |
 
-**Setup una tantum** (solo secret, non architettura):
+**Per ogni bridge — metodo standard Fly** (doc: https://fly.io/docs/launch/monorepo/):
 
-1. `fly tokens create deploy` → secret GitHub `FLY_API_TOKEN`
-2. Push su `main` oppure `gh workflow run deploy-fly-bridges.yml`
+1. **Launch** (una tantum per app):  
+   `fly launch --copy-config --config fly.bridge-xmpp.toml --path bridge-xmpp --no-deploy`  
+   (idem per Matrix con `fly.bridge-matrix.toml` / `bridge-matrix`)
+2. **Deploy**:  
+   `fly deploy ./bridge-xmpp --remote-only`  
+   oppure `./scripts/fly-deploy-all.sh` se hai `FLY_API_TOKEN`
 
-**Non usare** il wizard Fly “Launch from GitHub” dalla root del monorepo: non trova Dockerfile e spinge a configurare working directory in dashboard. L’architettura è già nei file committati.
+**Errore “Could not find a Dockerfile”**: succede se Fly Launch parte dalla **root** del monorepo senza `--config` e `--path`. Non è un bug del repo — va indicata la sottocartella bridge.
+
+**Non usare** GitHub Actions custom per Fly — il deploy passa da Fly (`fly deploy` / Launch dashboard con config path).
 
 | Check | Esito |
 |-------|-------|
 | Due container separati | ✅ un’app Fly per bridge |
-| Config fuori dalla dashboard | ✅ manifest + fly.toml + CI |
-| App deployate su Fly | 👤 dopo `FLY_API_TOKEN` + workflow |
+| Config in repo (standard Fly) | ✅ fly.*.toml + Dockerfile per bridge |
+| App deployate su Fly | 🟡 dopo `fly launch` + `fly deploy` per ciascuna app |
 
 ---
 
@@ -714,9 +720,9 @@ La CLI (e MCP per Supabase) sono **strumenti opzionali** per sviluppo e smoke te
 |----------|-------|------------------------|
 | **GitHub Pages** | ✅ OK | — |
 | **Supabase** | 📁 File in repo | Verifica progetto + migrazioni da dashboard/MCP |
-| **Fly.io** | 📁 File in repo | Secret `FLY_API_TOKEN` su GitHub → workflow crea app e deploya |
+| **Fly.io** | 📁 File in repo | `fly launch` + `fly deploy` per ogni bridge (metodo standard Fly) |
 
-_Il test non dipende dalla CLI locale installata sull'agente._
+_Il deploy Fly usa flyctl / dashboard Fly — non GitHub Actions custom._
 
 ---
 

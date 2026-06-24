@@ -1,28 +1,29 @@
 #!/usr/bin/env bash
-# Deploy di tutti i bridge Fly dichiarati in deploy/fly-bridges.json.
+# Deploy standard Fly.io dei bridge Alfred (monorepo).
+# Usa fly deploy sulla sottocartella — metodo documentato Fly per monorepo.
+# https://fly.io/docs/launch/monorepo/
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-MANIFEST="${ROOT}/deploy/fly-bridges.json"
 FLY="${FLY:-flyctl}"
 
-command -v jq >/dev/null 2>&1 || { echo "jq richiesto"; exit 1; }
 command -v "$FLY" >/dev/null 2>&1 || { echo "flyctl richiesto"; exit 1; }
 
 if [[ -z "${FLY_API_TOKEN:-}" ]]; then
-  echo "FLY_API_TOKEN non impostato"
+  echo "FLY_API_TOKEN non impostato (fly auth token o fly tokens create deploy)"
   exit 1
 fi
 
 cd "$ROOT"
 
-"${ROOT}/scripts/fly-bootstrap.sh"
-
-jq -c '.apps[]' "$MANIFEST" | while IFS= read -r entry; do
-  dir="$(echo "$entry" | jq -r '.dir')"
-  app="$(echo "$entry" | jq -r '.app')"
+deploy_bridge() {
+  local dir="$1"
+  local app="$2"
   echo "Deploy $app da ./$dir ..."
   "$FLY" deploy "./${dir}" --remote-only -a "$app"
-done
+}
+
+deploy_bridge bridge-xmpp alfred-im-bridge-xmpp
+deploy_bridge bridge-matrix alfred-im-bridge-matrix
 
 echo "Deploy completato."

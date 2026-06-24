@@ -3,11 +3,13 @@
     {
       "dir": "bridge-xmpp",
       "app": "alfred-im-bridge-xmpp",
+      "config": "fly.bridge-xmpp.toml",
       "region": "fra"
     },
     {
       "dir": "bridge-matrix",
       "app": "alfred-im-bridge-matrix",
+      "config": "fly.bridge-matrix.toml",
       "region": "fra"
     }
   ]
