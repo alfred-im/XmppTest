@@ -17,13 +17,13 @@ void main() {
     test('maps username to internal auth email', () {
       expect(
         AuthIdentity.internalAuthEmail('mario_rossi'),
-        'mario_rossi@users.alfred.internal',
+        'mario_rossi@users.alfred.app',
       );
     });
 
     test('extracts username from internal auth email', () {
       expect(
-        AuthIdentity.usernameFromAuthEmail('mario_rossi@users.alfred.internal'),
+        AuthIdentity.usernameFromAuthEmail('mario_rossi@users.alfred.app'),
         'mario_rossi',
       );
       expect(

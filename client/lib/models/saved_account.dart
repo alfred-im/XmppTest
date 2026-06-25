@@ -35,5 +35,4 @@ class SavedAccount {
     if (legacyEmail == null || legacyEmail.isEmpty) return '';
     return AuthIdentity.usernameFromAuthEmail(legacyEmail) ??
         legacyEmail.split('@').first;
-  }
-}
+  }}

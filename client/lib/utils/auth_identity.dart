@@ -3,7 +3,8 @@ class AuthIdentity {
   AuthIdentity._();
 
   /// Dominio riservato Supabase Auth — non è un indirizzo federato né visibile all'utente.
-  static const internalEmailDomain = 'users.alfred.internal';
+  /// GoTrue rifiuta `.internal` (validazione DNS 2025); `.app` passa i controlli.
+  static const internalEmailDomain = 'users.alfred.app';
 
   static final usernamePattern = RegExp(r'^[a-z0-9_]{3,32}$');
 

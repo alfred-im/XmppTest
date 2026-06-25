@@ -69,7 +69,7 @@ void main() {
     test('migrates legacy email field to username', () {
       final decoded = SavedAccount.fromJson({
         'userId': 'u1',
-        'email': 'alice@users.alfred.internal',
+        'email': 'alice@users.alfred.app',
         'refreshToken': 'rt',
         'displayName': 'Alice',
       });
