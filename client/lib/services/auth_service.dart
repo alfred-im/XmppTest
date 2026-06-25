@@ -24,14 +24,14 @@ class AuthService {
   }
 
   Future<AuthResponse> signIn({
-    required String username,
+    required String email,
     required String password,
   }) async {
     await persistCurrentSession();
 
-    final normalized = AuthIdentity.normalizeUsername(username);
+    final normalizedEmail = AuthIdentity.normalizeEmail(email);
     final response = await supabase.auth.signInWithPassword(
-      email: AuthIdentity.internalAuthEmail(normalized),
+      email: normalizedEmail,
       password: password,
     );
     await _persistSessionAccount(response.session);
@@ -50,12 +50,14 @@ class AuthService {
   }
 
   Future<AuthResponse> signUp({
+    required String email,
     required String password,
     required String username,
     required String displayName,
   }) async {
     await persistCurrentSession();
 
+    final normalizedEmail = AuthIdentity.normalizeEmail(email);
     final normalized = AuthIdentity.normalizeUsername(username);
     final available = await isUsernameAvailable(normalized);
     if (!available) {
@@ -63,7 +65,7 @@ class AuthService {
     }
 
     final response = await supabase.auth.signUp(
-      email: AuthIdentity.internalAuthEmail(normalized),
+      email: normalizedEmail,
       password: password,
       data: {
         'username': normalized,
@@ -74,6 +76,11 @@ class AuthService {
       await _persistSessionAccount(response.session);
     }
     return response;
+  }
+
+  Future<void> resetPassword(String email) async {
+    final normalizedEmail = AuthIdentity.normalizeEmail(email);
+    await supabase.auth.resetPasswordForEmail(normalizedEmail);
   }
 
   /// Esci dall'account attivo (revoca sessione corrente su Supabase).
@@ -141,7 +148,6 @@ class AuthService {
         .maybeSingle();
 
     final username = profile?['username'] as String? ??
-        AuthIdentity.usernameFromAuthEmail(session.user.email) ??
         session.user.userMetadata?['username'] as String?;
 
     if (username == null || username.isEmpty) return;

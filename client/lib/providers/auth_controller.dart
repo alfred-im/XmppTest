@@ -48,8 +48,8 @@ class AuthController extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> signIn(String username, String password) async {
-    final validationError = AuthIdentity.validateUsername(username);
+  Future<void> signIn(String email, String password) async {
+    final validationError = AuthIdentity.validateEmail(email);
     if (validationError != null) {
       error = validationError;
       notifyListeners();
@@ -60,7 +60,7 @@ class AuthController extends ChangeNotifier {
     isLoading = true;
     notifyListeners();
     try {
-      await _authService.signIn(username: username, password: password);
+      await _authService.signIn(email: email, password: password);
       savedAccounts = await _authService.savedAccounts();
     } catch (e) {
       error = _friendlyAuthError(e);
@@ -71,13 +71,21 @@ class AuthController extends ChangeNotifier {
   }
 
   Future<void> signUp({
+    required String email,
     required String password,
     required String username,
     required String displayName,
   }) async {
-    final validationError = AuthIdentity.validateUsername(username);
-    if (validationError != null) {
-      error = validationError;
+    final emailError = AuthIdentity.validateEmail(email);
+    if (emailError != null) {
+      error = emailError;
+      notifyListeners();
+      return;
+    }
+
+    final usernameError = AuthIdentity.validateUsername(username);
+    if (usernameError != null) {
+      error = usernameError;
       notifyListeners();
       return;
     }
@@ -93,6 +101,7 @@ class AuthController extends ChangeNotifier {
     notifyListeners();
     try {
       await _authService.signUp(
+        email: email,
         password: password,
         username: username,
         displayName: displayName.trim(),
@@ -100,6 +109,29 @@ class AuthController extends ChangeNotifier {
       savedAccounts = await _authService.savedAccounts();
     } catch (e) {
       error = _friendlyAuthError(e);
+    } finally {
+      isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<bool> resetPassword(String email) async {
+    final validationError = AuthIdentity.validateEmail(email);
+    if (validationError != null) {
+      error = validationError;
+      notifyListeners();
+      return false;
+    }
+
+    error = null;
+    isLoading = true;
+    notifyListeners();
+    try {
+      await _authService.resetPassword(email);
+      return true;
+    } catch (e) {
+      error = _friendlyAuthError(e);
+      return false;
     } finally {
       isLoading = false;
       notifyListeners();
@@ -147,7 +179,7 @@ class AuthController extends ChangeNotifier {
         return 'Sessione scaduta per questo account. Usa "Aggiungi account" e accedi di nuovo.';
       }
       if (msg.contains('invalid login credentials')) {
-        return 'Username o password non corretti.';
+        return 'Email o password non corretti.';
       }
       if (msg.contains('username già in uso')) {
         return 'Username già in uso. Scegline un altro.';
@@ -156,7 +188,7 @@ class AuthController extends ChangeNotifier {
         return 'Username già in uso o non valido. Scegline un altro.';
       }
       if (msg.contains('user already registered')) {
-        return 'Username già registrato. Prova ad accedere.';
+        return 'Email già registrata. Prova ad accedere.';
       }
       return e.message;
     }

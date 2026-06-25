@@ -65,15 +65,5 @@ void main() {
       );
       expect(decoded.username, account.username);
     });
-
-    test('migrates legacy email field to username', () {
-      final decoded = SavedAccount.fromJson({
-        'userId': 'u1',
-        'email': 'alfred.alice@gmail.com',
-        'refreshToken': 'rt',
-        'displayName': 'Alice',
-      });
-      expect(decoded.username, 'alice');
-    });
   });
 }

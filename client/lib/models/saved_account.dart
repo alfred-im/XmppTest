@@ -1,5 +1,3 @@
-import '../utils/auth_identity.dart';
-
 class SavedAccount {
   const SavedAccount({
     required this.userId,
@@ -21,8 +19,7 @@ class SavedAccount {
       };
 
   factory SavedAccount.fromJson(Map<String, dynamic> json) {
-    final username = json['username'] as String? ??
-        _legacyUsernameFromJson(json['email'] as String?);
+    final username = json['username'] as String? ?? '';
     return SavedAccount(
       userId: json['userId'] as String,
       username: username,
@@ -30,9 +27,4 @@ class SavedAccount {
       displayName: json['displayName'] as String,
     );
   }
-
-  static String _legacyUsernameFromJson(String? legacyEmail) {
-    if (legacyEmail == null || legacyEmail.isEmpty) return '';
-    return AuthIdentity.usernameFromAuthEmail(legacyEmail) ??
-        legacyEmail.split('@').first;
-  }}
+}
