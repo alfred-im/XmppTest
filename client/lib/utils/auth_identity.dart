@@ -2,9 +2,10 @@
 class AuthIdentity {
   AuthIdentity._();
 
-  /// Dominio riservato Supabase Auth — non è un indirizzo federato né visibile all'utente.
-  /// GoTrue rifiuta `.internal` (validazione DNS 2025); `.app` passa i controlli.
-  static const internalEmailDomain = 'users.alfred.app';
+  /// GoTrue (2025+) accetta solo domini su allowlist (gmail, outlook, …).
+  /// Email sintetica: alfred.{username}@gmail.com — non è una casella reale.
+  static const internalEmailLocalPrefix = 'alfred.';
+  static const internalEmailDomain = 'gmail.com';
 
   static final usernamePattern = RegExp(r'^[a-z0-9_]{3,32}$');
 
@@ -24,16 +25,32 @@ class AuthIdentity {
 
   static String internalAuthEmail(String username) {
     final normalized = normalizeUsername(username);
-    return '$normalized@$internalEmailDomain';
+    return '$internalEmailLocalPrefix$normalized@$internalEmailDomain';
   }
 
   /// Estrae lo username dall'email interna della sessione Supabase.
   static String? usernameFromAuthEmail(String? email) {
     if (email == null || email.isEmpty) return null;
-    final suffix = '@$internalEmailDomain';
-    if (email.endsWith(suffix)) {
-      return email.substring(0, email.length - suffix.length);
+
+    final at = email.lastIndexOf('@');
+    if (at <= 0) return null;
+    final local = email.substring(0, at);
+    final domain = email.substring(at + 1);
+
+    if (domain == internalEmailDomain &&
+        local.startsWith(internalEmailLocalPrefix)) {
+      final username = local.substring(internalEmailLocalPrefix.length);
+      return username.isEmpty ? null : username;
     }
+
+    // Legacy domini fittizi (pre-fix allowlist).
+    const legacyDomains = ['users.alfred.app', 'users.alfred.internal'];
+    for (final legacy in legacyDomains) {
+      if (domain == legacy) {
+        return local.isEmpty ? null : local;
+      }
+    }
+
     return null;
   }
 }

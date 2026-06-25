@@ -45,7 +45,7 @@ La documentazione sotto che cita `web-client/` descrive il **client React storic
 
 ### Caratteristiche attuali (client Flutter + piattaforma)
 
-- **Auth Alfred**: login/registrazione con **username** (nessuna email in UI); GoTrue usa identificatore interno `@users.alfred.app`
+- **Auth Alfred**: login/registrazione con **username** (nessuna email in UI); GoTrue usa email sintetica `alfred.{username}@gmail.com` (allowlist, mai in UI)
 - **Multi-account**: switch Thunderbird via `SharedPreferences` + `setSession`
 - **Contatti unificati**: interni Alfred + esterni XMPP/Matrix (protocollo solo routing)
 - **Conversazioni + chat realtime**: Supabase Postgres + Realtime; inbox via RPC `list_conversations` (un round-trip)
@@ -899,7 +899,7 @@ class ConversationRepository {
 
 ### ✅ Client Flutter — implementato (Alpha produzione)
 
-- Auth Supabase (login/registrazione **solo username**, profilo auto-creato; email GoTrue interna `@users.alfred.app` mai in UI)
+- Auth Supabase (login/registrazione **solo username**; email GoTrue sintetica `alfred.{username}@gmail.com` su dominio allowlist, mai in UI)
 - Multi-account Thunderbird (`SharedPreferences` + switch refresh token) — PR #111
 - Contatti unificati (interni + federati in rubrica)
 - Inbox via RPC `list_conversations` (un round-trip) — PR #112

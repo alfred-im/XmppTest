@@ -14,14 +14,18 @@ void main() {
       expect(AuthIdentity.isValidUsername('bad-name'), isFalse);
     });
 
-    test('maps username to internal auth email', () {
+    test('maps username to internal auth email on allowlisted domain', () {
       expect(
         AuthIdentity.internalAuthEmail('mario_rossi'),
-        'mario_rossi@users.alfred.app',
+        'alfred.mario_rossi@gmail.com',
       );
     });
 
     test('extracts username from internal auth email', () {
+      expect(
+        AuthIdentity.usernameFromAuthEmail('alfred.mario_rossi@gmail.com'),
+        'mario_rossi',
+      );
       expect(
         AuthIdentity.usernameFromAuthEmail('mario_rossi@users.alfred.app'),
         'mario_rossi',

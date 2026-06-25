@@ -72,14 +72,14 @@ client/lib/
 
 | Componente | Ruolo |
 |------------|-------|
-| `AuthIdentity` | Username utente ↔ email interna GoTrue (`{username}@users.alfred.app`) — **mai mostrata in UI** |
+| `AuthIdentity` | Username ↔ email sintetica GoTrue (`alfred.{username}@gmail.com`, allowlist) — **mai in UI** |
 | `AccountStorageService` | Persiste lista `{userId, username, refreshToken, displayName}` in `SharedPreferences` |
 | `AuthService.switchAccount()` | Salva sessione corrente → `setSession(refreshToken)` → aggiorna storage |
 | `AuthService.persistCurrentSession()` | Su `tokenRefreshed` e prima di switch/login add-account |
 | `AuthScreen` (`addingAccount: true`) | Login secondo account senza `signOut` sul primo |
 | Menu account in `HomeScreen` | Switch, **Aggiungi account**, Esci (solo account attivo) |
 
-**Scelta identità**: Alfred non usa email come identificatore utente (confusione con indirizzi federati tipo JID). L'utente si registra/accede con **username** + password; Supabase GoTrue richiede un campo email quindi il client mappa a `{username}@users.alfred.app` — dominio riservato fittizio (GoTrue rifiuta `.internal`), invisibile in UI.
+**Scelta identità**: Alfred non usa email come identificatore utente. GoTrue (2025+) rifiuta domini fittizi (`.internal`, `.app`); accetta solo provider su allowlist. Il client mappa a `alfred.{username}@gmail.com` — sintetica, non è una casella reale, invisibile in UI.
 
 **Scelta**: refresh token in locale (web) — accettabile per Alpha; encryption pianificata post-Alpha.
 
