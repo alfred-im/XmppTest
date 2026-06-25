@@ -21,6 +21,7 @@ class AuthScreen extends StatefulWidget {
 }
 
 class _AuthScreenState extends State<AuthScreen> {
+  final _emailController = TextEditingController();
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   final _displayNameController = TextEditingController();
@@ -28,6 +29,7 @@ class _AuthScreenState extends State<AuthScreen> {
 
   @override
   void dispose() {
+    _emailController.dispose();
     _usernameController.dispose();
     _passwordController.dispose();
     _displayNameController.dispose();
@@ -38,13 +40,14 @@ class _AuthScreenState extends State<AuthScreen> {
     final auth = context.read<AuthController>();
     if (_isSignUp) {
       await auth.signUp(
+        email: _emailController.text.trim(),
         password: _passwordController.text,
         username: _usernameController.text.trim(),
         displayName: _displayNameController.text.trim(),
       );
     } else {
       await auth.signIn(
-        _usernameController.text.trim(),
+        _emailController.text.trim(),
         _passwordController.text,
       );
     }
@@ -54,6 +57,58 @@ class _AuthScreenState extends State<AuthScreen> {
     if (widget.addingAccount) {
       Navigator.of(context).pop();
     }
+  }
+
+  Future<void> _forgotPassword() async {
+    final auth = context.read<AuthController>();
+    final emailController = TextEditingController(text: _emailController.text);
+
+    final sent = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Recupero password'),
+        content: TextField(
+          controller: emailController,
+          decoration: const InputDecoration(
+            labelText: 'Email',
+            hintText: 'mario@esempio.it',
+          ),
+          keyboardType: TextInputType.emailAddress,
+          autocorrect: false,
+          enableSuggestions: false,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Annulla'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Invia link'),
+          ),
+        ],
+      ),
+    );
+
+    if (sent != true || !mounted) {
+      emailController.dispose();
+      return;
+    }
+
+    final ok = await auth.resetPassword(emailController.text.trim());
+    emailController.dispose();
+
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          ok
+              ? 'Se l\'email è registrata, riceverai un link per reimpostare la password.'
+              : auth.error ?? 'Impossibile inviare il link di recupero.',
+        ),
+      ),
+    );
   }
 
   @override
@@ -92,16 +147,28 @@ class _AuthScreenState extends State<AuthScreen> {
                     ),
                     const SizedBox(height: 24),
                     TextField(
-                      controller: _usernameController,
+                      controller: _emailController,
                       decoration: const InputDecoration(
-                        labelText: 'Username',
-                        hintText: 'mario_rossi',
+                        labelText: 'Email',
+                        hintText: 'mario@esempio.it',
                       ),
+                      keyboardType: TextInputType.emailAddress,
                       textInputAction: TextInputAction.next,
                       autocorrect: false,
                       enableSuggestions: false,
                     ),
                     if (_isSignUp) ...[
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: _usernameController,
+                        decoration: const InputDecoration(
+                          labelText: 'Username',
+                          hintText: 'mario_rossi',
+                        ),
+                        textInputAction: TextInputAction.next,
+                        autocorrect: false,
+                        enableSuggestions: false,
+                      ),
                       const SizedBox(height: 12),
                       TextField(
                         controller: _displayNameController,
@@ -118,6 +185,16 @@ class _AuthScreenState extends State<AuthScreen> {
                       obscureText: true,
                       onSubmitted: (_) => _submit(),
                     ),
+                    if (!_isSignUp) ...[
+                      const SizedBox(height: 4),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: TextButton(
+                          onPressed: auth.isLoading ? null : _forgotPassword,
+                          child: const Text('Password dimenticata?'),
+                        ),
+                      ),
+                    ],
                     if (auth.error != null) ...[
                       const SizedBox(height: 12),
                       Text(

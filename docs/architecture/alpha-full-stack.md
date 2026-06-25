@@ -72,14 +72,14 @@ client/lib/
 
 | Componente | Ruolo |
 |------------|-------|
-| `AuthIdentity` | Username ↔ email sintetica GoTrue (`alfred.{username}@gmail.com`, allowlist) — **mai in UI** |
+| `AuthIdentity` | Validazione username (identità IM) ed email (auth/recupero) |
 | `AccountStorageService` | Persiste lista `{userId, username, refreshToken, displayName}` in `SharedPreferences` |
 | `AuthService.switchAccount()` | Salva sessione corrente → `setSession(refreshToken)` → aggiorna storage |
 | `AuthService.persistCurrentSession()` | Su `tokenRefreshed` e prima di switch/login add-account |
 | `AuthScreen` (`addingAccount: true`) | Login secondo account senza `signOut` sul primo |
 | Menu account in `HomeScreen` | Switch, **Aggiungi account**, Esci (solo account attivo) |
 
-**Scelta identità**: Alfred non usa email come identificatore utente. GoTrue (2025+) rifiuta domini fittizi (`.internal`, `.app`); accetta solo provider su allowlist. Il client mappa a `alfred.{username}@gmail.com` — sintetica, non è una casella reale, invisibile in UI.
+**Scelta identità**: login e recupero via **email reale** (GoTrue). L’**username** è l’identità pubblica nell’app (profilo, ricerca, multi-account `@username`) — non compare l’email agli altri utenti.
 
 **Scelta**: refresh token in locale (web) — accettabile per Alpha; encryption pianificata post-Alpha.
 
@@ -145,7 +145,7 @@ client/lib/
 | `20260624200000_alfred_domain_schema.sql` | Schema dominio, RLS, trigger, RPC base |
 | `20260624210000_rpc_grants_hardening.sql` | Grant EXECUTE RPC solo `authenticated` |
 | `20260624220000_list_conversations_rpc.sql` | RPC inbox un round-trip |
-| `20260625100000_username_only_auth.sql` | Trigger `handle_new_user` — username obbligatorio, no fallback da email reale |
+| `20260625150000_real_email_auth.sql` | Trigger `handle_new_user` — username da metadata, email reale in GoTrue |
 
 ### 3.2 Modello dati
 
