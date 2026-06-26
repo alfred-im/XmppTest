@@ -128,11 +128,18 @@ client/lib/
 
 ### 2.9 Spunte lettura (Alpha interna)
 
-- `mark_conversation_read` RPC apertura chat
-- Aggiorna `unread_count`, inserisce `message_read_receipts`, promuove `delivery_status` a `read` per messaggi propri
+**Concept vincolante**: [server-as-reception.md](../decisions/server-as-reception.md) — in un client cloud multidispositivo con fonte di verità sul server, la **ricezione coincide con la ricezione sul server**. Oggi (chat interna) invio e ricezione sembrano sincroni; con federazione/bridge saranno disaccoppiati come tra server diversi.
+
+| Livello | UI | Trigger Alpha |
+|---------|-----|---------------|
+| Inviato | ✓ grigia | `send_message` → `delivery_status = 'sent'` |
+| Consegnato | ✓✓ grigie | Messaggio **ricevuto sul server** (persistenza piattaforma o ack bridge) → `delivered` |
+| Lettura | ✓✓ blu | `mark_conversation_read` → `read` |
+
+- `mark_conversation_read` RPC all'apertura chat: aggiorna `unread_count`, inserisce `message_read_receipts`, promuove `delivery_status` a `read` per messaggi propri
 - UI: `MessageStatus` → ✓ / ✓✓ / ✓✓ blu (`message_bubble.dart`)
 
-**Nota**: XEP-0184/0333 arriveranno con bridge; schema supporta `marker_type`/`marker_for`.
+**Nota**: per federato, XEP-0184/0333 via bridge mappano su `delivered`/`read`; schema supporta `marker_type`/`marker_for`. La semantica ✓✓ grigia **non** è «arrivato sul device del destinatario» (legacy XMPP diretto) ma «arrivato nella fonte di verità».
 
 ---
 
