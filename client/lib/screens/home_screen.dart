@@ -187,7 +187,6 @@ class _HomeScreenState extends State<HomeScreen> {
               conversation: selected,
               showBackButton: true,
               onBack: () => setState(() => _showListOnMobile = true),
-              onDrawerTap: _openDrawer,
             ),
     );
   }
@@ -199,13 +198,11 @@ class _ChatWithMessages extends StatelessWidget {
     required this.conversation,
     this.showBackButton = false,
     this.onBack,
-    this.onDrawerTap,
   });
 
   final Conversation conversation;
   final bool showBackButton;
   final VoidCallback? onBack;
-  final VoidCallback? onDrawerTap;
 
   @override
   Widget build(BuildContext context) {
@@ -220,7 +217,6 @@ class _ChatWithMessages extends StatelessWidget {
         conversation: conversation,
         showBackButton: showBackButton,
         onBack: onBack,
-        onDrawerTap: onDrawerTap,
       ),
     );
   }

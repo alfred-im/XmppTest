@@ -283,7 +283,7 @@ client/lib/
 └── widgets/         # ConversationsPanel, ChatPanel, AccountSidebar, MessageBubble, …
 ```
 
-**Layout inbox (non deducibile)**: `HomeScreen` — mobile: drawer sinistro (hamburger) con `AccountSidebar` (profilo attivo, modifica, altri account, aggiungi, esci); lista conversazioni a schermo intero; chat con back + hamburger. Desktop (≥720px): colonna sinistra fissa = `AccountSidebar` + lista conversazioni (senza barra Alfred duplicata); area destra sempre chat/placeholder. Menu account bottom sheet rimosso.
+**Layout inbox (non deducibile)**: `HomeScreen` — mobile: drawer sinistro (hamburger solo nella lista conversazioni) con `AccountSidebar` (profilo attivo, modifica, altri account, aggiungi, esci); chat mobile con solo back. Desktop (≥720px): colonna sinistra fissa = `AccountSidebar` + lista conversazioni (senza barra Alfred duplicata); area destra sempre chat/placeholder. Menu account bottom sheet rimosso.
 
 ### Client legacy React (`web-client/`) — RIMOSSO DA MAIN
 
