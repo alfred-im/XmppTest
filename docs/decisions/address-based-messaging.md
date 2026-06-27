@@ -93,3 +93,4 @@ Solo: `delivery_status` interno → `delivered`; federato → `outbox`. **Nessun
 
 - Client: `ChatPeer`, `InboxController`, `MessagesController`, `ComposeService`
 - Architettura: `docs/architecture/alpha-full-stack.md`
+- Implementazione: `docs/implementation/messages-only-inbox.md`

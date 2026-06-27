@@ -4,7 +4,7 @@ Analisi tecniche implementazioni completate per comprensione dettagli e decision
 
 > **Nota (2026-06-24)**: i documenti in questa cartella descrivono per lo più il **client React legacy** (`web-client/`, tag `legacy/web-client-final`). Il codice non è più su `main`; i contenuti restano riferimento per il client Flutter.
 
-> **Flutter (2026-06-27)**: aggancio al fondo chat → [conversation-bottom-anchor.md](../design/conversation-bottom-anchor.md); note vocali → [voice-notes.md](./voice-notes.md) (non legacy React).
+> **Flutter (2026-06-27)**: aggancio al fondo chat → [conversation-bottom-anchor.md](../design/conversation-bottom-anchor.md); note vocali → [voice-notes.md](./voice-notes.md); inbox solo messaggi → [messages-only-inbox.md](./messages-only-inbox.md) (non legacy React).
 
 ## Documenti Disponibili
 
@@ -14,6 +14,7 @@ Analisi tecniche implementazioni completate per comprensione dettagli e decision
 - **chat-markers-xep-0333.md** - XEP-0333 livello 3 spunte (✓✓ blu)
 - **scrollable-containers.md** + **scrollable-containers-implementation.md** - Utility scroll
 - **voice-notes.md** - Note vocali WebM/Opus, registrazione, player, coda retry client (Flutter Alpha)
+- **messages-only-inbox.md** - Inbox query-only su `messages`, `ChatPeer`, drop `inbox_threads` (Flutter Alpha, PR #129)
 
 **Policy spunte**: [message-states.md](../architecture/message-states.md) (v2.1)
 
@@ -31,6 +32,7 @@ Analisi tecniche implementazioni completate per comprensione dettagli e decision
 | Aggancio al fondo (Flutter) | ✅ | [conversation-bottom-anchor.md](../design/conversation-bottom-anchor.md), `alpha-full-stack.md` §2.10 |
 | Note vocali (Flutter) | ✅ | [voice-notes.md](./voice-notes.md), `alpha-full-stack.md` §2.11 |
 | Coda retry invio client (Flutter) | ✅ | `OutboundMessageQueue` — `alpha-full-stack.md` §2.7, [voice-notes.md](./voice-notes.md) |
+| Inbox solo messaggi (Flutter) | ✅ | [messages-only-inbox.md](./messages-only-inbox.md), [address-based-messaging.md](../decisions/address-based-messaging.md), `alpha-full-stack.md` §2.5 |
 
 ## Pattern (Riferimento Rapido)
 

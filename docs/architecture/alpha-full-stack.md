@@ -122,7 +122,7 @@ client/lib/
 **Scelte**:
 - Storage pubblico per URL semplici in Realtime (Alpha); signed URL post-Alpha se serve
 - Solo `image/gif`, max 10 MB — bucket RLS: upload solo in cartella `auth.uid()`
-- `body` può essere vuoto per GIF; `mark_thread_read` include `content_type=gif`
+- `body` può essere vuoto per GIF; `mark_peer_read` include `content_type=gif`
 
 ### 2.9 Spunte lettura
 
@@ -157,7 +157,7 @@ client/lib/
 | `ConversationScrollAnchor` | Soglia e regole `shouldAutoScrollOnAppend` |
 | `ChatPanel` | Integra lista ancorata + `ChatInputBar` |
 
-**Scelta tecnica**: lista `reverse: true` (pattern chat Flutter); messaggi cronologici nel modello, indice invertito in build. Cambio conversazione: `ValueKey(conversation.id)` su `_ChatWithMessages` resetta lo scroll.
+**Scelta tecnica**: lista `reverse: true` (pattern chat Flutter); messaggi cronologici nel modello, indice invertito in build. Cambio peer: `ValueKey(peer.profileId)` su pannello chat resetta lo scroll.
 
 **PR**: #125
 
