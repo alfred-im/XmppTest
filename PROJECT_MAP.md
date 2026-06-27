@@ -629,9 +629,9 @@ flutter build web --release --base-href "/XmppTest/"
 | Dev | `flutter run -d chrome` | Hot reload locale |
 | Test | `flutter test` | Widget test in `test/` |
 | Prod web | `flutter build web --base-href "/XmppTest/"` | `client/build/web/` |
-| Deploy | GitHub Actions `deploy-pages.yml` | https://alfred-im.github.io/XmppTest/ (ogni build PR o `main`) |
+| Deploy | GitHub Actions `deploy-pages.yml` | https://alfred-im.github.io/XmppTest/ (solo da `main`; PR → preview Pages) |
 
-Workflow CI: build → **deploy su github-pages** (anche da PR, non solo preview) → copia `index.html` → `404.html`.
+Workflow CI: build → deploy-preview (PR) o deploy-prod (`main`) → copia `index.html` → `404.html`. L'ambiente `github-pages` **non accetta** deploy da branch PR (protection rules GitHub).
 
 ---
 

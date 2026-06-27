@@ -21,7 +21,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: pages-deploy
+  group: ${{ github.event_name == 'pull_request' && format('pages-pr-{0}', github.event.pull_request.number) || 'pages-prod' }}
   cancel-in-progress: true
 
 jobs:
@@ -60,7 +60,25 @@ jobs:
         with:
           path: client/build/web
 
-  deploy:
+  # Anteprima PR: URL dedicato (link «View deployment» sulla PR).
+  deploy-preview:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    needs: build
+    environment:
+      name: preview/pr-${{ github.event.pull_request.number }}
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy preview to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+        with:
+          preview: true
+          preview_id: pr-${{ github.event.pull_request.number }}
+
+  # Produzione: solo push su main (l'ambiente github-pages rifiuta i ref delle PR).
+  deploy-prod:
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     needs: build
     environment:
