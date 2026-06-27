@@ -14,8 +14,8 @@
 | Concetto | Ruolo |
 |----------|--------|
 | **Indirizzo** | Destinatario del messaggio: `username` (Alfred) o `username@server` (esterno) |
-| **Messaggi** | Unica fonte di verità; inviati e ricevuti |
-| **Inbox** | Vista sullo storico raggruppato per controparte; **solo se esiste almeno un messaggio** |
+| **Messaggi** | Unica fonte di verità; inviati e ricevuti con `sender_id` + destinatario |
+| **Inbox** | Vista sullo storico raggruppato per controparte (`inbox_threads`); **solo se esiste almeno un messaggio** |
 | **Rubrica (`contacts`)** | Strumento personale opzionale; **isolata** dalle dinamiche di chat |
 
 ### Indirizzamento
@@ -35,7 +35,7 @@ Validazione stretta dei formati: **non urgente**. Fase attuale: username Alfred 
 ### ✅ Corretto
 
 - FAB / nuova chat: inserisci indirizzo → **bozza** (nessuna riga inbox, nessun contatto obbligatorio)
-- Primo messaggio inviato → thread creato sul server → compare in inbox
+- Primo messaggio inviato → thread inbox creato sul server → compare in inbox
 - Messaggio ricevuto da chiunque → thread in inbox **senza** essere in rubrica
 - «Non in rubrica» **≠** «sconosciuto» (dinamica legacy XMPP da non replicare)
 - Rubrica: scorciatoie personali; si rifinisce in futuro, non nel flusso di invio
@@ -44,6 +44,7 @@ Validazione stretta dei formati: **non urgente**. Fase attuale: username Alfred 
 
 - Passare da `contact_id` / rubrica come prerequisito per scrivere (account interni)
 - Creare record conversazione / partecipanti **prima** del primo messaggio
+- Esporre al client RPC tipo `get_or_create_*_conversation`
 - Mostrare in inbox thread senza messaggi
 - Trattare la rubrica come gate di autorizzazione o classificazione «sconosciuti»
 
@@ -51,26 +52,36 @@ Validazione stretta dei formati: **non urgente**. Fase attuale: username Alfred 
 
 ## Modello tecnico (implementazione)
 
-### Inbox (`list_conversations`)
+### Nessuna «conversazione»
 
-Restituisce solo conversazioni con `last_message_at IS NOT NULL` (storico messaggi reale).
+Le tabelle `conversations` e `conversation_participants` **non esistono**.  
+Il dominio è:
+
+| Entità | Ruolo |
+|--------|--------|
+| `messages` | Fonte di verità: `sender_id`, `recipient_profile_id` (interno) o `recipient_external_address` (federato) |
+| `inbox_threads` | Metadati inbox per utente (preview, unread, last_message_at) — **nasce col primo messaggio** via trigger |
+
+### Inbox (`list_inbox`)
+
+Solo thread con `last_message_at IS NOT NULL`.
 
 ### Apertura chat (bozza)
 
 1. Client risolve indirizzo interno → `profile_id` + nome visualizzato
 2. Indirizzo esterno → errore `unsupported` (fase attuale)
-3. UI chat senza `conversation_id` finché l’utente non invia
+3. UI chat senza `thread_id` finché l’utente non invia
 
-### Primo invio
+### Invio
 
-1. RPC `get_or_create_direct_conversation(profile_id)` — **solo al primo messaggio**
-2. RPC `send_message` — inserisce il messaggio
-3. Trigger aggiorna preview / unread; inbox si aggiorna via realtime
+1. RPC `send_message_to_profile(recipient_profile_id, …)` — **unico punto di invio** (testo, GIF, voice)
+2. Trigger `on_message_inserted` crea/aggiorna `inbox_threads` per mittente e destinatario
+3. Inbox si aggiorna via realtime su `inbox_threads`
 
-### Thread DB (`conversations`)
+### Lettura thread
 
-Resta tabella di raggruppamento **tecnico** (partecipanti, realtime, unread, protocollo recapito).  
-**Non** è un oggetto utente da «aprire» prima dei messaggi; nasce con il primo messaggio.
+- `list_thread_messages(thread_id)` — storico messaggi con la controparte
+- `mark_thread_read(thread_id)` — unread + spunte lettura
 
 ### Rubrica
 
@@ -89,6 +100,6 @@ Modulo separato. Il pulsante «Scrivi» da contatti apre una **bozza** per indir
 ## Riferimenti codice
 
 - ADR: questo file
-- Migrazione: `supabase/migrations/20260627200000_address_based_messaging.sql`
-- Client: `ComposeTarget`, `ComposeAddress`, `MessagesController` (bozza + primo invio)
+- Migrazioni: `20260627200000_address_based_messaging.sql`, `20260627210000_message_centric_messaging.sql`
+- Client: `ComposeTarget`, `InboxThread`, `InboxController`, `MessagesController` (bozza + `send_message_to_profile`)
 - Architettura: `docs/architecture/alpha-full-stack.md` § messaggistica

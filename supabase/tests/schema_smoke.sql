@@ -12,8 +12,8 @@ BEGIN
   IF to_regclass('public.contacts') IS NULL THEN
     missing := array_append(missing, 'contacts');
   END IF;
-  IF to_regclass('public.conversations') IS NULL THEN
-    missing := array_append(missing, 'conversations');
+  IF to_regclass('public.inbox_threads') IS NULL THEN
+    missing := array_append(missing, 'inbox_threads');
   END IF;
   IF to_regclass('public.messages') IS NULL THEN
     missing := array_append(missing, 'messages');
@@ -22,22 +22,29 @@ BEGIN
     missing := array_append(missing, 'outbox');
   END IF;
 
+  IF to_regclass('public.conversations') IS NOT NULL THEN
+    RAISE EXCEPTION 'Legacy table conversations must be removed';
+  END IF;
+
   IF array_length(missing, 1) IS NOT NULL THEN
     RAISE EXCEPTION 'Missing tables: %', array_to_string(missing, ', ');
   END IF;
 
   -- Funzioni RPC
-  IF to_regprocedure('public.send_message(uuid,text,text)') IS NULL THEN
-    RAISE EXCEPTION 'Missing RPC send_message (text overload)';
+  IF to_regprocedure('public.send_message_to_profile(uuid,text,text)') IS NULL THEN
+    RAISE EXCEPTION 'Missing RPC send_message_to_profile (text overload)';
   END IF;
-  IF to_regprocedure('public.send_message(uuid,text,text,public.message_content_type,text,integer,text,bigint)') IS NULL THEN
-    RAISE EXCEPTION 'Missing RPC send_message (voice/media metadata overload)';
+  IF to_regprocedure('public.send_message_to_profile(uuid,text,text,public.message_content_type,text,integer,text,bigint)') IS NULL THEN
+    RAISE EXCEPTION 'Missing RPC send_message_to_profile (media metadata overload)';
   END IF;
-  IF to_regprocedure('public.mark_conversation_read(uuid)') IS NULL THEN
-    RAISE EXCEPTION 'Missing RPC mark_conversation_read';
+  IF to_regprocedure('public.mark_thread_read(uuid)') IS NULL THEN
+    RAISE EXCEPTION 'Missing RPC mark_thread_read';
   END IF;
-  IF to_regprocedure('public.list_conversations()') IS NULL THEN
-    RAISE EXCEPTION 'Missing RPC list_conversations';
+  IF to_regprocedure('public.list_inbox()') IS NULL THEN
+    RAISE EXCEPTION 'Missing RPC list_inbox';
+  END IF;
+  IF to_regprocedure('public.list_thread_messages(uuid,integer)') IS NULL THEN
+    RAISE EXCEPTION 'Missing RPC list_thread_messages';
   END IF;
   IF to_regprocedure('public.find_profile_by_username(text)') IS NULL THEN
     RAISE EXCEPTION 'Missing RPC find_profile_by_username';

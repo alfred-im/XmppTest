@@ -1,20 +1,20 @@
 import 'package:flutter/material.dart';
 
-import '../models/conversation.dart';
+import '../models/inbox_thread.dart';
 import '../theme/alfred_colors.dart';
 import '../utils/compose_address.dart';
-import 'conversation_tile.dart';
+import 'inbox_thread_tile.dart';
 
-class ConversationsPanel extends StatefulWidget {
-  const ConversationsPanel({
+class InboxPanel extends StatefulWidget {
+  const InboxPanel({
     super.key,
     required this.selectedId,
-    required this.conversations,
+    required this.threads,
     required this.isLoading,
     required this.onSelected,
     required this.onSearchChanged,
     required this.onContactsTap,
-    this.onNewConversation,
+    this.onNewMessage,
     this.onDrawerTap,
     this.error,
     this.onRetry,
@@ -24,13 +24,13 @@ class ConversationsPanel extends StatefulWidget {
   });
 
   final String? selectedId;
-  final List<Conversation> conversations;
+  final List<InboxThread> threads;
   final bool isLoading;
   final ValueChanged<String> onSelected;
   final ValueChanged<String> onSearchChanged;
   final VoidCallback? onDrawerTap;
   final VoidCallback onContactsTap;
-  final Future<void> Function(String address)? onNewConversation;
+  final Future<void> Function(String address)? onNewMessage;
   final String? error;
   final VoidCallback? onRetry;
   final bool showBackButton;
@@ -38,10 +38,10 @@ class ConversationsPanel extends StatefulWidget {
   final bool showTopBar;
 
   @override
-  State<ConversationsPanel> createState() => _ConversationsPanelState();
+  State<InboxPanel> createState() => _InboxPanelState();
 }
 
-class _ConversationsPanelState extends State<ConversationsPanel> {
+class _InboxPanelState extends State<InboxPanel> {
   final _searchController = TextEditingController();
 
   @override
@@ -72,7 +72,7 @@ class _ConversationsPanelState extends State<ConversationsPanel> {
                         controller: _searchController,
                         onChanged: widget.onSearchChanged,
                         decoration: InputDecoration(
-                          hintText: 'Cerca conversazione',
+                          hintText: 'Cerca messaggi',
                           prefixIcon: const Icon(
                             Icons.search,
                             color: AlfredColors.textSecondary,
@@ -86,7 +86,7 @@ class _ConversationsPanelState extends State<ConversationsPanel> {
                               controller: _searchController,
                               onChanged: widget.onSearchChanged,
                               decoration: InputDecoration(
-                                hintText: 'Cerca conversazione',
+                                hintText: 'Cerca messaggi',
                                 prefixIcon: const Icon(
                                   Icons.search,
                                   color: AlfredColors.textSecondary,
@@ -131,7 +131,7 @@ class _ConversationsPanelState extends State<ConversationsPanel> {
                               ),
                             ),
                           )
-                        : widget.conversations.isEmpty
+                        : widget.threads.isEmpty
                             ? const Center(
                                 child: Text(
                                   'Nessun messaggio.\nUsa + per scrivere a un indirizzo.',
@@ -140,15 +140,15 @@ class _ConversationsPanelState extends State<ConversationsPanel> {
                                 ),
                               )
                             : ListView.separated(
-                                itemCount: widget.conversations.length,
+                                itemCount: widget.threads.length,
                                 separatorBuilder: (_, _) =>
                                     const Divider(height: 1, indent: 76),
                                 itemBuilder: (context, index) {
-                                  final conversation = widget.conversations[index];
-                                  return ConversationTile(
-                                    conversation: conversation,
-                                    selected: conversation.id == widget.selectedId,
-                                    onTap: () => widget.onSelected(conversation.id),
+                                  final thread = widget.threads[index];
+                                  return InboxThreadTile(
+                                    thread: thread,
+                                    selected: thread.id == widget.selectedId,
+                                    onTap: () => widget.onSelected(thread.id),
                                   );
                                 },
                               ),
@@ -156,15 +156,15 @@ class _ConversationsPanelState extends State<ConversationsPanel> {
             ],
           ),
         ),
-        if (widget.onNewConversation != null)
+        if (widget.onNewMessage != null)
           Positioned(
             right: 16,
             bottom: 16,
             child: FloatingActionButton(
-              onPressed: () => _showNewConversationDialog(context),
+              onPressed: () => _showNewMessageDialog(context),
               backgroundColor: AlfredColors.unreadBadge,
               foregroundColor: AlfredColors.textOnDark,
-              tooltip: 'Nuova chat',
+              tooltip: 'Nuovo messaggio',
               child: const Icon(Icons.chat_outlined),
             ),
           ),
@@ -172,28 +172,28 @@ class _ConversationsPanelState extends State<ConversationsPanel> {
     );
   }
 
-  Future<void> _showNewConversationDialog(BuildContext context) async {
-    final onNewConversation = widget.onNewConversation;
-    if (onNewConversation == null) return;
+  Future<void> _showNewMessageDialog(BuildContext context) async {
+    final onNewMessage = widget.onNewMessage;
+    if (onNewMessage == null) return;
 
     final address = await showDialog<String>(
       context: context,
-      builder: (ctx) => const _NewConversationDialog(),
+      builder: (ctx) => const _NewMessageDialog(),
     );
 
     if (address == null || address.trim().isEmpty || !context.mounted) return;
-    await onNewConversation(address.trim());
+    await onNewMessage(address.trim());
   }
 }
 
-class _NewConversationDialog extends StatefulWidget {
-  const _NewConversationDialog();
+class _NewMessageDialog extends StatefulWidget {
+  const _NewMessageDialog();
 
   @override
-  State<_NewConversationDialog> createState() => _NewConversationDialogState();
+  State<_NewMessageDialog> createState() => _NewMessageDialogState();
 }
 
-class _NewConversationDialogState extends State<_NewConversationDialog> {
+class _NewMessageDialogState extends State<_NewMessageDialog> {
   final _controller = TextEditingController();
   final _formKey = GlobalKey<FormState>();
 
@@ -212,7 +212,7 @@ class _NewConversationDialogState extends State<_NewConversationDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Nuova chat'),
+      title: const Text('Nuovo messaggio'),
       content: Form(
         key: _formKey,
         child: TextFormField(

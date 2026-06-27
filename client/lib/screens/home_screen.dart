@@ -2,20 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../models/compose_target.dart';
-import '../models/conversation.dart';
+import '../models/inbox_thread.dart';
 import '../providers/auth_controller.dart';
-import '../providers/conversations_controller.dart';
+import '../providers/inbox_controller.dart';
 import '../providers/messages_controller.dart';
 import '../services/compose_service.dart';
 import '../theme/alfred_colors.dart';
 import '../widgets/account_sidebar.dart';
 import '../widgets/chat_panel.dart';
-import '../widgets/conversations_panel.dart';
+import '../widgets/inbox_panel.dart';
 import 'contacts_screen.dart';
 import 'auth_screen.dart';
 import 'profile_screen.dart';
 
-/// Layout principale stile WhatsApp Web: sidebar (profilo + conversazioni) + chat.
+/// Layout principale stile WhatsApp Web: sidebar (profilo + inbox) + chat.
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -32,11 +32,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
   static const _breakpoint = 720.0;
 
-  Conversation? _findSelected(ConversationsController controller) {
+  InboxThread? _findSelected(InboxController controller) {
     final id = _selectedId;
     if (id == null) return null;
-    for (final c in controller.conversations) {
-      if (c.id == id) return c;
+    for (final thread in controller.threads) {
+      if (thread.id == id) return thread;
     }
     return null;
   }
@@ -55,7 +55,7 @@ class _HomeScreenState extends State<HomeScreen> {
     _openDraft(target);
   }
 
-  Future<void> _startConversationFromAddress(String address) async {
+  Future<void> _startMessageFromAddress(String address) async {
     try {
       final target = await _composeService.resolveAddress(address);
       if (!mounted) return;
@@ -76,13 +76,19 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  Future<void> _onConversationCreated(String conversationId) async {
+  Future<void> _onFirstMessageSent() async {
     if (!mounted) return;
-    await context.read<ConversationsController?>()?.load();
+    final draft = _draftTarget;
+    final inbox = context.read<InboxController?>();
+    if (inbox == null || draft?.profileId == null) return;
+
+    await inbox.load();
     if (!mounted) return;
+
+    final thread = inbox.findByPeerProfileId(draft!.profileId!);
     setState(() {
       _draftTarget = null;
-      _selectedId = conversationId;
+      _selectedId = thread?.id;
       _showListOnMobile = false;
     });
   }
@@ -126,28 +132,28 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _conversationsPanel({
-    required ConversationsController conversations,
+  Widget _inboxPanel({
+    required InboxController inbox,
     required bool showDrawerButton,
     bool showBackButton = false,
     bool showTopBar = true,
     VoidCallback? onBack,
   }) {
-    return ConversationsPanel(
+    return InboxPanel(
       selectedId: _selectedId,
-      conversations: conversations.filteredConversations,
-      isLoading: conversations.isLoading,
-      error: conversations.error,
-      onRetry: conversations.load,
+      threads: inbox.filteredThreads,
+      isLoading: inbox.isLoading,
+      error: inbox.error,
+      onRetry: inbox.load,
       onSelected: (id) => setState(() {
         _selectedId = id;
         _draftTarget = null;
         _showListOnMobile = false;
       }),
-      onSearchChanged: conversations.setSearchQuery,
+      onSearchChanged: inbox.setSearchQuery,
       onDrawerTap: showDrawerButton ? _openDrawer : null,
       onContactsTap: _openContacts,
-      onNewConversation: _startConversationFromAddress,
+      onNewMessage: _startMessageFromAddress,
       showBackButton: showBackButton,
       onBack: onBack,
       showTopBar: showTopBar,
@@ -155,14 +161,14 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _chatArea({
-    required Conversation? selected,
+    required InboxThread? selected,
     required bool showBackButton,
     VoidCallback? onBack,
   }) {
     if (selected != null) {
       return _ChatWithMessages(
         key: ValueKey(selected.id),
-        conversation: selected,
+        thread: selected,
         showBackButton: showBackButton,
         onBack: onBack,
       );
@@ -175,7 +181,7 @@ class _HomeScreenState extends State<HomeScreen> {
         target: draft,
         showBackButton: showBackButton,
         onBack: onBack,
-        onConversationCreated: _onConversationCreated,
+        onFirstMessageSent: _onFirstMessageSent,
       );
     }
 
@@ -184,8 +190,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final conversations = context.watch<ConversationsController?>();
-    if (conversations == null) {
+    final inbox = context.watch<InboxController?>();
+    if (inbox == null) {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
       );
@@ -193,7 +199,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     final width = MediaQuery.sizeOf(context).width;
     final isWide = width >= _breakpoint;
-    final selected = _findSelected(conversations);
+    final selected = _findSelected(inbox);
     final showChatOnMobile = selected != null || _draftTarget != null;
     final sidebarWidth = width >= 1100 ? 380.0 : 320.0;
 
@@ -210,8 +216,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     _accountSidebar(compact: true),
                     const Divider(height: 1),
                     Expanded(
-                      child: _conversationsPanel(
-                        conversations: conversations,
+                      child: _inboxPanel(
+                        inbox: inbox,
                         showDrawerButton: false,
                         showTopBar: false,
                       ),
@@ -238,8 +244,8 @@ class _HomeScreenState extends State<HomeScreen> {
         child: _accountSidebar(),
       ),
       body: !showChatOnMobile || _showListOnMobile
-          ? _conversationsPanel(
-              conversations: conversations,
+          ? _inboxPanel(
+              inbox: inbox,
               showDrawerButton: true,
             )
           : _chatArea(
@@ -254,12 +260,12 @@ class _HomeScreenState extends State<HomeScreen> {
 class _ChatWithMessages extends StatelessWidget {
   const _ChatWithMessages({
     super.key,
-    required this.conversation,
+    required this.thread,
     this.showBackButton = false,
     this.onBack,
   });
 
-  final Conversation conversation;
+  final InboxThread thread;
   final bool showBackButton;
   final VoidCallback? onBack;
 
@@ -270,10 +276,11 @@ class _ChatWithMessages extends StatelessWidget {
     return ChangeNotifierProvider(
       create: (_) => MessagesController(
         userId: userId,
-        conversationId: conversation.id,
+        threadId: thread.id,
+        peerProfileId: thread.peerProfileId,
       ),
       child: ChatPanel(
-        conversation: conversation,
+        thread: thread,
         showBackButton: showBackButton,
         onBack: onBack,
       ),
@@ -285,13 +292,13 @@ class _DraftChat extends StatelessWidget {
   const _DraftChat({
     super.key,
     required this.target,
-    required this.onConversationCreated,
+    required this.onFirstMessageSent,
     this.showBackButton = false,
     this.onBack,
   });
 
   final ComposeTarget target;
-  final Future<void> Function(String conversationId) onConversationCreated;
+  final Future<void> Function() onFirstMessageSent;
   final bool showBackButton;
   final VoidCallback? onBack;
 
@@ -303,10 +310,10 @@ class _DraftChat extends StatelessWidget {
       create: (_) => MessagesController(
         userId: userId,
         composeTarget: target,
-        onConversationCreated: onConversationCreated,
+        onFirstMessageSent: onFirstMessageSent,
       ),
       child: ChatPanel(
-        conversation: target.toPlaceholderConversation(),
+        thread: target.toPlaceholderThread(),
         showBackButton: showBackButton,
         onBack: onBack,
       ),

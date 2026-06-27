@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../models/conversation.dart';
+import '../models/inbox_thread.dart';
 import '../providers/messages_controller.dart';
 import '../theme/alfred_colors.dart';
 import '../utils/avatar_color.dart';
@@ -11,12 +11,12 @@ import 'chat_input_bar.dart';
 class ChatPanel extends StatelessWidget {
   const ChatPanel({
     super.key,
-    required this.conversation,
+    required this.thread,
     this.showBackButton = false,
     this.onBack,
   });
 
-  final Conversation conversation;
+  final InboxThread thread;
   final bool showBackButton;
   final VoidCallback? onBack;
 
@@ -30,7 +30,7 @@ class ChatPanel extends StatelessWidget {
       child: Column(
         children: [
           _ChatHeader(
-            conversation: conversation,
+            thread: thread,
             showBackButton: showBackButton,
             onBack: onBack,
           ),
@@ -61,12 +61,12 @@ class ChatPanel extends StatelessWidget {
 
 class _ChatHeader extends StatelessWidget {
   const _ChatHeader({
-    required this.conversation,
+    required this.thread,
     required this.showBackButton,
     this.onBack,
   });
 
-  final Conversation conversation;
+  final InboxThread thread;
   final bool showBackButton;
   final VoidCallback? onBack;
 
@@ -89,9 +89,9 @@ class _ChatHeader extends StatelessWidget {
                   icon: const Icon(Icons.arrow_back),
                 ),
               CircleAvatar(
-                backgroundColor: conversation.avatarColor,
+                backgroundColor: thread.avatarColor,
                 child: Text(
-                  avatarInitial(conversation.name),
+                  avatarInitial(thread.name),
                   style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w600,
@@ -104,7 +104,7 @@ class _ChatHeader extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      conversation.name,
+                      thread.name,
                       style: const TextStyle(
                         fontWeight: FontWeight.w600,
                         fontSize: 16,
@@ -154,7 +154,7 @@ class EmptyChatPlaceholder extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             const Text(
-              'Seleziona una conversazione per iniziare',
+              'Seleziona un contatto per leggere i messaggi',
               style: TextStyle(color: AlfredColors.textSecondary),
             ),
           ],

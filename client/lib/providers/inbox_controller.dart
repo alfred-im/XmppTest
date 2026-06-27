@@ -3,41 +3,48 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../models/conversation.dart';
-import '../services/conversation_service.dart';
+import '../models/inbox_thread.dart';
+import '../services/inbox_service.dart';
 import '../services/supabase_bootstrap.dart';
 import '../utils/list_filter.dart';
 
-class ConversationsController extends ChangeNotifier {
-  ConversationsController({
+class InboxController extends ChangeNotifier {
+  InboxController({
     required this.userId,
-    ConversationService? conversationService,
+    InboxService? inboxService,
     this.enableRealtime = true,
-  }) : _conversationService = conversationService ?? ConversationService() {
+  }) : _inboxService = inboxService ?? InboxService() {
     unawaited(_bootstrap());
   }
 
   final String userId;
   final bool enableRealtime;
-  final ConversationService _conversationService;
+  final InboxService _inboxService;
   RealtimeChannel? _channel;
   int _loadGeneration = 0;
   bool _realtimeAttached = false;
 
-  List<Conversation> conversations = [];
+  List<InboxThread> threads = [];
   bool isLoading = true;
   String? error;
   String _searchQuery = '';
 
-  List<Conversation> get filteredConversations => filterByQueryFields(
-        conversations,
+  List<InboxThread> get filteredThreads => filterByQueryFields(
+        threads,
         _searchQuery,
-        (conversation) => [conversation.name, conversation.preview],
+        (thread) => [thread.name, thread.preview],
       );
 
   void setSearchQuery(String value) {
     _searchQuery = value;
     notifyListeners();
+  }
+
+  InboxThread? findByPeerProfileId(String profileId) {
+    for (final thread in threads) {
+      if (thread.peerProfileId == profileId) return thread;
+    }
+    return null;
   }
 
   Future<void> _bootstrap() async {
@@ -48,7 +55,7 @@ class ConversationsController extends ChangeNotifier {
   void _attachRealtime() {
     if (_realtimeAttached) return;
     _realtimeAttached = true;
-    _channel = _conversationService.subscribeToConversationList(userId, load);
+    _channel = _inboxService.subscribeToInbox(userId, load);
   }
 
   Future<void> load() async {
@@ -58,15 +65,15 @@ class ConversationsController extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final loaded = await _conversationService
-          .fetchConversations()
+      final loaded = await _inboxService
+          .fetchInbox()
           .timeout(const Duration(seconds: 30));
       if (generation != _loadGeneration) return;
-      conversations = loaded;
+      threads = loaded;
       error = null;
     } on TimeoutException {
       if (generation != _loadGeneration) return;
-      error = 'Timeout caricamento conversazioni. Riprova.';
+      error = 'Timeout caricamento inbox. Riprova.';
     } catch (e) {
       if (generation != _loadGeneration) return;
       error = e.toString();

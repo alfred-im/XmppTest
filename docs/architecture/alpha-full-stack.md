@@ -57,7 +57,7 @@ client/lib/
 
 ### 2.2 Perché Provider (e non Riverpod/BLoC)
 
-- Scope Alpha: pochi controller globali (`Auth`, `Conversations`, `Contacts`, `Profile`)
+- Scope Alpha: pochi controller globali (`Auth`, `Inbox`, `Contacts`, `Profile`)
 - `ProxyProvider` ricrea controller al cambio `userId` (switch account) senza boilerplate
 - **`ChangeNotifierProxyProvider`** (non `ProxyProvider`) per inbox/contatti/profilo — altrimenti `notifyListeners()` del controller non aggiorna la UI (fix PR #114; vedi `docs/fixes/flutter-inbox-stability.md`)
 
@@ -65,7 +65,7 @@ client/lib/
 
 1. `main()` → `Supabase.initialize(publishableKey)` → `waitForSupabaseSessionReady()` (attende idratazione auth; fix race PR #113)
 2. `MultiProvider` registra controller; `AuthController.initialize()` imposta `sessionReady`
-3. `ChangeNotifierProxyProvider` crea `ConversationsController` solo se `sessionReady && userId`
+3. `ChangeNotifierProxyProvider` crea `InboxController` solo se `sessionReady && userId`
 4. `AppShell` → `AuthScreen` se non autenticato, altrimenti `HomeScreen`
 
 ### 2.4 Multi-account
@@ -89,14 +89,14 @@ client/lib/
 
 **Regola vincolante**: [address-based-messaging.md](../decisions/address-based-messaging.md) — inbox = **solo thread con storico messaggi** (`last_message_at IS NOT NULL`); rubrica **non** abilita né blocca la messaggistica.
 
-1. `ConversationsController.load()` → RPC `list_conversations()` (**un round-trip**)
-2. Payload completo per UI: `conversation_id`, `display_name`, `last_message_preview`, `last_message_at`, `unread_count`, `protocol`
-3. Risoluzione nome peer **lato server** (titolo conversazione → profilo/contatto altro partecipante)
-4. Realtime (`conversations-{userId}`) richiama `load()` su cambio tabelle — stessa RPC
+1. `InboxController.load()` → RPC `list_inbox()` (**un round-trip**)
+2. Payload completo per UI: `thread_id`, `display_name`, `last_message_preview`, `last_message_at`, `unread_count`, `protocol`, `peer_profile_id`
+3. Risoluzione nome peer **lato server** (profilo controparte o `peer_display_name`)
+4. Realtime (`inbox-{userId}`) su `inbox_threads` richiama `load()` — stessa RPC
 
-**Nuova chat (bozza)**: FAB o rubrica → indirizzo `username` / `user@server` → UI chat **senza** `conversation_id` finché non parte il primo messaggio → nessuna riga inbox.
+**Nuova chat (bozza)**: FAB o rubrica → indirizzo `username` / `user@server` → UI chat **senza** `thread_id` finché non parte il primo messaggio → nessuna riga inbox.
 
-**Scelta**: niente query REST N+1 dal client; allineato al principio “il client chiede, la piattaforma manda tutto”.
+**Scelta**: niente query REST N+1 dal client; **nessuna tabella `conversations`** — messaggi con `sender_id`/`recipient_profile_id`, inbox derivata da trigger.
 
 **Anti-pattern evitato**: loop client con `_resolveDisplayName` per ogni riga (lento su web); creare conversazione prima del primo messaggio; passare da `contact_id` per account Alfred interni.
 
@@ -104,33 +104,32 @@ client/lib/
 
 | Canale | Tabelle | Scopo |
 |--------|---------|-------|
-| `conversations-{userId}` | `conversations`, `conversation_participants` | Aggiorna lista inbox |
-| `messages-{conversationId}` | `messages` INSERT/UPDATE | Chat live + aggiornamento spunte |
+| `inbox-{userId}` | `inbox_threads` | Aggiorna lista inbox |
+| `messages-peer-{me}-{peer}` | `messages` INSERT/UPDATE | Chat live + spunte (filtro client su coppia sender/recipient) |
 
 **Scelta**: canali separati per inbox e chat attiva — riduce traffico rispetto a un unico firehose.
 
 ### 2.7 Invio messaggi
 
-1. Bozza: nessun thread server; al **primo invio** → `get_or_create_direct_conversation(profile_id)` poi `send_message`
+1. Bozza: nessun thread server; invio diretto → RPC `send_message_to_profile(recipient_profile_id, …)`
 2. UI optimistic con `client_message_id` (UUID v4)
-3. RPC `send_message` (validazione server-side); testo usa overload 3-arg per evitare ambiguità PostgREST
-4. Trigger `on_message_inserted` aggiorna preview/unread → thread compare in inbox
-5. Per protocollo `internal`: delivery immediata via Realtime
-6. Per `xmpp`/`matrix`: status `pending` + riga `outbox` (bridge futuro); indirizzo `user@server` → `unsupported` in Alpha
-7. **Retry client**: `OutboundMessageQueue` persiste invii falliti (testo, GIF, voice) — retry periodico + tap «Riprova invio» (`MessagesController`)
+3. Trigger `on_message_inserted` crea/aggiorna `inbox_threads` per mittente e destinatario
+4. Per protocollo `internal`: `delivered` immediato in fonte di verità
+5. Per `xmpp`/`matrix`: status `pending` + riga `outbox` (bridge futuro); indirizzo `user@server` → `unsupported` in Alpha
+6. **Retry client**: `OutboundMessageQueue` persiste invii falliti (testo, GIF, voice)
 
 ### 2.8 GIF in chat
 
 1. Utente seleziona file `.gif` (`ChatInputBar` + `file_picker`)
 2. `MessageMediaService.uploadGif` → bucket Supabase `chat-media` (`{userId}/{uuid}.gif`)
-3. RPC `send_message` con `content_type=gif` e `media_url` pubblico
+3. RPC `send_message_to_profile` con `content_type=gif` e `media_url` pubblico
 4. `MessageBubble` renderizza `Image.network` (placeholder durante upload ottimistico)
 5. Preview inbox: `[GIF]` (trigger `on_message_inserted`)
 
 **Scelte**:
 - Storage pubblico per URL semplici in Realtime (Alpha); signed URL post-Alpha se serve
 - Solo `image/gif`, max 10 MB — bucket RLS: upload solo in cartella `auth.uid()`
-- `body` può essere vuoto per GIF; `mark_conversation_read` include `content_type=gif`
+- `body` può essere vuoto per GIF; `mark_thread_read` include `content_type=gif`
 
 ### 2.9 Spunte lettura
 
@@ -138,11 +137,11 @@ client/lib/
 
 | Livello | UI | Meccanismo Alpha |
 |---------|-----|------------------|
-| Inviato | ✓ grigia | `send_message` → `delivery_status = 'sent'` |
-| Consegnato | ✓✓ grigie | `on_message_inserted` → `delivered` quando in fonte di verità (debito: oggi branch su `protocol`) |
-| Lettura | ✓✓ blu | `mark_conversation_read` → `read` |
+| Inviato | ✓ grigia | `send_message_to_profile` → `delivery_status = 'sent'` |
+| Consegnato | ✓✓ grigie | `on_message_inserted` → `delivered` quando in fonte di verità |
+| Lettura | ✓✓ blu | `mark_thread_read` → `read` |
 
-- `mark_conversation_read` RPC all'apertura chat: aggiorna `unread_count`, inserisce `message_read_receipts`, promuove `delivery_status` a `read` per messaggi propri
+- `mark_thread_read` RPC all'apertura chat: aggiorna `unread_count`, inserisce `message_read_receipts`, promuove `delivery_status` a `read` per messaggi propri
 - UI: `MessageStatus` → ✓ / ✓✓ / ✓✓ blu (`message_bubble.dart`)
 - Migrazione `20260626100000_internal_delivered_on_server.sql`: promozione a `delivered` — **debito tecnico** (nome/branch «internal»; da unificare)
 
@@ -238,22 +237,22 @@ storage.chat-media (GIF + voice WebM, path `{userId}/{uuid}.gif|.webm`)
 
 **Vincolo CHECK** in tabella — impossibile stato ibrido incoerente.
 
-### 3.5 Conversazioni
+### 3.5 Inbox threads (non «conversazioni»)
 
-- **Interna**: 2 partecipanti `profiles`, deduplicata da `get_or_create_direct_conversation`
-- **Federata**: 1 partecipante Alfred + `contact_id` sul partecipante — titolo = `display_name` contatto
+- **`messages`**: fonte di verità con `sender_id` + `recipient_profile_id` (interno) o `recipient_external_address` (federato)
+- **`inbox_threads`**: metadati inbox per utente (preview, unread) — creati/aggiornati **solo** da trigger su insert messaggio
+- **Nessuna** tabella `conversations` / `conversation_participants`
 
 ### 3.6 RPC (business logic server)
 
 | RPC | Responsabilità |
 |-----|----------------|
 | `search_profiles` | Trova utenti Alfred per username/display_name |
-| `list_conversations` | Inbox completa in un round-trip (nome, preview, unread) |
-| `get_or_create_direct_conversation` | Chat 1:1 interna idempotente — **solo al primo messaggio** |
-| `get_or_create_conversation_from_contact` | Legacy rubrica/federato — non usato per avvio chat interna client |
+| `list_inbox` | Inbox completa in un round-trip (nome, preview, unread, peer) |
 | `find_profile_by_username` | Risoluzione username → profilo per bozza chat |
-| `send_message` | Validazione partecipante; testo (`body` non vuoto), GIF (`media_url`), o voice (`media_url` + `duration_seconds` + `media_mime`) |
-| `mark_conversation_read` | Unread + read receipts |
+| `send_message_to_profile` | Invio a profilo Alfred; testo, GIF o voice — **unico punto di invio client** |
+| `list_thread_messages` | Storico messaggi con controparte di un thread inbox |
+| `mark_thread_read` | Unread + read receipts |
 
 **Scelta**: logica critica in RPC `SECURITY DEFINER` — il client non può bypassare RLS con insert diretti malformati.
 

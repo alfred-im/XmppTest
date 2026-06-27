@@ -1,4 +1,4 @@
-import 'conversation.dart';
+import 'inbox_thread.dart';
 import '../utils/avatar_color.dart';
 
 /// Destinatario di una bozza chat — nessun thread server finché non parte un messaggio.
@@ -39,14 +39,15 @@ class ComposeTarget {
     );
   }
 
-  Conversation toPlaceholderConversation() {
-    return Conversation(
+  InboxThread toPlaceholderThread() {
+    return InboxThread(
       id: 'draft:$address',
       name: displayName,
       preview: '',
       timeLabel: '',
       unreadCount: 0,
       avatarColor: avatarColorForId(displayName),
+      peerProfileId: profileId,
     );
   }
 }

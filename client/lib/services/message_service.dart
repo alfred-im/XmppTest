@@ -5,18 +5,18 @@ import '../models/message.dart';
 import 'supabase_bootstrap.dart';
 
 class MessageService {
-  Future<List<ChatMessage>> fetchMessages({
-    required String conversationId,
+  Future<List<ChatMessage>> fetchThreadMessages({
+    required String threadId,
     required String currentUserId,
     int limit = 100,
   }) async {
-    final rows = await supabase
-        .from('messages')
-        .select()
-        .eq('conversation_id', conversationId)
-        .filter('marker_type', 'is', null)
-        .order('created_at', ascending: true)
-        .limit(limit);
+    final rows = await supabase.rpc(
+      'list_thread_messages',
+      params: {
+        'p_thread_id': threadId,
+        'p_limit': limit,
+      },
+    );
 
     return (rows as List<dynamic>)
         .map(
@@ -29,14 +29,14 @@ class MessageService {
         .toList();
   }
 
-  Future<ChatMessage> sendMessage({
-    required String conversationId,
+  Future<ChatMessage> sendToProfile({
+    required String recipientProfileId,
     required String body,
     required String currentUserId,
     required String clientMessageId,
   }) {
-    return _sendMessage(
-      conversationId: conversationId,
+    return _sendToProfile(
+      recipientProfileId: recipientProfileId,
       currentUserId: currentUserId,
       clientMessageId: clientMessageId,
       contentType: 'text',
@@ -44,14 +44,14 @@ class MessageService {
     );
   }
 
-  Future<ChatMessage> sendGif({
-    required String conversationId,
+  Future<ChatMessage> sendGifToProfile({
+    required String recipientProfileId,
     required String mediaUrl,
     required String currentUserId,
     required String clientMessageId,
   }) {
-    return _sendMessage(
-      conversationId: conversationId,
+    return _sendToProfile(
+      recipientProfileId: recipientProfileId,
       currentUserId: currentUserId,
       clientMessageId: clientMessageId,
       contentType: 'gif',
@@ -60,16 +60,16 @@ class MessageService {
     );
   }
 
-  Future<ChatMessage> sendVoice({
-    required String conversationId,
+  Future<ChatMessage> sendVoiceToProfile({
+    required String recipientProfileId,
     required String mediaUrl,
     required int durationSeconds,
     required int mediaSizeBytes,
     required String currentUserId,
     required String clientMessageId,
   }) {
-    return _sendMessage(
-      conversationId: conversationId,
+    return _sendToProfile(
+      recipientProfileId: recipientProfileId,
       currentUserId: currentUserId,
       clientMessageId: clientMessageId,
       contentType: 'voice',
@@ -81,8 +81,8 @@ class MessageService {
     );
   }
 
-  Future<ChatMessage> _sendMessage({
-    required String conversationId,
+  Future<ChatMessage> _sendToProfile({
+    required String recipientProfileId,
     required String currentUserId,
     required String clientMessageId,
     required String contentType,
@@ -94,9 +94,9 @@ class MessageService {
   }) async {
     if (contentType == 'text') {
       final row = await supabase.rpc(
-        'send_message',
+        'send_message_to_profile',
         params: {
-          'p_conversation_id': conversationId,
+          'p_recipient_profile_id': recipientProfileId,
           'p_body': body,
           'p_client_message_id': clientMessageId,
         },
@@ -108,7 +108,7 @@ class MessageService {
     }
 
     final params = {
-      'p_conversation_id': conversationId,
+      'p_recipient_profile_id': recipientProfileId,
       'p_body': body,
       'p_client_message_id': clientMessageId,
       'p_content_type': contentType,
@@ -118,7 +118,7 @@ class MessageService {
       'p_media_size_bytes': ?mediaSizeBytes,
     };
 
-    final row = await supabase.rpc('send_message', params: params);
+    final row = await supabase.rpc('send_message_to_profile', params: params);
 
     return ChatMessage.fromJson(
       json: row as Map<String, dynamic>,
@@ -126,52 +126,42 @@ class MessageService {
     );
   }
 
-  RealtimeChannel subscribeToMessages({
-    required String conversationId,
+  RealtimeChannel subscribeToPeerMessages({
     required String currentUserId,
+    required String peerProfileId,
     required void Function(ChatMessage message) onMessage,
   }) {
+    bool isRelevant(Map<String, dynamic> record) {
+      final sender = record['sender_id'] as String?;
+      final recipient = record['recipient_profile_id'] as String?;
+      return (sender == currentUserId && recipient == peerProfileId) ||
+          (sender == peerProfileId && recipient == currentUserId);
+    }
+
+    void handle(PostgresChangePayload payload) {
+      final record = payload.newRecord;
+      if (record.isEmpty || !isRelevant(record)) return;
+      final message = ChatMessage.fromJson(
+        json: record,
+        currentUserId: currentUserId,
+      );
+      if (!message.hasRenderableContent) return;
+      onMessage(message);
+    }
+
     return supabase
-        .channel('messages-$conversationId')
+        .channel('messages-peer-$currentUserId-$peerProfileId')
         .onPostgresChanges(
           event: PostgresChangeEvent.insert,
           schema: 'public',
           table: 'messages',
-          filter: PostgresChangeFilter(
-            type: PostgresChangeFilterType.eq,
-            column: 'conversation_id',
-            value: conversationId,
-          ),
-          callback: (payload) {
-            final record = payload.newRecord;
-            if (record.isEmpty) return;
-            final message = ChatMessage.fromJson(
-              json: record,
-              currentUserId: currentUserId,
-            );
-            if (!message.hasRenderableContent) return;
-            onMessage(message);
-          },
+          callback: handle,
         )
         .onPostgresChanges(
           event: PostgresChangeEvent.update,
           schema: 'public',
           table: 'messages',
-          filter: PostgresChangeFilter(
-            type: PostgresChangeFilterType.eq,
-            column: 'conversation_id',
-            value: conversationId,
-          ),
-          callback: (payload) {
-            final record = payload.newRecord;
-            if (record.isEmpty) return;
-            onMessage(
-              ChatMessage.fromJson(
-                json: record,
-                currentUserId: currentUserId,
-              ),
-            );
-          },
+          callback: handle,
         )
         .subscribe();
   }

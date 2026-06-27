@@ -29,9 +29,9 @@ class OutboundMessageQueue {
     return OutboundQueueItem.decodeList(raw);
   }
 
-  Future<List<OutboundQueueItem>> loadForConversation(String conversationId) async {
+  Future<List<OutboundQueueItem>> loadForQueueKey(String queueKey) async {
     final all = await loadAll();
-    return all.where((item) => item.conversationId == conversationId).toList();
+    return all.where((item) => item.queueKey == queueKey).toList();
   }
 
   Future<void> enqueue(OutboundQueueItem item) async {
