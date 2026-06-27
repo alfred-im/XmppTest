@@ -1,0 +1,55 @@
+import '../models/compose_target.dart';
+import '../models/contact.dart';
+import '../utils/compose_address.dart';
+import 'profile_service.dart';
+
+class ComposeService {
+  ComposeService({ProfileService? profileService})
+      : _profileService = profileService ?? ProfileService();
+
+  final ProfileService _profileService;
+
+  Future<ComposeTarget> resolveAddress(String raw) async {
+    final parsed = parseComposeAddress(raw);
+    switch (parsed.kind) {
+      case ComposeAddressKind.invalid:
+        throw StateError('Inserisci uno username o un indirizzo user@server');
+      case ComposeAddressKind.externalServer:
+        throw StateError('Indirizzo esterno non ancora supportato');
+      case ComposeAddressKind.internalUsername:
+        final profile =
+            await _profileService.findByUsername(parsed.normalized);
+        if (profile == null) {
+          throw StateError('Utente non trovato');
+        }
+        return ComposeTarget.internal(
+          address: profile.username,
+          displayName: profile.displayName,
+          profileId: profile.id,
+        );
+    }
+  }
+
+  ComposeTarget targetFromContact(Contact contact) {
+    if (contact.protocol == ContactProtocol.internal) {
+      final profileId = contact.linkedProfileId;
+      if (profileId == null) {
+        throw StateError('Contatto interno non valido');
+      }
+      return ComposeTarget.internal(
+        address: contact.displayName,
+        displayName: contact.displayName,
+        profileId: profileId,
+      );
+    }
+
+    final externalAddress = contact.externalAddress;
+    if (externalAddress == null || externalAddress.trim().isEmpty) {
+      throw StateError('Contatto esterno non valido');
+    }
+    return ComposeTarget.external(
+      address: externalAddress.trim(),
+      displayName: contact.displayName,
+    );
+  }
+}

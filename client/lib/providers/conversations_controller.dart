@@ -78,13 +78,6 @@ class ConversationsController extends ChangeNotifier {
     }
   }
 
-  Future<String> openFromContact(String contactId) async {
-    final id =
-        await _conversationService.openConversationFromContact(contactId);
-    await load();
-    return id;
-  }
-
   @override
   void dispose() {
     disposeRealtimeChannel(_channel);

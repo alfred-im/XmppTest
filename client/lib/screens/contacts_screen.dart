@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../models/compose_target.dart';
 import '../models/contact.dart';
 import '../providers/contacts_controller.dart';
-import '../providers/conversations_controller.dart';
+import '../services/compose_service.dart';
 import '../theme/alfred_colors.dart';
 import '../utils/avatar_color.dart';
 
@@ -16,6 +17,7 @@ class ContactsScreen extends StatefulWidget {
 
 class _ContactsScreenState extends State<ContactsScreen> {
   final _searchController = TextEditingController();
+  final _composeService = ComposeService();
 
   @override
   void dispose() {
@@ -23,12 +25,15 @@ class _ContactsScreenState extends State<ContactsScreen> {
     super.dispose();
   }
 
-  Future<void> _startChat(Contact contact) async {
-    final conversations = context.read<ConversationsController?>();
-    if (conversations == null) return;
-    final conversationId = await conversations.openFromContact(contact.id);
-    if (!mounted) return;
-    Navigator.pop(context, conversationId);
+  void _startChat(Contact contact) {
+    try {
+      final target = _composeService.targetFromContact(contact);
+      Navigator.pop(context, target);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString().replaceFirst('StateError: ', ''))),
+      );
+    }
   }
 
   Future<void> _showAddContact() async {

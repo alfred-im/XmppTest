@@ -87,14 +87,18 @@ client/lib/
 
 ### 2.5 Caricamento inbox (lista chat)
 
+**Regola vincolante**: [address-based-messaging.md](../decisions/address-based-messaging.md) — inbox = **solo thread con storico messaggi** (`last_message_at IS NOT NULL`); rubrica **non** abilita né blocca la messaggistica.
+
 1. `ConversationsController.load()` → RPC `list_conversations()` (**un round-trip**)
 2. Payload completo per UI: `conversation_id`, `display_name`, `last_message_preview`, `last_message_at`, `unread_count`, `protocol`
 3. Risoluzione nome peer **lato server** (titolo conversazione → profilo/contatto altro partecipante)
 4. Realtime (`conversations-{userId}`) richiama `load()` su cambio tabelle — stessa RPC
 
+**Nuova chat (bozza)**: FAB o rubrica → indirizzo `username` / `user@server` → UI chat **senza** `conversation_id` finché non parte il primo messaggio → nessuna riga inbox.
+
 **Scelta**: niente query REST N+1 dal client; allineato al principio “il client chiede, la piattaforma manda tutto”.
 
-**Anti-pattern evitato**: loop client con `_resolveDisplayName` per ogni riga (lento su web).
+**Anti-pattern evitato**: loop client con `_resolveDisplayName` per ogni riga (lento su web); creare conversazione prima del primo messaggio; passare da `contact_id` per account Alfred interni.
 
 ### 2.6 Realtime
 
@@ -107,12 +111,13 @@ client/lib/
 
 ### 2.7 Invio messaggi
 
-1. UI optimistic con `client_message_id` (UUID v4)
-2. RPC `send_message` (validazione server-side)
-3. Trigger `on_message_inserted` aggiorna preview/unread
-4. Per protocollo `internal`: delivery immediata via Realtime
-5. Per `xmpp`/`matrix`: status `pending` + riga `outbox` (bridge futuro)
-6. **Retry client**: `OutboundMessageQueue` persiste invii falliti (testo, GIF, voice) — retry periodico + tap «Riprova invio» (`MessagesController`)
+1. Bozza: nessun thread server; al **primo invio** → `get_or_create_direct_conversation(profile_id)` poi `send_message`
+2. UI optimistic con `client_message_id` (UUID v4)
+3. RPC `send_message` (validazione server-side); testo usa overload 3-arg per evitare ambiguità PostgREST
+4. Trigger `on_message_inserted` aggiorna preview/unread → thread compare in inbox
+5. Per protocollo `internal`: delivery immediata via Realtime
+6. Per `xmpp`/`matrix`: status `pending` + riga `outbox` (bridge futuro); indirizzo `user@server` → `unsupported` in Alpha
+7. **Retry client**: `OutboundMessageQueue` persiste invii falliti (testo, GIF, voice) — retry periodico + tap «Riprova invio» (`MessagesController`)
 
 ### 2.8 GIF in chat
 
@@ -194,6 +199,7 @@ client/lib/
 | `20260624200000_alfred_domain_schema.sql` | Schema dominio, RLS, trigger, RPC base |
 | `20260624210000_rpc_grants_hardening.sql` | Grant EXECUTE RPC solo `authenticated` |
 | `20260624220000_list_conversations_rpc.sql` | RPC inbox un round-trip |
+| `20260627200000_address_based_messaging.sql` | Inbox solo con messaggi; `find_profile_by_username` |
 | `20260624230000_message_gif_support.sql` | GIF — `content_type`, `media_url`, bucket `chat-media` |
 | `20260626100000_internal_delivered_on_server.sql` | Spunte — `delivered` su insert (debito nome «internal») |
 | `20260627120000_message_voice_support.sql` | Enum `voice` (step 1) |
@@ -243,8 +249,9 @@ storage.chat-media (GIF + voice WebM, path `{userId}/{uuid}.gif|.webm`)
 |-----|----------------|
 | `search_profiles` | Trova utenti Alfred per username/display_name |
 | `list_conversations` | Inbox completa in un round-trip (nome, preview, unread) |
-| `get_or_create_direct_conversation` | Chat 1:1 interna idempotente |
-| `get_or_create_conversation_from_contact` | Apre chat da rubrica (qualsiasi protocollo) |
+| `get_or_create_direct_conversation` | Chat 1:1 interna idempotente — **solo al primo messaggio** |
+| `get_or_create_conversation_from_contact` | Legacy rubrica/federato — non usato per avvio chat interna client |
+| `find_profile_by_username` | Risoluzione username → profilo per bozza chat |
 | `send_message` | Validazione partecipante; testo (`body` non vuoto), GIF (`media_url`), o voice (`media_url` + `duration_seconds` + `media_mime`) |
 | `mark_conversation_read` | Unread + read receipts |
 

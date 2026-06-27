@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/conversation.dart';
 import '../theme/alfred_colors.dart';
+import '../utils/compose_address.dart';
 import 'conversation_tile.dart';
 
 class ConversationsPanel extends StatefulWidget {
@@ -13,6 +14,7 @@ class ConversationsPanel extends StatefulWidget {
     required this.onSelected,
     required this.onSearchChanged,
     required this.onContactsTap,
+    this.onNewConversation,
     this.onDrawerTap,
     this.error,
     this.onRetry,
@@ -28,6 +30,7 @@ class ConversationsPanel extends StatefulWidget {
   final ValueChanged<String> onSearchChanged;
   final VoidCallback? onDrawerTap;
   final VoidCallback onContactsTap;
+  final Future<void> Function(String address)? onNewConversation;
   final String? error;
   final VoidCallback? onRetry;
   final bool showBackButton;
@@ -49,107 +52,192 @@ class _ConversationsPanelState extends State<ConversationsPanel> {
 
   @override
   Widget build(BuildContext context) {
-    return ColoredBox(
-      color: AlfredColors.panel,
-      child: Column(
-        children: [
-          if (widget.showTopBar)
-            _Header(
-              showBackButton: widget.showBackButton,
-              onBack: widget.onBack,
-              onDrawerTap: widget.onDrawerTap,
-              onContactsTap: widget.onContactsTap,
-            ),
-          Padding(
-            padding: EdgeInsets.fromLTRB(12, widget.showTopBar ? 0 : 12, 12, 8),
-            child: widget.showTopBar
-                ? TextField(
-                    controller: _searchController,
-                    onChanged: widget.onSearchChanged,
-                    decoration: InputDecoration(
-                      hintText: 'Cerca conversazione',
-                      prefixIcon: const Icon(
-                        Icons.search,
-                        color: AlfredColors.textSecondary,
-                      ),
-                    ),
-                  )
-                : Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: _searchController,
-                          onChanged: widget.onSearchChanged,
-                          decoration: InputDecoration(
-                            hintText: 'Cerca conversazione',
-                            prefixIcon: const Icon(
-                              Icons.search,
-                              color: AlfredColors.textSecondary,
-                            ),
-                          ),
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: widget.onContactsTap,
-                        icon: const Icon(Icons.people_outline),
-                        tooltip: 'Contatti',
-                      ),
-                    ],
-                  ),
-          ),
-          const Divider(height: 1),
-          Expanded(
-            child: widget.isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : widget.error != null
-                    ? Center(
-                        child: Padding(
-                          padding: const EdgeInsets.all(24),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                widget.error!,
-                                textAlign: TextAlign.center,
-                                style: const TextStyle(
-                                  color: AlfredColors.textSecondary,
-                                ),
-                              ),
-                              if (widget.onRetry != null) ...[
-                                const SizedBox(height: 16),
-                                FilledButton(
-                                  onPressed: widget.onRetry,
-                                  child: const Text('Riprova'),
-                                ),
-                              ],
-                            ],
+    return Stack(
+      children: [
+        ColoredBox(
+          color: AlfredColors.panel,
+          child: Column(
+            children: [
+              if (widget.showTopBar)
+                _Header(
+                  showBackButton: widget.showBackButton,
+                  onBack: widget.onBack,
+                  onDrawerTap: widget.onDrawerTap,
+                  onContactsTap: widget.onContactsTap,
+                ),
+              Padding(
+                padding: EdgeInsets.fromLTRB(12, widget.showTopBar ? 0 : 12, 12, 8),
+                child: widget.showTopBar
+                    ? TextField(
+                        controller: _searchController,
+                        onChanged: widget.onSearchChanged,
+                        decoration: InputDecoration(
+                          hintText: 'Cerca conversazione',
+                          prefixIcon: const Icon(
+                            Icons.search,
+                            color: AlfredColors.textSecondary,
                           ),
                         ),
                       )
-                    : widget.conversations.isEmpty
-                        ? const Center(
-                            child: Text(
-                              'Nessuna conversazione.\nAggiungi un contatto per iniziare.',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(color: AlfredColors.textSecondary),
+                    : Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: _searchController,
+                              onChanged: widget.onSearchChanged,
+                              decoration: InputDecoration(
+                                hintText: 'Cerca conversazione',
+                                prefixIcon: const Icon(
+                                  Icons.search,
+                                  color: AlfredColors.textSecondary,
+                                ),
+                              ),
+                            ),
+                          ),
+                          IconButton(
+                            onPressed: widget.onContactsTap,
+                            icon: const Icon(Icons.people_outline),
+                            tooltip: 'Contatti',
+                          ),
+                        ],
+                      ),
+              ),
+              const Divider(height: 1),
+              Expanded(
+                child: widget.isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : widget.error != null
+                        ? Center(
+                            child: Padding(
+                              padding: const EdgeInsets.all(24),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    widget.error!,
+                                    textAlign: TextAlign.center,
+                                    style: const TextStyle(
+                                      color: AlfredColors.textSecondary,
+                                    ),
+                                  ),
+                                  if (widget.onRetry != null) ...[
+                                    const SizedBox(height: 16),
+                                    FilledButton(
+                                      onPressed: widget.onRetry,
+                                      child: const Text('Riprova'),
+                                    ),
+                                  ],
+                                ],
+                              ),
                             ),
                           )
-                        : ListView.separated(
-                            itemCount: widget.conversations.length,
-                            separatorBuilder: (_, _) =>
-                                const Divider(height: 1, indent: 76),
-                            itemBuilder: (context, index) {
-                              final conversation = widget.conversations[index];
-                              return ConversationTile(
-                                conversation: conversation,
-                                selected: conversation.id == widget.selectedId,
-                                onTap: () => widget.onSelected(conversation.id),
-                              );
-                            },
-                          ),
+                        : widget.conversations.isEmpty
+                            ? const Center(
+                                child: Text(
+                                  'Nessun messaggio.\nUsa + per scrivere a un indirizzo.',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(color: AlfredColors.textSecondary),
+                                ),
+                              )
+                            : ListView.separated(
+                                itemCount: widget.conversations.length,
+                                separatorBuilder: (_, _) =>
+                                    const Divider(height: 1, indent: 76),
+                                itemBuilder: (context, index) {
+                                  final conversation = widget.conversations[index];
+                                  return ConversationTile(
+                                    conversation: conversation,
+                                    selected: conversation.id == widget.selectedId,
+                                    onTap: () => widget.onSelected(conversation.id),
+                                  );
+                                },
+                              ),
+              ),
+            ],
           ),
-        ],
+        ),
+        if (widget.onNewConversation != null)
+          Positioned(
+            right: 16,
+            bottom: 16,
+            child: FloatingActionButton(
+              onPressed: () => _showNewConversationDialog(context),
+              backgroundColor: AlfredColors.unreadBadge,
+              foregroundColor: AlfredColors.textOnDark,
+              tooltip: 'Nuova chat',
+              child: const Icon(Icons.chat_outlined),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Future<void> _showNewConversationDialog(BuildContext context) async {
+    final onNewConversation = widget.onNewConversation;
+    if (onNewConversation == null) return;
+
+    final address = await showDialog<String>(
+      context: context,
+      builder: (ctx) => const _NewConversationDialog(),
+    );
+
+    if (address == null || address.trim().isEmpty || !context.mounted) return;
+    await onNewConversation(address.trim());
+  }
+}
+
+class _NewConversationDialog extends StatefulWidget {
+  const _NewConversationDialog();
+
+  @override
+  State<_NewConversationDialog> createState() => _NewConversationDialogState();
+}
+
+class _NewConversationDialogState extends State<_NewConversationDialog> {
+  final _controller = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    if (_formKey.currentState?.validate() ?? false) {
+      Navigator.pop(context, _controller.text.trim());
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Nuova chat'),
+      content: Form(
+        key: _formKey,
+        child: TextFormField(
+          controller: _controller,
+          autofocus: true,
+          autocorrect: false,
+          textInputAction: TextInputAction.done,
+          decoration: const InputDecoration(
+            labelText: 'Indirizzo',
+            hintText: 'mario_rossi o mario@dominio.it',
+          ),
+          onFieldSubmitted: (_) => _submit(),
+          validator: validateComposeAddressInput,
+        ),
       ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Annulla'),
+        ),
+        FilledButton(
+          onPressed: _submit,
+          child: const Text('Continua'),
+        ),
+      ],
     );
   }
 }

@@ -1,6 +1,6 @@
 # Alfred - Mappa Completa del Progetto
 
-**Ultimo aggiornamento**: 2026-06-27 (note vocali PR #126, gate `scripts/verify.sh`, deploy-alpha)  
+**Ultimo aggiornamento**: 2026-06-27 (messaggistica per indirizzo, inbox storico messaggi)  
 **Versione repository**: 3.1.0-alpha (client Flutter live con piattaforma; bridge esclusi)
 
 ---
@@ -47,7 +47,8 @@ La documentazione sotto che cita `web-client/` descrive il **client React storic
 
 - **Auth Alfred**: login/registrazione con **email + password** (GoTrue); **username** obbligatorio in registrazione come identità IM pubblica — email **non** in profilo/rubrica/ricerca
 - **Multi-account**: switch Thunderbird via `SharedPreferences` + `setSession`
-- **Contatti unificati**: interni Alfred + esterni XMPP/Matrix (protocollo solo routing)
+- **Contatti unificati**: rubrica personale opzionale (interni + federati) — **isolata** dalla messaggistica; vedi ADR `docs/decisions/address-based-messaging.md`
+- **Messaggistica per indirizzo**: `username` (Alfred) o `user@server` (esterno, `unsupported` in Alpha); inbox solo thread con messaggi; bozza chat senza thread fino al primo invio
 - **Conversazioni + chat realtime**: Supabase Postgres + Realtime; inbox via RPC `list_conversations` (un round-trip)
 - **GIF in chat**: upload su bucket Supabase `chat-media` → `messages.content_type=gif` + `media_url`; preview inbox `[GIF]`
 - **Note vocali in chat**: WebM/Opus canonico (`audio/webm`) → `content_type=voice` + `duration_seconds` + `media_mime` + `media_url`; preview inbox `🎤 m:ss`; registrazione hold-to-send in `ChatInputBar`; coda retry `OutboundMessageQueue` (testo/GIF/voice)
@@ -290,7 +291,7 @@ client/lib/
 
 **Coda invio client (non deducibile)**: `OutboundMessageQueue` persiste fallimenti (testo/GIF/voice) per retry automatico e tap «Riprova invio» — non è l'outbox server federato.
 
-**Layout inbox (non deducibile)**: `HomeScreen` — mobile: drawer sinistro (hamburger solo nella lista conversazioni) con `AccountSidebar` (profilo attivo, modifica, altri account, aggiungi, esci); chat mobile con solo back. Desktop (≥720px): colonna sinistra fissa = `AccountSidebar` + lista conversazioni (senza barra Alfred duplicata); area destra sempre chat/placeholder. Menu account bottom sheet rimosso.
+**Layout inbox (non deducibile)**: `HomeScreen` — mobile: drawer sinistro (hamburger solo nella lista conversazioni) con `AccountSidebar` (profilo attivo, modifica, altri account, aggiungi, esci); chat mobile con solo back. Desktop (≥720px): colonna sinistra fissa = `AccountSidebar` + lista conversazioni (senza barra Alfred duplicata); area destra sempre chat/placeholder. Menu account bottom sheet rimosso. `ConversationsPanel`: FAB → indirizzo → bozza (`ComposeTarget`); primo messaggio → `get_or_create_direct_conversation` + `send_message` → inbox. `list_conversations` filtra `last_message_at IS NOT NULL`.
 
 **Aggancio al fondo (non deducibile)**: `AnchoredMessageList` in `chat_panel.dart` — `ListView` `reverse: true`, soglia 48 px, pulsante freccia + badge se staccato. Identico per tutte le conversazioni. Spec: `docs/design/conversation-bottom-anchor.md`.
 

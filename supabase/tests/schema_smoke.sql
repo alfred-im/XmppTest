@@ -39,6 +39,9 @@ BEGIN
   IF to_regprocedure('public.list_conversations()') IS NULL THEN
     RAISE EXCEPTION 'Missing RPC list_conversations';
   END IF;
+  IF to_regprocedure('public.find_profile_by_username(text)') IS NULL THEN
+    RAISE EXCEPTION 'Missing RPC find_profile_by_username';
+  END IF;
 
   RAISE NOTICE 'alfred_schema_smoke_ok';
 END $$;

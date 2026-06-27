@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../models/compose_target.dart';
 import '../models/conversation.dart';
 import '../providers/auth_controller.dart';
 import '../providers/conversations_controller.dart';
 import '../providers/messages_controller.dart';
+import '../services/compose_service.dart';
 import '../theme/alfred_colors.dart';
 import '../widgets/account_sidebar.dart';
 import '../widgets/chat_panel.dart';
@@ -23,7 +25,9 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
+  final _composeService = ComposeService();
   String? _selectedId;
+  ComposeTarget? _draftTarget;
   bool _showListOnMobile = true;
 
   static const _breakpoint = 720.0;
@@ -43,18 +47,44 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _openContacts() async {
     _closeDrawer();
-    final conversationId = await Navigator.push<String>(
+    final target = await Navigator.push<ComposeTarget>(
       context,
       MaterialPageRoute(builder: (_) => const ContactsScreen()),
     );
+    if (!mounted || target == null) return;
+    _openDraft(target);
+  }
+
+  Future<void> _startConversationFromAddress(String address) async {
+    try {
+      final target = await _composeService.resolveAddress(address);
+      if (!mounted) return;
+      _openDraft(target);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString().replaceFirst('StateError: ', ''))),
+      );
+    }
+  }
+
+  void _openDraft(ComposeTarget target) {
+    setState(() {
+      _draftTarget = target;
+      _selectedId = null;
+      _showListOnMobile = false;
+    });
+  }
+
+  Future<void> _onConversationCreated(String conversationId) async {
     if (!mounted) return;
     await context.read<ConversationsController?>()?.load();
-    if (conversationId != null) {
-      setState(() {
-        _selectedId = conversationId;
-        _showListOnMobile = false;
-      });
-    }
+    if (!mounted) return;
+    setState(() {
+      _draftTarget = null;
+      _selectedId = conversationId;
+      _showListOnMobile = false;
+    });
   }
 
   Future<void> _openProfile() async {
@@ -89,6 +119,7 @@ class _HomeScreenState extends State<HomeScreen> {
         _closeDrawer();
         setState(() {
           _selectedId = null;
+          _draftTarget = null;
           _showListOnMobile = true;
         });
       },
@@ -110,15 +141,45 @@ class _HomeScreenState extends State<HomeScreen> {
       onRetry: conversations.load,
       onSelected: (id) => setState(() {
         _selectedId = id;
+        _draftTarget = null;
         _showListOnMobile = false;
       }),
       onSearchChanged: conversations.setSearchQuery,
       onDrawerTap: showDrawerButton ? _openDrawer : null,
       onContactsTap: _openContacts,
+      onNewConversation: _startConversationFromAddress,
       showBackButton: showBackButton,
       onBack: onBack,
       showTopBar: showTopBar,
     );
+  }
+
+  Widget _chatArea({
+    required Conversation? selected,
+    required bool showBackButton,
+    VoidCallback? onBack,
+  }) {
+    if (selected != null) {
+      return _ChatWithMessages(
+        key: ValueKey(selected.id),
+        conversation: selected,
+        showBackButton: showBackButton,
+        onBack: onBack,
+      );
+    }
+
+    final draft = _draftTarget;
+    if (draft != null) {
+      return _DraftChat(
+        key: ValueKey('draft:${draft.address}'),
+        target: draft,
+        showBackButton: showBackButton,
+        onBack: onBack,
+        onConversationCreated: _onConversationCreated,
+      );
+    }
+
+    return const EmptyChatPlaceholder();
   }
 
   @override
@@ -133,6 +194,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final width = MediaQuery.sizeOf(context).width;
     final isWide = width >= _breakpoint;
     final selected = _findSelected(conversations);
+    final showChatOnMobile = selected != null || _draftTarget != null;
     final sidebarWidth = width >= 1100 ? 380.0 : 320.0;
 
     if (isWide) {
@@ -160,12 +222,10 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const VerticalDivider(width: 1, color: AlfredColors.border),
             Expanded(
-              child: selected == null
-                  ? const EmptyChatPlaceholder()
-                  : _ChatWithMessages(
-                      key: ValueKey(selected.id),
-                      conversation: selected,
-                    ),
+              child: _chatArea(
+                selected: selected,
+                showBackButton: false,
+              ),
             ),
           ],
         ),
@@ -177,14 +237,13 @@ class _HomeScreenState extends State<HomeScreen> {
       drawer: Drawer(
         child: _accountSidebar(),
       ),
-      body: selected == null || _showListOnMobile
+      body: !showChatOnMobile || _showListOnMobile
           ? _conversationsPanel(
               conversations: conversations,
               showDrawerButton: true,
             )
-          : _ChatWithMessages(
-              key: ValueKey(selected.id),
-              conversation: selected,
+          : _chatArea(
+              selected: selected,
               showBackButton: true,
               onBack: () => setState(() => _showListOnMobile = true),
             ),
@@ -210,11 +269,44 @@ class _ChatWithMessages extends StatelessWidget {
 
     return ChangeNotifierProvider(
       create: (_) => MessagesController(
-        conversationId: conversation.id,
         userId: userId,
+        conversationId: conversation.id,
       ),
       child: ChatPanel(
         conversation: conversation,
+        showBackButton: showBackButton,
+        onBack: onBack,
+      ),
+    );
+  }
+}
+
+class _DraftChat extends StatelessWidget {
+  const _DraftChat({
+    super.key,
+    required this.target,
+    required this.onConversationCreated,
+    this.showBackButton = false,
+    this.onBack,
+  });
+
+  final ComposeTarget target;
+  final Future<void> Function(String conversationId) onConversationCreated;
+  final bool showBackButton;
+  final VoidCallback? onBack;
+
+  @override
+  Widget build(BuildContext context) {
+    final userId = context.read<AuthController>().userId!;
+
+    return ChangeNotifierProvider(
+      create: (_) => MessagesController(
+        userId: userId,
+        composeTarget: target,
+        onConversationCreated: onConversationCreated,
+      ),
+      child: ChatPanel(
+        conversation: target.toPlaceholderConversation(),
         showBackButton: showBackButton,
         onBack: onBack,
       ),

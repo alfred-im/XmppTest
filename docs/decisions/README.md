@@ -114,6 +114,16 @@ Dettagli: [../fixes/account-storage-isolation.md](../fixes/account-storage-isola
 
 **Implementazione aggancio**: [conversation-bottom-anchor.md](../design/conversation-bottom-anchor.md) — PR #125
 
+### 11. Messaggistica per indirizzo (2026-06-27)
+- **[address-based-messaging.md](./address-based-messaging.md)**
+- **Status**: ✅ Accettata — **regola vincolante**
+- **Summary**: Si scrive a un indirizzo (`username` / `user@server`); inbox = solo thread con messaggi; rubrica isolata e opzionale
+
+**Perché**:
+- Rubrica non deve abilitare né bloccare la chat (errore legacy XMPP)
+- Niente conversazioni vuote in inbox
+- Primo messaggio crea il thread tecnico; bozza UI senza record anticipato
+
 ## Decisioni In Valutazione
 
 - **Virtual Scrolling**: Liste > 100 elementi (react-window vs react-virtualized)

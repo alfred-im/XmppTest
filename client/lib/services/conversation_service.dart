@@ -24,6 +24,14 @@ class ConversationService {
     return conversations;
   }
 
+  Future<String> openDirectConversation(String otherProfileId) async {
+    final result = await supabase.rpc(
+      'get_or_create_direct_conversation',
+      params: {'p_other_profile_id': otherProfileId},
+    );
+    return result as String;
+  }
+
   Future<String> openConversationFromContact(String contactId) async {
     final result = await supabase.rpc(
       'get_or_create_conversation_from_contact',

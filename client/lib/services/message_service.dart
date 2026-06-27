@@ -92,6 +92,21 @@ class MessageService {
     String? mediaMime,
     int? mediaSizeBytes,
   }) async {
+    if (contentType == 'text') {
+      final row = await supabase.rpc(
+        'send_message',
+        params: {
+          'p_conversation_id': conversationId,
+          'p_body': body,
+          'p_client_message_id': clientMessageId,
+        },
+      );
+      return ChatMessage.fromJson(
+        json: row as Map<String, dynamic>,
+        currentUserId: currentUserId,
+      );
+    }
+
     final params = {
       'p_conversation_id': conversationId,
       'p_body': body,
