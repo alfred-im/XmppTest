@@ -1,6 +1,6 @@
 # Alfred - Mappa Completa del Progetto
 
-**Ultimo aggiornamento**: 2026-06-27 (aggancio al fondo conversazione)  
+**Ultimo aggiornamento**: 2026-06-27 (note vocali WebM/Opus)  
 **Versione repository**: 3.1.0-alpha (client Flutter live con piattaforma; bridge esclusi)
 
 ---
@@ -50,7 +50,8 @@ La documentazione sotto che cita `web-client/` descrive il **client React storic
 - **Contatti unificati**: interni Alfred + esterni XMPP/Matrix (protocollo solo routing)
 - **Conversazioni + chat realtime**: Supabase Postgres + Realtime; inbox via RPC `list_conversations` (un round-trip)
 - **GIF in chat**: upload su bucket Supabase `chat-media` → `messages.content_type=gif` + `media_url`; preview inbox `[GIF]`
-- **Messaggistica interna**: utente↔utente stessa istanza — completa (testo + GIF)
+- **Note vocali in chat**: WebM/Opus canonico (`audio/webm`) → `content_type=voice` + `duration_seconds` + `media_mime` + `media_url`; preview inbox `🎤 m:ss`; registrazione hold-to-send in `ChatInputBar`; coda retry `OutboundMessageQueue` (testo/GIF/voice)
+- **Messaggistica interna**: utente↔utente stessa istanza — completa (testo + GIF + voice)
 - **Messaggistica federata**: outbox `queued` — attende bridge (non implementato)
 - **Profilo Alfred**: display name, bio, username
 - **Spunte lettura**: `on_message_inserted` → `delivered` (internal) · `mark_conversation_read` → `read` — concept: ricezione = server — `docs/decisions/server-as-reception.md`
@@ -268,7 +269,7 @@ Per ogni messaggio nell'array:
 | **Entry** | `lib/main.dart` → `AppShell` (auth gate) → `HomeScreen` |
 | **State** | Provider (`AuthController`, `ConversationsController`, `ContactsController`, `MessagesController`) |
 | **Backend** | `supabase_flutter` — REST + Realtime + RPC |
-| **Dipendenze** | `provider`, `intl`, `uuid`, `shared_preferences`, `file_picker`, `supabase_flutter` |
+| **Dipendenze** | `provider`, `intl`, `uuid`, `shared_preferences`, `file_picker`, `record`, `just_audio`, `path_provider`, `ffmpeg_kit_flutter_new_min` (transcode IO→WebM), `supabase_flutter` |
 | **Config** | `lib/config/app_config.dart` — override `--dart-define=SUPABASE_URL` |
 | **Test** | `test/unit/`, `test/widget/` — CI esegue `flutter test` |
 | **Build web** | `flutter build web --release --base-href "/XmppTest/"` |
@@ -898,7 +899,7 @@ class ConversationRepository {
 
 | Componente | Stato |
 |------------|-------|
-| `client/` (Flutter) | 🟢 Auth, contatti, chat realtime (testo + GIF), profilo, multi-account |
+| `client/` (Flutter) | 🟢 Auth, contatti, chat realtime (testo + GIF + voice), profilo, multi-account |
 | `supabase/` | 🟢 Schema dominio + RLS + RPC + storage `chat-media` + outbox |
 | `bridge-xmpp/` · `bridge-matrix/` | 🟡 Stub Fly.io health — federazione non implementata |
 | `web-client/` (React) | ❌ Rimosso — tag `legacy/web-client-final` |
