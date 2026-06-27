@@ -688,7 +688,7 @@ La CLI (e MCP per Supabase) sono **strumenti opzionali** per sviluppo e smoke te
 | SPA fallback | `index.html` copiato come `404.html` |
 | `web-client/` React | Rimosso — tag `legacy/web-client-final` |
 
-Deploy produzione su ogni push a `main` che tocca `client/` o il workflow.
+Deploy ambiente Alpha (GitHub Pages) su ogni push a `main` che tocca `client/` o il workflow.
 
 ---
 
