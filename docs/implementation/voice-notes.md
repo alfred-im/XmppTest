@@ -25,7 +25,7 @@ File storage: `{userId}/{uuid}.webm`.
 | Rilascio (non bloccato) | **Invio immediato** (se durata ≥ 1 s) |
 | Swipe ↑ | Blocca registrazione |
 | Swipe ↓ | Annulla |
-| Bloccato → stop | Anteprima → invia o cestino |
+| Bloccato | **Invia** in barra (invio immediato) o **Anteprima** nell'overlay → invia/cestino |
 | Max durata | 10 min (`VoiceConfig.maxDurationSeconds`) |
 
 ## Client Flutter

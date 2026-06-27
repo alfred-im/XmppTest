@@ -156,11 +156,44 @@ class _ChatInputBarState extends State<ChatInputBar> {
     if (_voicePhase != _VoicePhase.locked) return;
     _stopUiTracking();
     final result = await _recorder.stop();
+    if (!mounted) return;
     setState(() {
       _preview = result;
       _voicePhase = _VoicePhase.preview;
       _level = 0;
     });
+  }
+
+  Future<void> _cancelLockedRecording() async {
+    if (_voicePhase != _VoicePhase.locked) return;
+    _stopUiTracking();
+    await _recorder.cancel();
+    if (!mounted) return;
+    setState(() {
+      _voicePhase = _VoicePhase.idle;
+      _level = 0;
+      _preview = null;
+    });
+  }
+
+  Future<void> _sendLockedRecording() async {
+    if (_voicePhase != _VoicePhase.locked) return;
+    _stopUiTracking();
+    final result = await _recorder.stop();
+    if (!mounted) return;
+    setState(() {
+      _voicePhase = _VoicePhase.idle;
+      _level = 0;
+      _preview = null;
+    });
+    if (result == null) return;
+    if (result.durationMs < VoiceConfig.minDurationMs) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Nota vocale troppo breve.')),
+      );
+      return;
+    }
+    await widget.onSendVoice!(result.bytes, result.durationMs);
   }
 
   Future<void> _discardPreview() async {
@@ -240,16 +273,19 @@ class _ChatInputBarState extends State<ChatInputBar> {
                         style: const TextStyle(fontWeight: FontWeight.w600),
                       ),
                     ),
-                    IconButton(
-                      tooltip: 'Stop',
+                    TextButton(
                       onPressed: _stopLockedRecording,
-                      icon: const Icon(Icons.stop_circle_outlined),
-                      color: AlfredColors.charcoal,
+                      child: const Text('Anteprima'),
                     ),
                   ],
                 ),
                 const SizedBox(height: 8),
                 LiveVoiceWaveform(level: _level, activeColor: AlfredColors.charcoal),
+                const SizedBox(height: 4),
+                const Text(
+                  'Usa Invia nella barra in basso, oppure Anteprima per ascoltare prima.',
+                  style: TextStyle(color: AlfredColors.textSecondary, fontSize: 12),
+                ),
               ],
               if (_voicePhase == _VoicePhase.preview && _preview != null) ...[
                 Row(
@@ -281,6 +317,77 @@ class _ChatInputBarState extends State<ChatInputBar> {
               ],
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTrailingAction() {
+    if (_hasText) {
+      return Material(
+        color: AlfredColors.charcoal,
+        borderRadius: BorderRadius.circular(24),
+        child: InkWell(
+          onTap: widget.enabled ? _submit : null,
+          borderRadius: BorderRadius.circular(24),
+          child: const Padding(
+            padding: EdgeInsets.all(10),
+            child: Icon(Icons.send, color: Colors.white, size: 22),
+          ),
+        ),
+      );
+    }
+
+    if (_voicePhase == _VoicePhase.locked) {
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          IconButton(
+            tooltip: 'Annulla registrazione',
+            onPressed: widget.enabled ? () => unawaited(_cancelLockedRecording()) : null,
+            icon: const Icon(Icons.delete_outline),
+            color: Colors.redAccent,
+          ),
+          Material(
+            color: AlfredColors.charcoal,
+            borderRadius: BorderRadius.circular(24),
+            child: InkWell(
+              onTap: widget.enabled ? () => unawaited(_sendLockedRecording()) : null,
+              borderRadius: BorderRadius.circular(24),
+              child: const Padding(
+                padding: EdgeInsets.all(10),
+                child: Icon(Icons.send, color: Colors.white, size: 22),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
+    return Listener(
+      onPointerDown: widget.enabled && widget.onSendVoice != null
+          ? (event) {
+              _pointerOriginY = event.position.dy;
+              unawaited(_beginVoiceHold());
+            }
+          : null,
+      onPointerMove: widget.enabled && _pointerOriginY != null
+          ? (event) {
+              final origin = _pointerOriginY;
+              if (origin == null) return;
+              _onVoiceDragUpdate(event.position.dy - origin);
+            }
+          : null,
+      onPointerUp: widget.enabled ? (_) => unawaited(_endVoiceHold()) : null,
+      onPointerCancel: widget.enabled ? (_) => unawaited(_endVoiceHold()) : null,
+      child: Material(
+        color: _voicePhase == _VoicePhase.recording
+            ? AlfredColors.unreadBadge
+            : AlfredColors.charcoal,
+        borderRadius: BorderRadius.circular(24),
+        child: const Padding(
+          padding: EdgeInsets.all(10),
+          child: Icon(Icons.mic, color: Colors.white, size: 22),
         ),
       ),
     );
@@ -324,48 +431,7 @@ class _ChatInputBarState extends State<ChatInputBar> {
                     ),
                   ),
                   const SizedBox(width: 4),
-                  if (_hasText)
-                    Material(
-                      color: AlfredColors.charcoal,
-                      borderRadius: BorderRadius.circular(24),
-                      child: InkWell(
-                        onTap: widget.enabled ? _submit : null,
-                        borderRadius: BorderRadius.circular(24),
-                        child: const Padding(
-                          padding: EdgeInsets.all(10),
-                          child: Icon(Icons.send, color: Colors.white, size: 22),
-                        ),
-                      ),
-                    )
-                  else
-                    Listener(
-                      onPointerDown: widget.enabled && widget.onSendVoice != null
-                          ? (event) {
-                              _pointerOriginY = event.position.dy;
-                              unawaited(_beginVoiceHold());
-                            }
-                          : null,
-                      onPointerMove: widget.enabled && _pointerOriginY != null
-                          ? (event) {
-                              final origin = _pointerOriginY;
-                              if (origin == null) return;
-                              _onVoiceDragUpdate(event.position.dy - origin);
-                            }
-                          : null,
-                      onPointerUp: widget.enabled ? (_) => unawaited(_endVoiceHold()) : null,
-                      onPointerCancel:
-                          widget.enabled ? (_) => unawaited(_endVoiceHold()) : null,
-                      child: Material(
-                        color: _voicePhase == _VoicePhase.recording
-                            ? AlfredColors.unreadBadge
-                            : AlfredColors.charcoal,
-                        borderRadius: BorderRadius.circular(24),
-                        child: const Padding(
-                          padding: EdgeInsets.all(10),
-                          child: Icon(Icons.mic, color: Colors.white, size: 22),
-                        ),
-                      ),
-                    ),
+                  _buildTrailingAction(),
                 ],
               ),
             ),
