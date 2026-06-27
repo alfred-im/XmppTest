@@ -23,6 +23,11 @@ Modifiche rilevanti al progetto per tracciare evoluzione tecnica e decisioni imp
 
 ## [Unreleased]
 
+### Alpha Flutter — PR #131 (sidebar logout)
+
+- **`AccountSidebar`**: rimossa spunta verde fissa sull'account attivo; logout spostato in card profilo (icona a destra del nome)
+- Rimossa voce «Esci» in fondo alla sidebar (logout unico punto di uscita nella card)
+
 ### Alpha Flutter — PR #130 (inbox solo messaggi)
 
 - **Drop `inbox_threads`**: inbox = `list_inbox()` aggregazione on-read su `messages` (non vista materializzata, non cache con FK)
