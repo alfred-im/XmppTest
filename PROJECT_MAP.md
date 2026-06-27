@@ -1087,7 +1087,7 @@ Documentati in `docs/fixes/known-issues.md`:
 - ✅ **PR #110**: passkeys `bundle.js` — fix schermo bianco Pages
 - ✅ **PR #111**: multi-account switch senza logout forzato
 - ✅ **PR #112**: RPC inbox un round-trip (sostituito da `list_inbox` in PR #129)
-- ✅ **PR #129**: Messaggistica per indirizzo — solo messaggi, `list_inbox` query, `ChatPeer`, niente `inbox_threads`/`conversations`
+- ✅ **PR #130**: Inbox solo messaggi — drop `inbox_threads`, `ChatPeer`, RPC peer-based
 - ✅ **PR #113**: fix race auth web (`waitForSupabaseSessionReady`)
 - ✅ **PR #115**: GIF in chat (`content_type`, `media_url`, bucket `chat-media`)
 - ✅ **PR #114**: `ChangeNotifierProxyProvider` — fix UI inbox bloccata

@@ -14,7 +14,7 @@ Analisi tecniche implementazioni completate per comprensione dettagli e decision
 - **chat-markers-xep-0333.md** - XEP-0333 livello 3 spunte (✓✓ blu)
 - **scrollable-containers.md** + **scrollable-containers-implementation.md** - Utility scroll
 - **voice-notes.md** - Note vocali WebM/Opus, registrazione, player, coda retry client (Flutter Alpha)
-- **messages-only-inbox.md** - Inbox query-only su `messages`, `ChatPeer`, drop `inbox_threads` (Flutter Alpha, PR #129)
+- **messages-only-inbox.md** - Inbox query-only su `messages`, `ChatPeer`, drop `inbox_threads` (Flutter Alpha, PR #130)
 
 **Policy spunte**: [message-states.md](../architecture/message-states.md) (v2.1)
 

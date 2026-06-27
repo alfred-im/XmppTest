@@ -23,7 +23,7 @@ Modifiche rilevanti al progetto per tracciare evoluzione tecnica e decisioni imp
 
 ## [Unreleased]
 
-### Alpha Flutter — PR #129 (messaggistica solo messaggi)
+### Alpha Flutter — PR #130 (inbox solo messaggi)
 
 - **Drop `inbox_threads`**: inbox = `list_inbox()` query su `messages`
 - **RPC peer-based**: `list_peer_messages`, `mark_peer_read` (no `thread_id`)

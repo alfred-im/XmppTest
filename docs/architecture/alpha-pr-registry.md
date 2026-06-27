@@ -1,6 +1,6 @@
 # Registro PR Alpha Flutter (main)
 
-**Ultimo aggiornamento**: 2026-06-27 (PR #129 message-centric, fix overload RPC)  
+**Ultimo aggiornamento**: 2026-06-27 (PR #130 messages-only inbox)  
 **Scope**: PR mergiate su `main` dopo migrazione Flutter — riferimento per allineamento documentazione.
 
 Documento per AI. Ogni PR deve riflettersi in: `PROJECT_MAP.md`, `CHANGELOG.md`, `docs/architecture/alpha-full-stack.md` (e fix dedicato se applicabile).
@@ -23,9 +23,9 @@ Documento per AI. Ogni PR deve riflettersi in: `PROJECT_MAP.md`, `CHANGELOG.md`,
 | **#125** | Aggancio al fondo | `AnchoredMessageList`, scroll ancorato, pulsante riaggancio | `alpha-full-stack.md` §2.10, `docs/design/conversation-bottom-anchor.md` |
 | **#126** | Note vocali in chat | WebM/Opus, `content_type=voice`, registrazione hold-to-send, player, `OutboundMessageQueue` | `alpha-full-stack.md` §2.11, `docs/implementation/voice-notes.md` |
 | **#127** | Processo `flutter analyze` | `client/scripts/verify.sh`, gate analyze in CI/doc | `.cursor-rules.md`, `alpha-full-stack.md` §5, `client/README.md` |
-| **#129** | Solo messaggi (no metadati inbox) | Drop `inbox_threads`; `ChatPeer`; `list_peer_messages`, `mark_peer_read` | `address-based-messaging.md`, migrazioni `20260627200000`–`20260627230000` |
+| **#130** | Inbox solo messaggi | Drop `inbox_threads`; `ChatPeer`; `list_peer_messages`, `mark_peer_read`; fix HTTP 300 overload | `address-based-messaging.md`, `messages-only-inbox.md`, migrazioni `20260627200000`–`20260627230000` |
 
-**PR aperte (2026-06-27)**: #129 (messages-only inbox, no thread_id).
+**PR aperte (2026-06-27)**: #130 (sostituisce draft #129).
 
 ---
 
@@ -56,9 +56,10 @@ Dopo ogni merge su `main`:
 | `20260626100000_internal_delivered_on_server.sql` | — | Spunte — `delivered` su insert server |
 | `20260627120000_message_voice_support.sql` | #126 | Enum `voice` (step 1) |
 | `20260627120100_message_voice_support.sql` | #126 | Voice — colonne media, RPC 8 arg, bucket `audio/webm` |
-| `20260627200000_address_based_messaging.sql` | #129 | `find_profile_by_username`, filtro inbox con messaggi |
-| `20260627210000_message_centric_messaging.sql` | #129 | `inbox_threads`, drop `conversations`, RPC `list_inbox` / `send_message_to_profile` |
-| `20260627230000_messages_only_inbox.sql` | #129 | Drop `inbox_threads`; inbox query-only; `list_peer_messages`, `mark_peer_read` |
+| `20260627200000_address_based_messaging.sql` | #130 | `find_profile_by_username`, filtro inbox con messaggi |
+| `20260627210000_message_centric_messaging.sql` | #130 | (storico) `inbox_threads` — rimosso in `20260627230000` |
+| `20260627220000_fix_send_message_to_profile_overload.sql` | #130 | Fix PostgREST HTTP 300 — drop overload 3-arg |
+| `20260627230000_messages_only_inbox.sql` | #130 | Drop `inbox_threads`; inbox query-only; `list_peer_messages`, `mark_peer_read` |
 
 ---
 

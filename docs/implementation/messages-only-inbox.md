@@ -1,7 +1,7 @@
 # Inbox solo messaggi (messages-only)
 
 **Data**: 2026-06-27  
-**PR**: #129  
+**PR**: #130  
 **ADR**: [address-based-messaging.md](../decisions/address-based-messaging.md)  
 **Migrazione**: `supabase/migrations/20260627230000_messages_only_inbox.sql`
 
