@@ -1,6 +1,6 @@
 # Alfred - Mappa Completa del Progetto
 
-**Ultimo aggiornamento**: 2026-06-27 (aggancio al fondo conversazione)  
+**Ultimo aggiornamento**: 2026-06-27 (gate `scripts/verify.sh` — flutter analyze)  
 **Versione repository**: 3.1.0-alpha (client Flutter live con piattaforma; bridge esclusi)
 
 ---
@@ -614,23 +614,28 @@ Config deploy in root: `fly.toml` (due `[[services]]`), `Dockerfile`. Fly colleg
 
 ### Client Flutter (`client/`)
 
+**Gate standard** (locale, agenti, CI — stesso script):
+
 ```bash
 cd client
-flutter pub get
-flutter analyze
-flutter test
+bash scripts/verify.sh           # pub get + analyze + test
+bash scripts/verify.sh --build   # + build web release
+```
+
+```bash
 flutter run -d chrome
-flutter build web --release --base-href "/XmppTest/"
 ```
 
 | Step | Tool | Output |
 |------|------|--------|
+| **Verifica** | `scripts/verify.sh` | `flutter analyze` (zero issue obbligatorio) + `flutter test` |
 | Dev | `flutter run -d chrome` | Hot reload locale |
-| Test | `flutter test` | Widget test in `test/` |
 | Prod web | `flutter build web --base-href "/XmppTest/"` | `client/build/web/` |
 | Deploy | GitHub Actions `deploy-pages.yml` | https://alfred-im.github.io/XmppTest/ |
 
-Workflow CI: build + copia `index.html` → `404.html` (SPA su Pages).
+**`flutter analyze`**: in CI e nello script `verify.sh` qualsiasi issue (anche `info`, es. `unnecessary_import`) fa fallire il gate — allineare il codice prima del push.
+
+Workflow CI: `verify.sh` → build web → copia `index.html` → `404.html` (SPA su Pages).
 
 ---
 

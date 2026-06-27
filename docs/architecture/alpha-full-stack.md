@@ -276,7 +276,7 @@ Vedi `docs/decisions/bridge-stateless.md`.
 | E2E | `client/e2e/` | Playwright — inbox load senza interazione (`inbox-load.spec.ts`) |
 | SQL smoke | `supabase/tests/schema_smoke.sql` | Tabelle + RPC presenti |
 | Build | `flutter build web` | Compilazione release GitHub Pages |
-| CI | `.github/workflows/deploy-pages.yml` | analyze + test + build su PR/main |
+| CI | `.github/workflows/deploy-pages.yml` | `client/scripts/verify.sh` (analyze + test, zero issue) + build su PR/main |
 
 ---
 

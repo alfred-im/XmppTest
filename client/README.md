@@ -19,16 +19,17 @@ Client ufficiale Alfred — multi-piattaforma (web, mobile, desktop).
 ## Test
 
 ```bash
-flutter test                    # unit + widget
-cd client && npx playwright test e2e/   # e2e (inbox-load)
+cd client
+bash scripts/verify.sh            # analyze + test (gate CI)
+bash scripts/verify.sh --build    # + build web
+npx playwright test e2e/          # e2e (inbox-load)
 ```
 
 ## Sviluppo
 
 ```bash
-flutter pub get
-flutter analyze
-flutter test
+cd client
+bash scripts/verify.sh
 flutter run -d chrome \
   --dart-define=SUPABASE_URL=... \
   --dart-define=SUPABASE_ANON_KEY=...
@@ -40,7 +41,7 @@ flutter run -d chrome \
 flutter build web --release --base-href "/XmppTest/"
 ```
 
-Il workflow `.github/workflows/deploy-pages.yml` esegue test + build + deploy su push a `main`.
+Il workflow `.github/workflows/deploy-pages.yml` esegue `scripts/verify.sh` (analyze + test) + build + deploy su push a `main`.
 
 ## Struttura
 
