@@ -22,19 +22,17 @@ Client ufficiale Alfred — multi-piattaforma (web, mobile, desktop).
 ## Test
 
 ```bash
-flutter analyze    # gate CI — zero issue (anche info)
-flutter test       # unit + widget
-cd client && npx playwright test e2e/   # e2e (inbox-load)
+cd client
+bash scripts/verify.sh            # analyze + test (gate CI)
+bash scripts/verify.sh --build    # + build web
+npx playwright test e2e/          # e2e (inbox-load)
 ```
-
-Opzionale (PR #127, quando mergiato): `./scripts/verify.sh` — analyze + test in un comando.
 
 ## Sviluppo
 
 ```bash
-flutter pub get
-flutter analyze
-flutter test
+cd client
+bash scripts/verify.sh
 flutter run -d chrome \
   --dart-define=SUPABASE_URL=... \
   --dart-define=SUPABASE_ANON_KEY=...
@@ -46,7 +44,7 @@ flutter run -d chrome \
 flutter build web --release --base-href "/XmppTest/"
 ```
 
-Il workflow `.github/workflows/deploy-pages.yml` esegue `analyze` + `test` + build + job **`deploy-alpha`** su ogni **PR** su `main` e su ogni **push** a `main` (path `client/**`). Richiede Environment GitHub `github-pages` con *Deployment branches: All branches*.
+Il workflow `.github/workflows/deploy-pages.yml` esegue `scripts/verify.sh` (analyze + test) + build + job **`deploy-alpha`** su ogni **PR** su `main` e su ogni **push** a `main` (path `client/**`). Richiede Environment GitHub `github-pages` con *Deployment branches: All branches*.
 
 ## Struttura
 

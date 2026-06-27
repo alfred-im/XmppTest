@@ -1,6 +1,6 @@
 # Alfred - Mappa Completa del Progetto
 
-**Ultimo aggiornamento**: 2026-06-27 (note vocali, deploy-alpha da PR, doc sync)  
+**Ultimo aggiornamento**: 2026-06-27 (note vocali PR #126, gate `scripts/verify.sh`, deploy-alpha)  
 **Versione repository**: 3.1.0-alpha (client Flutter live con piattaforma; bridge esclusi)
 
 ---
@@ -619,23 +619,25 @@ Config deploy in root: `fly.toml` (due `[[services]]`), `Dockerfile`. Fly colleg
 
 ### Client Flutter (`client/`)
 
+**Gate standard** (locale, agenti, CI — stesso script):
+
 ```bash
 cd client
-flutter pub get
-flutter analyze    # zero issue obbligatorio (anche info fallisce in CI)
-flutter test
+bash scripts/verify.sh           # pub get + analyze + test (gate CI)
+bash scripts/verify.sh --build   # + build web release
 flutter run -d chrome
-flutter build web --release --base-href "/XmppTest/"
 ```
 
 | Step | Tool | Output |
 |------|------|--------|
-| Verifica locale | `flutter analyze` + `flutter test` | Gate identico alla CI |
+| **Verifica** | `scripts/verify.sh` | `flutter analyze` (zero issue obbligatorio) + `flutter test` |
 | Dev | `flutter run -d chrome` | Hot reload locale |
 | Artefatto web | `flutter build web --base-href "/XmppTest/"` | `client/build/web/` |
 | Deploy Alpha | CI job `deploy-alpha` | https://alfred-im.github.io/XmppTest/ — **PR e `main`** |
 
-Workflow CI (`.github/workflows/deploy-pages.yml`): `build` (analyze + test + compile) → `deploy-alpha` → copia `index.html` → `404.html`.
+**`flutter analyze`**: in CI e in `verify.sh` qualsiasi issue (anche `info`, es. `unnecessary_import`) fa fallire il gate.
+
+Workflow CI (`.github/workflows/deploy-pages.yml`): `verify.sh` → build web → `deploy-alpha` → copia `index.html` → `404.html`.
 
 **Vincolo GitHub (non deducibile)**: Settings → Environments → `github-pages` → *Deployment branches: All branches*. Con solo `main` selezionato, il deploy da PR fallisce (`environment protection rules`). `deployment_branch_policy: null` via API = nessun vincolo.
 
