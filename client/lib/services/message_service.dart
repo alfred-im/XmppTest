@@ -99,6 +99,7 @@ class MessageService {
           'p_recipient_profile_id': recipientProfileId,
           'p_body': body,
           'p_client_message_id': clientMessageId,
+          'p_content_type': contentType,
         },
       );
       return ChatMessage.fromJson(

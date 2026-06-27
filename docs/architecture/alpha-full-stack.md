@@ -269,19 +269,21 @@ storage.chat-media (GIF + voice WebM, path `{userId}/{uuid}.gif|.webm`)
 |---------|---------------|
 | `profiles` | SELECT tutti autenticati; UPDATE solo proprio |
 | `contacts` | CRUD solo `owner_id = auth.uid()` |
-| `conversations` | SELECT se partecipante |
-| `messages` | SELECT/INSERT se partecipante |
+| `inbox_threads` | SELECT/UPDATE solo `owner_id = auth.uid()` |
+| `messages` | SELECT se mittente o destinatario; INSERT solo come mittente (`sender_id = auth.uid()`) |
 | `outbox`, `sync_cursors`, `bridge_jobs` | **DENY** authenticated — solo `service_role` (bridge) |
 
 ### 3.9 Punti integrazione bridge (non implementati)
 
 ```
-Client → send_message → messages
-                      → outbox (status=queued)  ← bridge worker poll/claim
+Client → send_message_to_profile → messages
+                                 → outbox (status=queued)  ← bridge worker poll/claim
 Bridge → aggiorna messages.external_id, delivery_status
        → sync_cursors (MAM/Matrix token)
        → bridge_jobs (handshake, sync batch)
 ```
+
+**PostgREST**: `send_message_to_profile` deve restare **un solo overload** — due firme compatibili con gli stessi tre argomenti client causano HTTP 300 e invio fallito.
 
 Vedi `docs/decisions/bridge-stateless.md`.
 
@@ -304,6 +306,7 @@ Vedi `docs/decisions/bridge-stateless.md`.
 | Widget | `client/test/widget/` | MessageBubble, AlfredLogo, provider listen, voice UI |
 | E2E | `client/e2e/` | Playwright — inbox load senza interazione (`inbox-load.spec.ts`) |
 | SQL smoke | `supabase/tests/schema_smoke.sql` | Tabelle + RPC presenti |
+| SQL smoke invio | `supabase/tests/send_message_to_profile_smoke.sql` | Invio a profilo non in rubrica, un solo overload RPC |
 | Build | `flutter build web` | Compilazione release GitHub Pages |
 | CI | `.github/workflows/deploy-pages.yml` | `client/scripts/verify.sh` (analyze + test, zero issue) + build; job `deploy-alpha` |
 | Analyze | `flutter analyze` | Fallisce su qualsiasi issue, incluso livello `info` |

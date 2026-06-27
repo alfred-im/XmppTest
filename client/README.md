@@ -4,14 +4,15 @@ Client ufficiale Alfred — multi-piattaforma (web, mobile, desktop).
 
 ## Stato
 
-**Alpha** — collegato a Supabase (auth, contatti, conversazioni, chat realtime, profilo, multi-account).
+**Alpha** — collegato a Supabase (auth, contatti, inbox, chat realtime, profilo, multi-account).
 
 | | |
 |---|---|
 | **Live (Alpha dev)** | https://alfred-im.github.io/XmppTest/ — non è produzione |
-| **Layout** | Lista conversazioni + chat (stile WhatsApp Web) |
+| **Layout** | Lista inbox + chat (stile WhatsApp Web) |
 | **Brand** | `#2D2926` |
-| **Inbox** | RPC `list_conversations` — un round-trip (PR #112) |
+| **Inbox** | RPC `list_inbox` — solo thread con messaggi (PR #129) |
+| **Nuovo messaggio** | FAB → indirizzo `username` → bozza → `send_message_to_profile` (rubrica non richiesta) |
 | **Multi-account** | Switch Thunderbird via `SharedPreferences` (PR #111) |
 | **Chat scroll** | Aggancio al fondo — `AnchoredMessageList` (PR #125) |
 | **GIF** | Upload bucket `chat-media` (PR #115) |
@@ -23,7 +24,7 @@ Client ufficiale Alfred — multi-piattaforma (web, mobile, desktop).
 
 ```bash
 cd client
-bash scripts/verify.sh            # analyze + test (gate CI)
+bash scripts/verify.sh            # analyze + test — obbligatorio prima di git push
 bash scripts/verify.sh --build    # + build web
 npx playwright test e2e/          # e2e (inbox-load)
 ```
@@ -51,22 +52,21 @@ Il workflow `.github/workflows/deploy-pages.yml` esegue `scripts/verify.sh` (ana
 ```
 lib/
 ├── config/      # AppConfig, VoiceConfig
-├── models/      # Conversation, ChatMessage, OutboundQueueItem, …
-├── services/    # Auth, MessageService, MessageMediaService, VoiceRecordingService,
-│                # OutboundMessageQueue, voice_encoding_*, …
-├── providers/   # ChangeNotifier (Auth, Conversations, Messages, …)
+├── models/      # InboxThread, ComposeTarget, ChatMessage, OutboundQueueItem, …
+├── services/    # Auth, MessageService, ComposeService, InboxService, …
+├── providers/   # ChangeNotifier (Auth, Inbox, Messages, Contacts, …)
 ├── screens/     # AppShell, Auth, Home, Contatti, Profilo
-├── utils/       # ConversationScrollAnchor, date_format, duration_format, …
-└── widgets/     # AnchoredMessageList, ChatPanel, ChatInputBar, VoiceMessageContent, …
+├── utils/       # compose_address, ConversationScrollAnchor, date_format, …
+└── widgets/     # InboxPanel, ChatPanel, ChatInputBar, VoiceMessageContent, …
 ```
 
 ## Architettura client
 
 - `docs/architecture/alpha-full-stack.md` — flussi auth, inbox, realtime, GIF, voice (§2.11), aggancio al fondo (§2.10), deploy Alpha (§6)
+- `docs/decisions/address-based-messaging.md` — messaggistica per indirizzo, rubrica isolata
 - `docs/implementation/voice-notes.md` — contratto voice, UX registrazione, Supabase
 - `docs/design/conversation-bottom-anchor.md` — specifica scroll ancorato in chat
 - `docs/architecture/alpha-pr-registry.md` — registro PR Alpha e checklist documentazione
-- `docs/fixes/flutter-inbox-stability.md` — fix stabilità inbox (PR #113/#114)
 
 ## Prossimi passi
 

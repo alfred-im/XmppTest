@@ -683,28 +683,8 @@ begin
 end;
 $$;
 
--- Overload testo (PostgREST)
-create or replace function public.send_message_to_profile(
-  p_recipient_profile_id uuid,
-  p_body text,
-  p_client_message_id text default null
-)
-returns public.messages
-language sql
-security definer
-set search_path = public
-as $$
-  select public.send_message_to_profile(
-    p_recipient_profile_id,
-    p_body,
-    p_client_message_id,
-    'text'::public.message_content_type,
-    null,
-    null,
-    null,
-    null
-  );
-$$;
+-- Nota: non aggiungere un secondo overload (uuid,text,text) — PostgREST HTTP 300.
+-- Vedi migrazione 20260627220000_fix_send_message_to_profile_overload.sql
 
 -- ---------------------------------------------------------------------------
 -- Revoca RPC conversazione (non più esposte al client)
@@ -727,13 +707,11 @@ grant execute on function public.list_inbox() to authenticated;
 grant execute on function public.list_thread_messages(uuid, integer) to authenticated;
 grant execute on function public.mark_thread_read(uuid) to authenticated;
 grant execute on function public.send_message_to_profile(uuid, text, text, public.message_content_type, text, integer, text, bigint) to authenticated;
-grant execute on function public.send_message_to_profile(uuid, text, text) to authenticated;
 
 revoke all on function public.list_inbox() from anon;
 revoke all on function public.list_thread_messages(uuid, integer) from anon;
 revoke all on function public.mark_thread_read(uuid) from anon;
 revoke all on function public.send_message_to_profile(uuid, text, text, public.message_content_type, text, integer, text, bigint) from anon;
-revoke all on function public.send_message_to_profile(uuid, text, text) from anon;
 
 -- ---------------------------------------------------------------------------
 -- RLS

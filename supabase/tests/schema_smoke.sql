@@ -30,12 +30,17 @@ BEGIN
     RAISE EXCEPTION 'Missing tables: %', array_to_string(missing, ', ');
   END IF;
 
-  -- Funzioni RPC
-  IF to_regprocedure('public.send_message_to_profile(uuid,text,text)') IS NULL THEN
-    RAISE EXCEPTION 'Missing RPC send_message_to_profile (text overload)';
-  END IF;
+  -- Funzioni RPC (send_message_to_profile: un solo overload — PostgREST HTTP 300 se duplicato)
   IF to_regprocedure('public.send_message_to_profile(uuid,text,text,public.message_content_type,text,integer,text,bigint)') IS NULL THEN
-    RAISE EXCEPTION 'Missing RPC send_message_to_profile (media metadata overload)';
+    RAISE EXCEPTION 'Missing RPC send_message_to_profile';
+  END IF;
+  IF (
+    SELECT count(*)
+    FROM pg_proc p
+    JOIN pg_namespace n ON n.oid = p.pronamespace
+    WHERE n.nspname = 'public' AND p.proname = 'send_message_to_profile'
+  ) <> 1 THEN
+    RAISE EXCEPTION 'send_message_to_profile must have exactly one overload (PostgREST ambiguity)';
   END IF;
   IF to_regprocedure('public.mark_thread_read(uuid)') IS NULL THEN
     RAISE EXCEPTION 'Missing RPC mark_thread_read';
