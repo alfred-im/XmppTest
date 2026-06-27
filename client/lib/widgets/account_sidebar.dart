@@ -81,13 +81,6 @@ class AccountSidebar extends StatelessWidget {
               contentPadding: EdgeInsets.zero,
               onTap: onAddAccount,
             ),
-            const Divider(height: 24),
-            ListTile(
-              leading: const Icon(Icons.logout, color: AlfredColors.textSecondary),
-              title: const Text('Esci'),
-              contentPadding: EdgeInsets.zero,
-              onTap: () => context.read<AuthController>().signOut(),
-            ),
           ],
         ),
       ),
@@ -167,10 +160,11 @@ class _ActiveProfileCard extends StatelessWidget {
             ],
           ),
         ),
-        const Icon(
-          Icons.check_circle,
-          color: AlfredColors.unreadBadge,
-          size: 20,
+        IconButton(
+          icon: const Icon(Icons.logout_outlined, size: 22),
+          color: AlfredColors.textSecondary,
+          tooltip: 'Esci',
+          onPressed: () => context.read<AuthController>().signOut(),
         ),
       ],
     );
