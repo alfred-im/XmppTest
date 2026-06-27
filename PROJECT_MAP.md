@@ -290,7 +290,7 @@ client/lib/
 
 **Coda invio client (non deducibile)**: `OutboundMessageQueue` persiste fallimenti (testo/GIF/voice) per retry automatico e tap «Riprova invio» — non è l'outbox server federato.
 
-**Layout inbox (non deducibile)**: `HomeScreen` — mobile: drawer sinistro (hamburger solo nella lista conversazioni) con `AccountSidebar` (profilo attivo, modifica, altri account, aggiungi, esci); chat mobile con solo back. Desktop (≥720px): colonna sinistra fissa = `AccountSidebar` + lista conversazioni (senza barra Alfred duplicata); area destra sempre chat/placeholder. Menu account bottom sheet rimosso.
+**Layout inbox (non deducibile)**: `HomeScreen` — mobile: drawer sinistro (hamburger solo nella lista conversazioni) con `AccountSidebar` (profilo attivo, modifica, altri account, aggiungi, esci); chat mobile con solo back. Desktop (≥720px): colonna sinistra fissa = `AccountSidebar` + lista conversazioni (senza barra Alfred duplicata); area destra sempre chat/placeholder. Menu account bottom sheet rimosso. `ConversationsPanel`: FAB in basso a destra → dialog username → `openFromUsername` (cerca profilo Alfred, crea/riusa contatto interno, apre conversazione).
 
 **Aggancio al fondo (non deducibile)**: `AnchoredMessageList` in `chat_panel.dart` — `ListView` `reverse: true`, soglia 48 px, pulsante freccia + badge se staccato. Identico per tutte le conversazioni. Spec: `docs/design/conversation-bottom-anchor.md`.
 

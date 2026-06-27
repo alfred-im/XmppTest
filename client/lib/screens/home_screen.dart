@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../models/conversation.dart';
 import '../providers/auth_controller.dart';
+import '../providers/contacts_controller.dart';
 import '../providers/conversations_controller.dart';
 import '../providers/messages_controller.dart';
 import '../theme/alfred_colors.dart';
@@ -55,6 +56,18 @@ class _HomeScreenState extends State<HomeScreen> {
         _showListOnMobile = false;
       });
     }
+  }
+
+  Future<void> _startConversationFromUsername(String username) async {
+    final conversations = context.read<ConversationsController?>();
+    if (conversations == null) return;
+    final conversationId = await conversations.openFromUsername(username);
+    if (!mounted) return;
+    await context.read<ContactsController?>()?.load();
+    setState(() {
+      _selectedId = conversationId;
+      _showListOnMobile = false;
+    });
   }
 
   Future<void> _openProfile() async {
@@ -115,6 +128,7 @@ class _HomeScreenState extends State<HomeScreen> {
       onSearchChanged: conversations.setSearchQuery,
       onDrawerTap: showDrawerButton ? _openDrawer : null,
       onContactsTap: _openContacts,
+      onNewConversation: _startConversationFromUsername,
       showBackButton: showBackButton,
       onBack: onBack,
       showTopBar: showTopBar,

@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/conversation.dart';
+import '../services/contact_service.dart';
 import '../services/conversation_service.dart';
 import '../services/supabase_bootstrap.dart';
 import '../utils/list_filter.dart';
@@ -12,14 +13,17 @@ class ConversationsController extends ChangeNotifier {
   ConversationsController({
     required this.userId,
     ConversationService? conversationService,
+    ContactService? contactService,
     this.enableRealtime = true,
-  }) : _conversationService = conversationService ?? ConversationService() {
+  })  : _conversationService = conversationService ?? ConversationService(),
+        _contactService = contactService ?? ContactService() {
     unawaited(_bootstrap());
   }
 
   final String userId;
   final bool enableRealtime;
   final ConversationService _conversationService;
+  final ContactService _contactService;
   RealtimeChannel? _channel;
   int _loadGeneration = 0;
   bool _realtimeAttached = false;
@@ -83,6 +87,19 @@ class ConversationsController extends ChangeNotifier {
         await _conversationService.openConversationFromContact(contactId);
     await load();
     return id;
+  }
+
+  Future<String> openFromUsername(String username) async {
+    final profile = await _contactService.findProfileByUsername(username);
+    if (profile == null) {
+      throw StateError('Utente non trovato');
+    }
+
+    final contact = await _contactService.getOrCreateInternalContact(
+      ownerId: userId,
+      profile: profile,
+    );
+    return openFromContact(contact.id);
   }
 
   @override

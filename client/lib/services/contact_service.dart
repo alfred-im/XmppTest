@@ -25,6 +25,42 @@ class ContactService {
         .toList();
   }
 
+  Future<Contact?> findInternalContactByProfileId(
+    String ownerId,
+    String profileId,
+  ) async {
+    final row = await supabase
+        .from('contacts')
+        .select()
+        .eq('owner_id', ownerId)
+        .eq('linked_profile_id', profileId)
+        .maybeSingle();
+
+    if (row == null) return null;
+    return Contact.fromJson(row);
+  }
+
+  Future<Contact> getOrCreateInternalContact({
+    required String ownerId,
+    required ProfileSearchResult profile,
+  }) async {
+    final existing =
+        await findInternalContactByProfileId(ownerId, profile.id);
+    if (existing != null) return existing;
+    return addInternalContact(ownerId: ownerId, profile: profile);
+  }
+
+  Future<ProfileSearchResult?> findProfileByUsername(String username) async {
+    final normalized = username.trim().toLowerCase();
+    if (normalized.length < 3) return null;
+
+    final results = await searchProfiles(normalized);
+    for (final profile in results) {
+      if (profile.username.toLowerCase() == normalized) return profile;
+    }
+    return null;
+  }
+
   Future<Contact> addInternalContact({
     required String ownerId,
     required ProfileSearchResult profile,
