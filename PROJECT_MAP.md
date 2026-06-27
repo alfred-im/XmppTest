@@ -631,7 +631,7 @@ flutter build web --release --base-href "/XmppTest/"
 | Prod web | `flutter build web --base-href "/XmppTest/"` | `client/build/web/` |
 | Deploy | GitHub Actions `deploy-pages.yml` | https://alfred-im.github.io/XmppTest/ (solo da `main`; PR → preview Pages) |
 
-Workflow CI: build → `deploy-preview` (PR) o `deploy-alpha` (push `main`, ambiente sviluppo Pages) → copia `index.html` → `404.html`. L'ambiente GitHub `github-pages` **non accetta** deploy da ref PR (protection rules).
+Workflow CI: build → `deploy-alpha` (PR e `main`) → https://alfred-im.github.io/XmppTest/. **Vincolo GitHub (non deducibile)**: ambiente `github-pages` deve avere *Deployment branches → All branches*; con solo `main` le PR falliscono (`environment protection rules`).
 
 ---
 
