@@ -1,6 +1,6 @@
 # Alfred - Mappa Completa del Progetto
 
-**Ultimo aggiornamento**: 2026-06-26 (spunte delivered sul server per chat interna)  
+**Ultimo aggiornamento**: 2026-06-27 (ADR: nessuna distinzione chat interna/esterna)  
 **Versione repository**: 3.1.0-alpha (client Flutter live con piattaforma; bridge esclusi)
 
 ---
@@ -93,6 +93,8 @@ Il client React aveva: offline-first IndexedDB per account, XMPP diretto (Stanza
 **Regola vincolante**: i bridge **non** tengono stato di business — vedi `docs/decisions/bridge-stateless.md`.
 
 **Stato implementazione**: client Flutter + schema Supabase dominio **implementati**. Bridge restano stub health.
+
+**Chat unificate (vincolante, 2026-06-27)**: la distinzione chat interna/esterna **non esiste** nel prodotto — una sola esperienza per ogni conversazione (scroll, aggancio al fondo, UI correlata). Vietato branch client/UI su tipo di chat. Il campo `protocol` è solo routing invisibile verso i bridge. ADR: `docs/decisions/no-internal-external-chat-distinction.md`.
 
 ### Documentazione architettura Alpha
 

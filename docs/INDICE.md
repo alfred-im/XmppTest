@@ -23,6 +23,7 @@ Recupero codice legacy: `git checkout legacy/web-client-final -- web-client/`
 
 ## Decisioni (ADR)
 
+- [decisions/no-internal-external-chat-distinction.md](./decisions/no-internal-external-chat-distinction.md) - **🟢 Regola vincolante** — nessuna distinzione chat interna/esterna a nessun livello (2026-06-27)
 - [decisions/server-as-reception.md](./decisions/server-as-reception.md) - **🟢 Concept spunte cloud** — ricezione = ricezione sul server (2026-06-26)
 
 ## Architettura
@@ -86,6 +87,6 @@ Recupero codice legacy: `git checkout legacy/web-client-final -- web-client/`
 
 ---
 
-**Ultimo aggiornamento**: 2026-06-24 (PR Alpha #108–#115 mergiate su main)  
+**Ultimo aggiornamento**: 2026-06-27 (ADR nessuna distinzione chat interna/esterna)  
 **Client live**: Flutter + Supabase @ https://alfred-im.github.io/XmppTest/  
 **Legacy (riferimento doc)**: React @ `legacy/web-client-final`

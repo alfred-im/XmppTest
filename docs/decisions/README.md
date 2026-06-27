@@ -102,6 +102,16 @@ Dettagli: [../fixes/account-storage-isolation.md](../fixes/account-storage-isola
 - Prepara il modello spunte per bridge/outbox senza cambiare semantica UI
 - Distingue il client Flutter Alpha dal legacy XMPP (XEP-0184 = device)
 
+### 10. Nessuna distinzione chat interna / esterna (2026-06-27)
+- **[no-internal-external-chat-distinction.md](./no-internal-external-chat-distinction.md)**
+- **Status**: ✅ Accettata — **regola vincolante**
+- **Summary**: La distinzione chat interna/esterna non esiste e non deve esistere a nessun livello (UI, client, comportamento). Una sola esperienza chat per tutte le conversazioni; `protocol` solo routing invisibile verso i bridge.
+
+**Perché**:
+- Coerente con protocollo invisibile in UI (discovery)
+- Evita doppie implementazioni (scroll, aggancio al fondo, composer, ecc.)
+- L'utente vede chat, non tipi di chat
+
 ## Decisioni In Valutazione
 
 - **Virtual Scrolling**: Liste > 100 elementi (react-window vs react-virtualized)
