@@ -43,7 +43,7 @@ class MessagesController extends ChangeNotifier {
   final ComposeTarget? _composeTarget;
   final Future<void> Function()? onFirstMessageSent;
 
-  String? _threadId;
+  final String? _threadId;
   final String? _peerProfileId;
   final MessageService _messageService;
   final MessageMediaService _messageMediaService;
@@ -74,7 +74,7 @@ class MessagesController extends ChangeNotifier {
     if (_threadId != null) {
       await load();
       await _restoreFailedFromQueue();
-      await _inboxService.markRead(_threadId!);
+      await _inboxService.markRead(_threadId);
       _attachRealtime();
     } else {
       isLoading = false;

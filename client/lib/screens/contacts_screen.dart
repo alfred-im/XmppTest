@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../models/compose_target.dart';
 import '../models/contact.dart';
 import '../providers/contacts_controller.dart';
 import '../services/compose_service.dart';
