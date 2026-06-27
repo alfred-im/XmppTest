@@ -1,6 +1,6 @@
 # Alfred - Mappa Completa del Progetto
 
-**Ultimo aggiornamento**: 2026-06-27 (solo messaggi — drop inbox_threads, ChatPeer)  
+**Ultimo aggiornamento**: 2026-06-27 (sidebar — logout in card profilo, PR #131)  
 **Versione repository**: 3.1.0-alpha (client Flutter live con piattaforma; bridge esclusi)
 
 ---
@@ -291,7 +291,7 @@ client/lib/
 
 **Coda invio client (non deducibile)**: `OutboundMessageQueue` persiste fallimenti (testo/GIF/voice) per retry automatico e tap «Riprova invio» — non è l'outbox server federato.
 
-**Layout inbox (non deducibile)**: `HomeScreen` — mobile: drawer sinistro con `AccountSidebar`; desktop: colonna sinistra = account + inbox. `InboxPanel`: FAB → indirizzo → `ChatPeer`; chat sempre per `profile_id`; `list_inbox()` = aggregazione on-read su `messages`; `list_peer_messages(peer)`.
+**Layout inbox (non deducibile)**: `HomeScreen` — mobile: drawer sinistro con `AccountSidebar`; desktop: colonna sinistra = account + inbox. `AccountSidebar`: card profilo attivo con logout (icona a destra del nome, tooltip «Esci»); switch altri account; «Aggiungi account». `InboxPanel`: FAB → indirizzo → `ChatPeer`; chat sempre per `profile_id`; `list_inbox()` = aggregazione on-read su `messages`; `list_peer_messages(peer)`.
 
 **Aggancio al fondo (non deducibile)**: `AnchoredMessageList` in `chat_panel.dart` — `ListView` `reverse: true`, soglia 48 px, pulsante freccia + badge se staccato. Identico per tutte le conversazioni. Spec: `docs/design/conversation-bottom-anchor.md`.
 

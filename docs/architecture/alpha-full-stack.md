@@ -77,7 +77,7 @@ client/lib/
 | `AuthService.switchAccount()` | Salva sessione corrente → `setSession(refreshToken)` → aggiorna storage |
 | `AuthService.persistCurrentSession()` | Su `tokenRefreshed` e prima di switch/login add-account |
 | `AuthScreen` (`addingAccount: true`) | Login secondo account senza `signOut` sul primo |
-| Menu account in `HomeScreen` | Switch, **Aggiungi account**, Esci (solo account attivo) |
+| Menu account in `AccountSidebar` | Switch altri account, **Aggiungi account**; **Esci** (icona logout a destra del nome nella card profilo attivo) |
 
 **Scelta identità**: login e recupero via **email reale** (GoTrue). L’**username** è l’identità pubblica nell’app (profilo, ricerca, multi-account `@username`) — non compare l’email agli altri utenti.
 

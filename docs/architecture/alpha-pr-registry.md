@@ -1,6 +1,6 @@
 # Registro PR Alpha Flutter (main)
 
-**Ultimo aggiornamento**: 2026-06-27 (PR #130 mergiata — inbox solo messaggi)  
+**Ultimo aggiornamento**: 2026-06-27 (PR #131 — sidebar logout in card profilo)  
 **Scope**: PR mergiate su `main` dopo migrazione Flutter — riferimento per allineamento documentazione.
 
 Documento per AI. Ogni PR deve riflettersi in: `PROJECT_MAP.md`, `CHANGELOG.md`, `docs/architecture/alpha-full-stack.md` (e fix dedicato se applicabile).
@@ -24,6 +24,7 @@ Documento per AI. Ogni PR deve riflettersi in: `PROJECT_MAP.md`, `CHANGELOG.md`,
 | **#126** | Note vocali in chat | WebM/Opus, `content_type=voice`, registrazione hold-to-send, player, `OutboundMessageQueue` | `alpha-full-stack.md` §2.11, `docs/implementation/voice-notes.md` |
 | **#127** | Processo `flutter analyze` | `client/scripts/verify.sh`, gate analyze in CI/doc | `.cursor-rules.md`, `alpha-full-stack.md` §5, `client/README.md` |
 | **#130** | Inbox solo messaggi | Drop `inbox_threads`; `ChatPeer`; `list_peer_messages`, `mark_peer_read`; fix HTTP 300 overload | `address-based-messaging.md`, `messages-only-inbox.md`, migrazioni `20260627200000`–`20260627230000` |
+| **#131** | Sidebar logout in card profilo | Rimossa spunta verde account attivo; logout icona a destra del nome nella card profilo | `PROJECT_MAP.md` § layout inbox, `alpha-full-stack.md` §2.4 |
 
 ---
 
