@@ -56,12 +56,12 @@ test('lista conversazioni si carica senza digitare nella ricerca', async ({
   });
 
   await expect(
-    page.getByText(/Nessuna conversazione|Cerca conversazione/),
+    page.getByText(/Nessun messaggio|Cerca messaggi/),
   ).toBeVisible({ timeout: 45_000 });
 
   await page.waitForTimeout(3_000);
   await expect(
-    page.getByText(/Nessuna conversazione|Cerca conversazione/),
+    page.getByText(/Nessun messaggio|Cerca messaggi/),
   ).toBeVisible();
 
   expect(errors, `errori JS: ${errors.join('; ')}`).toEqual([]);

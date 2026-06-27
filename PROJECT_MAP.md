@@ -1,6 +1,6 @@
 # Alfred - Mappa Completa del Progetto
 
-**Ultimo aggiornamento**: 2026-06-27 (note vocali PR #126, gate `scripts/verify.sh`, deploy-alpha)  
+**Ultimo aggiornamento**: 2026-06-27 (solo messaggi — drop inbox_threads, ChatPeer)  
 **Versione repository**: 3.1.0-alpha (client Flutter live con piattaforma; bridge esclusi)
 
 ---
@@ -47,14 +47,15 @@ La documentazione sotto che cita `web-client/` descrive il **client React storic
 
 - **Auth Alfred**: login/registrazione con **email + password** (GoTrue); **username** obbligatorio in registrazione come identità IM pubblica — email **non** in profilo/rubrica/ricerca
 - **Multi-account**: switch Thunderbird via `SharedPreferences` + `setSession`
-- **Contatti unificati**: interni Alfred + esterni XMPP/Matrix (protocollo solo routing)
-- **Conversazioni + chat realtime**: Supabase Postgres + Realtime; inbox via RPC `list_conversations` (un round-trip)
+- **Contatti unificati**: rubrica personale opzionale (interni + federati) — **isolata** dalla messaggistica; vedi ADR `docs/decisions/address-based-messaging.md`
+- **Messaggistica per indirizzo**: `username` (Alfred) o `user@server` (esterno, `unsupported` in Alpha); **solo `messages` + `profiles`** — inbox = aggregazione on-read `list_inbox()`; chat per `peer_profile_id`; nessuna tabella/cache inbox, nessun FK verso derivati
+- **Inbox + chat realtime**: Supabase Postgres + Realtime; inbox via RPC `list_inbox` (un round-trip)
 - **GIF in chat**: upload su bucket Supabase `chat-media` → `messages.content_type=gif` + `media_url`; preview inbox `[GIF]`
 - **Note vocali in chat**: WebM/Opus canonico (`audio/webm`) → `content_type=voice` + `duration_seconds` + `media_mime` + `media_url`; preview inbox `🎤 m:ss`; registrazione hold-to-send in `ChatInputBar`; coda retry `OutboundMessageQueue` (testo/GIF/voice)
 - **Messaggistica interna**: utente↔utente stessa istanza — completa (testo + GIF + voice)
 - **Messaggistica federata**: outbox `queued` — attende bridge (non implementato)
 - **Profilo Alfred**: display name, bio, username
-- **Spunte lettura**: `on_message_inserted` → `delivered` (internal) · `mark_conversation_read` → `read` — concept: ricezione = server — `docs/decisions/server-as-reception.md`
+- **Spunte lettura**: `on_message_inserted` → `delivered` (internal) · `mark_thread_read` → `read` — concept: ricezione = server — `docs/decisions/server-as-reception.md`
 - **Brand Alfred**: `#2D2926`, bolle WhatsApp, layout responsive
 - **Deploy web**: GitHub Pages — ambiente **Alpha/sviluppo**; ogni build PR o `main` aggiorna https://alfred-im.github.io/XmppTest/ (`deploy-alpha`)
 
@@ -267,7 +268,7 @@ Per ogni messaggio nell'array:
 | Elemento | Dettaglio |
 |----------|-----------|
 | **Entry** | `lib/main.dart` → `AppShell` (auth gate) → `HomeScreen` |
-| **State** | Provider (`AuthController`, `ConversationsController`, `ContactsController`, `MessagesController`) |
+| **State** | Provider (`AuthController`, `InboxController`, `ContactsController`, `MessagesController`) |
 | **Backend** | `supabase_flutter` — REST + Realtime + RPC |
 | **Dipendenze** | `provider`, `intl`, `uuid`, `shared_preferences`, `file_picker`, `record`, `just_audio`, `path_provider`, `ffmpeg_kit_flutter_new_min` (transcode IO→WebM), `supabase_flutter` |
 | **Config** | `lib/config/app_config.dart` — override `--dart-define=SUPABASE_URL` |
@@ -277,7 +278,7 @@ Per ogni messaggio nell'array:
 ```
 client/lib/
 ├── config/          # AppConfig, VoiceConfig
-├── models/          # Conversation, ChatMessage, OutboundQueueItem, …
+├── models/          # ChatPeer, ChatMessage, OutboundQueueItem, …
 ├── services/        # auth, message, message_media, voice_recording, voice_encoding_*, outbound_message_queue, …
 ├── providers/       # ChangeNotifier controllers
 ├── screens/         # AppShell, Auth, Home, Contacts, Profile
@@ -290,7 +291,7 @@ client/lib/
 
 **Coda invio client (non deducibile)**: `OutboundMessageQueue` persiste fallimenti (testo/GIF/voice) per retry automatico e tap «Riprova invio» — non è l'outbox server federato.
 
-**Layout inbox (non deducibile)**: `HomeScreen` — mobile: drawer sinistro (hamburger solo nella lista conversazioni) con `AccountSidebar` (profilo attivo, modifica, altri account, aggiungi, esci); chat mobile con solo back. Desktop (≥720px): colonna sinistra fissa = `AccountSidebar` + lista conversazioni (senza barra Alfred duplicata); area destra sempre chat/placeholder. Menu account bottom sheet rimosso.
+**Layout inbox (non deducibile)**: `HomeScreen` — mobile: drawer sinistro con `AccountSidebar`; desktop: colonna sinistra = account + inbox. `InboxPanel`: FAB → indirizzo → `ChatPeer`; chat sempre per `profile_id`; `list_inbox()` = aggregazione on-read su `messages`; `list_peer_messages(peer)`.
 
 **Aggancio al fondo (non deducibile)**: `AnchoredMessageList` in `chat_panel.dart` — `ListView` `reverse: true`, soglia 48 px, pulsante freccia + badge se staccato. Identico per tutte le conversazioni. Spec: `docs/design/conversation-bottom-anchor.md`.
 
@@ -628,6 +629,8 @@ bash scripts/verify.sh --build   # + build web release
 flutter run -d chrome
 ```
 
+**Obbligatorio prima di `git push`**: `verify.sh` deve terminare con `verify_ok` (zero issue su `flutter analyze`, test verdi). Senza questo la CI non deploya su GitHub Pages.
+
 | Step | Tool | Output |
 |------|------|--------|
 | **Verifica** | `scripts/verify.sh` | `flutter analyze` (zero issue obbligatorio) + `flutter test` |
@@ -917,11 +920,13 @@ class ConversationRepository {
 - Auth Supabase (login/registrazione **email + password**; username identità IM in `profiles`, non esposto come credenziale altrui)
 - Multi-account Thunderbird (`SharedPreferences` + switch refresh token) — PR #111
 - Contatti unificati (interni + federati in rubrica)
-- Inbox via RPC `list_conversations` (un round-trip) — PR #112
+- Inbox via RPC `list_inbox` (un round-trip) — message-centric (PR #129)
+- Composizione per indirizzo (`find_profile_by_username`) — rubrica non richiesta per inviare
 - Chat realtime testo + GIF + voice (Supabase Postgres + Realtime + Storage) — PR #109/#115/#126
+- Invio: RPC `send_message_to_profile` (unico overload PostgREST — no HTTP 300)
 - Stabilità inbox web: `waitForSupabaseSessionReady` + `ChangeNotifierProxyProvider` — PR #113/#114
 - Deploy GitHub Pages con passkeys bundle — PR #110
-- Layout conversazioni + chat responsive, tema `#2D2926`
+- Layout inbox + chat responsive, tema `#2D2926`
 - Test: unit, widget (voice incluso), e2e Playwright inbox, SQL smoke, CI analyze+test+build
 
 **Architettura dettagliata**: `docs/architecture/alpha-full-stack.md`  
@@ -1006,9 +1011,9 @@ Documentati in `docs/fixes/known-issues.md`:
 
 | Area | Comportamento |
 |------|---------------|
-| Inbox | Un round-trip RPC `list_conversations` |
-| Chat | Realtime Supabase su canale `messages-{conversationId}` |
-| Invio | Optimistic UI + RPC `send_message` |
+| Inbox | Un round-trip RPC `list_inbox` |
+| Chat | Realtime Supabase su messaggi peer (`sender_id` / `recipient_profile_id`) |
+| Invio | Optimistic UI + RPC `send_message_to_profile` |
 | Web | Online-only (D-031) — nessuna cache offline |
 
 **Ottimizzazioni legacy React** (tag `legacy/web-client-final`): sync-once, cache-first IndexedDB — vedi sezione legacy sotto.
@@ -1081,7 +1086,8 @@ Documentati in `docs/fixes/known-issues.md`:
 - ✅ **PR #109**: app completa Flutter + schema dominio Supabase
 - ✅ **PR #110**: passkeys `bundle.js` — fix schermo bianco Pages
 - ✅ **PR #111**: multi-account switch senza logout forzato
-- ✅ **PR #112**: RPC `list_conversations` inbox un round-trip
+- ✅ **PR #112**: RPC inbox un round-trip (sostituito da `list_inbox` in PR #129)
+- ✅ **PR #130**: Inbox solo messaggi — drop `inbox_threads`, `ChatPeer`, RPC peer-based
 - ✅ **PR #113**: fix race auth web (`waitForSupabaseSessionReady`)
 - ✅ **PR #115**: GIF in chat (`content_type`, `media_url`, bucket `chat-media`)
 - ✅ **PR #114**: `ChangeNotifierProxyProvider` — fix UI inbox bloccata

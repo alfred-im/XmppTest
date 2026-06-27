@@ -23,6 +23,20 @@ Modifiche rilevanti al progetto per tracciare evoluzione tecnica e decisioni imp
 
 ## [Unreleased]
 
+### Alpha Flutter — PR #130 (inbox solo messaggi)
+
+- **Drop `inbox_threads`**: inbox = `list_inbox()` aggregazione on-read su `messages` (non vista materializzata, non cache con FK)
+- **RPC peer-based**: `list_peer_messages`, `mark_peer_read` (no `thread_id`)
+- **Client**: `ChatPeer` per account; niente bozza/ComposeTarget/InboxThread
+- Migrazione `20260627230000_messages_only_inbox.sql`
+
+### Alpha Flutter — PR #129 (messaggistica per indirizzo, iterazione precedente)
+- **Modello message-centric**: `inbox_threads`, messaggi con `sender_id` + `recipient_profile_id`; drop `conversations`
+- **RPC**: `list_inbox`, `list_thread_messages`, `send_message_to_profile`, `find_profile_by_username`, `mark_thread_read`
+- **Client**: `InboxController`, bozza compose (FAB → username), invio senza rubrica
+- **Fix invio**: rimosso overload duplicato `send_message_to_profile(uuid,text,text)` — PostgREST HTTP 300
+- **ADR**: `docs/decisions/address-based-messaging.md`
+
 ### CI / deploy Alpha (2026-06-27)
 - **Workflow unificato `deploy-alpha`**: ogni PR su `main` (path `client/**`) e ogni push a `main` pubblicano su https://alfred-im.github.io/XmppTest/ — ambiente **sviluppo**, non produzione
 - Rimossi job `deploy-preview` / `deploy-prod`; concurrency `pages-alpha`

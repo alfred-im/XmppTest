@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../providers/auth_controller.dart';
 import '../providers/contacts_controller.dart';
-import '../providers/conversations_controller.dart';
+import '../providers/inbox_controller.dart';
 import '../providers/profile_controller.dart';
 import '../services/supabase_bootstrap.dart';
 import 'screens/app_shell.dart';
@@ -28,14 +28,14 @@ class AlfredApp extends StatelessWidget {
         // ChangeNotifierProxyProvider (non ProxyProvider): ascolta notifyListeners
         // del controller — altrimenti la UI resta sulla rotella finché un altro
         // evento (ricerca, navigazione) non forza un rebuild.
-        ChangeNotifierProxyProvider<AuthController, ConversationsController?>(
+        ChangeNotifierProxyProvider<AuthController, InboxController?>(
           create: (_) => null,
           update: (_, auth, previous) {
             if (!auth.sessionReady) return null;
             final userId = auth.userId;
             if (userId == null) return null;
             if (previous?.userId == userId) return previous;
-            return ConversationsController(userId: userId);
+            return InboxController(userId: userId);
           },
         ),
         ChangeNotifierProxyProvider<AuthController, ContactsController?>(

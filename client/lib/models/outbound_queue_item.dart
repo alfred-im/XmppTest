@@ -17,7 +17,7 @@ OutboundContentKind outboundContentKindFromString(String value) {
 class OutboundQueueItem {
   const OutboundQueueItem({
     required this.clientId,
-    required this.conversationId,
+    required this.queueKey,
     required this.kind,
     required this.attempts,
     required this.queuedAt,
@@ -29,7 +29,7 @@ class OutboundQueueItem {
   });
 
   final String clientId;
-  final String conversationId;
+  final String queueKey;
   final OutboundContentKind kind;
   final int attempts;
   final DateTime queuedAt;
@@ -41,7 +41,7 @@ class OutboundQueueItem {
 
   Map<String, dynamic> toJson() => {
         'clientId': clientId,
-        'conversationId': conversationId,
+        'queueKey': queueKey,
         'kind': kind.name,
         'attempts': attempts,
         'queuedAt': queuedAt.toUtc().toIso8601String(),
@@ -55,7 +55,7 @@ class OutboundQueueItem {
   factory OutboundQueueItem.fromJson(Map<String, dynamic> json) {
     return OutboundQueueItem(
       clientId: json['clientId'] as String,
-      conversationId: json['conversationId'] as String,
+      queueKey: (json['queueKey'] ?? json['conversationId']) as String,
       kind: outboundContentKindFromString(json['kind'] as String? ?? 'text'),
       attempts: json['attempts'] as int? ?? 0,
       queuedAt: DateTime.parse(json['queuedAt'] as String),
@@ -73,7 +73,7 @@ class OutboundQueueItem {
   }) {
     return OutboundQueueItem(
       clientId: clientId,
-      conversationId: conversationId,
+      queueKey: queueKey,
       kind: kind,
       attempts: attempts ?? this.attempts,
       queuedAt: queuedAt,

@@ -6,7 +6,7 @@ Traccia lo stato del progetto Alfred per continuità del lavoro. NON è document
 
 ## Stato attuale (2026-06-27)
 
-Migrazione verso **Flutter + Supabase + bridge Python** (`docs/decisions/project-revolution-discovery.md`). PR Alpha **#108–#125** mergiate su `main`; **#126** (note vocali + deploy-alpha) e **#127** (verify script) aperte (registro: `docs/architecture/alpha-pr-registry.md`).
+Migrazione verso **Flutter + Supabase + bridge Python** (`docs/decisions/project-revolution-discovery.md`). PR Alpha **#108–#127** mergiate su `main`; **#130** inbox solo messaggi in PR (registro: `docs/architecture/alpha-pr-registry.md`).
 
 | Componente | Stato |
 |------------|-------|
@@ -37,6 +37,8 @@ Flutter (client/)  →  Supabase (piattaforma)  →  bridge XMPP + bridge Matrix
 
 ```bash
 cd client
+bash scripts/verify.sh   # obbligatorio prima di git push (analyze + test)
+# oppure manualmente:
 flutter pub get
 flutter analyze    # zero issue obbligatorio (CI fallisce anche su info)
 flutter test

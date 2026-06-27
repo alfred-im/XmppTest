@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
 
-import '../models/conversation.dart';
+import '../models/chat_peer.dart';
 import '../theme/alfred_colors.dart';
 import '../utils/avatar_color.dart';
 
-class ConversationTile extends StatelessWidget {
-  const ConversationTile({
+class InboxPeerTile extends StatelessWidget {
+  const InboxPeerTile({
     super.key,
-    required this.conversation,
+    required this.peer,
     required this.selected,
     required this.onTap,
   });
 
-  final Conversation conversation;
+  final ChatPeer peer;
   final bool selected;
   final VoidCallback onTap;
 
@@ -28,7 +28,7 @@ class ConversationTile extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           child: Row(
             children: [
-              _Avatar(conversation: conversation),
+              _Avatar(peer: peer),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -38,7 +38,7 @@ class ConversationTile extends StatelessWidget {
                       children: [
                         Expanded(
                           child: Text(
-                            conversation.name,
+                            peer.displayName,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: theme.textTheme.titleSmall?.copyWith(
@@ -48,12 +48,12 @@ class ConversationTile extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          conversation.timeLabel,
+                          peer.timeLabel,
                           style: theme.textTheme.labelSmall?.copyWith(
-                            color: conversation.unreadCount > 0
+                            color: peer.unreadCount > 0
                                 ? AlfredColors.unreadBadge
                                 : AlfredColors.textSecondary,
-                            fontWeight: conversation.unreadCount > 0
+                            fontWeight: peer.unreadCount > 0
                                 ? FontWeight.w600
                                 : FontWeight.w400,
                           ),
@@ -65,7 +65,7 @@ class ConversationTile extends StatelessWidget {
                       children: [
                         Expanded(
                           child: Text(
-                            conversation.preview,
+                            peer.preview,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: theme.textTheme.bodySmall?.copyWith(
@@ -73,9 +73,9 @@ class ConversationTile extends StatelessWidget {
                             ),
                           ),
                         ),
-                        if (conversation.unreadCount > 0) ...[
+                        if (peer.unreadCount > 0) ...[
                           const SizedBox(width: 8),
-                          _UnreadBadge(count: conversation.unreadCount),
+                          _UnreadBadge(count: peer.unreadCount),
                         ],
                       ],
                     ),
@@ -91,44 +91,25 @@ class ConversationTile extends StatelessWidget {
 }
 
 class _Avatar extends StatelessWidget {
-  const _Avatar({required this.conversation});
+  const _Avatar({required this.peer});
 
-  final Conversation conversation;
+  final ChatPeer peer;
 
   @override
   Widget build(BuildContext context) {
-    final initial = avatarInitial(conversation.name);
+    final initial = avatarInitial(peer.displayName);
 
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        CircleAvatar(
-          radius: 26,
-          backgroundColor: conversation.avatarColor,
-          child: Text(
-            initial,
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w600,
-              fontSize: 18,
-            ),
-          ),
+    return CircleAvatar(
+      radius: 26,
+      backgroundColor: peer.resolvedAvatarColor,
+      child: Text(
+        initial,
+        style: const TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.w600,
+          fontSize: 18,
         ),
-        if (conversation.isOnline)
-          Positioned(
-            right: 0,
-            bottom: 0,
-            child: Container(
-              width: 14,
-              height: 14,
-              decoration: BoxDecoration(
-                color: AlfredColors.unreadBadge,
-                shape: BoxShape.circle,
-                border: Border.all(color: AlfredColors.panel, width: 2),
-              ),
-            ),
-          ),
-      ],
+      ),
     );
   }
 }

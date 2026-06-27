@@ -23,6 +23,7 @@ Recupero codice legacy: `git checkout legacy/web-client-final -- web-client/`
 
 ## Decisioni (ADR)
 
+- [decisions/address-based-messaging.md](./decisions/address-based-messaging.md) - **🟢 Regola vincolante** — messaggistica per indirizzo; inbox = aggregazione on-read su `messages`; `ChatPeer`; rubrica isolata (2026-06-27)
 - [decisions/no-internal-external-chat-distinction.md](./decisions/no-internal-external-chat-distinction.md) - **🟢 Regola vincolante** — nessuna distinzione chat interna/esterna (client, piattaforma, bridge, test) (2026-06-27)
 - [decisions/server-as-reception.md](./decisions/server-as-reception.md) - **🟢 Concept spunte cloud** — ricezione = ricezione sul server (2026-06-26)
 
@@ -47,6 +48,7 @@ Recupero codice legacy: `git checkout legacy/web-client-final -- web-client/`
 - [implementation/delivery-receipts-xep-0184.md](./implementation/delivery-receipts-xep-0184.md) - **XEP-0184** livello 2 (✓✓ grigie consegnato)
 - [implementation/chat-markers-xep-0333.md](./implementation/chat-markers-xep-0333.md) - **XEP-0333** livello 3 (✓✓ blu lettura)
 - [implementation/voice-notes.md](./implementation/voice-notes.md) - **Note vocali** — WebM/Opus, hold-to-send, coda retry client (PR #126, 2026-06-27)
+- [implementation/messages-only-inbox.md](./implementation/messages-only-inbox.md) - **Inbox solo messaggi** — drop `inbox_threads`, `ChatPeer`, RPC peer-based (PR #130, 2026-06-27)
 
 ## Fixes
 
