@@ -213,19 +213,20 @@ client/lib/
 | `20260627120000_message_voice_support.sql` | Enum `voice` (step 1) |
 | `20260627120100_message_voice_support.sql` | Voice — colonne media, RPC 8 arg, bucket `audio/webm` |
 
-### 3.2 Modello dati
+### 3.2 Modello dati (su `main`, PR #130)
 
 ```
 auth.users 1──1 profiles
 profiles 1──* contacts (owner)
-profiles *──* conversations (via conversation_participants)
-conversations 1──* messages (content_type, media_url, duration_seconds, media_mime opzionali)
-messages 1──* message_read_receipts
-messages 1──0..1 outbox (se federato; payload include content_type/media_url/duration per voice)
+profiles *──* messages (sender_id / recipient_profile_id)
+messages 1──* message_read_receipts (se presente)
+messages 1──0..1 outbox (peer federato)
 profiles 1──* sync_cursors
-bridge_jobs (coda generica bridge)
-storage.chat-media (GIF + voice WebM, path `{userId}/{uuid}.gif|.webm`)
+bridge_jobs (coda bridge)
+storage.chat-media (GIF + voice WebM)
 ```
+
+Inbox: **nessuna tabella dedicata** — `list_inbox()` aggrega da `messages`.
 
 ### 3.3 Enum
 
