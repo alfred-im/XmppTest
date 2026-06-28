@@ -23,6 +23,16 @@ Modifiche rilevanti al progetto per tracciare evoluzione tecnica e decisioni imp
 
 ## [Unreleased]
 
+### Documentazione (2026-06-28 — rimozione legacy React/XMPP)
+
+- Eliminati doc architettura/implementazione/fix relativi al client React rimosso da `main`
+- `PROJECT_MAP.md` riscritto — solo stack Flutter + Supabase attivo
+- Codice storico recuperabile solo via tag git `legacy/web-client-final` (non documentato nel repo)
+
+### Documentazione (2026-06-28 — sync post-merge #126–#132)
+
+- Allineati `PROJECT_MAP.md`, `README.md`, `docs/INDICE.md`, `alpha-full-stack.md` — stato PR e date (tutto mergiato su `main`)
+
 ### Alpha Flutter — PR #132 (ricerca on-demand inbox)
 
 - **`InboxPanel`**: barra «Cerca messaggi» nascosta di default; icona lente apre con focus; chiusura via `dismissSearch()` (toggle lente + `TapRegion.onTapOutside`); filtro azzerato alla chiusura
@@ -348,7 +358,7 @@ Le voci sotto riguardano il client React (`legacy/web-client-final`), non il Flu
 
 ## Note Storiche
 
-Documenti archiviati pre-0.9.0 consolidati in questo changelog. Documenti specifici di sessioni di lavoro sono stati archiviati in `docs/archive/old-docs/`.
+Documenti storici pre-0.9.0 consolidati in questo changelog. Documentazione client React rimossa dal repo (2026-06-28); codice storico solo su tag `legacy/web-client-final`.
 
 ---
 

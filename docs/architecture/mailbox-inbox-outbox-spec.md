@@ -1,7 +1,7 @@
 # Specifica tecnica — Modello caselle (inbox/outbox) e flusso unificato
 
 **Data**: 2026-06-26  
-**Status**: 📋 **Proposta** — non implementata; chat Alpha attuale resta su `conversations` + `messages` condivisi  
+**Status**: 📋 **Proposta** — non implementata; **schema attuale su `main`** (PR #130): solo `messages` + `profiles`, inbox = `list_inbox()` on-read — vedi [messages-only-inbox.md](../implementation/messages-only-inbox.md). §2.1 sotto descrive uno stato intermedio superato.
 **Categoria**: Architettura messaggistica, schema dominio, pipeline consegna  
 **Audience**: AI / implementazione futura  
 **Correlata**: [server-as-reception.md](../decisions/server-as-reception.md), [bridge-stateless.md](../decisions/bridge-stateless.md), [alpha-full-stack.md](./alpha-full-stack.md), [project-revolution-discovery.md](../decisions/project-revolution-discovery.md)
@@ -16,7 +16,7 @@ Nel corso della discussione sono emersi chiarimenti progressivi:
 
 | Iterazione | Chiarimento |
 |------------|-------------|
-| 1 | L'analogia **non** è il client legacy XMPP di Alfred (IndexedDB per JID), ma il modello **federato con due account su due server**. |
+| 1 | L'analogia è il modello **federato con due account su due server**, non un client offline locale. |
 | 2 | Avere **due tipi di conversazione** (interna vs federata) con pipeline diverse **complica il codice**; l'obiettivo è **un solo flusso**. |
 | 3 | Il flusso unificato si ottiene con un **"bridge verso l'interno"**: anche i messaggi verso utenti Alfred sulla stessa istanza passano da **outbox → consegna**, come quelli verso l'esterno. |
 | 4 | **Non** serve un'entità `conversation` / `dialogue` condivisa che leghi le due parti. Nella mia inbox ho messaggi che scambio con un account; se elimino la chat, la elimino **solo dal mio lato**. |
@@ -30,18 +30,22 @@ Nel corso della discussione sono emersi chiarimenti progressivi:
 
 ## 2. Problema da risolvere
 
-### 2.1 Stato attuale (Alpha, `main`)
+### 2.1 Stato attuale su `main` (PR #130)
 
-- Tabella `conversations` **condivisa** tra partecipanti, con campo `protocol` (`internal` | `xmpp` | `matrix`).
-- Tabella `messages` **condivisa** per `conversation_id`; un messaggio = **una riga** visibile a tutti i partecipanti (filtrata da RLS).
-- Trigger `on_message_inserted` **biforca**:
-  - `internal` → promozione immediata a `delivered` sulla stessa riga;
-  - `xmpp` / `matrix` → `pending` + insert in `outbox`.
-- Client Flutter legge `messages` per `conversation_id`; subscribe Realtime su `messages-{conversationId}`.
-- RPC `get_or_create_direct_conversation` **deduplica** una conversazione condivisa per coppia di profili interni.
-- Federazione (bridge) **non implementata**; schema `outbox`, `sync_cursors`, `bridge_jobs` esiste per il percorso federato.
+Schema **message-centric** — fonte di verità unica:
 
-### 2.2 Perché il modello attuale non basta (obiettivo futuro)
+- **`messages`**: ogni riga ha `sender_id` + `recipient_profile_id`; contenuto testo/GIF/voice (`content_type`, `media_url`, …)
+- **`profiles`**: identità utente (`username`, display name, …)
+- **Inbox**: RPC `list_inbox()` — aggregazione **on-read** su `messages` (preview, unread, ordine per peer)
+- **Chat**: RPC `list_peer_messages(peer_profile_id)`, invio `send_message_to_profile`, lettura `mark_peer_read`
+- **Nessuna** tabella `conversations`, `inbox_threads`, `conversation_participants` né cache inbox con FK verso derivati
+- **Federazione**: tabella `outbox` + `sync_cursors` + `bridge_jobs` — bridge **non implementati** (stub health)
+- **Trigger** `messages_after_insert`: consegna interna immediata (`delivered`) o accodamento outbox per peer federato
+- **Client Flutter**: Realtime su messaggi del peer; `ChatPeer` identifica la conversazione
+
+Riferimento implementato: [messages-only-inbox.md](../implementation/messages-only-inbox.md), [address-based-messaging.md](../decisions/address-based-messaging.md), [alpha-full-stack.md](./alpha-full-stack.md) §3.5.
+
+### 2.2 Perché il modello attuale non basta (obiettivo futuro della proposta)
 
 1. **Biforcazione logica** `internal` vs federato in trigger, RPC e potenzialmente client.
 2. **Conversazione condivisa** come entità centrale: non riflette il modello email/federato (elimina solo dal mio lato, peer esterno fuori piattaforma).

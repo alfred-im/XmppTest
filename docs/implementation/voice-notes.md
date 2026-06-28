@@ -1,6 +1,6 @@
 # Voice notes (WebM/Opus)
 
-**Stato**: implementato in PR **#126** (`cursor/voice-notes-support-9bc2`) — client Flutter + migrazioni Supabase applicate al cloud.
+**Stato**: implementato in PR **#126** (mergiata su `main`) — client Flutter + migrazioni Supabase applicate al cloud.
 
 ## Contratto canonico
 
@@ -80,6 +80,6 @@ Stesso workflow delle altre feature client: `build` (analyze + test + compile) �
 
 Workflow storico: rimossi `deploy-preview` e `deploy-prod` (naming errato) a favore di un solo job `deploy-alpha`.
 
-**PR correlate**: #126 (voice + workflow), #127 (`client/scripts/verify.sh` — branch separata, opzionale per unificare gate locale/CI).
+**PR correlate**: #126 (voice + deploy-alpha), #127 (`client/scripts/verify.sh` — gate `flutter analyze` locale/CI).
 
 Vedi `alpha-full-stack.md` §5–§6, `PROJECT_MAP.md` § Build e Testing.

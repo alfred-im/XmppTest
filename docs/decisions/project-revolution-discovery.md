@@ -619,7 +619,7 @@ Le seguenti domande erano basate sull'assunzione "client XMPP classico" e sono *
 | D-011 | 2026-06-24 | Web hosting = deploy facile (GH Pages ok) | ✅ |
 | D-012 | 2026-06-24 | Tag `legacy/web-client-final` @ `6e792eb` | ✅ |
 | D-049 | 2026-06-24 | Client Flutter in `client/` + deploy Pages → **Alpha produzione Supabase** (PR #109) | ✅ |
-| D-050 | 2026-06-24 | PR Alpha #108–#114 mergiate; registro `alpha-pr-registry.md` | ✅ |
+| D-050 | 2026-06-24 | PR Alpha #108–#132 mergiate; registro `alpha-pr-registry.md` (aggiornato 2026-06-28) | ✅ |
 | D-051 | 2026-06-24 | **Bridge sempre stateless** — stato solo in piattaforma | ✅ |
 | D-013 | 2026-06-24 | Chat separate in inbox (no associazione cross-protocollo) | ✅ |
 | D-014 | 2026-06-24 | Login solo piattaforma | ✅ |

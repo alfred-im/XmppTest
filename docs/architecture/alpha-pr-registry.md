@@ -63,14 +63,4 @@ Dopo ogni merge su `main`:
 
 ---
 
-## Documenti legacy (non aggiornare per PR Flutter)
-
-I file sotto descrivono il **client React** (`legacy/web-client-final`). Non vanno estesi per feature Flutter — usare `alpha-full-stack.md`.
-
-- `docs/implementation/*` (eccetto note storiche)
-- `docs/architecture/message-states.md`, `mam-*.md`, `strategy-comparison.md`
-- `docs/fixes/account-storage-isolation.md` (IndexedDB XMPP)
-
----
-
 **Riferimenti**: `PROJECT_MAP.md`, `docs/architecture/alpha-full-stack.md`, `CHANGELOG.md`

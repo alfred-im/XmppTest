@@ -1,21 +1,12 @@
-# Design - Riferimenti Tecnici
+# Design — Riferimenti tecnici
 
-Principi design e decisioni architetturali design-related. Documento per AI.
+Principi UI per il client Flutter Alpha. Documento per AI.
 
-**Note**: Brand identity e architettura database (incluso **IndexedDB per account** v2.2) sono in `PROJECT_MAP.md` — sezioni Design System, Database e Storage, Principi Architetturali.
+| File | Contenuto |
+|------|-----------|
+| [conversation-bottom-anchor.md](./conversation-bottom-anchor.md) | Scroll ancorato in chat |
+| [inbox-search-toggle.md](./inbox-search-toggle.md) | Ricerca inbox on-demand |
 
-## Principi CSS (Riferimento Rapido)
-
-**Layout**: Prediligere SEMPRE flexbox. Grid solo per layout bidimensionali complessi.
-
-**Utility Classes**: `.scrollable-container` per scroll verticale con touch support (vedi `../implementation/scrollable-containers.md`)
-
-**Colore Primario**: `#2D2926` (Dark Charcoal)
-
-**Typography**: Inter, SF Pro Display, system-ui
-
-**Components**: Radius 8-12px, shadow sottili, transitions 150-300ms
-
-**Breakpoints**: Mobile-first, tablet 768px, desktop 1024px, touch targets min 48px
-
-**Chat — aggancio al fondo**: vedi [conversation-bottom-anchor.md](./conversation-bottom-anchor.md) — comportamento unico per tutte le conversazioni
+**Brand**: colore `#2D2926` — `client/lib/theme/alfred_colors.dart`  
+**Logo**: `client/lib/widgets/alfred_logo.dart`  
+**Layout**: responsive stile WhatsApp Web — `PROJECT_MAP.md`

@@ -32,20 +32,16 @@ Il disaccoppiamento non è un'eccezione futura: è la **stessa logica** del caso
 |---------|-----|--------------------------------------|
 | **1 — Inviato** | ✓ grigia | Il messaggio è stato accettato dalla piattaforma (RPC `send_message` / outbox `queued` per federato). |
 | **2 — Consegnato** | ✓✓ grigie | Il messaggio è **ricevuto sul server** — cioè disponibile nella fonte di verità per il destinatario (inserimento DB interno, oppure ack bridge/XEP-0184 per federato). **Non** significa «aperto sul telefono del destinatario». |
-| **3 — Lettura** | ✓✓ blu | Il destinatario ha **visualizzato** la conversazione (`mark_conversation_read` / XEP-0333 `displayed`). |
+| **3 — Lettura** | ✓✓ blu | Il destinatario ha **visualizzato** la conversazione (`mark_peer_read` / XEP-0333 `displayed` via bridge). |
 
-### Differenza rispetto al client legacy XMPP diretto
-
-Nel client React legacy (XMPP sul device), il livello 2 seguiva **XEP-0184**: consegnato = arrivato sul **device** del peer.
-
-Nel client cloud Alfred, il livello 2 segue il **server come fonte di verità**: consegnato = ricevuto **nella piattaforma** (o nel server federato di destinazione tramite bridge). Il multidispositivo è coerente: tutti i device del destinatario leggono lo stesso stato dal server; non serve un ack per-device per la spunta grigia doppia.
+Nel client cloud Alfred il livello 2 segue il **server come fonte di verità**: consegnato = ricevuto **nella piattaforma** (o nel server federato di destinazione tramite bridge). Il multidispositivo è coerente: tutti i device del destinatario leggono lo stesso stato dal server.
 
 ---
 
 ## Conseguenze implementative
 
 1. **`delivery_status = 'delivered'`** va impostato quando il messaggio è persistito/recapitato nella fonte di verità rilevante — **non** quando il client del destinatario riceve un evento Realtime. Il meccanismo concreto (immediato in piattaforma vs ack bridge) è **pipeline di recapito**, non due tipi di chat — vedi [no-internal-external-chat-distinction.md](./no-internal-external-chat-distinction.md).
-2. **`delivery_status = 'read'`** resta legato all'azione esplicita di lettura (`mark_conversation_read`), indipendente dal disaccoppiamento invio/ricezione.
+2. **`delivery_status = 'read'`** resta legato all'azione esplicita di lettura (`mark_peer_read`), indipendente dal disaccoppiamento invio/ricezione.
 3. **Outbox e bridge**: messaggi il cui recapito passa da bridge possono restare `pending`/`sent` fino a conferma — il disaccoppiamento è previsto nello schema (`outbox`, `bridge_jobs`); non definisce una «chat federata» separata.
 4. **Non confondere** con WhatsApp mobile P2P: Alfred è cloud-first; la semantica delle spunte riflette il server, non la singola sessione WebSocket del peer.
 
@@ -54,5 +50,4 @@ Nel client cloud Alfred, il livello 2 segue il **server come fonte di verità**:
 ## Riferimenti
 
 - [alpha-full-stack.md](../architecture/alpha-full-stack.md) — §2.9 Spunte lettura
-- [message-states.md](../architecture/message-states.md) — policy legacy XMPP (livello 2 = device); **non** applicare tale semantica al client Flutter Alpha senza adattamento
 - [no-internal-external-chat-distinction.md](./no-internal-external-chat-distinction.md) — regola vincolante: nessuna distinzione chat interna/esterna a nessun livello

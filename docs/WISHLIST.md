@@ -1,21 +1,21 @@
 # Wishlist Funzionalità
 
-**Ultimo aggiornamento**: 2026-06-16
+**Ultimo aggiornamento**: 2026-06-28
 
-Funzionalità **future** desiderate per Alfred. Le XEP già implementate sono documentate in `docs/implementation/` — non sono wishlist.
+Funzionalità **future** desiderate per Alfred (client Flutter + piattaforma + bridge).
 
 ---
 
-## ✅ Già implementato (riferimento)
+## ✅ Già in Alpha (riferimento)
 
-| XEP | Ruolo | Documentazione |
-|-----|-------|----------------|
-| XEP-0184 | Spunte livello 2 (✓✓ grigie — consegnato) | [delivery-receipts-xep-0184.md](./implementation/delivery-receipts-xep-0184.md) |
-| XEP-0333 | Spunte livello 3 (✓✓ blu — lettura) | [chat-markers-xep-0333.md](./implementation/chat-markers-xep-0333.md) |
-| XEP-0313 | MAM — archivio messaggi | [sync-system-complete.md](./implementation/sync-system-complete.md) |
-| XEP-0357 | Push Notifications | `push-notifications.ts` |
+| Area | Stato | Documentazione |
+|------|-------|----------------|
+| Spunte cloud (inviato / consegnato server / lettura) | Parziale su interni | [server-as-reception.md](./decisions/server-as-reception.md), [alpha-full-stack.md](./architecture/alpha-full-stack.md) §2.9 |
+| Chat testo, GIF, voice | ✅ | [voice-notes.md](./implementation/voice-notes.md) |
+| Inbox message-centric | ✅ | [messages-only-inbox.md](./implementation/messages-only-inbox.md) |
+| Federazione XMPP/Matrix | ⏸ Outbox only | [bridge-stateless.md](./decisions/bridge-stateless.md) |
 
-**Policy spunte 3 livelli**: [message-states.md](./architecture/message-states.md)
+Spunte federate (XEP-0184 / XEP-0333 via bridge): da implementare con i bridge Python.
 
 ---
 
@@ -32,9 +32,8 @@ Funzionalità **future** desiderate per Alfred. Le XEP già implementate sono do
 - Storia messaggi consistente
 
 **Note implementazione**:
-- Richiede supporto server (conversations.im supporta)
-- Da integrare nel servizio XMPP esistente
-- Sincronizzazione automatica con IndexedDB
+- Via bridge XMPP quando federazione attiva
+- Stato su piattaforma Supabase (non cache locale)
 
 ---
 
@@ -139,21 +138,13 @@ Funzionalità **future** desiderate per Alfred. Le XEP già implementate sono do
 ## 📝 Note Generali
 
 ### Compatibilità Server
-La maggior parte delle XEP richiede supporto server. Prima di implementare una feature, verificare:
-- `conversations.im` supporto (server test principale)
-- Alternatives server XMPP pubblici
-- Feature detection runtime (XEP-0030 Service Discovery)
+La maggior parte delle XEP richiede supporto server. Prima di implementare una feature, verificare supporto lato bridge e homeserver federati.
 
 ### Testing
-Ogni nuova XEP deve includere:
-- Unit tests servizio XMPP
-- Integration tests con server reale
-- UI tests con Playwright
-- Documentazione in `docs/implementation/`
+Ogni nuova XEP deve includere test bridge, integrazione piattaforma e documentazione in `docs/implementation/`.
 
 ### Riferimenti Utili
 - **XEP Index**: https://xmpp.org/extensions/
-- **Stanza.js Plugins**: https://stanzajs.org/docs/
 - **Compliance Suites**: https://xmpp.org/extensions/xep-0459.html (2024)
 
 ---
@@ -162,3 +153,13 @@ Ogni nuova XEP deve includere:
 1. Implementare XEP-0280 (Carbons) per sync multi-device
 2. Aggiungere XEP-0308 (Message Correction) per edit messaggi
 3. Valutare XEP-0363 (File Upload) dopo testing server
+- Esperienza multi-device fluida
+- Storia messaggi consistente
+
+**Note implementazione**:
+- Via bridge XMPP quando federazione attiva
+- Stato su piattaforma Supabase (non cache locale)
+
+---
+
+## 🚀 Funzionalità in Roadmap
