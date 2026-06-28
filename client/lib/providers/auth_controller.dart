@@ -31,10 +31,12 @@ class AuthController extends ChangeNotifier {
 
   bool get isAuthenticated => _authService.isAuthenticated;
   String? get userId => _authService.currentUser?.id;
+  String? get email => _authService.currentUser?.email;
   String? get username => profile?.username;
 
   Future<void> initialize() async {
     savedAccounts = await _authService.savedAccounts();
+    savedAccounts = await _authService.syncSavedAccountsFromProfiles();
     await _loadProfile();
     sessionReady = true;
     notifyListeners();
@@ -43,7 +45,7 @@ class AuthController extends ChangeNotifier {
   /// Prima di aggiungere un altro account: salva la sessione corrente.
   Future<void> prepareAddAccount() async {
     await _authService.persistCurrentSession();
-    savedAccounts = await _authService.savedAccounts();
+    savedAccounts = await _authService.syncSavedAccountsFromProfiles();
     error = null;
     notifyListeners();
   }
@@ -58,7 +60,7 @@ class AuthController extends ChangeNotifier {
 
     await _withLoading(() async {
       await _authService.signIn(email: email, password: password);
-      savedAccounts = await _authService.savedAccounts();
+      savedAccounts = await _authService.syncSavedAccountsFromProfiles();
     });
   }
 
@@ -95,7 +97,7 @@ class AuthController extends ChangeNotifier {
         username: username,
         displayName: displayName.trim(),
       );
-      savedAccounts = await _authService.savedAccounts();
+      savedAccounts = await _authService.syncSavedAccountsFromProfiles();
     });
   }
 
@@ -135,7 +137,7 @@ class AuthController extends ChangeNotifier {
     notifyListeners();
     try {
       await _authService.switchAccount(account);
-      savedAccounts = await _authService.savedAccounts();
+      savedAccounts = await _authService.syncSavedAccountsFromProfiles();
       await _loadProfile();
       return true;
     } catch (e) {
@@ -148,7 +150,11 @@ class AuthController extends ChangeNotifier {
     }
   }
 
-  Future<void> refreshProfile() => _loadProfile();
+  Future<void> refreshProfile() async {
+    await _loadProfile();
+    savedAccounts = await _authService.syncSavedAccountsFromProfiles();
+    notifyListeners();
+  }
 
   Future<void> _withLoading(Future<void> Function() action) async {
     error = null;

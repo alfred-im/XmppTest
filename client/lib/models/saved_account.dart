@@ -1,30 +1,39 @@
+import 'profile_summary.dart';
+
 class SavedAccount {
   const SavedAccount({
-    required this.userId,
-    required this.username,
+    required this.profile,
     required this.refreshToken,
-    required this.displayName,
   });
 
-  final String userId;
-  final String username;
+  final ProfileSummary profile;
   final String refreshToken;
-  final String displayName;
+
+  String get userId => profile.id;
+  String get username => profile.username ?? '';
+  String get displayName => profile.displayName;
+  String? get avatarUrl => profile.avatarUrl;
+  String? get pronouns => profile.pronouns;
+
+  SavedAccount copyWith({
+    ProfileSummary? profile,
+    String? refreshToken,
+  }) {
+    return SavedAccount(
+      profile: profile ?? this.profile,
+      refreshToken: refreshToken ?? this.refreshToken,
+    );
+  }
 
   Map<String, dynamic> toJson() => {
-        'userId': userId,
-        'username': username,
+        ...profile.toSavedAccountJsonFields(),
         'refreshToken': refreshToken,
-        'displayName': displayName,
       };
 
   factory SavedAccount.fromJson(Map<String, dynamic> json) {
-    final username = json['username'] as String? ?? '';
     return SavedAccount(
-      userId: json['userId'] as String,
-      username: username,
+      profile: ProfileSummary.fromSavedAccountJson(json),
       refreshToken: json['refreshToken'] as String,
-      displayName: json['displayName'] as String,
     );
   }
 }

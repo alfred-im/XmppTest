@@ -1,5 +1,6 @@
 import '../models/chat_peer.dart';
 import '../models/contact.dart';
+import '../models/profile_summary.dart';
 import '../utils/compose_address.dart';
 import 'profile_service.dart';
 
@@ -22,10 +23,9 @@ class ComposeService {
         if (profile == null) {
           throw StateError('Utente non trovato');
         }
-        return ChatPeer.internal(
+        return ChatPeer.fromProfile(
+          profile: profile,
           address: profile.username,
-          displayName: profile.displayName,
-          profileId: profile.id,
         );
     }
   }
@@ -36,10 +36,13 @@ class ComposeService {
       if (profileId == null) {
         throw StateError('Contatto interno non valido');
       }
-      return ChatPeer.internal(
+      return ChatPeer.fromProfile(
+        profile: ProfileSummary(
+          id: profileId,
+          displayName: contact.displayName,
+          avatarUrl: contact.avatarUrl,
+        ),
         address: contact.displayName,
-        displayName: contact.displayName,
-        profileId: profileId,
       );
     }
 
