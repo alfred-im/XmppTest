@@ -1,10 +1,16 @@
 # Specifica tecnica — Modello caselle (inbox/outbox) e flusso unificato
 
-**Data**: 2026-06-26  
-**Status**: 📋 **Proposta** — non implementata; **schema attuale su `main`** (PR #130): solo `messages` + `profiles`, inbox = `list_inbox()` on-read — vedi [messages-only-inbox.md](../implementation/messages-only-inbox.md). §2.1 sotto descrive uno stato intermedio superato.
+**Data originale**: 2026-06-26  
+**Ultima revisione**: 2026-06-28  
+**Status**: 📋 **Proposta futura** — non implementata; **non** è il modello su `main`  
 **Categoria**: Architettura messaggistica, schema dominio, pipeline consegna  
 **Audience**: AI / implementazione futura  
+
+**Modello attuale su `main`**: message-centric — `messages` + `profiles`, inbox = `list_inbox()` on-read. Vedi [address-based-messaging.md](../decisions/address-based-messaging.md) (ADR vincolante) e [messages-only-inbox.md](../implementation/messages-only-inbox.md) (PR #130).
+
 **Correlata**: [server-as-reception.md](../decisions/server-as-reception.md), [bridge-stateless.md](../decisions/bridge-stateless.md), [alpha-full-stack.md](./alpha-full-stack.md), [project-revolution-discovery.md](../decisions/project-revolution-discovery.md)
+
+> Se questa proposta venisse adottata, **sostituirebbe** l'ADR [address-based-messaging.md](../decisions/address-based-messaging.md) — non lo estende. Sono due paradigmi di archiviazione diversi.
 
 ---
 
@@ -26,33 +32,38 @@ Nel corso della discussione sono emersi chiarimenti progressivi:
 | 8 | Se il modello **non** fosse così, si finirebbe inevitabilmente per **dividere funzionalità** tra conversazioni federate e interne — esattamente ciò che si vuole evitare. |
 | 9 | La chat Alpha **funziona oggi**; l'implementazione richiede migrazione incrementale e reversibile, non big bang. |
 
+**Nota cronologica**: il giorno dopo (2026-06-27) è stato implementato su `main` il modello message-centric (PR #130), diverso da questa proposta. Il documento resta valido come **evoluzione opzionale futura**, non come piano attivo.
+
 ---
 
 ## 2. Problema da risolvere
 
-### 2.1 Stato attuale su `main` (PR #130)
+### 2.1 Stato attuale su `main` (baseline migrazione)
 
-Schema **message-centric** — fonte di verità unica:
+Schema **message-centric** — una riga `messages` per evento, condivisa tra mittente e destinatario:
 
-- **`messages`**: ogni riga ha `sender_id` + `recipient_profile_id`; contenuto testo/GIF/voice (`content_type`, `media_url`, …)
-- **`profiles`**: identità utente (`username`, display name, …)
-- **Inbox**: RPC `list_inbox()` — aggregazione **on-read** su `messages` (preview, unread, ordine per peer)
-- **Chat**: RPC `list_peer_messages(peer_profile_id)`, invio `send_message_to_profile`, lettura `mark_peer_read`
-- **Nessuna** tabella `conversations`, `inbox_threads`, `conversation_participants` né cache inbox con FK verso derivati
-- **Federazione**: tabella `outbox` + `sync_cursors` + `bridge_jobs` — bridge **non implementati** (stub health)
-- **Trigger** `messages_after_insert`: consegna interna immediata (`delivered`) o accodamento outbox per peer federato
-- **Client Flutter**: Realtime su messaggi del peer; `ChatPeer` identifica la conversazione
+| Area | Implementazione |
+|------|-----------------|
+| **Messaggi** | `messages`: `sender_id` + `recipient_profile_id`; testo, GIF, voice (`content_type`, `media_url`, …) |
+| **Profili** | `profiles`: `username`, display name, avatar, pronomi |
+| **Inbox** | RPC `list_inbox()` — aggregazione **on-read** su `messages` (preview, unread, ordine per `peer_profile_id`) |
+| **Chat** | `list_peer_messages(peer_profile_id)`, `send_message_to_profile`, `mark_peer_read` |
+| **Assenti** | `conversations`, `inbox_threads`, `conversation_participants` — già eliminate |
+| **Federazione** | `outbox` + `sync_cursors` + `bridge_jobs`; bridge stub (solo health) |
+| **Consegna** | Trigger `on_message_inserted`: internal → `delivered` diretto; xmpp/matrix → outbox |
+| **Client** | `InboxController`, `ChatPeer` (`profileId`), `MessagesController`; realtime su `messages` |
+| **UX inbox** | Ricerca on-demand (PR #132); avatar/pronomi peer in `list_inbox()` |
 
-Riferimento implementato: [messages-only-inbox.md](../implementation/messages-only-inbox.md), [address-based-messaging.md](../decisions/address-based-messaging.md), [alpha-full-stack.md](./alpha-full-stack.md) §3.5.
+Riferimenti: [messages-only-inbox.md](../implementation/messages-only-inbox.md), [address-based-messaging.md](../decisions/address-based-messaging.md), [alpha-full-stack.md](./alpha-full-stack.md) §2.5, §3.5.
 
-### 2.2 Perché il modello attuale non basta (obiettivo futuro della proposta)
+### 2.2 Perché il modello attuale potrebbe non bastare (obiettivo futuro)
 
 1. **Biforcazione logica** `internal` vs federato in trigger, RPC e potenzialmente client.
-2. **Conversazione condivisa** come entità centrale: non riflette il modello email/federato (elimina solo dal mio lato, peer esterno fuori piattaforma).
-3. **Thread condiviso** non è il fondamento giusto per gruppi con N autori senza introdurre eccezioni.
-4. Ogni feature futura (bridge, gruppi, delete locale) rischia di essere implementata **due volte**.
+2. **Riga messaggio condivisa** tra i due peer: non permette delete locale, ordini indipendenti, né il modello email/federato completo.
+3. **Aggregazione on-read** per inbox: sufficiente per Alpha; può non scalare per delete locale, archivio, gruppi.
+4. Ogni feature futura (bridge, gruppi, delete solo dal proprio lato) rischia codice **duplicato** o eccezioni se il flusso resta biforcato.
 
-### 2.3 Vincolo non negoziabile
+### 2.3 Vincolo non negoziabile (della proposta)
 
 > **Un solo meccanismo di messaggistica per tutti i peer e tutti i protocolli.**  
 > La differenza `internal` / `xmpp` / `matrix` è **solo routing del driver di consegna** in fondo alla pila — invisibile al client e alla maggior parte delle RPC applicative.
@@ -74,24 +85,30 @@ Riferimento implementato: [messages-only-inbox.md](../implementation/messages-on
 | Ordine nella casella di Bob | **Indipendente**; non va allineato alla mia |
 | Read receipt | **Segnale puntuale** sul messaggio, non sincronizzazione tra due caselle |
 
-### 3.2 Cosa NON è questo modello
+### 3.2 Archiviazione per casella (non «metadati duplicati»)
+
+In questo modello **`mailbox_messages` è dove vivono i messaggi** — archivio per utente.  
+**`mailbox_threads` è la struttura dell'archivio** verso un peer (contenitore + header denormalizzato per performance: preview, unread).
+
+Non è il pattern dell'ex `inbox_threads` (cache di aggregati sopra un `messages` condiviso). Qui la fonte di verità **è la casella**, non una tabella centralizzata con derivati accanto.
 
 | Affermazione errata | Realtà |
 |---------------------|--------|
-| «Due conversazioni collegate» | **Uno scambio**, due caselle **indipendenti**. Nessun link obbligatorio tra metadati delle due caselle. |
-| «Allineare le due inbox» | **Esplicitamente escluso.** Fraintendimento da non portare avanti. |
-| «Duplicazione per fingere due server» | Duplicazione = **materializzazione nella casella del destinatario** al momento della consegna, non simulazione di infrastruttura. |
-| «Alfred è un homeserver» | Alfred è **piattaforma per istanza** (Postgres + servizi). I bridge espongono facciata federata **verso l'esterno**. |
-| «Campo `direction` in/out» | **Vietato.** Solo `author_id`. «Mio» vs «suo» = `author_id == auth.uid()` in UI. |
-| «Conversazione come entità condivisa» | **Non prevista.** Solo caselle per `owner_id`. |
-| «Ordine globale unico del thread» | **Non richiesto.** Ogni casella ordina i propri messaggi. |
+| «Sono metadati inbox duplicati da `messages`» | Sono **archivi distinti per owner**; ogni casella è autonoma |
+| «Due conversazioni collegate» | **Uno scambio**, due caselle **indipendenti**. Nessun link obbligatorio tra le due |
+| «Allineare le due inbox» | **Esplicitamente escluso** |
+| «Duplicazione per fingere due server» | Materializzazione nella casella del destinatario al momento della consegna |
+| «Alfred è un homeserver» | Alfred è **piattaforma per istanza** (Postgres + servizi) |
+| «Campo `direction` in/out» | **Vietato.** Solo `author_id` |
+| «Conversazione come entità condivisa» | **Non prevista.** Solo caselle per `owner_id` |
+| «Ordine globale unico del thread» | **Non richiesto.** Ogni casella ordina i propri messaggi |
 
 ### 3.3 Alfred è piattaforma, non homeserver
 
 - Un'**istanza** Alfred = un dominio, un Supabase, daemon bridge **per istanza** (D-037).
-- Gli utenti Alfred sulla **stessa istanza** condividono la stessa piattaforma ma **non** condividono la stessa casella messaggi.
-- La duplicazione messaggi sulla stessa istanza è scelta di **modello caselle**, non replica di vincolo di rete tra server distinti.
-- Per peer **esterni**, la cronologia dell'altro lato **non risiede** su Alfred: asimmetria strutturale già accettata (come email verso dominio esterno).
+- Gli utenti Alfred sulla **stessa istanza** condividono la piattaforma ma **non** la stessa casella messaggi.
+- La duplicazione sulla stessa istanza è scelta di **modello di archiviazione**, non replica di vincolo di rete.
+- Per peer **esterni**, la cronologia dell'altro lato **non risiede** su Alfred.
 
 ---
 
@@ -156,15 +173,9 @@ RPC send_message
 
 ### 4.3 `logical_message_id`
 
-- UUID generato al momento dell'invio; **stesso valore** sulla copia del mittente e sulla copia del destinatario (quando questa esiste).
-- **Scopo ammesso:**
-  - idempotenza della **consegna** (non inserire due volte nella casella destinatario per lo stesso invio);
-  - correlazione **segnali** spunta/lettura (notifica puntuale al mittente);
-  - riferimento per eventuali ack bridge.
-- **Scopo esplicitamente NON ammesso:**
-  - mantenere allineate preview, ordine, contenuto o lifecycle delle due caselle;
-  - definire un'entità "conversazione condivisa";
-  - propagare delete/edit automaticamente all'altra casella (salvo policy esplicita futura, fuori scope di questa spec).
+- UUID generato al momento dell'invio; **stesso valore** sulla copia del mittente e sulla copia del destinatario (quando esiste).
+- **Scopo ammesso:** idempotenza consegna; correlazione segnali spunta/lettura; ack bridge.
+- **Scopo escluso:** allineare preview, ordine, contenuto o lifecycle tra caselle; conversazione condivisa; delete/edit automatici sull'altra casella.
 
 ---
 
@@ -172,21 +183,21 @@ RPC send_message
 
 ### 5.1 `mailbox_threads`
 
-Casella dell'utente verso un peer (contatto diretto, profilo interno, o gruppo).
+**Struttura dell'archivio** dell'utente verso un peer (contatto, profilo interno, o gruppo). I campi preview/unread sono denormalizzazione sull'header del thread, aggiornati dagli insert in `mailbox_messages` della stessa casella.
 
 | Colonna | Tipo | Note |
 |---------|------|------|
-| `id` | `uuid` PK | Identificatore **del thread nella mia casella** |
+| `id` | `uuid` PK | Identificatore del thread **nella mia casella** |
 | `owner_id` | `uuid` FK `profiles` | Sempre `auth.uid()` per RPC utente |
 | `peer_kind` | `enum` | `profile` \| `contact` \| `group` |
 | `peer_profile_id` | `uuid` nullable | Se peer = utente Alfred noto |
-| `peer_contact_id` | `uuid` nullable | Se peer = riga `contacts` (interno o esterno) |
+| `peer_contact_id` | `uuid` nullable | Se peer = riga `contacts` |
 | `peer_group_id` | `uuid` nullable | Futuro: gruppo |
 | `protocol` | `contact_protocol` | `internal` \| `xmpp` \| `matrix` — **solo routing** |
-| `last_message_at` | `timestamptz` | Derivato da messaggi **in questa casella** |
-| `last_message_preview` | `text` | Derivato da messaggi **in questa casella** |
-| `last_message_author_id` | `uuid` nullable | Autore dell'ultimo messaggio **in questa casella** |
-| `unread_count` | `integer` | Conteggio **nella mia casella** |
+| `last_message_at` | `timestamptz` | Ultimo messaggio **in questa casella** |
+| `last_message_preview` | `text` | Preview ultimo messaggio **in questa casella** |
+| `last_message_author_id` | `uuid` nullable | Autore ultimo messaggio **in questa casella** |
+| `unread_count` | `integer` | Non letti **nella mia casella** |
 | `archived_at` | `timestamptz` nullable | Archivio locale |
 | `deleted_at` | `timestamptz` nullable | Eliminazione **solo mio lato** (soft delete) |
 | `created_at` | `timestamptz` | |
@@ -194,29 +205,32 @@ Casella dell'utente verso un peer (contatto diretto, profilo interno, o gruppo).
 
 **Vincoli:**
 
-- Unicità: `(owner_id, peer_kind, coalesce(peer_profile_id, peer_contact_id, peer_group_id))` per thread attivo (con gestione delete).
+- Unicità: `(owner_id, peer_kind, coalesce(peer_profile_id, peer_contact_id, peer_group_id))` per thread attivo.
 - **Nessuna** FK verso il `mailbox_thread` dell'altro utente.
-- `protocol` deriva dal contatto/peer al momento della creazione; non guida biforcazioni applicative.
+- `protocol` deriva dal peer; non guida biforcazioni applicative.
 
 ### 5.2 `mailbox_messages`
 
-Messaggi **nella casella di un utente**. Ogni riga appartiene a **un solo** `owner_id`.
+Messaggi **nell'archivio di un utente**. Ogni riga appartiene a un solo `owner_id`.
 
 | Colonna | Tipo | Note |
 |---------|------|------|
 | `id` | `uuid` PK | Id riga **in questa casella** |
 | `logical_message_id` | `uuid` NOT NULL | Id logico evento (stesso su copie diverse) |
-| `thread_id` | `uuid` FK `mailbox_threads` | Casella di appartenenza |
-| `owner_id` | `uuid` FK `profiles` | Ridondanza per RLS e query; = `mailbox_threads.owner_id` |
+| `thread_id` | `uuid` FK `mailbox_threads` | Thread di appartenenza |
+| `owner_id` | `uuid` FK `profiles` | = `mailbox_threads.owner_id` (RLS) |
 | `author_id` | `uuid` FK `profiles` | **Chi ha scritto** il messaggio |
-| `body` | `text` | Può essere vuoto per GIF |
-| `content_type` | `message_content_type` | `text` \| `gif` |
+| `body` | `text` | Può essere vuoto per GIF/voice |
+| `content_type` | `message_content_type` | `text` \| `gif` \| `voice` |
 | `media_url` | `text` nullable | |
-| `client_message_id` | `text` nullable | Idempotenza lato client (UUID v4) |
+| `media_mime` | `text` nullable | Es. `audio/webm` per voice |
+| `media_size_bytes` | `bigint` nullable | |
+| `duration_seconds` | `integer` nullable | Voice |
+| `client_message_id` | `text` nullable | Idempotenza client (UUID v4) |
 | `delivery_status` | `message_delivery_status` | Stato **su questa copia** |
 | `marker_type` | `text` nullable | `receipt` \| `displayed` — futuro bridge |
 | `marker_for` | `uuid` nullable | `logical_message_id` target |
-| `external_id` | `text` nullable | Id su sistema esterno (bridge) |
+| `external_id` | `text` nullable | Id su sistema esterno |
 | `created_at` | `timestamptz` | Timestamp **in questa casella** |
 | `updated_at` | `timestamptz` | |
 
@@ -224,17 +238,17 @@ Messaggi **nella casella di un utente**. Ogni riga appartiene a **un solo** `own
 
 - **NO** colonna `direction`.
 - Unicità: `(owner_id, thread_id, client_message_id)` dove `client_message_id` non null.
-- Unicità consegna: `(owner_id, thread_id, logical_message_id)` — il destinatario non riceve due copie per lo stesso invio.
-- `author_id` può essere ≠ `owner_id` (messaggio ricevuto da altri nella mia casella).
+- Unicità consegna: `(owner_id, thread_id, logical_message_id)`.
+- `author_id` può essere ≠ `owner_id` (messaggio ricevuto nella mia casella).
 
 **Semantica `delivery_status` per copia:**
 
 | Copia | Stati tipici |
 |-------|----------------|
-| Mittente (`author_id = owner_id`) | `sent` → `delivered` (peer ha ricevuto nella sua casella o ack bridge) → `read` (peer ha letto) |
-| Destinatario (`author_id ≠ owner_id`) | `delivered` all'insert → `read` quando io apro il thread |
+| Mittente (`author_id = owner_id`) | `sent` → `delivered` → `read` |
+| Destinatario (`author_id ≠ owner_id`) | `delivered` all'insert → `read` quando apro il thread |
 
-Allineato a [server-as-reception.md](../decisions/server-as-reception.md): consegnato = nella fonte di verità rilevante, **non** sul device.
+Allineato a [server-as-reception.md](../decisions/server-as-reception.md).
 
 ### 5.3 `outbox` (evoluzione tabella esistente)
 
@@ -246,11 +260,11 @@ Estensione del modello `outbox` attuale per essere **l'unico** punto di uscita.
 | `logical_message_id` | `uuid` | |
 | `from_profile_id` | `uuid` | Mittente |
 | `to_profile_id` | `uuid` nullable | Destinatario interno stessa istanza |
-| `to_contact_id` | `uuid` nullable | Se destinazione via contatto esterno |
-| `to_external_address` | `text` nullable | JID / Matrix ID se noto |
+| `to_contact_id` | `uuid` nullable | Destinazione via contatto esterno |
+| `to_external_address` | `text` nullable | JID / Matrix ID |
 | `sender_mailbox_message_id` | `uuid` | FK copia mittente |
 | `protocol` | `contact_protocol` | Driver |
-| `payload` | `jsonb` | body, content_type, media_url, author_id, client_message_id, … |
+| `payload` | `jsonb` | body, content_type, media_*, author_id, client_message_id, … |
 | `status` | `queue_status` | `queued` \| `processing` \| `delivered` \| `failed` |
 | `attempts` | `integer` | |
 | `locked_by` | `text` nullable | |
@@ -261,15 +275,18 @@ Estensione del modello `outbox` attuale per essere **l'unico** punto di uscita.
 
 **Regola:** ogni `send_message` crea **sempre** una riga outbox, incluso `protocol = internal`.
 
-### 5.4 Tabelle deprecate (dopo migrazione completa)
+### 5.4 Tabelle sostituite (dopo migrazione completa)
 
-| Tabella attuale | Destino |
-|-----------------|---------|
-| `conversations` | Deprecata — sostituita da `mailbox_threads` per owner |
-| `conversation_participants` | Deprecata — stato unread/last_read su `mailbox_threads` |
-| `messages` (modello condiviso) | Deprecata — sostituita da `mailbox_messages` |
+| Tabella attuale (`main`) | Destino |
+|--------------------------|---------|
+| `messages` (riga condivisa mittente↔destinatario) | `mailbox_messages` (copie per owner) |
+| Inbox on-read (`list_inbox()` su `messages`) | `list_mailbox_threads()` su `mailbox_threads` |
+| `send_message_to_profile` | `send_message` (thread-based) + outbox |
+| `list_peer_messages` / `mark_peer_read` | `list_mailbox_messages` / `mark_thread_read` |
 
-`contacts`, `profiles`, `message_read_receipts` (o equivalente), `sync_cursors`, `bridge_jobs` restano o vengono adattati.
+**Già eliminate** (non tornano): `conversations`, `conversation_participants`, `inbox_threads`.
+
+`contacts`, `profiles`, `message_read_receipts`, `sync_cursors`, `bridge_jobs` restano o vengono adattati.
 
 ---
 
@@ -277,39 +294,30 @@ Estensione del modello `outbox` attuale per essere **l'unico** punto di uscita.
 
 ### 6.1 Contratto comune `deliver_outbox(outbox_row)`
 
-Ogni driver implementa:
-
 1. Legge payload e destinatario.
 2. **Idempotente:** se esiste già `mailbox_message` con `(owner_id=dest, logical_message_id)`, skip insert.
 3. Materializza messaggio nella casella del destinatario (`author_id` = mittente originale).
 4. Aggiorna `delivery_status` sulla copia del mittente.
-5. Aggiorna `mailbox_threads` (preview, unread) **solo per le caselle toccate**.
+5. Aggiorna header `mailbox_threads` (preview, unread) **solo per le caselle toccate**.
 6. Marca outbox `delivered` o `failed`.
 7. Emette eventi Realtime appropriati.
 
 ### 6.2 Driver `internal` (bridge verso l'interno)
 
-- Esecuzione: **funzione PL/pgSQL** o job in-process sulla piattaforma — **non** richiede demone Python separato.
-- Può completare **nella stessa transazione** di `send_message` (latenza trascurabile).
-- Azioni:
-  - Trova o crea `mailbox_thread` del destinatario verso il mittente.
-  - Insert `mailbox_message` nella casella destinatario.
-  - Promuove copia mittente a `delivered`.
-- **Non** crea link tra i due `mailbox_thread`.
-- **Non** verifica né allinea ordine/preview tra le due caselle.
+- Esecuzione: funzione PL/pgSQL o job in-process — **non** richiede demone Python.
+- Può completare **nella stessa transazione** di `send_message`.
+- Trova o crea `mailbox_thread` del destinatario; insert `mailbox_message`; promuove copia mittente a `delivered`.
+- **Non** crea link tra i due `mailbox_thread`; **non** allinea ordine/preview tra caselle.
 
 ### 6.3 Driver `xmpp` / `matrix` (futuro)
 
 - Bridge stateless (D-051) consuma outbox via `service_role`.
-- Materializza **solo** la casella lato utente Alfred (mittente in uscita; eventuale risposta in ingresso quando il bridge riceve).
-- Cronologia del peer esterno vive **fuori** da Alfred.
-- Ack bridge aggiornano `delivery_status` sulla **copia del mittente** — segnale, non sync caselle.
+- Materializza solo la casella lato utente Alfred.
+- Ack bridge aggiornano `delivery_status` sulla copia del mittente — segnale, non sync caselle.
 
 ### 6.4 Driver `alfred_remote` (futuro, fuori scope Alpha)
 
-- Federazione tra **due istanze** Alfred.
-- Ogni istanza materializza solo le caselle dei propri utenti.
-- Stesso contratto outbox; transport HTTP/API tra piattaforme.
+- Federazione tra due istanze Alfred; stesso contratto outbox.
 
 ---
 
@@ -317,147 +325,113 @@ Ogni driver implementa:
 
 ### 7.1 `get_or_create_mailbox_thread`
 
-**Input:** `p_peer_contact_id uuid` oppure `p_peer_profile_id uuid`
+**Input:** `p_peer_contact_id` oppure `p_peer_profile_id`
 
-**Comportamento:**
-
-1. Risolve peer e `protocol` da `contacts` o profilo.
-2. Cerca `mailbox_threads` con `owner_id = auth.uid()` e peer corrispondente.
+1. Risolve peer e `protocol`.
+2. Cerca `mailbox_threads` con `owner_id = auth.uid()`.
 3. Se assente, crea **solo** il thread del chiamante.
-4. **Non** crea il thread del peer (nasce alla prima consegna verso di lui).
+4. **Non** crea il thread del peer (nasce alla prima consegna).
 5. Ritorna `thread_id`.
 
 ### 7.2 `list_mailbox_threads`
 
-Sostituisce `list_conversations`.
+Sostituisce `list_inbox()` del modello attuale.
 
-**Output per riga:** `thread_id`, `display_name`, `last_message_preview`, `last_message_at`, `unread_count`, `peer_*` — **tutti derivati dalla casella del chiamante**.
-
-**Nessun join** con la casella del peer.
+**Output:** `thread_id`, `display_name`, `last_message_preview`, `last_message_at`, `unread_count`, `peer_*` — tutti dalla **casella del chiamante**. Nessun join con la casella del peer.
 
 ### 7.3 `list_mailbox_messages`
 
-**Input:** `p_thread_id uuid`, `p_limit`, `p_before` (paginazione)
+**Input:** `p_thread_id`, `p_limit`, `p_before`
 
-**Filtro:** `owner_id = auth.uid()` AND `thread_id = p_thread_id` AND `deleted_at IS NULL`
-
-**Ordine:** `created_at ASC` (o `DESC` con reverse in client)
+**Filtro:** `owner_id = auth.uid()` AND `thread_id = p_thread_id` AND messaggi non eliminati.
 
 ### 7.4 `send_message`
 
-**Input:** `p_thread_id`, `p_body`, `p_client_message_id`, `p_content_type`, `p_media_url`
-
-**Comportamento:**
-
 1. Valida thread appartiene a `auth.uid()`.
-2. Genera `logical_message_id = gen_random_uuid()`.
-3. Insert copia mittente in `mailbox_messages` (`author_id = auth.uid()`, `delivery_status = sent`).
+2. Genera `logical_message_id`.
+3. Insert copia mittente (`author_id = auth.uid()`, `delivery_status = sent`).
 4. Insert `outbox`.
 5. Chiama `deliver_outbox` (sync se internal).
-6. Aggiorna preview/unread sul thread mittente.
-7. Ritorna la **copia mittente** aggiornata.
+6. Aggiorna header thread mittente.
+7. Ritorna copia mittente aggiornata.
 
-**Idempotenza client:** stesso `(thread_id, client_message_id)` → ritorna messaggio esistente senza doppio outbox.
+**Idempotenza:** stesso `(thread_id, client_message_id)` → messaggio esistente, niente doppio outbox.
 
 ### 7.5 `mark_thread_read`
 
-**Input:** `p_thread_id`
-
-**Comportamento:**
-
-1. Azzera `unread_count` sul **mio** thread.
-2. Marca messaggi **in questa casella** con `author_id <> auth.uid()` come letti localmente.
-3. Emette **segnale** verso la copia del mittente (update `delivery_status = read` sulla **sua** riga con stesso `logical_message_id`) — **non** modifica altri campi della casella mittente.
+1. Azzera `unread_count` sul mio thread.
+2. Marca messaggi ricevuti come letti **nella mia casella**.
+3. Emette segnale `read` sulla copia del mittente (stesso `logical_message_id`).
 
 ### 7.6 `delete_mailbox_thread` / `archive_mailbox_thread`
 
-**Solo lato chiamante:**
+Solo lato chiamante: soft delete su thread e messaggi associati **nella mia casella**. Nessuna operazione sulla casella del peer.
 
-- Soft delete: `deleted_at` sul thread; opzionalmente nasconde messaggi associati **nella mia casella**.
-- **Nessuna** operazione sulla casella del peer.
-- Se il peer scrive di nuovo, si può creare un **nuovo** thread o riattivare policy esplicita (da definire in implementazione).
+### 7.7 Contatti e risoluzione indirizzo
 
-### 7.7 `search_profiles`, gestione contatti
-
-Invariata rispetto ad Alpha; `get_or_create_conversation_from_contact` diventa wrapper verso `get_or_create_mailbox_thread`.
+Invariata rispetto ad Alpha (`find_profile_by_username`, rubrica). Il client apre chat via `get_or_create_mailbox_thread` invece di `ChatPeer` + `peer_profile_id` diretto.
 
 ---
 
 ## 8. Gruppi (futuro)
 
-- `peer_kind = group`; `peer_group_id` punta a entità gruppo (tabella futura).
-- **Una casella per membro** verso il gruppo: ogni membro ha la propria cronologia.
-- Messaggi con `author_id` tra N partecipanti; **nessun** `direction`.
-- Invio al gruppo:
-  1. Insert nella **mia** casella gruppo (`author_id = io`).
-  2. Outbox con destinatari = tutti i membri (o outbox singola con fan-out nel driver).
-  3. Driver materializza nella casella di ciascun membro **senza** allineamento tra caselle.
-- Costo storage: **O(membri × messaggi)** — accettato per design (non ottimizzare in questa spec).
+- `peer_kind = group`; una casella per membro verso il gruppo.
+- Messaggi con `author_id` tra N partecipanti; nessun `direction`.
+- Invio: insert nella mia casella gruppo → outbox → fan-out driver.
+- Costo storage O(membri × messaggi) — accettato per design.
 
 ---
 
 ## 9. Realtime
 
-### 9.1 Canali
-
 | Canale | Evento | Scopo |
 |--------|--------|-------|
-| `mailbox-threads-{userId}` | INSERT/UPDATE su `mailbox_threads` dove `owner_id = userId` | Inbox |
-| `mailbox-messages-{userId}` | INSERT/UPDATE su `mailbox_messages` dove `owner_id = userId` | Chat attiva + aggiornamento spunte su copia mittente |
+| `mailbox-threads-{userId}` | INSERT/UPDATE su `mailbox_threads` (`owner_id = userId`) | Inbox |
+| `mailbox-messages-{userId}` | INSERT/UPDATE su `mailbox_messages` (`owner_id = userId`) | Chat + spunte |
 
-**Non** esiste canale condiviso per "conversation_id".
-
-### 9.2 Client Flutter
-
-- Subscribe per `auth.uid()` corrente (cambia su switch account).
-- `MessageService.fetchMessages` → `list_mailbox_messages`.
-- Optimistic UI: insert locale con `client_message_id`; reconcile con risposta `send_message`.
-- **Nessun** branch `protocol == internal` in UI o invio.
+**Client:** subscribe per `auth.uid()`; `list_mailbox_messages`; optimistic UI con `client_message_id`; nessun branch `protocol == internal` in UI.
 
 ---
 
 ## 10. RLS (linee guida)
 
 - `mailbox_threads`: `owner_id = auth.uid()` per SELECT/UPDATE/DELETE.
-- `mailbox_messages`: `owner_id = auth.uid()` per SELECT; INSERT solo tramite RPC `SECURITY DEFINER`.
-- `outbox`: deny totale a `authenticated` (come oggi); bridge con `service_role`.
-- Driver internal: `SECURITY DEFINER` con validazione partecipazione.
+- `mailbox_messages`: `owner_id = auth.uid()` per SELECT; INSERT solo via RPC `SECURITY DEFINER`.
+- `outbox`: deny a `authenticated`; bridge con `service_role`.
 
 ---
 
-## 11. Multi-account (Thunderbird)
+## 11. Multi-account
 
-- Ogni account Alfred = sessione Supabase distinta (`setSession`).
-- Caselle **sempre** filtrate per `auth.uid()` della sessione attiva.
-- Stesso codice client; cambia solo utente autenticato.
-- Refresh token in `SharedPreferences` (Alpha attuale; encryption post-Alpha).
+- Ogni account = sessione Supabase (`setSession`); caselle filtrate per `auth.uid()`.
+- Refresh token in `SharedPreferences` (Alpha attuale).
 
 ---
 
-## 12. Mappatura dal modello attuale
+## 12. Mappatura dal modello attuale (`main`, PR #130)
 
-| Concetto attuale | Nuovo modello | Note |
-|------------------|---------------|------|
-| `conversations` | `mailbox_threads` per owner | Da condiviso a per-utente |
-| `conversation_participants` | Campi su `mailbox_threads` | unread, last_read |
-| `messages` | `mailbox_messages` | Da 1 riga condivisa a 1+ righe per evento |
-| `messages.sender_id` | `mailbox_messages.author_id` | Già concettualmente allineato |
-| `send_message` → insert `messages` | `send_message` → copia mittente + outbox | |
-| `on_message_inserted` biforcato | `deliver_outbox` unico | |
-| outbox solo xmpp/matrix | outbox **sempre** | Estensione, non rottura del contratto federato |
-| `list_conversations` | `list_mailbox_threads` | |
-| Realtime `messages-{conversationId}` | `mailbox-messages-{userId}` + filtro thread | |
-| `get_or_create_direct_conversation` dedup coppia | `get_or_create_mailbox_thread` solo per me | |
+| Concetto attuale | Modello caselle (proposta) | Note |
+|------------------|---------------------------|------|
+| `messages` (1 riga condivisa) | `mailbox_messages` (1+ copie per evento) | Cambio paradigma archiviazione |
+| `messages.sender_id` | `mailbox_messages.author_id` | Già allineato concettualmente |
+| `list_inbox()` on-read | `list_mailbox_threads()` | Da aggregazione live a archivio strutturato |
+| `list_peer_messages(peer)` | `list_mailbox_messages(thread_id)` | Chat per thread nella mia casella |
+| `mark_peer_read(peer)` | `mark_thread_read(thread_id)` | |
+| `send_message_to_profile` | `send_message` + outbox | |
+| `on_message_inserted` biforcato | `deliver_outbox` unico | Internal passa da outbox |
+| Outbox solo xmpp/matrix | Outbox **sempre** | |
+| `ChatPeer.profileId` | `thread_id` (+ peer nel thread) | Client identifica chat per thread |
+| Realtime `inbox-messages-{userId}` su `messages` | `mailbox-threads/messages-{userId}` | |
+| Inbox UX (ricerca on-demand, avatar) | Stessa UX; dati da `list_mailbox_threads` | Comportamento client invariato |
 
-### 12.1 Cosa è già vero oggi (riuso)
+### 12.1 Cosa si riusa dal modello attuale
 
-- `outbox` con `status`, `attempts`, `locked_by` — **già: federato**
-- `sync_cursors`, `bridge_jobs` — **già: federato**
-- `messages.sender_id` (autore, non direction) — **già: modello attuale**
-- `delivery_status` enum — **già: parziale** (percorsi diversi internal/federato)
-- Asimmetria peer esterno (solo casella Alfred) — **già: federato**
-- Multi-account switch sessione — **già: parziale** (non caselle)
-- Concept [server-as-reception](../decisions/server-as-reception.md) — **già: parziale**
+- `outbox`, `sync_cursors`, `bridge_jobs` (struttura coda federata)
+- `sender_id` / autore senza `direction`
+- `delivery_status`, `message_read_receipts`
+- Asimmetria peer esterno
+- Multi-account, `ComposeService` / risoluzione username
+- Concetti [server-as-reception](../decisions/server-as-reception.md), [bridge-stateless](../decisions/bridge-stateless.md)
 
 ---
 
@@ -465,124 +439,108 @@ Invariata rispetto ad Alpha; `get_or_create_conversation_from_contact` diventa w
 
 ### 13.1 Principi
 
-- Il flusso attuale resta **produzione** finché il nuovo non è validato.
-- Fasi **piccole e reversibili**.
-- Branch dedicato; merge solo dopo prova esplicita.
+- Il flusso attuale (`messages` + `list_inbox`) resta produzione finché il nuovo non è validato.
+- Fasi piccole e reversibili; branch dedicato; merge solo dopo prova esplicita.
 - Test: `schema_smoke.sql`, `flutter test`, e2e inbox.
 
 ### 13.2 Fasi
 
 | Fase | Azione | Rischio |
 |------|--------|---------|
-| A | Creare `mailbox_threads`, `mailbox_messages` vuote + RPC lettura | Zero |
-| B | **Doppia scrittura** su send: vecchio `messages` + nuovo modello | Basso |
-| C | Job backfill storico → caselle | Medio |
+| A | Creare `mailbox_threads`, `mailbox_messages` + RPC lettura | Zero |
+| B | Doppia scrittura su send: `messages` attuale + modello caselle | Basso |
+| C | Backfill storico `messages` → caselle | Medio |
 | D | Flag dev: UI legge nuovo modello, confronto shadow | Zero prod |
-| E | Switch lettura client al nuovo modello | Medio, rollback facile |
+| E | Switch lettura client a `list_mailbox_threads` | Medio, rollback facile |
 | F | Switch invio solo nuovo modello | Medio |
-| G | Deprecare `conversations` / `messages` condivisi | Solo quando stabile |
+| G | Deprecare `messages` condiviso e RPC peer-based | Solo quando stabile |
 
-### 13.3 Criteri di accettazione migrazione
+**Nota:** `conversations` e `inbox_threads` sono già state eliminate; la migrazione parte dal modello message-centric, non da entità conversazione.
 
-- Invio testo e GIF 1:1 interno.
-- Ricezione Realtime destinatario.
+### 13.3 Criteri di accettazione
+
+- Invio testo, GIF e voice 1:1 interno.
+- Realtime destinatario.
 - Spunte sent / delivered / read su copia mittente.
-- Switch multi-account senza bleed tra caselle.
-- `list_mailbox_threads` equivalente a inbox attuale.
-- Delete thread solo lato chiamante verificato.
-- Outbox internal processata in transazione; nessun messaggio duplicato su retry (idempotenza `logical_message_id`).
+- Multi-account senza bleed tra caselle.
+- `list_mailbox_threads` equivalente a `list_inbox()` attuale.
+- Delete thread solo lato chiamante.
+- Outbox internal in transazione; idempotenza `logical_message_id`.
 
 ---
 
-## 14. Vantaggi e svantaggi (da analisi comparativa)
+## 14. Vantaggi e svantaggi
 
 ### 14.1 Vantaggi
 
-*Architettura / codice*
+*Architettura*
 
 - Un solo flusso invio → outbox → consegna
-- Niente biforcazione `internal` / federato nel client
-- Niente biforcazione `internal` / federato nelle RPC principali
-- Outbox come contratto unico per tutti i driver — **già: federato**
-- Base pronta per bridge — **già: federato**
+- Niente biforcazione internal/federato in client e RPC principali
+- Outbox come contratto unico per tutti i driver
 
 *Funzionalità*
 
 - Caselle indipendenti (modello email)
-- Nessun allineamento obbligatorio tra caselle
-- Eliminazione solo dal proprio lato — **già: federato** (lato esterno fuori piattaforma)
-- Modello 1:1, gruppi, federazione con stessa forma messaggio (`author_id`) — **già: parziale**
-- Nessuna entità conversazione condivisa
-- Multi-account = logica casella per sessione — **già: parziale**
-- Spunte come segnali puntuali, non sync caselle — **già: parziale**
-- Coerenza peer non su piattaforma — **già: federato**
+- Delete/archivio solo dal proprio lato
+- Stessa forma messaggio per 1:1, gruppi, federazione (`author_id`)
+- Spunte come segnali puntuali, non sync caselle
 
 ### 14.2 Svantaggi
 
-*Costo di refactoring*
+*Refactoring*
 
-- Migrazione dal modello attuale
-- Rischio regressione chat funzionante
-- Query e RPC da riscrivere — **già: modello attuale**
+- Migrazione dal modello message-centric funzionante
+- Rischio regressione chat Alpha
 - Periodo doppia scrittura / convivenza schemi
-- Inbox da rifare — **già: modello attuale**
-- Test da estendere — **già: modello attuale**
+- RPC e client da riscrivere
 
-*Funzionalità*
+*Piattaforma*
 
-- Idempotenza e retry sulla **consegna** outbox — **già: federato**
-- Realtime per casella — **già: modello attuale** (da adattare)
-- Esterni asimmetrici — **già: federato**
-- Spunte/lettura come notifiche puntuali — **già: parziale**
-
-*Costi piattaforma*
-
-- Più righe DB per evento (copia mittente + copia destinatario su stessa istanza)
+- Più righe DB per evento (copia mittente + destinatario su stessa istanza)
 - Storage moltiplicato nei gruppi
-- Thread condiviso sostituito da N caselle — **già: modello attuale** (una riga condivisa oggi)
+- Perdita della query semplice su riga messaggio unica
 
 ---
 
-## 15. Contropunti registrati (per decisioni future)
+## 15. Contropunti registrati
 
-### 15.1 Contro il rinvio del refactor
+### 15.1 Contro il rinvio
 
-Rimandare può cementare il biforcamento `internal`/esterno mentre si aggiungono bridge e gruppi; il refactor costa di più con più dati e codice. **Nota:** l'orizzonte temporale integrazione bridge **non è noto**; il peso del refactor va calibrato sul calendario reale, non su assunzioni.
+Rimandare può cementare il biforcamento internal/esterno mentre si aggiungono bridge e gruppi. L'orizzonte bridge **non è noto**; calibrare il peso del refactor sul calendario reale.
 
-### 15.2 Contro il refactor stesso
+### 15.2 Contro il refactor
 
-Complessità nuova (N copie, migrazione fragile); si può unificare il **percorso logico** (interno in outbox) mantenendo thread condiviso finché il bridge non impone il contrario.
+Complessità nuova (N copie, migrazione fragile). Alternativa: unificare solo il **percorso logico** (internal in outbox) mantenendo riga `messages` condivisa.
 
-### 15.3 Contro la soluzione caselle (rivista, senza homeserver)
+**Stato attuale:** con PR #130 è stata scelta la strada opposta — message-centric con inbox on-read, senza caselle. Questa alternativa resta valida se si rimanda o si rifiuta il modello caselle.
 
-Duplicazione su stesso Postgres senza vincolo di rete; si perde query semplice su stanza unica. Un flusso unico **senza** N archivi materializzati resta alternativa per piattaforma centralizzata.
+### 15.3 Contro le caselle su piattaforma centralizzata
 
-**Risposta del design:** la materializzazione per casella è **deliberata** per evitare due tipi di conversazione e allineare gruppi/federazione/email — non per replicare un homeserver.
+Duplicazione su stesso Postgres senza vincolo di rete; si perde query su stanza unica.
 
----
-
-## 16. ADR e vincoli esistenti rispettati
-
-| ADR | Come si applica |
-|-----|-----------------|
-| D-008 | Client parla solo con Supabase |
-| D-031 | Web online-only; caselle su piattaforma, no IndexedDB |
-| D-034 | Protocollo invisibile in UI |
-| D-051 | Stato in piattaforma; bridge stateless |
-| server-as-reception | `delivery_status` su **copia**; consegnato = nella fonte di verità |
-| D-036 | Account Alfred ≠ contatti |
-| D-037 | Daemon per istanza |
+**Risposta del design:** archiviazione per casella è **deliberata** per unificare 1:1, gruppi e federazione sul modello email — non per replicare un homeserver.
 
 ---
 
-## 17. Fuori scope (esplicito)
+## 16. ADR e relazione con il modello attuale
 
-- Implementazione bridge XMPP/Matrix
+| Documento | Rapporto con questa proposta |
+|-----------|------------------------------|
+| [address-based-messaging.md](../decisions/address-based-messaging.md) | **Incompatibile** se adottata la proposta — va sostituito |
+| [server-as-reception.md](../decisions/server-as-reception.md) | Compatibile (`delivery_status` su copia) |
+| [bridge-stateless.md](../decisions/bridge-stateless.md) | Compatibile |
+| D-008, D-031, D-034, D-036, D-037 | Compatibili |
+
+---
+
+## 17. Fuori scope
+
+- Bridge XMPP/Matrix (implementazione)
 - Federazione tra istanze Alfred
-- Gruppi (schema `groups` non definito qui)
+- Gruppi (schema `groups`)
 - Edit messaggio, delete globale, reazioni
 - Cache offline nativa
-- Encryption at rest refresh token multi-account
 - Allineamento ordine/contenuto/preview tra caselle di utenti diversi
 
 ---
@@ -591,11 +549,11 @@ Duplicazione su stesso Postgres senza vincolo di rete; si perde query semplice s
 
 | Termine | Significato |
 |---------|-------------|
-| **Casella** | Insieme di messaggi di un utente verso un peer, `owner_id` fisso |
-| **Thread** | Sinonomo di riga `mailbox_threads` |
+| **Casella** | Archivio messaggi di un utente verso un peer, `owner_id` fisso |
+| **Thread** | Riga `mailbox_threads` — contenitore/struttura dell'archivio verso un peer |
 | **Peer** | Contatto, profilo o gruppo con cui scambio messaggi |
 | **Copia** | Riga `mailbox_messages` appartenente a un `owner_id` |
-| **Consegna** | Transizione outbox → materializzazione in casella destinatario (se esiste) |
+| **Consegna** | Outbox → materializzazione in casella destinatario (se esiste) |
 | **Segnale** | Aggiornamento puntuale (es. `read` sul mittente); non sync casella |
 | **Driver** | Implementazione consegna per `protocol` |
 | **Bridge interno** | Driver `internal` sulla piattaforma, non demone Python |
@@ -604,17 +562,18 @@ Duplicazione su stesso Postgres senza vincolo di rete; si perde query semplice s
 
 ## 19. Stato implementazione
 
-| Componente | Stato |
-|------------|-------|
+| Componente | Stato su `main` |
+|------------|-----------------|
 | Schema `mailbox_*` | ❌ Non implementato |
-| `send_message` unificato | ❌ |
-| Driver internal | ❌ |
-| Migrazione dati | ❌ |
-| Client Flutter | ❌ Usa ancora `conversations` + `messages` |
-| Bridge federato | ❌ Stub |
+| `send_message` unificato (outbox sempre) | ❌ Oggi: `send_message_to_profile` → insert diretto `messages` |
+| Driver `internal` via outbox | ❌ Oggi: trigger `delivered` su internal |
+| Migrazione dati verso caselle | ❌ |
+| Client Flutter | ✅ Funzionante con modello **attuale**: `InboxController`, `ChatPeer`, `list_inbox()`, `list_peer_messages` |
+| Bridge federato | ❌ Stub health only |
+| ADR message-centric (PR #130) | ✅ Implementato e vincolante |
 
-**Chat Alpha interna attuale: funzionante — non modificare senza piano migrazione §13.**
+**Chat Alpha interna: funzionante.** Non modificare senza piano migrazione §13 e decisione esplicita di adottare questa proposta al posto di [address-based-messaging.md](../decisions/address-based-messaging.md).
 
 ---
 
-*Documento generato da sessione design 2026-06-26. Aggiornare questo file e `PROJECT_MAP.md` al momento dell'implementazione.*
+*Originale: sessione design 2026-06-26. Revisione documentale 2026-06-28. Aggiornare questo file e `PROJECT_MAP.md` al momento dell'implementazione.*
