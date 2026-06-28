@@ -40,6 +40,7 @@ class AccountSidebar extends StatelessWidget {
               _ActiveProfileCard(
                 displayName: profile.displayName,
                 username: profile.username,
+                pronouns: profile.pronouns,
                 avatarUrl: profile.avatarUrl,
                 userId: activeUserId,
               )
@@ -104,12 +105,14 @@ class _ActiveProfileCard extends StatelessWidget {
     required this.displayName,
     required this.username,
     required this.userId,
+    this.pronouns,
     this.avatarUrl,
   });
 
   final String displayName;
   final String username;
   final String userId;
+  final String? pronouns;
   final String? avatarUrl;
 
   @override
@@ -157,6 +160,18 @@ class _ActiveProfileCard extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
+              if (pronouns != null && pronouns!.isNotEmpty) ...[
+                const SizedBox(height: 2),
+                Text(
+                  pronouns!,
+                  style: const TextStyle(
+                    color: AlfredColors.textSecondary,
+                    fontSize: 12,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
             ],
           ),
         ),

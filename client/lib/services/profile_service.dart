@@ -7,12 +7,16 @@ class ProfileService {
     required String userId,
     required String displayName,
     String? bio,
+    String? pronouns,
+    String? avatarUrl,
   }) async {
     final row = await supabase
         .from('profiles')
         .update({
           'display_name': displayName,
           'bio': bio,
+          'pronouns': pronouns,
+          'avatar_url': ?avatarUrl,
           'updated_at': DateTime.now().toUtc().toIso8601String(),
         })
         .eq('id', userId)

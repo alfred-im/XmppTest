@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:alfred_client/models/contact.dart';
 import 'package:alfred_client/models/chat_peer.dart';
 import 'package:alfred_client/models/message.dart';
+import 'package:alfred_client/models/profile.dart';
 import 'package:alfred_client/utils/avatar_color.dart';
 import 'package:alfred_client/utils/date_format.dart';
 import 'package:alfred_client/utils/duration_format.dart';
@@ -30,6 +31,24 @@ void main() {
     test('parses protocol names', () {
       expect(contactProtocolFromString('xmpp'), ContactProtocol.xmpp);
       expect(contactProtocolFromString('internal'), ContactProtocol.internal);
+    });
+  });
+
+  group('UserProfile.fromJson', () {
+    test('parses pronouns and avatar', () {
+      final profile = UserProfile.fromJson({
+        'id': 'u1',
+        'username': 'alice',
+        'display_name': 'Alice',
+        'bio': 'Ciao',
+        'pronouns': 'lei/ella',
+        'avatar_url': 'https://example.com/a.jpg',
+        'created_at': '2026-06-28T12:00:00Z',
+        'updated_at': '2026-06-28T12:00:00Z',
+      });
+
+      expect(profile.pronouns, 'lei/ella');
+      expect(profile.avatarUrl, 'https://example.com/a.jpg');
     });
   });
 

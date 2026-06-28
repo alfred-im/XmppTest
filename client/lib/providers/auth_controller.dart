@@ -31,6 +31,7 @@ class AuthController extends ChangeNotifier {
 
   bool get isAuthenticated => _authService.isAuthenticated;
   String? get userId => _authService.currentUser?.id;
+  String? get email => _authService.currentUser?.email;
   String? get username => profile?.username;
 
   Future<void> initialize() async {

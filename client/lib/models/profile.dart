@@ -4,6 +4,7 @@ class UserProfile {
     required this.username,
     required this.displayName,
     this.bio,
+    this.pronouns,
     this.avatarUrl,
     required this.createdAt,
     required this.updatedAt,
@@ -13,6 +14,7 @@ class UserProfile {
   final String username;
   final String displayName;
   final String? bio;
+  final String? pronouns;
   final String? avatarUrl;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -23,6 +25,7 @@ class UserProfile {
       username: json['username'] as String,
       displayName: json['display_name'] as String,
       bio: json['bio'] as String?,
+      pronouns: json['pronouns'] as String?,
       avatarUrl: json['avatar_url'] as String?,
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: DateTime.parse(json['updated_at'] as String),

@@ -1,6 +1,6 @@
 # Alfred - Mappa Completa del Progetto
 
-**Ultimo aggiornamento**: 2026-06-28 (rimozione doc legacy React; sync PR #108–#132)  
+**Ultimo aggiornamento**: 2026-06-28 (profilo: email, avatar, pronomi; sync PR #108–#132)  
 **Versione repository**: 3.1.0-alpha (client Flutter + piattaforma Supabase; bridge stub)
 
 ---
@@ -147,8 +147,9 @@ Avvio container: `scripts/start-bridges.sh`.
 
 | Storage | Uso |
 |---------|-----|
-| Postgres | `profiles`, `contacts`, `messages`, `outbox`, `sync_cursors`, `bridge_jobs` |
+| Postgres | `profiles` (+ `pronouns`), `contacts`, `messages`, `outbox`, `sync_cursors`, `bridge_jobs` |
 | Storage `chat-media` | GIF + voice WebM (`{userId}/{uuid}.…`) |
+| Storage `avatars` | Foto profilo (`{userId}/avatar.{jpg|png|webp}`, max 2 MB) |
 | Client `SharedPreferences` | Multi-account (refresh token) |
 
 RPC principali: `list_inbox`, `find_profile_by_username`, `send_message_to_profile`, `list_peer_messages`, `mark_peer_read`.
@@ -202,7 +203,7 @@ bash scripts/verify.sh --build   # + build web
 
 **Data**: 2026-06-28
 
-- Rimossa documentazione client React/XMPP dal repository (codice storico solo su tag `legacy/web-client-final`)
+- Profilo arricchito: email in sola lettura (GoTrue), upload avatar bucket `avatars`, campo `pronouns` su `profiles`
 - Sync stato PR #108–#132 mergiate
 - PR #132 ricerca inbox · #131 logout sidebar · #130 inbox solo messaggi · #127 verify.sh · #126 voice
 
