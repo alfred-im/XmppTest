@@ -4,7 +4,7 @@ Analisi tecniche implementazioni completate per comprensione dettagli e decision
 
 > **Nota (2026-06-24)**: i documenti in questa cartella descrivono per lo più il **client React legacy** (`web-client/`, tag `legacy/web-client-final`). Il codice non è più su `main`; i contenuti restano riferimento per il client Flutter.
 
-> **Flutter (2026-06-27)**: aggancio al fondo chat → [conversation-bottom-anchor.md](../design/conversation-bottom-anchor.md); note vocali → [voice-notes.md](./voice-notes.md); inbox solo messaggi → [messages-only-inbox.md](./messages-only-inbox.md) (non legacy React).
+> **Flutter (2026-06-28)**: aggancio al fondo → [conversation-bottom-anchor.md](../design/conversation-bottom-anchor.md); note vocali → [voice-notes.md](./voice-notes.md); inbox solo messaggi → [messages-only-inbox.md](./messages-only-inbox.md); ricerca inbox → [inbox-search-toggle.md](../design/inbox-search-toggle.md) (non legacy React).
 
 ## Documenti Disponibili
 

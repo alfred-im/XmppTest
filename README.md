@@ -4,20 +4,20 @@
 
 Traccia lo stato del progetto Alfred per continuità del lavoro. NON è documentazione per utenti esterni.
 
-## Stato attuale (2026-06-27)
+## Stato attuale (2026-06-28)
 
-Migrazione verso **Flutter + Supabase + bridge Python** (`docs/decisions/project-revolution-discovery.md`). PR Alpha **#108–#130** mergiate su `main` (registro: `docs/architecture/alpha-pr-registry.md`).
+Migrazione verso **Flutter + Supabase + bridge Python** (`docs/decisions/project-revolution-discovery.md`). PR Alpha **#108–#132** mergiate su `main` (registro: `docs/architecture/alpha-pr-registry.md`).
 
 | Componente | Stato |
 |------------|-------|
-| **`client/`** (Flutter) | App completa Supabase — auth, chat testo/GIF/**voice**, aggancio al fondo, contatti, multi-account, coda retry invio |
+| **`client/`** (Flutter) | App completa Supabase — auth, chat testo/GIF/**voice**, ricerca inbox on-demand, aggancio al fondo, contatti, multi-account, coda retry invio, gate `verify.sh` |
 | **`supabase/`** | Schema dominio Alfred (profiles, contacts, messages, outbox, …) |
 | **`bridge-xmpp/`** · **`bridge-matrix/`** | Stub health Fly.io — logica **non** implementata |
 | **`web-client/`** (React) | **Rimosso** — tag `legacy/web-client-final` |
 
 ### URL live
 
-**https://alfred-im.github.io/XmppTest/** — ambiente **Alpha/sviluppo** (non produzione): client Flutter + Supabase (auth, chat testo/GIF/voice, contatti, multi-account). Ogni build CI da PR o `main` aggiorna lo stesso URL (`deploy-alpha`).
+**https://alfred-im.github.io/XmppTest/** — ambiente **Alpha/sviluppo** (non produzione): client Flutter + Supabase (auth, chat testo/GIF/voice, ricerca inbox, contatti, multi-account). Ogni build CI da PR o `main` aggiorna lo stesso URL (`deploy-alpha`).
 
 ### Client legacy React
 
@@ -71,6 +71,6 @@ MIT — `LICENSE`
 
 ---
 
-**Ultimo aggiornamento**: 2026-06-27  
+**Ultimo aggiornamento**: 2026-06-28  
 **Live**: Flutter + Supabase @ GitHub Pages (Alpha dev)  
 **Legacy**: React @ `legacy/web-client-final`

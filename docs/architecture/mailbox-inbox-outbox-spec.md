@@ -1,7 +1,7 @@
 # Specifica tecnica — Modello caselle (inbox/outbox) e flusso unificato
 
 **Data**: 2026-06-26  
-**Status**: 📋 **Proposta** — non implementata; chat Alpha attuale resta su `conversations` + `messages` condivisi  
+**Status**: 📋 **Proposta** — non implementata; **schema attuale su `main`** (PR #130): solo `messages` + `profiles`, inbox = `list_inbox()` on-read — vedi [messages-only-inbox.md](../implementation/messages-only-inbox.md). §2.1 sotto descrive uno stato intermedio superato.
 **Categoria**: Architettura messaggistica, schema dominio, pipeline consegna  
 **Audience**: AI / implementazione futura  
 **Correlata**: [server-as-reception.md](../decisions/server-as-reception.md), [bridge-stateless.md](../decisions/bridge-stateless.md), [alpha-full-stack.md](./alpha-full-stack.md), [project-revolution-discovery.md](../decisions/project-revolution-discovery.md)

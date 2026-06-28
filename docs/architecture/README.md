@@ -7,7 +7,7 @@ Analisi architetturali per comprensione sistema e decisioni implementative. Docu
 ## Documenti Alpha Flutter (main)
 
 - **alpha-full-stack.md** — Architettura completa client + Supabase
-- **alpha-pr-registry.md** — PR #108–#114 → feature → checklist documentazione
+- **alpha-pr-registry.md** — PR #108–#132 → feature → checklist documentazione
 
 ## Documenti Legacy React (riferimento)
 

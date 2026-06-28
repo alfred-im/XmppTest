@@ -1,8 +1,8 @@
 # Alfred Alpha — Architettura completa (client + piattaforma)
 
-**Data**: 2026-06-27  
+**Data**: 2026-06-28  
 **Scope**: App completa **senza bridge** (XMPP/Matrix restano stub Fly.io)  
-**Stato**: PR #109–#125 su `main`; #126 (voice + deploy-alpha) aperta  
+**Stato**: PR Alpha **#108–#132** mergiate su `main`  
 **Registro PR**: [alpha-pr-registry.md](./alpha-pr-registry.md)
 
 ---
@@ -178,7 +178,7 @@ client/lib/
 - Coda retry client unificata con testo/GIF (`OutboundMessageQueue`)
 - Migrazioni enum in due file (commit enum prima del CHECK/RPC)
 
-**PR**: #126 (aperta al 2026-06-27)
+**PR**: #126
 
 ### 2.12 Ricerca on-demand inbox
 

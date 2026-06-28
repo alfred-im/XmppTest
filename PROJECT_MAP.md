@@ -20,7 +20,7 @@
 
 ---
 
-## ⚠️ Stato repository (2026-06-27)
+## ⚠️ Stato repository (2026-06-28)
 
 | Elemento | Dettaglio |
 |----------|-----------|
@@ -31,7 +31,7 @@
 | **Bridge** | `bridge-xmpp/` · `bridge-matrix/` — **stub** (health Fly.io only, non implementati) |
 | **Client legacy** | `web-client/` rimosso da `main` — tag `legacy/web-client-final` @ `6e792eb` |
 | **Recupero legacy** | `git checkout legacy/web-client-final -- web-client/` |
-| **Branch** | `main` — PR Alpha #108–#132 mergiate; #126 (voice) e #127 (verify) aperte — `docs/architecture/alpha-pr-registry.md` |
+| **Branch** | `main` — PR Alpha **#108–#132** mergiate — `docs/architecture/alpha-pr-registry.md` |
 
 **Stack su `main`**: `client/` · `supabase/` · `bridge-xmpp/` · `bridge-matrix/`
 
@@ -906,7 +906,7 @@ class ConversationRepository {
 
 ## 📊 Stato Corrente
 
-### Stack su `main` (2026-06-27, post-merge PR #108–#130)
+### Stack su `main` (2026-06-28, post-merge PR #108–#132)
 
 | Componente | Stato |
 |------------|-------|
@@ -920,13 +920,15 @@ class ConversationRepository {
 - Auth Supabase (login/registrazione **email + password**; username identità IM in `profiles`, non esposto come credenziale altrui)
 - Multi-account Thunderbird (`SharedPreferences` + switch refresh token) — PR #111
 - Contatti unificati (interni + federati in rubrica)
-- Inbox via RPC `list_inbox` (un round-trip) — message-centric (PR #129)
+- Inbox via RPC `list_inbox` (un round-trip) — aggregazione on-read su `messages` (PR #130)
 - Composizione per indirizzo (`find_profile_by_username`) — rubrica non richiesta per inviare
 - Chat realtime testo + GIF + voice (Supabase Postgres + Realtime + Storage) — PR #109/#115/#126
 - Invio: RPC `send_message_to_profile` (unico overload PostgREST — no HTTP 300)
 - Stabilità inbox web: `waitForSupabaseSessionReady` + `ChangeNotifierProxyProvider` — PR #113/#114
+- Gate locale/CI: `client/scripts/verify.sh` (`flutter analyze` zero issue) — PR #127
 - Deploy GitHub Pages con passkeys bundle — PR #110
-- Layout inbox + chat responsive, tema `#2D2926`
+- Layout inbox + chat responsive, tema `#2D2926`; ricerca on-demand inbox — PR #132
+- Sidebar: logout in card profilo (icona a destra del nome) — PR #131
 - Test: unit, widget (voice incluso), e2e Playwright inbox, SQL smoke, CI analyze+test+build
 
 **Architettura dettagliata**: `docs/architecture/alpha-full-stack.md`  
@@ -1072,15 +1074,21 @@ Documentati in `docs/fixes/known-issues.md`:
 
 ## 🔄 Ultima Revisione
 
-**Data**: 2026-06-27  
-**Versione**: 3.1.0-alpha — Client Flutter + Supabase; PR #126 voice (aperta)
+**Data**: 2026-06-28  
+**Versione**: 3.1.0-alpha — Client Flutter + Supabase; PR Alpha #108–#132 su `main`
+
+**Modifiche Recenti** (2026-06-28):
+- ✅ **PR #132**: ricerca on-demand inbox (`InboxPanel`, `inbox-search-toggle.md`)
+- ✅ **PR #131**: logout in card profilo sidebar (`AccountSidebar`)
+- ✅ Sync documentazione post-merge (#126–#132)
 
 **Modifiche Recenti** (2026-06-27):
-- ✅ **PR #126** (aperta): note vocali WebM/Opus, `OutboundMessageQueue`, migrazioni voice
+- ✅ **PR #130**: inbox solo messaggi — drop `inbox_threads`, `ChatPeer`, aggregazione on-read
+- ✅ **PR #127**: `client/scripts/verify.sh` — gate `flutter analyze` in locale e CI
+- ✅ **PR #126**: note vocali WebM/Opus, `OutboundMessageQueue`, migrazioni voice
 - ✅ **Deploy Alpha**: job unificato `deploy-alpha` — PR e `main` → stesso URL Pages; Environment `github-pages` *All branches*
 - ✅ **PR #125**: aggancio al fondo (`AnchoredMessageList`)
 - ✅ **PR #124**: ADR chat unificate (nessuna distinzione interna/esterna)
-- ✅ Documentazione: `voice-notes.md`, sync INDICE/CHANGELOG/alpha-pr-registry/README
 
 **Modifiche Recenti** (v3.1.0-alpha — 24 giugno 2026):
 - ✅ **PR #109**: app completa Flutter + schema dominio Supabase

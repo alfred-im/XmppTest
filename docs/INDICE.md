@@ -26,12 +26,17 @@ Recupero codice legacy: `git checkout legacy/web-client-final -- web-client/`
 - [decisions/address-based-messaging.md](./decisions/address-based-messaging.md) - **🟢 Regola vincolante** — messaggistica per indirizzo; inbox = aggregazione on-read su `messages`; `ChatPeer`; rubrica isolata (2026-06-27)
 - [decisions/no-internal-external-chat-distinction.md](./decisions/no-internal-external-chat-distinction.md) - **🟢 Regola vincolante** — nessuna distinzione chat interna/esterna (client, piattaforma, bridge, test) (2026-06-27)
 - [decisions/server-as-reception.md](./decisions/server-as-reception.md) - **🟢 Concept spunte cloud** — ricezione = ricezione sul server (2026-06-26)
+- [decisions/bridge-stateless.md](./decisions/bridge-stateless.md) - **Bridge stateless — stato solo in piattaforma** (vincolante)
+- [decisions/project-revolution-discovery.md](./decisions/project-revolution-discovery.md) - **🟡 Discovery Q&A rivoluzione progetto** (iterazioni in corso)
+- [decisions/README.md](./decisions/README.md) - Overview decisioni
+- [decisions/no-message-deletion.md](./decisions/no-message-deletion.md) - Decisione no message deletion
+- [decisions/no-modify-source-data.md](./decisions/no-modify-source-data.md) - Regola: non modificare la fonte dati
 
 ## Architettura
 
-- [architecture/mailbox-inbox-outbox-spec.md](./architecture/mailbox-inbox-outbox-spec.md) - **📋 Proposta** — modello caselle, outbox unificata, flusso email (2026-06-26)
+- [architecture/mailbox-inbox-outbox-spec.md](./architecture/mailbox-inbox-outbox-spec.md) - **📋 Proposta** — modello caselle, outbox unificata, flusso email (2026-06-26; schema attuale → `messages-only-inbox.md`)
 - [architecture/alpha-full-stack.md](./architecture/alpha-full-stack.md) - **🟢 Alpha completa** — client + Supabase, senza bridge (§2.12 ricerca inbox on-demand, 2026-06-28)
-- [architecture/alpha-pr-registry.md](./architecture/alpha-pr-registry.md) - **Registro PR Alpha #108–#114** — cosa documentare dopo ogni merge
+- [architecture/alpha-pr-registry.md](./architecture/alpha-pr-registry.md) - **Registro PR Alpha #108–#132** — cosa documentare dopo ogni merge
 - [architecture/conversations-analysis.md](./architecture/conversations-analysis.md) - Analisi conversazioni XMPP
 - [architecture/mam-global-strategy-explained.md](./architecture/mam-global-strategy-explained.md) - Strategia MAM globale
 - [architecture/mam-performance-long-term.md](./architecture/mam-performance-long-term.md) - Performance MAM
@@ -61,21 +66,13 @@ Recupero codice legacy: `git checkout legacy/web-client-final -- web-client/`
 - [fixes/profile-scroll-fix.md](./fixes/profile-scroll-fix.md) - Fix scroll profilo
 - [fixes/vcard-photo-base64-string-fix.md](./fixes/vcard-photo-base64-string-fix.md) - Fix formato foto
 - [fixes/vcard-photo-server-issue.md](./fixes/vcard-photo-server-issue.md) - Analisi problemi vCard
-- [fixes/known-issues.md](./fixes/known-issues.md) - Known issues
+- [fixes/known-issues.md](./fixes/known-issues.md) - Known issues (⚠️ legacy React XMPP)
 
 ## Design
 
 - [design/README.md](./design/README.md) - Principi design (Note: brand identity e database architecture integrati in PROJECT_MAP.md)
 - [design/conversation-bottom-anchor.md](./design/conversation-bottom-anchor.md) - **🟢 Aggancio al fondo** — scroll ancorato, stacco, riaggancio, UI correlata (2026-06-27)
 - [design/inbox-search-toggle.md](./design/inbox-search-toggle.md) - **🟢 Ricerca on-demand inbox** — lente, TapRegion tap-outside, `dismissSearch()` unico (PR #132, 2026-06-28)
-
-## Decisioni Architetturali (ADR)
-
-- [decisions/bridge-stateless.md](./decisions/bridge-stateless.md) - **Bridge stateless — stato solo in piattaforma** (vincolante)
-- [decisions/project-revolution-discovery.md](./decisions/project-revolution-discovery.md) - **🟡 Discovery Q&A rivoluzione progetto** (iterazioni in corso)
-- [decisions/README.md](./decisions/README.md) - Overview decisioni
-- [decisions/no-message-deletion.md](./decisions/no-message-deletion.md) - Decisione no message deletion
-- [decisions/no-modify-source-data.md](./decisions/no-modify-source-data.md) - Regola: non modificare la fonte dati
 
 ## Archivio
 
@@ -92,6 +89,6 @@ Recupero codice legacy: `git checkout legacy/web-client-final -- web-client/`
 
 ---
 
-**Ultimo aggiornamento**: 2026-06-27 (note vocali PR #126, deploy-alpha da PR, aggancio al fondo, ADR chat unificate)  
+**Ultimo aggiornamento**: 2026-06-28 (sync post-merge PR #126–#132: README, PROJECT_MAP, alpha-full-stack, registro PR)  
 **Client live**: Flutter + Supabase @ https://alfred-im.github.io/XmppTest/  
 **Legacy (riferimento doc)**: React @ `legacy/web-client-final`

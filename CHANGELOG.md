@@ -23,6 +23,10 @@ Modifiche rilevanti al progetto per tracciare evoluzione tecnica e decisioni imp
 
 ## [Unreleased]
 
+### Documentazione (2026-06-28 — sync post-merge #126–#132)
+
+- Allineati `PROJECT_MAP.md`, `README.md`, `docs/INDICE.md`, `alpha-full-stack.md` — stato PR e date (tutto mergiato su `main`)
+
 ### Alpha Flutter — PR #132 (ricerca on-demand inbox)
 
 - **`InboxPanel`**: barra «Cerca messaggi» nascosta di default; icona lente apre con focus; chiusura via `dismissSearch()` (toggle lente + `TapRegion.onTapOutside`); filtro azzerato alla chiusura
