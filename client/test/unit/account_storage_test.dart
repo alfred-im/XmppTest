@@ -59,11 +59,15 @@ void main() {
         username: 'alice',
         refreshToken: 'rt',
         displayName: 'Alice',
+        avatarUrl: 'https://example.com/a.jpg',
+        pronouns: 'lei/ella',
       );
       final decoded = SavedAccount.fromJson(
         jsonDecode(jsonEncode(account.toJson())) as Map<String, dynamic>,
       );
       expect(decoded.username, account.username);
+      expect(decoded.avatarUrl, account.avatarUrl);
+      expect(decoded.pronouns, account.pronouns);
     });
   });
 }

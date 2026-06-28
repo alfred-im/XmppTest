@@ -118,6 +118,45 @@ class AuthService {
 
   Future<List<SavedAccount>> savedAccounts() => _accountStorage.loadAccounts();
 
+  /// Aggiorna avatar/pronomi/nome degli account salvati da `profiles` (RLS: lettura autenticata).
+  Future<List<SavedAccount>> syncSavedAccountsFromProfiles() async {
+    final accounts = await _accountStorage.loadAccounts();
+    if (accounts.isEmpty) return accounts;
+
+    final rows = await supabase
+        .from('profiles')
+        .select('id, display_name, username, avatar_url, pronouns')
+        .inFilter('id', accounts.map((a) => a.userId).toList());
+
+    if (rows.isEmpty) return accounts;
+
+    final byId = <String, Map<String, dynamic>>{
+      for (final row in rows) row['id'] as String: row,
+    };
+
+    final synced = <SavedAccount>[];
+    for (final account in accounts) {
+      final row = byId[account.userId];
+      if (row == null) {
+        synced.add(account);
+        continue;
+      }
+
+      final updated = account.copyWith(
+        displayName: row['display_name'] as String? ?? account.displayName,
+        username: row['username'] as String? ?? account.username,
+        avatarUrl: row['avatar_url'] as String?,
+        pronouns: row['pronouns'] as String?,
+        clearAvatarUrl: row['avatar_url'] == null,
+        clearPronouns: row['pronouns'] == null,
+      );
+      await _accountStorage.upsertAccount(updated);
+      synced.add(updated);
+    }
+
+    return synced;
+  }
+
   Future<UserProfile?> fetchCurrentProfile() async {
     final userId = currentUser?.id;
     if (userId == null) return null;
@@ -140,7 +179,7 @@ class AuthService {
 
     final profile = await supabase
         .from('profiles')
-        .select('display_name, username')
+        .select('display_name, username, avatar_url, pronouns')
         .eq('id', session.user.id)
         .maybeSingle();
 
@@ -159,6 +198,8 @@ class AuthService {
         username: username,
         refreshToken: refresh,
         displayName: displayName,
+        avatarUrl: profile?['avatar_url'] as String?,
+        pronouns: profile?['pronouns'] as String?,
       ),
     );
   }

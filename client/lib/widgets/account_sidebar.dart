@@ -200,13 +200,32 @@ class _AccountTile extends StatelessWidget {
     return ListTile(
       leading: CircleAvatar(
         backgroundColor: avatarColorForId(account.userId),
-        child: Text(
-          avatarInitial(account.displayName),
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
-        ),
+        backgroundImage:
+            account.avatarUrl != null ? NetworkImage(account.avatarUrl!) : null,
+        child: account.avatarUrl == null
+            ? Text(
+                avatarInitial(account.displayName),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                ),
+              )
+            : null,
       ),
       title: Text(account.displayName),
-      subtitle: Text('@${account.username}'),
+      subtitle: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('@${account.username}'),
+          if (account.pronouns != null && account.pronouns!.isNotEmpty)
+            Text(
+              account.pronouns!,
+              style: const TextStyle(fontSize: 12),
+            ),
+        ],
+      ),
+      isThreeLine:
+          account.pronouns != null && account.pronouns!.isNotEmpty,
       contentPadding: EdgeInsets.zero,
       onTap: onTap,
     );
