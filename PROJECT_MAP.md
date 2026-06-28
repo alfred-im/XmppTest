@@ -1,6 +1,6 @@
 # Alfred - Mappa Completa del Progetto
 
-**Ultimo aggiornamento**: 2026-06-27 (sidebar — logout in card profilo, PR #131)  
+**Ultimo aggiornamento**: 2026-06-28 (inbox — ricerca on-demand, PR #132)  
 **Versione repository**: 3.1.0-alpha (client Flutter live con piattaforma; bridge esclusi)
 
 ---
@@ -31,7 +31,7 @@
 | **Bridge** | `bridge-xmpp/` · `bridge-matrix/` — **stub** (health Fly.io only, non implementati) |
 | **Client legacy** | `web-client/` rimosso da `main` — tag `legacy/web-client-final` @ `6e792eb` |
 | **Recupero legacy** | `git checkout legacy/web-client-final -- web-client/` |
-| **Branch** | `main` — PR Alpha #108–#125 mergiate; #126 (voice) e #127 (verify) aperte — `docs/architecture/alpha-pr-registry.md` |
+| **Branch** | `main` — PR Alpha #108–#132 mergiate; #126 (voice) e #127 (verify) aperte — `docs/architecture/alpha-pr-registry.md` |
 
 **Stack su `main`**: `client/` · `supabase/` · `bridge-xmpp/` · `bridge-matrix/`
 
@@ -49,7 +49,7 @@ La documentazione sotto che cita `web-client/` descrive il **client React storic
 - **Multi-account**: switch Thunderbird via `SharedPreferences` + `setSession`
 - **Contatti unificati**: rubrica personale opzionale (interni + federati) — **isolata** dalla messaggistica; vedi ADR `docs/decisions/address-based-messaging.md`
 - **Messaggistica per indirizzo**: `username` (Alfred) o `user@server` (esterno, `unsupported` in Alpha); **solo `messages` + `profiles`** — inbox = aggregazione on-read `list_inbox()`; chat per `peer_profile_id`; nessuna tabella/cache inbox, nessun FK verso derivati
-- **Inbox + chat realtime**: Supabase Postgres + Realtime; inbox via RPC `list_inbox` (un round-trip)
+- **Inbox + chat realtime**: Supabase Postgres + Realtime; inbox via RPC `list_inbox` (un round-trip); ricerca conversazioni on-demand (lente + tap-outside, filtro client-side)
 - **GIF in chat**: upload su bucket Supabase `chat-media` → `messages.content_type=gif` + `media_url`; preview inbox `[GIF]`
 - **Note vocali in chat**: WebM/Opus canonico (`audio/webm`) → `content_type=voice` + `duration_seconds` + `media_mime` + `media_url`; preview inbox `🎤 m:ss`; registrazione hold-to-send in `ChatInputBar`; coda retry `OutboundMessageQueue` (testo/GIF/voice)
 - **Messaggistica interna**: utente↔utente stessa istanza — completa (testo + GIF + voice)
@@ -291,7 +291,7 @@ client/lib/
 
 **Coda invio client (non deducibile)**: `OutboundMessageQueue` persiste fallimenti (testo/GIF/voice) per retry automatico e tap «Riprova invio» — non è l'outbox server federato.
 
-**Layout inbox (non deducibile)**: `HomeScreen` — mobile: drawer sinistro con `AccountSidebar`; desktop: colonna sinistra = account + inbox. `AccountSidebar`: card profilo attivo con logout (icona a destra del nome, tooltip «Esci»); switch altri account; «Aggiungi account». `InboxPanel`: FAB → indirizzo → `ChatPeer`; chat sempre per `profile_id`; `list_inbox()` = aggregazione on-read su `messages`; `list_peer_messages(peer)`.
+**Layout inbox (non deducibile)**: `HomeScreen` — mobile: drawer sinistro con `AccountSidebar`; desktop: colonna sinistra = account + inbox. `AccountSidebar`: card profilo attivo con logout (icona a destra del nome, tooltip «Esci»); switch altri account; «Aggiungi account». `InboxPanel`: ricerca on-demand (`TapRegion` + `dismissSearch()` unico); mobile = lente in header «Alfred»; desktop = riga «Conversazioni» + lente; `ValueKey(userId)` reset al cambio account; FAB → indirizzo → `ChatPeer`; chat sempre per `profile_id`; `list_inbox()` = aggregazione on-read su `messages`; `list_peer_messages(peer)`. Spec: `docs/design/inbox-search-toggle.md`.
 
 **Aggancio al fondo (non deducibile)**: `AnchoredMessageList` in `chat_panel.dart` — `ListView` `reverse: true`, soglia 48 px, pulsante freccia + badge se staccato. Identico per tutte le conversazioni. Spec: `docs/design/conversation-bottom-anchor.md`.
 

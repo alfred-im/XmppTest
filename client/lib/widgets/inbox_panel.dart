@@ -43,11 +43,76 @@ class InboxPanel extends StatefulWidget {
 
 class _InboxPanelState extends State<InboxPanel> {
   final _searchController = TextEditingController();
+  final _searchFocusNode = FocusNode();
+  final _searchTapRegionGroup = Object();
+  bool _searchVisible = false;
 
   @override
   void dispose() {
+    if (_searchVisible || _searchController.text.isNotEmpty) {
+      widget.onSearchChanged('');
+    }
     _searchController.dispose();
+    _searchFocusNode.dispose();
     super.dispose();
+  }
+
+  void _dismissSearch() {
+    final hadQuery = _searchController.text.isNotEmpty;
+    _searchController.clear();
+    _searchFocusNode.unfocus();
+    if (hadQuery) {
+      widget.onSearchChanged('');
+    }
+    if (_searchVisible) {
+      setState(() => _searchVisible = false);
+    }
+  }
+
+  void _toggleSearch() {
+    if (_searchVisible) {
+      _dismissSearch();
+      return;
+    }
+    setState(() => _searchVisible = true);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _searchFocusNode.requestFocus();
+    });
+  }
+
+  Widget _searchLensButton({Color? iconColor}) {
+    return TapRegion(
+      groupId: _searchTapRegionGroup,
+      child: IconButton(
+        onPressed: _toggleSearch,
+        icon: Icon(Icons.search, color: iconColor),
+        tooltip: 'Cerca messaggi',
+      ),
+    );
+  }
+
+  Widget _searchField() {
+    if (!_searchVisible) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+      child: TapRegion(
+        groupId: _searchTapRegionGroup,
+        onTapOutside: (_) => _dismissSearch(),
+        child: TextField(
+          controller: _searchController,
+          focusNode: _searchFocusNode,
+          onChanged: widget.onSearchChanged,
+          decoration: const InputDecoration(
+            hintText: 'Cerca messaggi',
+            prefixIcon: Icon(
+              Icons.search,
+              color: AlfredColors.textSecondary,
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -64,44 +129,35 @@ class _InboxPanelState extends State<InboxPanel> {
                   onBack: widget.onBack,
                   onDrawerTap: widget.onDrawerTap,
                   onContactsTap: widget.onContactsTap,
-                ),
-              Padding(
-                padding: EdgeInsets.fromLTRB(12, widget.showTopBar ? 0 : 12, 12, 8),
-                child: widget.showTopBar
-                    ? TextField(
-                        controller: _searchController,
-                        onChanged: widget.onSearchChanged,
-                        decoration: InputDecoration(
-                          hintText: 'Cerca messaggi',
-                          prefixIcon: const Icon(
-                            Icons.search,
-                            color: AlfredColors.textSecondary,
+                  searchLens: _searchLensButton(
+                    iconColor: AlfredColors.textOnDark,
+                  ),
+                )
+              else
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 12, 4, 0),
+                  child: Row(
+                    children: [
+                      const Expanded(
+                        child: Text(
+                          'Conversazioni',
+                          style: TextStyle(
+                            color: AlfredColors.textPrimary,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
-                      )
-                    : Row(
-                        children: [
-                          Expanded(
-                            child: TextField(
-                              controller: _searchController,
-                              onChanged: widget.onSearchChanged,
-                              decoration: InputDecoration(
-                                hintText: 'Cerca messaggi',
-                                prefixIcon: const Icon(
-                                  Icons.search,
-                                  color: AlfredColors.textSecondary,
-                                ),
-                              ),
-                            ),
-                          ),
-                          IconButton(
-                            onPressed: widget.onContactsTap,
-                            icon: const Icon(Icons.people_outline),
-                            tooltip: 'Contatti',
-                          ),
-                        ],
                       ),
-              ),
+                      _searchLensButton(),
+                      IconButton(
+                        onPressed: widget.onContactsTap,
+                        icon: const Icon(Icons.people_outline),
+                        tooltip: 'Contatti',
+                      ),
+                    ],
+                  ),
+                ),
+              _searchField(),
               const Divider(height: 1),
               Expanded(
                 child: widget.isLoading
@@ -248,12 +304,14 @@ class _Header extends StatelessWidget {
     this.onBack,
     this.onDrawerTap,
     required this.onContactsTap,
+    required this.searchLens,
   });
 
   final bool showBackButton;
   final VoidCallback? onBack;
   final VoidCallback? onDrawerTap;
   final VoidCallback onContactsTap;
+  final Widget searchLens;
 
   @override
   Widget build(BuildContext context) {
@@ -285,9 +343,11 @@ class _Header extends StatelessWidget {
                 ),
               ),
             ),
+            searchLens,
             IconButton(
               onPressed: onContactsTap,
               icon: const Icon(Icons.people_outline, color: AlfredColors.textOnDark),
+              tooltip: 'Contatti',
             ),
           ],
         ),

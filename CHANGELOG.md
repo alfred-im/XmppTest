@@ -23,6 +23,13 @@ Modifiche rilevanti al progetto per tracciare evoluzione tecnica e decisioni imp
 
 ## [Unreleased]
 
+### Alpha Flutter — PR #132 (ricerca on-demand inbox)
+
+- **`InboxPanel`**: barra «Cerca messaggi» nascosta di default; icona lente apre con focus; chiusura via `dismissSearch()` (toggle lente + `TapRegion.onTapOutside`); filtro azzerato alla chiusura
+- **Layout**: mobile = lente in header accanto a Contatti; desktop = riga «Conversazioni» + lente
+- **`HomeScreen`**: `ValueKey(userId)` su `InboxPanel` — reset stato ricerca al cambio account
+- **Design**: `docs/design/inbox-search-toggle.md`
+
 ### Alpha Flutter — PR #131 (sidebar logout)
 
 - **`AccountSidebar`**: rimossa spunta verde fissa sull'account attivo; logout spostato in card profilo (icona a destra del nome)
