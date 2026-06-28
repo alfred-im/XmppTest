@@ -127,12 +127,14 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _inboxPanel({
     required InboxController inbox,
+    required String accountUserId,
     required bool showDrawerButton,
     bool showBackButton = false,
     bool showTopBar = true,
     VoidCallback? onBack,
   }) {
     return InboxPanel(
+      key: ValueKey(accountUserId),
       selectedPeerId: _activePeer?.profileId,
       peers: inbox.filteredPeers,
       isLoading: inbox.isLoading,
@@ -170,7 +172,8 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final inbox = context.watch<InboxController?>();
-    if (inbox == null) {
+    final accountUserId = context.read<AuthController>().userId;
+    if (inbox == null || accountUserId == null) {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
       );
@@ -196,6 +199,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     Expanded(
                       child: _inboxPanel(
                         inbox: inbox,
+                        accountUserId: accountUserId,
                         showDrawerButton: false,
                         showTopBar: false,
                       ),
@@ -221,6 +225,7 @@ class _HomeScreenState extends State<HomeScreen> {
       body: !showChatOnMobile || _showListOnMobile
           ? _inboxPanel(
               inbox: inbox,
+              accountUserId: accountUserId,
               showDrawerButton: true,
             )
           : _chatArea(
