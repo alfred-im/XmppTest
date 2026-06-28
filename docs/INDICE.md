@@ -30,7 +30,7 @@ Recupero codice legacy: `git checkout legacy/web-client-final -- web-client/`
 ## Architettura
 
 - [architecture/mailbox-inbox-outbox-spec.md](./architecture/mailbox-inbox-outbox-spec.md) - **📋 Proposta** — modello caselle, outbox unificata, flusso email (2026-06-26)
-- [architecture/alpha-full-stack.md](./architecture/alpha-full-stack.md) - **🟢 Alpha completa** — client + Supabase, senza bridge (§2.10 aggancio al fondo, 2026-06-27)
+- [architecture/alpha-full-stack.md](./architecture/alpha-full-stack.md) - **🟢 Alpha completa** — client + Supabase, senza bridge (§2.12 ricerca inbox on-demand, 2026-06-28)
 - [architecture/alpha-pr-registry.md](./architecture/alpha-pr-registry.md) - **Registro PR Alpha #108–#114** — cosa documentare dopo ogni merge
 - [architecture/conversations-analysis.md](./architecture/conversations-analysis.md) - Analisi conversazioni XMPP
 - [architecture/mam-global-strategy-explained.md](./architecture/mam-global-strategy-explained.md) - Strategia MAM globale
@@ -67,6 +67,7 @@ Recupero codice legacy: `git checkout legacy/web-client-final -- web-client/`
 
 - [design/README.md](./design/README.md) - Principi design (Note: brand identity e database architecture integrati in PROJECT_MAP.md)
 - [design/conversation-bottom-anchor.md](./design/conversation-bottom-anchor.md) - **🟢 Aggancio al fondo** — scroll ancorato, stacco, riaggancio, UI correlata (2026-06-27)
+- [design/inbox-search-toggle.md](./design/inbox-search-toggle.md) - **🟢 Ricerca on-demand inbox** — lente, TapRegion tap-outside, `dismissSearch()` unico (PR #132, 2026-06-28)
 
 ## Decisioni Architetturali (ADR)
 

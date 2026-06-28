@@ -180,6 +180,21 @@ client/lib/
 
 **PR**: #126 (aperta al 2026-06-27)
 
+### 2.12 Ricerca on-demand inbox
+
+**Dettaglio**: [inbox-search-toggle.md](../design/inbox-search-toggle.md)
+
+1. Barra «Cerca messaggi» **nascosta** di default in `InboxPanel`
+2. Icona lente: mobile nell’header «Alfred» (prima di Contatti); desktop nella riga «Conversazioni»
+3. Apertura → focus automatico sul campo; filtro client-side su `InboxController.filteredPeers` (invariato)
+4. Chiusura → un solo `_dismissSearch()`: nasconde UI, svuota testo, `onSearchChanged('')`
+5. Tap fuori da barra + lente (`TapRegion` stesso `groupId`) — **vietata** lista di trigger per azione nel parent
+6. `ValueKey(userId)` su `InboxPanel` — reset al cambio account
+
+**Non coperto (follow-up)**: Back Android, Escape web.
+
+**PR**: #132
+
 ---
 
 ## 3. Layer piattaforma Supabase
