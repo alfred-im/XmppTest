@@ -13,6 +13,7 @@
 | | Oggi (`main`) | Target caselle |
 |--|---------------|----------------|
 | **Archivio** | 1 riga `messages` condivisa tra i due peer | Un archivio per owner: io ho i miei messaggi in/out, tu i tuoi |
+| **Consegna** | Internal: insert diretto + `delivered`; federato: outbox | **Outbox sempre** (anche internal), poi materializzazione nell’archivio del destinatario — un solo tipo di pipeline |
 | **Inbox** | Query live su `messages` (`list_inbox()`) | Lista derivata dal **mio** archivio |
 | **Identità chat** | `(io, peer_profile_id)` | `(io, indirizzo peer)` — `username` o `username@server` |
 
