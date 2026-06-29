@@ -137,7 +137,7 @@ Quando si implementa: **migra e basta** — DB solo dev, niente produzione da pr
 
 - 2026-06-26: idea da sessione design (cronologia per owner, omogeneità col federato).
 - 2026-06-27: su `main` implementato message-centric (PR #130) — percorso diverso, temporaneo.
-- 2026-06-28: direzione caselle confermata; specifica lunga sostituita da questa nota; Q&A utente su identità e scope; **outbox sempre** (anche internal) confermato.
+- 2026-06-28: direzione caselle confermata; Q&A identità, outbox sempre, media condivisi/GC, **spunte = segnali** (modello XMPP/Matrix) confermato.
 
 ---
 
