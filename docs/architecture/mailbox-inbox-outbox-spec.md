@@ -21,6 +21,22 @@ Tutto il resto (UI, realtime, spunte, tipi messaggio, rubrica) si deduce dall’
 
 ---
 
+## Media (GIF, voice) — file condiviso
+
+Il flusso client resta quello Alpha: **un upload** nel bucket `chat-media` → **un** `media_url` → metadati sul messaggio.
+
+Con il modello caselle le **copie d’archivio** (mittente e destinatario) puntano allo **stesso blob** — il file **non** si duplica in storage.
+
+| Aspetto | Conseguenza |
+|---------|-------------|
+| **Riferimento** | Più righe archivio possono condividere lo stesso `media_url` |
+| **Garbage collection** | Prima di cancellare da `chat-media`: verificare se altre copie referenziano ancora l’URL |
+| **Delete / retry** | Blob orfano se upload ok ma consegna fallita; link rotto se mittente cancella file mentre il peer ha ancora il messaggio |
+
+Trattare i media come **risorsa condivisa con refcount logico** — strategia GC da definire prima di delete messaggi/casella (fuori scope Alpha).
+
+---
+
 ## Identità chat (vincolante)
 
 **Non serve altro** oltre a:
@@ -41,6 +57,63 @@ Niente `thread_id` lato client. Niente entità «casella verso Paolo» esposta c
 3. **Solo `author_id`** — niente `direction` in schema.
 4. **Il mio archivio alimenta la mia interfaccia** — casella = dove vivono i messaggi dell’owner, non cache su tabella condivisa.
 5. **Outbox sempre** — anche internal passa da outbox; internal / xmpp / matrix differiscono solo nel driver di consegna in fondo. Un solo flusso invio → outbox → archivio destinatario.
+6. **Spunte = segnali puntuali** — aggiornano solo la copia del mittente tramite id di correlazione; **non** sincronizzano né modificano l’archivio del peer (modello federato).
+
+## Spunte — segnali, non sync archivi (vincolante)
+
+Nel federato **non esiste** una riga condivisa tra mittente e destinatario. Ogni lato ha il proprio archivio; le spunte si risolvono con **messaggi/segnali separati** che **referenziano** il messaggio originale per id — non aggiornando la copia altrui.
+
+Alfred caselle usa lo **stesso modello** anche tra due utenti sulla stessa istanza (internal).
+
+### Correlazione
+
+| Ruolo | Internal Alfred | Federato (riferimento protocollo) |
+|-------|-----------------|-----------------------------------|
+| Id che lega le due copie | `logical_message_id` | XMPP: `id` stanza · Matrix: `event_id` · Bridge: `external_id` |
+| Copia mittente | Riga nel **mio** archivio (`author_id = io`) | Archivio uscita lato Alfred |
+| Copia destinatario | Riga nel **suo** archivio (`author_id = mittente`) | Archivio ingresso / server esterno |
+
+`client_message_id` resta per idempotenza **lato mittente** (retry client); è distinto da `logical_message_id`.
+
+### Tre livelli (semantica [server-as-reception](../decisions/server-as-reception.md))
+
+| Livello | UI | Significato | Internal | Federato |
+|---------|-----|-------------|----------|----------|
+| Inviato | ✓ | Accettato da piattaforma / in outbox | Copia mittente `sent` | Outbox `queued` |
+| Consegnato | ✓✓ grigie | Nella fonte di verità del destinatario | Dopo materializzazione copia destinatario → **segnale** `delivered` sulla copia mittente | XEP-0184 `received@id` o ack bridge → stesso aggiornamento sulla copia mittente Alfred |
+| Letto | ✓✓ blu | Destinatario ha visualizzato | `mark_peer_read` sul **proprio** archivio → **segnale** `read` sulla copia mittente (stesso `logical_message_id`) | XEP-0333 `displayed@id` o Matrix `m.receipt` → bridge aggiorna copia mittente |
+
+**Non** significa «arrivato sul device» in senso P2P: significa «nella fonte di verità rilevante» (server / piattaforma).
+
+### Regole
+
+- Il segnale aggiorna **solo** `delivery_status` (o equivalente) sulla **copia del mittente** identificata da `logical_message_id` (+ `owner_id` mittente).
+- **Mai** modificare l’archivio del peer per far vedere le spunte al mittente.
+- **Mai** allineare preview, ordine o contenuto tra le due copie come effetto delle spunte.
+- Realtime mittente: subscribe agli UPDATE sulla **propria** copia (`owner_id = io`).
+- I marker non vanno «all’indietro» (segnale su id più vecchio dello stato locale → ignorare).
+
+### Flusso internal (sintesi)
+
+```
+Invio → copia mittente (sent, λ) → outbox → copia destinatario (λ)
+                              → segnale delivered su copia mittente
+
+Paolo apre chat → mark_peer_read sul SUO archivio
+               → segnale read sulla copia Mario WHERE logical_message_id = λ
+```
+
+### Flusso federato (sintesi)
+
+```
+Alfred → outbox → bridge → server esterno del peer
+              → copia mittente su Alfred
+
+Peer legge su client esterno → XEP-0333 / m.receipt
+                            → bridge → UPDATE copia mittente Alfred (via external_id / λ)
+```
+
+Il bridge è **stateless** ([bridge-stateless.md](../decisions/bridge-stateless.md)): traduce il segnale protocollo in update piattaforma, non tiene stato spunte in RAM.
 
 ## Fuori scope (per ora)
 
@@ -50,7 +123,7 @@ Niente `thread_id` lato client. Niente entità «casella verso Paolo» esposta c
 
 ## Delegato all’implementazione
 
-- Correlazione tra le due copie dello stesso invio (es. `logical_message_id` + `client_message_id`) — scegliere al momento, non vincolare il design concettuale.
+- Dettaglio schema (`marker_type` / `marker_for` vs solo `delivery_status`), nomi RPC e transazioni dei driver — al momento del codice.
 
 ---
 
