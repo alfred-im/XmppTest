@@ -117,6 +117,8 @@
 
 **Non deducibile — multi-account client**: `AccountManager` / `AccountSession` — ogni account aperto ha client Supabase dedicato (`SharedPreferencesLocalStorage` per `userId`), `InboxController` sempre attivo con realtime. Lista `OpenAccount` in storage = account autenticati (non bookmark). Switch = `setFocus` senza `setSession`. Overlay credenziali semi-trasparente su `HomeScreen`. Doc: `docs/decisions/multi-account-parallel-sessions.md`, `docs/design/auth-overlay-shell.md`, `docs/implementation/multi-account-client.md`.
 
+**Non deducibile — auth bootstrap**: login/add-account usa client effimero; **non** chiamare `signOut` sul bootstrap dopo adozione sessione dedicata (revoca refresh GoTrue). PKCE: `EphemeralPkceStorage`. Fix: PR #142 — `docs/fixes/auth-bootstrap-gotrue-revoke.md`. Topic aperto logout per dispositivo: `docs/decisions/single-device-logout-open.md`. Handoff: `docs/SESSION_HANDOFF.md`.
+
 **Non deducibile — layout inbox**: `HomeScreen` — mobile drawer `AccountSidebar`; desktop colonna sinistra account + inbox. `AccountSidebar`: chiusura account in card profilo. `InboxPanel`: ricerca on-demand, `ValueKey(userId)` al cambio focus. Spec: `docs/design/inbox-search-toggle.md`.
 
 **Non deducibile — chat**: `AnchoredMessageList` (`ListView` reverse, soglia 48 px). Spec: `docs/design/conversation-bottom-anchor.md`.

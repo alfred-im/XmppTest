@@ -56,9 +56,9 @@ curl -sS -X POST "$SUPABASE_URL/auth/v1/token?grant_type=password" \
 
 ### Recupero password dall'app
 
-Il client bootstrap per `resetPasswordForEmail` deve usare `AuthFlowType.implicit`
-(non PKCE senza storage) — vedi fix PR #142. Se compare «null value» o rate limit,
-usare dashboard Supabase → Authentication → Users per reimpostare password account utente.
+Il client bootstrap usa `EphemeralPkceStorage` (`pkceAsyncStorage`) con `EmptyLocalStorage` —
+non PKCE senza storage (crash null) né `AuthFlowType.implicit`. Vedi PR #142 e
+`docs/fixes/auth-bootstrap-gotrue-revoke.md`.
 
 ---
 
@@ -75,4 +75,4 @@ Presenti nel DB live; **non** usare per esperimenti che cambiano credenziali o d
 
 ---
 
-**Ultimo aggiornamento:** 2026-06-29
+**Ultimo aggiornamento:** 2026-06-29 (handoff PR #142)

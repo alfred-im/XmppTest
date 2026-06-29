@@ -18,6 +18,7 @@ Indice documenti tecnici per navigazione rapida. Documento per AI, non per utent
 - **[.cursor-rules.md](../.cursor-rules.md)** — Regole sviluppo AI
 - **[TEST_CREDENTIALS.md](../TEST_CREDENTIALS.md)** — Credenziali test XMPP (legacy)
 - **[AGENT_DEBUG_ACCOUNTS.md](./AGENT_DEBUG_ACCOUNTS.md)** — **Account Supabase solo agente** + regola non toccare test1/2/3
+- **[SESSION_HANDOFF.md](./SESSION_HANDOFF.md)** — **Handoff sessione** — stato corrente per nuova chat AI
 - **[WISHLIST.md](./WISHLIST.md)** — Funzionalità future (riferimenti XEP)
 
 ---
@@ -29,6 +30,7 @@ Indice documenti tecnici per navigazione rapida. Documento per AI, non per utent
 - [decisions/server-as-reception.md](./decisions/server-as-reception.md) — Concept spunte cloud
 - [decisions/bridge-stateless.md](./decisions/bridge-stateless.md) — Bridge senza stato di business
 - [decisions/multi-account-parallel-sessions.md](./decisions/multi-account-parallel-sessions.md) — **🟢 Vincolante** — sessioni Supabase parallele per account aperti
+- [decisions/single-device-logout-open.md](./decisions/single-device-logout-open.md) — **🟡 Aperto** — logout per dispositivo vs revoca globale
 - [decisions/project-revolution-discovery.md](./decisions/project-revolution-discovery.md) — Visione e discovery Alpha
 - [decisions/no-message-deletion.md](./decisions/no-message-deletion.md) — No cancellazione messaggi
 - [decisions/no-modify-source-data.md](./decisions/no-modify-source-data.md) — Non modificare la fonte dati
@@ -57,6 +59,8 @@ Indice documenti tecnici per navigazione rapida. Documento per AI, non per utent
 ## Fix
 
 - [fixes/flutter-inbox-stability.md](./fixes/flutter-inbox-stability.md) — Race auth + provider inbox (#113/#114); evoluzione post #140
+- [fixes/auth-bootstrap-gotrue-revoke.md](./fixes/auth-bootstrap-gotrue-revoke.md) — Bootstrap signOut revoca refresh; PKCE (#141/#142)
+- [fixes/conversations-empty-diagnosis.md](./fixes/conversations-empty-diagnosis.md) — Diagnosi chat vuota / RPC silenziosa
 - [fixes/README.md](./fixes/README.md) — Indice fix
 
 ---

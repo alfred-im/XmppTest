@@ -1,6 +1,6 @@
 # Registro PR Alpha Flutter (main)
 
-**Ultimo aggiornamento**: 2026-06-29 (PR #140 — multi-account sessioni parallele)  
+**Ultimo aggiornamento**: 2026-06-29 (PR #142 — auth bootstrap + PKCE + handoff)  
 **Scope**: PR mergiate su `main` dopo migrazione Flutter — riferimento per allineamento documentazione.
 
 Documento per AI. Ogni PR deve riflettersi in: `PROJECT_MAP.md`, `CHANGELOG.md`, `docs/architecture/alpha-full-stack.md` (e fix dedicato se applicabile).
@@ -27,6 +27,8 @@ Documento per AI. Ogni PR deve riflettersi in: `PROJECT_MAP.md`, `CHANGELOG.md`,
 | **#131** | Sidebar logout in card profilo | Rimossa spunta verde account attivo; logout icona a destra del nome nella card profilo | `PROJECT_MAP.md` § layout inbox, `alpha-full-stack.md` §2.4 |
 | **#132** | Ricerca on-demand inbox | Barra ricerca nascosta; lente + `TapRegion` tap-outside; `dismissSearch()` unico; `ValueKey(userId)` | `docs/design/inbox-search-toggle.md`, `PROJECT_MAP.md` § layout inbox, `alpha-full-stack.md` §2.12 |
 | **#140** | Multi-account sessioni parallele | `AccountManager` / `AccountSession`; N×`SupabaseClient`; focus UI-only; overlay auth su shell; `OpenAccount` | `multi-account-parallel-sessions.md`, `multi-account-client.md`, `auth-overlay-shell.md`, `alpha-full-stack.md` §2.3–2.4 |
+| **#141** | Fix add-account (parziale) | `_sessionFromAuthResponse` fast path access+refresh; bootstrap ancora con `signOut` nel `finally` | `auth-bootstrap-gotrue-revoke.md` § stato main |
+| **#142** | Auth bootstrap completo | Rimosso `signOut` post-login; `EphemeralPkceStorage`; test live password reset; doc agente/handoff | `auth-bootstrap-gotrue-revoke.md`, `AGENT_DEBUG_ACCOUNTS.md`, `SESSION_HANDOFF.md` |
 
 ---
 

@@ -23,6 +23,19 @@ Modifiche rilevanti al progetto per tracciare evoluzione tecnica e decisioni imp
 
 ## [Unreleased]
 
+### Alpha Flutter — PR #142 (auth bootstrap + PKCE)
+
+- **Rimosso** `bootstrap.auth.signOut()` dopo login/signup — non revoca più il refresh token condiviso con il client dedicato
+- **`EphemeralPkceStorage`**: PKCE su client bootstrap effimero (recupero password senza crash null)
+- **Test**: `password_reset_live_test.dart` (tag `live`), `account_session_bootstrap_test.dart`
+- **Doc**: `docs/fixes/auth-bootstrap-gotrue-revoke.md`, `docs/SESSION_HANDOFF.md`, `docs/AGENT_DEBUG_ACCOUNTS.md`
+- **Topic aperto**: logout solo dispositivo — `docs/decisions/single-device-logout-open.md`
+
+### Alpha Flutter — PR #141 (add-account parziale, superseded da #142 su signOut)
+
+- **`_sessionFromAuthResponse`**: adozione sessione dedicata con access+refresh senza `restore()` immediato
+- **Residuo pre-#142**: `signOut` bootstrap nel `finally` ancora presente su main fino a merge #142
+
 ### Alpha Flutter — PR #140 (multi-account sessioni parallele)
 
 - **Modello**: account aperto = sessione Supabase viva + realtime inbox; non bookmark + `setSession`

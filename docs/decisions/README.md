@@ -12,6 +12,12 @@ Architecture Decision Records. Documento per AI.
 | [server-as-reception.md](./server-as-reception.md) | Ricezione = ricezione sul server (spunte cloud) |
 | [multi-account-parallel-sessions.md](./multi-account-parallel-sessions.md) | Multi-account: N sessioni Supabase parallele; focus solo UI |
 
+## Topic aperti (non vincolanti)
+
+| Doc | Summary |
+|-----|---------|
+| [single-device-logout-open.md](./single-device-logout-open.md) | Logout solo dispositivo corrente vs revoca globale GoTrue |
+
 ## Visione e proposte
 
 | ADR | Summary |
