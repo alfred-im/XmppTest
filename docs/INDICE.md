@@ -66,4 +66,4 @@ Indice documenti tecnici per navigazione rapida. Documento per AI, non per utent
 
 ---
 
-**Ultimo aggiornamento**: 2026-06-28 — rimozione documentazione client React/XMPP; solo stack Flutter attivo
+**Ultimo aggiornamento**: 2026-06-29 — multi-account sessioni parallele; stack Flutter attivo
