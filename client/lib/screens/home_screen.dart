@@ -27,8 +27,25 @@ class _HomeScreenState extends State<HomeScreen> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   ChatPeer? _activePeer;
   bool _showListOnMobile = true;
+  String? _boundFocusUserId;
 
   static const _breakpoint = 720.0;
+
+  /// Chat aperta deve appartenere all'account in focus (ADR multi-account).
+  void _bindChatToFocus(String? focusUserId) {
+    if (_boundFocusUserId == focusUserId) return;
+    _boundFocusUserId = focusUserId;
+
+    if (_activePeer == null && _showListOnMobile) return;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      setState(() {
+        _activePeer = null;
+        _showListOnMobile = true;
+      });
+    });
+  }
 
   void _openDrawer() => _scaffoldKey.currentState?.openDrawer();
 
@@ -108,13 +125,7 @@ class _HomeScreenState extends State<HomeScreen> {
       compact: compact,
       onEditProfile: _openProfile,
       onAddAccount: _openAddAccount,
-      onAccountSwitched: () {
-        _closeDrawer();
-        setState(() {
-          _activePeer = null;
-          _showListOnMobile = true;
-        });
-      },
+      onAccountSwitched: _closeDrawer,
     );
   }
 
@@ -169,6 +180,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final inbox = context.watch<InboxController?>();
     final session = auth.focusedSession;
     final accountUserId = session?.userId;
+    _bindChatToFocus(accountUserId);
 
     final width = MediaQuery.sizeOf(context).width;
     final isWide = width >= _breakpoint;

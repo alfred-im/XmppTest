@@ -2,7 +2,6 @@ import '../models/open_account.dart';
 import '../utils/auth_redirect_url.dart';
 import 'account_session.dart';
 import 'account_storage_service.dart';
-import 'profile_service.dart';
 
 /// Gestisce account messaggistica aperti in parallelo e il focus UI.
 class AccountManager {
@@ -131,19 +130,9 @@ class AccountManager {
   }
 
   Future<void> _syncAllProfiles() async {
-    if (_sessions.isEmpty) return;
-
-    final summaries = await ProfileService(
-      _sessions.values.first.client,
-    ).fetchSummariesByIds(_sessions.keys.toList());
-
-    final byId = {for (final s in summaries) s.id: s};
     for (final session in _sessions.values) {
-      final summary = byId[session.userId];
-      if (summary != null) {
-        session.profile = summary;
-        await _persistSession(session);
-      }
+      await session.syncProfileSummary();
+      await _persistSession(session);
     }
   }
 

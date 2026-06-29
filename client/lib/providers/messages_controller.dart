@@ -46,7 +46,15 @@ class MessagesController extends ChangeNotifier {
   RealtimeChannel? _channel;
   Timer? _retryTimer;
 
-  String get _queueKey => peerProfileId;
+  /// Chiave coda retry: account + peer (evita collisioni multi-account).
+  static String outboundQueueKey({
+    required String userId,
+    required String peerProfileId,
+  }) =>
+      '$userId|$peerProfileId';
+
+  String get _queueKey =>
+      outboundQueueKey(userId: userId, peerProfileId: peerProfileId);
 
   Future<void> _init() async {
     await load();
