@@ -55,11 +55,10 @@ Il client Alfred oggi ha due “logout” concettuali non distinti in UX:
 
 ---
 
-## Azione richiesta prima di implementare
+## Azione futura opzionale
 
-1. Concordare con l'utente semantica desiderata (locale vs globale).
-2. Verificare capability Supabase Auth (session list, revoke single session) sul progetto `tvwpoxxcqwphryvuyqzu`.
-3. Solo dopo accordo: ADR vincolante + implementazione.
+1. Azione UX «Disconnetti ovunque» (`signOut(scope: global)`) — separata da «Chiudi account»
+2. Verificare capability Supabase Auth session management se serve revoke selettivo server-side
 
 ---
 

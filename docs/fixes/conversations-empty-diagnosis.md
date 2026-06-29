@@ -1,8 +1,8 @@
 # Diagnosi: «non si legge nulla nelle conversazioni»
 
 **Data**: 2026-06-29  
-**Status**: 🟢 Causa individuata — fix client in corso (cache inbox + sessione morta)  
-**Categoria**: Messaggistica / auth
+**Status**: 🟡 Fix client in PR #143 — **validazione UI utente ancora negativa**  
+**Categoria**: Messaggistica / auth / multi-account
 
 Documento per AI.
 
@@ -75,7 +75,20 @@ Riportare: URL (Alpha/localhost), account, esito inbox vs chat, snippet risposta
 
 ---
 
+## Fix multi-account correlati (PR #143)
+
+Oltre sessione morta / RPC silenziosa:
+
+- **View globale su `setFocus`** → `activePeer` errato tra account (fix: `AccountViewState` per `userId`)
+- **InboxController disposed** al cambio focus (fix: `ListenableProxyProvider` noop dispose)
+- **Persistenza** → un solo account dopo F5 (fix: `saveAllAccounts` atomico da tutte le sessioni)
+
+Dettaglio: `docs/fixes/multi-account-chat-persistence-pr143.md`.
+
+---
+
 ## Riferimenti
 
+- `docs/fixes/multi-account-chat-persistence-pr143.md`
 - `docs/fixes/auth-bootstrap-gotrue-revoke.md`
 - `docs/AGENT_DEBUG_ACCOUNTS.md`
