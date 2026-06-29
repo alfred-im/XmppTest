@@ -1,5 +1,4 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:alfred_client/services/account_session.dart';
 
@@ -18,9 +17,27 @@ void main() {
     // 4. refresh RT → error_code refresh_token_not_found
     // Il finally con bootstrap.auth.signOut() revocava la sessione appena adottata.
     //
-    // Recupero password: bootstrap PKCE senza pkceAsyncStorage → crash «null value».
-    test('bootstrap client uses implicit auth flow', () {
-      expect(AuthFlowType.implicit, isNot(AuthFlowType.pkce));
-    });
+    // Recupero password: bootstrap PKCE senza pkceAsyncStorage → crash «null value»
+    // (riprodotto in test/live/password_reset_live_test.dart prima del fix).
+    test('resetPassword via bootstrap does not throw null (implicit flow)', () async {
+      final client = AccountSession.createBootstrapClient();
+      addTearDown(client.dispose);
+      Object? caught;
+      try {
+        await client.auth.resetPasswordForEmail(
+          'agadriel.sexpositive+alfredagent1@gmail.com',
+          redirectTo: 'https://alfred-im.github.io/XmppTest/',
+        );
+      } catch (e) {
+        caught = e;
+      }
+      if (caught == null) return;
+      final label = caught.toString().toLowerCase();
+      expect(
+        label,
+        isNot(anyOf(contains('null'), contains('asyncstorage'))),
+        reason: 'bootstrap PKCE senza storage crasha: $caught',
+      );
+    }, tags: ['live']);
   });
 }
