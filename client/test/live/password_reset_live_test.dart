@@ -115,9 +115,12 @@ void main() {
       );
     });
 
-    test('FIX: implicit (bootstrap produzione) → OK o rate limit (no crash null)',
+    test('FIX: PKCE + pkceAsyncStorage (bootstrap produzione) → OK o rate limit',
         () async {
-      final client = _rawClient(AuthFlowType.implicit);
+      final client = _rawClient(
+        AuthFlowType.pkce,
+        pkceStorage: _MemoryPkceStorage(),
+      );
       addTearDown(client.dispose);
 
       Object? caught;
@@ -137,7 +140,7 @@ void main() {
       expect(
         label.toLowerCase(),
         isNot(contains('null')),
-        reason: 'fix implicit non deve crashare: $label',
+        reason: 'PKCE con storage non deve crashare: $label',
       );
       expect(
         _isRateLimit(err),

@@ -17,9 +17,9 @@ void main() {
     // 4. refresh RT → error_code refresh_token_not_found
     // Il finally con bootstrap.auth.signOut() revocava la sessione appena adottata.
     //
-    // Recupero password: bootstrap PKCE senza pkceAsyncStorage → crash «null value»
-    // (riprodotto in test/live/password_reset_live_test.dart prima del fix).
-    test('resetPassword via bootstrap does not throw null (implicit flow)', () async {
+    // Recupero password: bootstrap PKCE senza pkceAsyncStorage → crash client.
+    // Fix: EphemeralPkceStorage (vedi test/live/password_reset_live_test.dart).
+    test('resetPassword via bootstrap does not crash PKCE (has pkce storage)', () async {
       final client = AccountSession.createBootstrapClient();
       addTearDown(client.dispose);
       Object? caught;

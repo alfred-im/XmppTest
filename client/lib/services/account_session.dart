@@ -9,6 +9,7 @@ import '../models/profile_summary.dart';
 import '../providers/inbox_controller.dart';
 import '../utils/auth_identity.dart';
 import '../utils/auth_redirect_url.dart';
+import '../utils/ephemeral_pkce_storage.dart';
 import 'compose_service.dart';
 import 'contact_service.dart';
 import 'inbox_service.dart';
@@ -69,10 +70,10 @@ class AccountSession {
     );
   }
 
-  /// Client effimero per login/registrazione — niente persistenza né auto-refresh.
+  /// Client effimero per login/registrazione — niente persistenza sessione né auto-refresh.
   ///
-  /// Usa [AuthFlowType.implicit]: il default PKCE richiede [GotrueAsyncStorage]
-  /// per `resetPasswordForEmail` (altrimenti crash «null value» lato client).
+  /// PKCE (default) richiede [pkceAsyncStorage]: senza, `resetPasswordForEmail`
+  /// crasha lato client. [EphemeralPkceStorage] tiene il code verifier in RAM.
   ///
   /// Non chiamare mai [GoTrueClient.signOut] sul bootstrap dopo
   /// [_sessionFromAuthResponse]: bootstrap e client dedicato condividono la
@@ -82,11 +83,11 @@ class AccountSession {
     return SupabaseClient(
       AppConfig.supabaseUrl,
       AppConfig.supabaseAnonKey,
-      authOptions: const FlutterAuthClientOptions(
-        localStorage: EmptyLocalStorage(),
+      authOptions: FlutterAuthClientOptions(
+        localStorage: const EmptyLocalStorage(),
         detectSessionInUri: false,
         autoRefreshToken: false,
-        authFlowType: AuthFlowType.implicit,
+        pkceAsyncStorage: EphemeralPkceStorage(),
       ),
     );
   }
