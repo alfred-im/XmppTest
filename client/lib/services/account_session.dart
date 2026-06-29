@@ -69,15 +69,18 @@ class AccountSession {
     );
   }
 
-  /// Client effimero per login/registrazione — niente auto-refresh in parallelo.
-  static SupabaseClient createBootstrapClient(String storageScope) {
+  /// Client effimero per login/registrazione — niente persistenza né auto-refresh.
+  ///
+  /// Non chiamare mai [GoTrueClient.signOut] sul bootstrap dopo
+  /// [_sessionFromAuthResponse]: bootstrap e client dedicato condividono la
+  /// stessa sessione GoTrue; il logout server-side revoca il refresh token appena
+  /// adottato («Invalid Refresh Token: Refresh Token Not Found»).
+  static SupabaseClient createBootstrapClient() {
     return SupabaseClient(
       AppConfig.supabaseUrl,
       AppConfig.supabaseAnonKey,
-      authOptions: FlutterAuthClientOptions(
-        localStorage: SharedPreferencesLocalStorage(
-          persistSessionKey: 'alfred_auth_$storageScope',
-        ),
+      authOptions: const FlutterAuthClientOptions(
+        localStorage: EmptyLocalStorage(),
         detectSessionInUri: false,
         autoRefreshToken: false,
       ),
@@ -122,17 +125,13 @@ class AccountSession {
     required String email,
     required String password,
   }) async {
-    final bootstrap = createBootstrapClient('_sign_in');
-    try {
-      final normalizedEmail = AuthIdentity.normalizeEmail(email);
-      final response = await bootstrap.auth.signInWithPassword(
-        email: normalizedEmail,
-        password: password,
-      );
-      return _sessionFromAuthResponse(response);
-    } finally {
-      await bootstrap.auth.signOut();
-    }
+    final bootstrap = createBootstrapClient();
+    final normalizedEmail = AuthIdentity.normalizeEmail(email);
+    final response = await bootstrap.auth.signInWithPassword(
+      email: normalizedEmail,
+      password: password,
+    );
+    return _sessionFromAuthResponse(response);
   }
 
   static Future<AccountSession> signUp({
@@ -141,44 +140,40 @@ class AccountSession {
     required String username,
     required String displayName,
   }) async {
-    final bootstrap = createBootstrapClient('_sign_up');
-    try {
-      final normalizedEmail = AuthIdentity.normalizeEmail(email);
-      final normalized = AuthIdentity.normalizeUsername(username);
-      final available = await bootstrap.rpc(
-        'is_username_available',
-        params: {'p_username': normalized},
-      );
-      if (available != true) {
-        throw const AuthException('Username già in uso. Scegline un altro.');
-      }
-
-      final response = await bootstrap.auth.signUp(
-        email: normalizedEmail,
-        password: password,
-        emailRedirectTo: AuthRedirectUrl.resolve(),
-        data: {
-          'username': normalized,
-          'display_name': displayName,
-        },
-      );
-      final session = response.session;
-      if (session == null) {
-        throw const AuthException(
-          'Registrazione inviata. Conferma l\'email prima di accedere.',
-        );
-      }
-      return _sessionFromAuthResponse(
-        response,
-        profileOverride: ProfileSummary(
-          id: session.user.id,
-          username: normalized,
-          displayName: displayName,
-        ),
-      );
-    } finally {
-      await bootstrap.auth.signOut();
+    final bootstrap = createBootstrapClient();
+    final normalizedEmail = AuthIdentity.normalizeEmail(email);
+    final normalized = AuthIdentity.normalizeUsername(username);
+    final available = await bootstrap.rpc(
+      'is_username_available',
+      params: {'p_username': normalized},
+    );
+    if (available != true) {
+      throw const AuthException('Username già in uso. Scegline un altro.');
     }
+
+    final response = await bootstrap.auth.signUp(
+      email: normalizedEmail,
+      password: password,
+      emailRedirectTo: AuthRedirectUrl.resolve(),
+      data: {
+        'username': normalized,
+        'display_name': displayName,
+      },
+    );
+    final session = response.session;
+    if (session == null) {
+      throw const AuthException(
+        'Registrazione inviata. Conferma l\'email prima di accedere.',
+      );
+    }
+    return _sessionFromAuthResponse(
+      response,
+      profileOverride: ProfileSummary(
+        id: session.user.id,
+        username: normalized,
+        displayName: displayName,
+      ),
+    );
   }
 
   static Future<AccountSession> _fromClient({
