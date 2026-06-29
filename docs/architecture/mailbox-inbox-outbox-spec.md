@@ -1,55 +1,72 @@
 # Proposta — modello caselle (direzione)
 
 **Ultima revisione**: 2026-06-28  
-**Status**: 📋 **Idea non adottata** — non è su `main`, non è un piano di lavoro  
-**Audience**: AI / discussione futura
+**Status**: 🟡 **Direzione confermata** — da implementare su dev; **non** ancora su `main`  
+**Audience**: AI / implementazione
 
-**Su `main` oggi** vale l’ADR vincolante [address-based-messaging.md](../decisions/address-based-messaging.md) e l’implementazione [messages-only-inbox.md](../implementation/messages-only-inbox.md). Per flussi, RPC, client e schema attuali: [alpha-full-stack.md](./alpha-full-stack.md).
-
-> Se un giorno si adotta questa proposta, **sostituisce** l’ADR message-centric — non lo estende. Fino ad allora **non implementare** nulla da questo file.
+**Su `main` oggi** vale ancora [address-based-messaging.md](../decisions/address-based-messaging.md). Questo file descrive il **target** concordato; all’implementazione **sostituisce** quell’ADR.
 
 ---
 
 ## Delta rispetto a oggi
 
-| | Oggi (`main`) | Proposta caselle |
-|--|---------------|------------------|
-| **Archivio messaggio** | 1 riga `messages` condivisa tra Mario e Paolo | 2 archivi (`mailbox_messages`), uno per owner |
-| **Consegna internal** | Insert diretto; trigger → `delivered` | **Outbox sempre** (anche internal), poi materializzazione nella casella del destinatario |
-| **Inbox** | Query live su `messages` (`list_inbox()`) | Lista delle **tue** caselle verso i peer |
+| | Oggi (`main`) | Target caselle |
+|--|---------------|----------------|
+| **Archivio** | 1 riga `messages` condivisa tra i due peer | Un archivio per owner: io ho i miei messaggi in/out, tu i tuoi |
+| **Inbox** | Query live su `messages` (`list_inbox()`) | Lista derivata dal **mio** archivio |
+| **Identità chat** | `(io, peer_profile_id)` | `(io, indirizzo peer)` — `username` o `username@server` |
 
-Tutto il resto (UI, realtime, spunte, multi-account, rubrica, tipi messaggio, bridge federato) si **deduce** dall’applicazione attuale e va ripensato al momento della decisione — non è prefigurato qui.
-
----
-
-## Principi (solo se si adotta)
-
-1. **Nessuna conversazione condivisa** — due caselle indipendenti; analogia email.
-2. **Nessun allineamento obbligatorio** tra la casella di Mario e quella di Paolo (ordine, preview, delete).
-3. **Solo `author_id`** — niente campo `direction` in/out.
-4. **Un solo flusso invio** — internal / xmpp / matrix differiscono solo nel driver di consegna in fondo alla pila.
-5. **Delete solo dal proprio lato** — il peer conserva il suo archivio.
-6. **Casella = archivio**, non cache di metadati sopra una tabella condivisa: i messaggi vivono nell’archivio dell’owner.
+Tutto il resto (UI, realtime, spunte, tipi messaggio, rubrica) si deduce dall’Alpha attuale salvo quanto sotto.
 
 ---
 
-## Domande aperte (da chiarire prima di procedere)
+## Identità chat (vincolante)
 
-- **Quando** ha senso adottarla? (es. bridge reali, delete locale, gruppi, federazione tra istanze — o mai)
-- **Alternativa minima**: outbox unificato anche per internal **senza** archivi per owner — basta per unificare il flusso?
-- **Migrazione**: doppia scrittura, backfill, rollback — strategia non scelta
-- **Identificatore chat lato client**: restare su `peer_profile_id` o passare a `thread_id` nella mia casella
-- **Correlazione copie** (spunte, idempotenza consegna): serve un `logical_message_id` dedicato o basta quanto c’è già?
-- **Nuovo messaggio dopo delete locale**: riattivare la stessa casella o crearne una nuova
-- **Gruppi**: fan-out in outbox, costo storage N×messaggi — accettabile?
-- **Driver internal**: stessa transazione del send o job async
-- **Schema tabelle, nomi RPC, RLS**: da progettare **dopo** la decisione, non da questo documento
+**Non serve altro** oltre a:
+
+1. **Il mio account** (`auth.uid()` / sessione corrente)
+2. **L’altro account** come indirizzo: `username` (Alfred) oppure `username@server` (esterno)
+
+Niente `thread_id` lato client. Niente entità «casella verso Paolo» esposta come id separato: è **ottimizzazione interna** al server (indici, cache, raggruppamento). Il client continua come oggi: indirizzo → chat.
+
+«In/out» in UI = messaggi nel **mio** archivio dove `author_id` è me (uscita) o l’altro (entrata). Nessuna colonna `direction` nel DB.
+
+---
+
+## Principi confermati
+
+1. **Nessuna conversazione condivisa** — due archivi indipendenti (analogia email).
+2. **Nessun allineamento obbligatorio** tra il mio archivio e quello del peer.
+3. **Solo `author_id`** — niente `direction` in schema.
+4. **Il mio archivio alimenta la mia interfaccia** — casella = dove vivono i messaggi dell’owner, non cache su tabella condivisa.
+
+## Fuori scope (per ora)
+
+- Delete chat locale
+- Gruppi
+- Preservazione dati in migrazione (solo DB dev; niente prod)
+
+## Delegato all’implementazione
+
+- Correlazione tra le due copie dello stesso invio (es. `logical_message_id` + `client_message_id`) — scegliere al momento, non vincolare il design concettuale.
+
+## Aperto
+
+- **Outbox sempre anche per internal** (principio «un solo flusso» con XMPP/Matrix): **non confermato**. Motivazione originale: un solo percorso codice quando arrivano i bridge. Non è obbligatorio per avere due archivi per owner; si decide in implementazione se internal consegue direttamente o passa da outbox.
+
+---
+
+## Migrazione
+
+Quando si implementa: **migra e basta** — DB solo dev, niente produzione da preservare. Niente doppia scrittura obbligatoria.
 
 ---
 
 ## Storico
 
-Idea emersa da sessione design 2026-06-26 (*duplicare cronologia interna per omogeneità col modello federato?*). Il 2026-06-27 su `main` è stato implementato il modello message-centric (PR #130), diverso da questa direzione. Una specifica dettagliata precedente è stata sostituita da questo file per evitare di cristallizzare scelte non ancora prese.
+- 2026-06-26: idea da sessione design (cronologia per owner, omogeneità col federato).
+- 2026-06-27: su `main` implementato message-centric (PR #130) — percorso diverso, temporaneo.
+- 2026-06-28: direzione caselle confermata; specifica lunga sostituita da questa nota; Q&A utente su identità e scope.
 
 ---
 
@@ -57,8 +74,8 @@ Idea emersa da sessione design 2026-06-26 (*duplicare cronologia interna per omo
 
 | Documento | Ruolo |
 |-----------|--------|
-| [address-based-messaging.md](../decisions/address-based-messaging.md) | Modello **attuale** vincolante |
-| [messages-only-inbox.md](../implementation/messages-only-inbox.md) | Implementazione inbox on-read |
-| [alpha-full-stack.md](./alpha-full-stack.md) | Architettura Alpha operativa |
-| [server-as-reception.md](../decisions/server-as-reception.md) | Spunte (compatibile con entrambi i modelli) |
-| [bridge-stateless.md](../decisions/bridge-stateless.md) | Outbox e bridge |
+| [address-based-messaging.md](../decisions/address-based-messaging.md) | Modello **attuale** su `main` (da sostituire) |
+| [messages-only-inbox.md](../implementation/messages-only-inbox.md) | Implementazione attuale |
+| [alpha-full-stack.md](./alpha-full-stack.md) | Flussi Alpha da riusare |
+| [server-as-reception.md](../decisions/server-as-reception.md) | Spunte |
+| [bridge-stateless.md](../decisions/bridge-stateless.md) | Outbox / bridge (se/un quando) |
