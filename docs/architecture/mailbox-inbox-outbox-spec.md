@@ -40,6 +40,7 @@ Niente `thread_id` lato client. Niente entità «casella verso Paolo» esposta c
 2. **Nessun allineamento obbligatorio** tra il mio archivio e quello del peer.
 3. **Solo `author_id`** — niente `direction` in schema.
 4. **Il mio archivio alimenta la mia interfaccia** — casella = dove vivono i messaggi dell’owner, non cache su tabella condivisa.
+5. **Outbox sempre** — anche internal passa da outbox; internal / xmpp / matrix differiscono solo nel driver di consegna in fondo. Un solo flusso invio → outbox → archivio destinatario.
 
 ## Fuori scope (per ora)
 
@@ -50,10 +51,6 @@ Niente `thread_id` lato client. Niente entità «casella verso Paolo» esposta c
 ## Delegato all’implementazione
 
 - Correlazione tra le due copie dello stesso invio (es. `logical_message_id` + `client_message_id`) — scegliere al momento, non vincolare il design concettuale.
-
-## Aperto
-
-- **Outbox sempre anche per internal** (principio «un solo flusso» con XMPP/Matrix): **non confermato**. Motivazione originale: un solo percorso codice quando arrivano i bridge. Non è obbligatorio per avere due archivi per owner; si decide in implementazione se internal consegue direttamente o passa da outbox.
 
 ---
 
@@ -67,7 +64,7 @@ Quando si implementa: **migra e basta** — DB solo dev, niente produzione da pr
 
 - 2026-06-26: idea da sessione design (cronologia per owner, omogeneità col federato).
 - 2026-06-27: su `main` implementato message-centric (PR #130) — percorso diverso, temporaneo.
-- 2026-06-28: direzione caselle confermata; specifica lunga sostituita da questa nota; Q&A utente su identità e scope.
+- 2026-06-28: direzione caselle confermata; specifica lunga sostituita da questa nota; Q&A utente su identità e scope; **outbox sempre** (anche internal) confermato.
 
 ---
 
