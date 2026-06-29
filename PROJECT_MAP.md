@@ -26,7 +26,9 @@
 |----------|-----------|
 | **Client** | `client/` — Flutter, collegato a Supabase |
 | **URL live** | https://alfred-im.github.io/XmppTest/ |
-| **Deploy** | `.github/workflows/deploy-pages.yml` — `verify.sh` + build; job `deploy-alpha` (PR e `main`) |
+| **Deploy** | `.github/workflows/deploy-pages.yml` — `verify.sh` + build; job `deploy-alpha` (**PR su `main` e push su `main`**, path `client/**`) |
+
+**Non deducibile — URL Alpha ≠ branch `main`**: https://alfred-im.github.io/XmppTest/ pubblica l’**ultimo** `deploy-alpha` riuscito (PR o push). **Non** è vero che «il sito live builda sempre da `main`». Per sapere quale codice è live, controllare quale workflow/PR ha deployato per ultimo (`concurrency: pages-alpha` → ultimo vince).
 | **Piattaforma** | Supabase `tvwpoxxcqwphryvuyqzu` — schema dominio + RLS + RPC |
 | **Bridge** | `bridge-xmpp/` · `bridge-matrix/` — stub health Fly.io (federazione non implementata) |
 | **PR Alpha** | **#108–#132** mergiate su `main` — **#140** draft (multi-account parallelo) — `docs/architecture/alpha-pr-registry.md` |

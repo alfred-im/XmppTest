@@ -347,6 +347,8 @@ Vedi `docs/decisions/bridge-stateless.md`.
 
 **Non deducibile**: ambiente GitHub `github-pages` deve permettere *All branches* per il deploy da PR. Default (solo `main`) → errore `environment protection rules`. Rimosso `deploy-preview` / `deploy-prod` — un solo job `deploy-alpha` per ambiente sviluppo condiviso.
 
+**Non deducibile — errore comune agente**: ❌ «il sito live builda da `main`». ✅ L’URL Alpha riflette l’**ultimo deploy riuscito** tra PR aperte su `main` e push su `main`; non mappare automaticamente lo stato di `main`.
+
 Concurrency: `pages-alpha` (ultimo build vince).
 
 ### Override config build

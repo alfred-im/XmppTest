@@ -20,6 +20,9 @@ backend out of the box.
 - `cd client && flutter run -d web-server --web-port=8080 --web-hostname=0.0.0.0`, then open `http://localhost:8080/`.
 - Use the `web-server` device (above): `-d chrome` requires `CHROME_EXECUTABLE` + a display and is less reliable here.
 
+### Deploy Alpha (GitHub Pages)
+- **Non** assumere che https://alfred-im.github.io/XmppTest/ rifletta il branch `main`: `deploy-alpha` pubblica da **PR su `main`** e da **push su `main`** (ultimo deploy riuscito vince). Vedi `docs/architecture/alpha-full-stack.md` §6.
+
 ### Auth / messaging gotchas (non-obvious, hit during setup)
 - Registration: GoTrue rejects unrealistic email domains (e.g. `@example.com` → "Email address is invalid"). Use a realistic domain like `gmail.com`.
 - New signups require **email confirmation** before login. For testing, confirm directly in Supabase:
