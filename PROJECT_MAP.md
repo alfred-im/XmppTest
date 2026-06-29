@@ -1,6 +1,6 @@
 # Alfred - Mappa Completa del Progetto
 
-**Ultimo aggiornamento**: 2026-06-28 (profilo: email, avatar, pronomi; sync PR #108–#132)  
+**Ultimo aggiornamento**: 2026-06-28 (target caselle confermato; doc mailbox-inbox-outbox-spec)  
 **Versione repository**: 3.1.0-alpha (client Flutter + piattaforma Supabase; bridge stub)
 
 ---
@@ -81,7 +81,7 @@
 - **Bridge stateless**: `docs/decisions/bridge-stateless.md`
 - **Chat unificate** (nessuna distinzione interna/esterna): `docs/decisions/no-internal-external-chat-distinction.md`
 - **Dettaglio completo**: `docs/architecture/alpha-full-stack.md`
-- **Proposta futura caselle**: `docs/architecture/mailbox-inbox-outbox-spec.md` (non implementata)
+- **Target caselle** (direzione confermata, non su `main`): `docs/architecture/mailbox-inbox-outbox-spec.md` — archivio per owner + outbox sempre; sostituirà ADR message-centric a implementazione
 
 ---
 
