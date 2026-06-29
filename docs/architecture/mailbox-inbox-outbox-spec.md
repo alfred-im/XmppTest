@@ -1,6 +1,6 @@
 # Proposta — modello caselle (direzione)
 
-**Ultima revisione**: 2026-06-28  
+**Ultima revisione**: 2026-06-29  
 **Status**: 🟡 **Direzione confermata** — da implementare su dev; **non** ancora su `main`  
 **Audience**: AI / implementazione
 
@@ -64,6 +64,54 @@ Niente `thread_id` lato client. Niente entità «casella verso Paolo» esposta c
 5. **Outbox sempre** — anche internal passa da outbox; internal / xmpp / matrix differiscono solo nel driver di consegna in fondo. Un solo flusso invio → outbox → archivio destinatario.
 6. **Spunte = segnali puntuali** — aggiornano solo la copia del mittente tramite id di correlazione; **non** sincronizzano né modificano l’archivio del peer (modello federato).
 
+## Identificatori — livelli distinti (vincolante)
+
+Gli id **non vanno fusi**: ognuno copre un livello diverso. Vale per internal e federazione.
+
+| Id | Scope | Ruolo |
+|----|-------|-------|
+| **`id` (riga archivio)** | Per owner | Identità **locale** del messaggio nel mio archivio (`owner_id = io`). Mittente e destinatario hanno **sempre** `id` diversi. |
+| **`client_message_id`** | Mittente (client + server) | Idempotenza **invio**: retry client, coda outbound, merge UI optimistic lato mittente. **Non** correla le due copie. |
+| **`logical_message_id`** | Piattaforma (λ) | **Correlazione** tra le due copie dello stesso invio + target dei segnali spunta (`delivered` / `read`). |
+| **`external_id`** | Federato | Id **percepito dall’altro sistema** (XMPP stanza `id`, Matrix `event_id`). Il bridge lo traduce in update sulla copia Alfred del mittente (via λ o mapping esplicito). |
+
+### Regole
+
+- Il client mittente: optimistic su `client_message_id` → poi aggancia alla riga server (`id` della **propria** copia).
+- Spunte e bridge: operano su `logical_message_id` (e in federato su `external_id` per interpretare ack del protocollo esterno).
+- Il destinatario vede solo il **suo** `id` riga; il mittente non assume mai che coincida col proprio.
+- A volte serve l’id **come lo vede l’altro account** (es. XEP-0333 `displayed@id`) — è compito del bridge mapparlo sulla copia corretta lato Alfred, non del client.
+
+### Idempotenza (chiavi di dedup)
+
+| Operazione | Chiave |
+|------------|--------|
+| Retry invio client | `(owner_id mittente, client_message_id)` |
+| Materializzazione copia destinatario | `(owner_id destinatario, logical_message_id)` |
+| Job outbox | `logical_message_id` (o `outbox.id` equivalente) |
+| Segnale `delivered` / `read` | `(owner_id mittente, logical_message_id)` |
+| Bridge federato (inbound ack) | `external_id` + protocollo → risoluzione su λ |
+
+`client_message_id` e `logical_message_id` restano **sempre** distinti: il primo è solo invio, il secondo solo correlazione e recapito.
+
+## Consegna — stessa pipeline ovunque (vincolante)
+
+Internal e federato condividono **un solo tipo** di recapito; differisce solo il driver in fondo (sync sulla stessa istanza vs bridge).
+
+| Fase | Effetto |
+|------|---------|
+| **Accettazione** | Copia mittente creata → UI ✓ (`sent`) |
+| **Recapito** | Outbox → materializzazione copia destinatario |
+| **Ack** | Segnale `delivered` sulla copia mittente (via λ) |
+
+Se il recapito non completa (copia mittente sì, destinatario no), **non** è un’anomalia del modello caselle: è uno **stato di consegna** come per email, XMPP o Matrix. Oggi su internal sembra istantaneo solo perché insert + `delivered` sono nella stessa transazione — shortcut da eliminare.
+
+### Stati operativi (da implementare)
+
+- **Retry** outbox — stesso meccanismo internal e federato
+- **`failed` / dead-letter** se esauriti i tentativi
+- **UI mittente**: resta su ✓ finché non arriva il segnale `delivered`; assenza di ✓✓ = consegna in corso o fallita, non «messaggio perso»
+
 ## Spunte — segnali, non sync archivi (vincolante)
 
 Nel federato **non esiste** una riga condivisa tra mittente e destinatario. Ogni lato ha il proprio archivio; le spunte si risolvono con **messaggi/segnali separati** che **referenziano** il messaggio originale per id — non aggiornando la copia altrui.
@@ -72,13 +120,13 @@ Alfred caselle usa lo **stesso modello** anche tra due utenti sulla stessa istan
 
 ### Correlazione
 
+Vedi [Identificatori](#identificatori--livelli-distinti-vincolante). In sintesi:
+
 | Ruolo | Internal Alfred | Federato (riferimento protocollo) |
 |-------|-----------------|-----------------------------------|
-| Id che lega le due copie | `logical_message_id` | XMPP: `id` stanza · Matrix: `event_id` · Bridge: `external_id` |
-| Copia mittente | Riga nel **mio** archivio (`author_id = io`) | Archivio uscita lato Alfred |
-| Copia destinatario | Riga nel **suo** archivio (`author_id = mittente`) | Archivio ingresso / server esterno |
-
-`client_message_id` resta per idempotenza **lato mittente** (retry client); è distinto da `logical_message_id`.
+| Correlazione copie + spunte | `logical_message_id` (λ) | λ + `external_id` (XMPP `id` · Matrix `event_id`) |
+| Copia mittente | Riga nel **mio** archivio (`author_id = io`), `id` locale | Archivio uscita lato Alfred |
+| Copia destinatario | Riga nel **suo** archivio (`author_id = mittente`), `id` locale | Archivio ingresso / server esterno |
 
 ### Tre livelli (semantica [server-as-reception](../decisions/server-as-reception.md))
 
@@ -95,7 +143,7 @@ Alfred caselle usa lo **stesso modello** anche tra due utenti sulla stessa istan
 - Il segnale aggiorna **solo** `delivery_status` (o equivalente) sulla **copia del mittente** identificata da `logical_message_id` (+ `owner_id` mittente).
 - **Mai** modificare l’archivio del peer per far vedere le spunte al mittente.
 - **Mai** allineare preview, ordine o contenuto tra le due copie come effetto delle spunte.
-- Realtime mittente: subscribe agli UPDATE sulla **propria** copia (`owner_id = io`).
+- Realtime mittente: subscribe agli UPDATE sulla **propria** copia (`owner_id = io`); merge optimistic via `client_message_id`, spunte via `logical_message_id` — vedi [Identificatori](#identificatori--livelli-distinti-vincolante).
 - I marker non vanno «all’indietro» (segnale su id più vecchio dello stato locale → ignorare).
 
 ### Flusso internal (sintesi)
@@ -129,6 +177,7 @@ Il bridge è **stateless** ([bridge-stateless.md](../decisions/bridge-stateless.
 ## Delegato all’implementazione
 
 - Dettaglio schema (`marker_type` / `marker_for` vs solo `delivery_status`), nomi RPC e transazioni dei driver — al momento del codice.
+- Driver internal: sync nella stessa RPC vs worker async (non cambia la semantica [Consegna](#consegna--stessa-pipeline-ovunque-vincolante)).
 
 ---
 
@@ -143,6 +192,7 @@ Quando si implementa: **migra e basta** — DB solo dev, niente produzione da pr
 - 2026-06-26: idea da sessione design (cronologia per owner, omogeneità col federato).
 - 2026-06-27: su `main` implementato message-centric (PR #130) — percorso diverso, temporaneo.
 - 2026-06-28: direzione caselle confermata; Q&A identità, outbox sempre, media condivisi/GC, **spunte = segnali** (modello XMPP/Matrix) confermato.
+- 2026-06-29: identificatori a livelli distinti (`id` / `client_message_id` / λ / `external_id`), idempotenza per operazione, consegna parziale = stato normale pipeline.
 
 ---
 
