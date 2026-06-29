@@ -182,7 +182,10 @@ class AuthController extends ChangeNotifier {
   String _friendlyAuthError(Object e) {
     if (e is AuthException) {
       final msg = e.message.toLowerCase();
-      if (msg.contains('refresh') || msg.contains('session')) {
+      if (msg.contains('invalid refresh') ||
+          msg.contains('refresh token not found') ||
+          msg.contains('session expired') ||
+          msg.contains('token has expired')) {
         return 'Sessione scaduta per questo account. Accedi di nuovo.';
       }
       if (msg.contains('invalid login credentials')) {

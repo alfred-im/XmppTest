@@ -69,6 +69,46 @@ class AccountSession {
     );
   }
 
+  /// Client effimero per login/registrazione — niente auto-refresh in parallelo.
+  static SupabaseClient createBootstrapClient(String storageScope) {
+    return SupabaseClient(
+      AppConfig.supabaseUrl,
+      AppConfig.supabaseAnonKey,
+      authOptions: FlutterAuthClientOptions(
+        localStorage: SharedPreferencesLocalStorage(
+          persistSessionKey: 'alfred_auth_$storageScope',
+        ),
+        detectSessionInUri: false,
+        autoRefreshToken: false,
+      ),
+    );
+  }
+
+  static Future<AccountSession> _sessionFromAuthResponse(
+    AuthResponse response, {
+    ProfileSummary? profileOverride,
+  }) async {
+    final session = response.session;
+    if (session == null) {
+      throw const AuthException('Accesso non riuscito.');
+    }
+    final refresh = session.refreshToken;
+    if (refresh == null || refresh.isEmpty) {
+      throw const AuthException('Sessione non disponibile.');
+    }
+
+    final client = createClient(session.user.id);
+    await client.auth.setSession(
+      refresh,
+      accessToken: session.accessToken,
+    );
+
+    return _fromClient(
+      client: client,
+      initialProfile: profileOverride ?? _profileFromUser(session.user),
+    );
+  }
+
   static Future<AccountSession> restore(OpenAccount stored) async {
     final client = createClient(stored.userId);
     await client.auth.setSession(stored.refreshToken);
@@ -82,27 +122,14 @@ class AccountSession {
     required String email,
     required String password,
   }) async {
-    final bootstrap = createClient('_sign_in');
+    final bootstrap = createBootstrapClient('_sign_in');
     try {
       final normalizedEmail = AuthIdentity.normalizeEmail(email);
       final response = await bootstrap.auth.signInWithPassword(
         email: normalizedEmail,
         password: password,
       );
-      final session = response.session;
-      if (session == null) {
-        throw const AuthException('Accesso non riuscito.');
-      }
-      final refresh = session.refreshToken;
-      if (refresh == null || refresh.isEmpty) {
-        throw const AuthException('Sessione non disponibile.');
-      }
-      return restore(
-        OpenAccount(
-          profile: _profileFromUser(session.user),
-          refreshToken: refresh,
-        ),
-      );
+      return _sessionFromAuthResponse(response);
     } finally {
       await bootstrap.auth.signOut();
     }
@@ -114,7 +141,7 @@ class AccountSession {
     required String username,
     required String displayName,
   }) async {
-    final bootstrap = createClient('_sign_up');
+    final bootstrap = createBootstrapClient('_sign_up');
     try {
       final normalizedEmail = AuthIdentity.normalizeEmail(email);
       final normalized = AuthIdentity.normalizeUsername(username);
@@ -141,18 +168,12 @@ class AccountSession {
           'Registrazione inviata. Conferma l\'email prima di accedere.',
         );
       }
-      final refresh = session.refreshToken;
-      if (refresh == null || refresh.isEmpty) {
-        throw const AuthException('Sessione non disponibile.');
-      }
-      return restore(
-        OpenAccount(
-          profile: ProfileSummary(
-            id: session.user.id,
-            username: normalized,
-            displayName: displayName,
-          ),
-          refreshToken: refresh,
+      return _sessionFromAuthResponse(
+        response,
+        profileOverride: ProfileSummary(
+          id: session.user.id,
+          username: normalized,
+          displayName: displayName,
         ),
       );
     } finally {
