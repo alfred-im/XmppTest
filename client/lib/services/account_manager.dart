@@ -155,7 +155,7 @@ class AccountManager {
 
   Future<bool> isUsernameAvailable(String username) async {
     final client = _sessions.values.isEmpty
-        ? AccountSession.createClient('_username_check')
+        ? AccountSession.createBootstrapClient('_username_check')
         : _sessions.values.first.client;
     final normalized = username.trim().toLowerCase();
     final available = await client.rpc(
@@ -166,7 +166,7 @@ class AccountManager {
   }
 
   Future<void> resetPassword(String email) async {
-    final client = AccountSession.createClient('_password_reset');
+    final client = AccountSession.createBootstrapClient('_password_reset');
     final normalizedEmail = email.trim().toLowerCase();
     await client.auth.resetPasswordForEmail(
       normalizedEmail,
