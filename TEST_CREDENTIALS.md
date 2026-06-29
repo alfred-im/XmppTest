@@ -1,6 +1,17 @@
 # Test Credentials (Riferimento Tecnico)
 
-Credenziali account di test configurati su conversations.im per sviluppo e testing. Documento per riferimento rapido AI.
+Credenziali account di test. Documento per riferimento rapido AI.
+
+## Supabase Alfred (client Flutter Alpha)
+
+**Usare account agente dedicati** — vedi **[docs/AGENT_DEBUG_ACCOUNTS.md](./docs/AGENT_DEBUG_ACCOUNTS.md)**.
+
+- `alfredagent1` / `alfredagent2` — creati per debug agente (auth, multi-account).
+- **Non modificare** `test1`, `test2`, `test3` (account utente; vedi incidente 2026-06-29 in quel documento).
+
+---
+
+## XMPP (legacy)
 
 ## Accesso Produzione
 
@@ -58,4 +69,4 @@ const TEST_ACCOUNTS = {
 
 ---
 
-**Ultimo aggiornamento**: 2025-12-06
+**Ultimo aggiornamento**: 2026-06-29 (aggiunto rinvio account Supabase agente)

@@ -16,7 +16,8 @@ Indice documenti tecnici per navigazione rapida. Documento per AI, non per utent
 - **[README.md](../README.md)** — Stato progetto
 - **[CHANGELOG.md](../CHANGELOG.md)** — Storia modifiche
 - **[.cursor-rules.md](../.cursor-rules.md)** — Regole sviluppo AI
-- **[TEST_CREDENTIALS.md](../TEST_CREDENTIALS.md)** — Credenziali test
+- **[TEST_CREDENTIALS.md](../TEST_CREDENTIALS.md)** — Credenziali test XMPP (legacy)
+- **[AGENT_DEBUG_ACCOUNTS.md](./AGENT_DEBUG_ACCOUNTS.md)** — **Account Supabase solo agente** + regola non toccare test1/2/3
 - **[WISHLIST.md](./WISHLIST.md)** — Funzionalità future (riferimenti XEP)
 
 ---

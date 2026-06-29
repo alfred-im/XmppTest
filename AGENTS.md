@@ -26,6 +26,7 @@ backend out of the box.
   `update auth.users set email_confirmed_at = now() where email = '<addr>';` (via the Supabase MCP `execute_sql`).
 - Supabase enforces an **email send rate limit**; rapid repeated signups fail with "email rate limit exceeded".
 - Messaging needs a real recipient profile: **self-messaging fails** ("Utente non trovato") and external `user@server` addresses are **unsupported** in Alpha ("Indirizzo esterno non ancora supportato"). Seeded recipients exist in the live DB (e.g. `test1`, `test2`, `test3`).
+- **Account debug agente:** usare **solo** `alfredagent1` / `alfredagent2` (credenziali in `docs/AGENT_DEBUG_ACCOUNTS.md`). **Non modificare mai** password o dati di `test1`/`test2`/`test3` — vedi incidente documentato in quel file (2026-06-29).
 
 ### Browser (computerUse) testing of Flutter web
 - Inputs are typeable: **click directly into a field to focus it, then type** (don't assume canvas blocks input).
