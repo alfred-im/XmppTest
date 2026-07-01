@@ -94,7 +94,10 @@ class AccountSession {
 
   Future<void> updateStoredProfile(ProfileSummary profile) async {
     this.profile = profile;
-    final token = _lastKnownRefreshToken;
+    // Non riscrivere il token da RAM: leggi quello già salvato per questo userId.
+    final accounts = await _requireStorage().loadAccounts();
+    final existing = accounts.where((a) => a.userId == userId).firstOrNull;
+    final token = existing?.refreshToken ?? _lastKnownRefreshToken;
     if (token == null || token.isEmpty) return;
     await persistOpenAccount(refreshToken: token, profile: profile);
   }
@@ -323,13 +326,24 @@ class AccountSession {
     _listenAuth();
   }
 
+  /// Silenzia il listener durante login add-account (evita token cross-account).
+  Future<void> pauseAuthListener() async {
+    await _authSubscription?.cancel();
+    _authSubscription = null;
+  }
+
+  void resumeAuthListener() => _ensureAuthListener();
+
   void _listenAuth() {
     _authSubscription = client.auth.onAuthStateChange.listen((state) {
-      if (state.event == AuthChangeEvent.tokenRefreshed) {
-        final token = state.session?.refreshToken;
-        if (token != null && token.isNotEmpty) {
-          unawaited(persistOpenAccount(refreshToken: token));
-        }
+      if (state.event != AuthChangeEvent.tokenRefreshed) return;
+      final session = state.session;
+      // Ogni SupabaseClient ha il proprio storage, ma su web gli eventi auth
+      // possono propagarsi: persistere solo se la sessione è di QUESTO account.
+      if (session?.user.id != userId) return;
+      final token = session?.refreshToken;
+      if (token != null && token.isNotEmpty) {
+        unawaited(persistOpenAccount(refreshToken: token));
       }
     });
   }

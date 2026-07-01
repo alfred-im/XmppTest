@@ -93,16 +93,21 @@ class AccountManager {
     required String email,
     required String password,
   }) async {
-    final account = await AccountSession.signInOpenAccount(
-      email: email,
-      password: password,
-    );
-    await _storage.upsertAccount(account);
-    final session = await _rebuildFromManifest(
-      focusUserId: account.userId,
-      requireSession: true,
-    );
-    return session!;
+    await _pauseAuthListeners();
+    try {
+      final account = await AccountSession.signInOpenAccount(
+        email: email,
+        password: password,
+      );
+      await _storage.upsertAccount(account);
+      final session = await _rebuildFromManifest(
+        focusUserId: account.userId,
+        requireSession: true,
+      );
+      return session!;
+    } finally {
+      await _resumeAuthListeners();
+    }
   }
 
   Future<AccountSession> openWithSignUp({
@@ -111,18 +116,23 @@ class AccountManager {
     required String username,
     required String displayName,
   }) async {
-    final account = await AccountSession.signUpOpenAccount(
-      email: email,
-      password: password,
-      username: username,
-      displayName: displayName,
-    );
-    await _storage.upsertAccount(account);
-    final session = await _rebuildFromManifest(
-      focusUserId: account.userId,
-      requireSession: true,
-    );
-    return session!;
+    await _pauseAuthListeners();
+    try {
+      final account = await AccountSession.signUpOpenAccount(
+        email: email,
+        password: password,
+        username: username,
+        displayName: displayName,
+      );
+      await _storage.upsertAccount(account);
+      final session = await _rebuildFromManifest(
+        focusUserId: account.userId,
+        requireSession: true,
+      );
+      return session!;
+    } finally {
+      await _resumeAuthListeners();
+    }
   }
 
   /// Legge [alfred_saved_accounts], butta le sessioni in RAM e le ricrea da token.
@@ -142,13 +152,16 @@ class AccountManager {
       }
       try {
         final session = await _restoreWithRetry(account);
-        session.wireStorage(_storage);
         _sessions[session.userId] = session;
       } catch (e) {
         if (_isPermanentAuthFailure(e)) {
           await _storage.removeAccount(account.userId);
         }
       }
+    }
+
+    for (final session in _sessions.values) {
+      session.wireStorage(_storage);
     }
 
     if (_sessions.isEmpty) {
@@ -175,6 +188,18 @@ class AccountManager {
       await session.disposeResources(clearAuthStorage: clearAuthStorage);
     }
     _sessions.clear();
+  }
+
+  Future<void> _pauseAuthListeners() async {
+    for (final session in _sessions.values) {
+      await session.pauseAuthListener();
+    }
+  }
+
+  Future<void> _resumeAuthListeners() async {
+    for (final session in _sessions.values) {
+      session.resumeAuthListener();
+    }
   }
 
   Future<AccountSession> _restoreWithRetry(OpenAccount account) async {

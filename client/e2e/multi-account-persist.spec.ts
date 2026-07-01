@@ -10,6 +10,8 @@ const BASE_URL = process.env.ALFRED_BASE_URL ?? 'http://localhost:8080/';
 /** Viewport stretto: evita bug ListView unbounded in layout wide (sidebar desktop). */
 test.use({ viewport: { width: 390, height: 844 } });
 
+test.setTimeout(300_000);
+
 const AGENT1 = {
   email: 'agadriel.sexpositive+alfredagent1@gmail.com',
   password: 'AlfredAgentDbg1!',
@@ -77,9 +79,9 @@ test('multi-account: manifest con 2 token e UI dopo F5', async ({ page }) => {
   });
   await loginInAuthForm(page, AGENT2.email, AGENT2.password);
   await expect(page.getByRole('textbox', { name: 'Email' })).toBeHidden({
-    timeout: 120_000,
+    timeout: 90_000,
   });
-  await page.waitForTimeout(20_000);
+  await page.waitForTimeout(5000);
 
   const manifestBeforeReload = await readSavedAccountsManifest(page);
   expect(manifestBeforeReload, 'manifest assente prima del reload').not.toBeNull();
