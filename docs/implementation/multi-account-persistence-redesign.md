@@ -1,7 +1,7 @@
 # Multi-account: redesign persistenza (single source of truth)
 
 **Data**: 2026-07-01  
-**Stato**: 🟡 **Proposta vincolante per prossima implementazione** — sostituisce l’approccio a patch (PR #143, #144)  
+**Stato**: 🟢 **Documento su `main`** — implementazione codice **non ancora fatta** (vedi §10)  
 **Audience**: AI in sessioni future — implementare **solo** secondo questo documento  
 **Non implementare**: catene di fallback RAM → cache → GoTrue → storage; `saveAllAccounts` ricostruito da sessioni
 
@@ -324,14 +324,15 @@ Test obbligatorio da aggiungere/rafforzare:
 
 ---
 
-## 10. Cosa fare con PR #143 / #144
+## 10. Stato PR e pulizia (2026-07-01)
 
-| PR | Azione consigliata |
-|----|-------------------|
+| PR / branch | Esito |
+|-------------|--------|
 | #143 (mergiata su `main`) | Tenere fix runtime (view per account, logout locale, inbox lifecycle) |
-| #144 (draft, patch persistenza) | **Non mergiare** — chiudere dopo implementazione redesign |
+| #144 + `cursor/fix-multi-account-persist-merge-c1ed` | **Chiusa / rimossa** — patch persistenza abbandonate; non mergiate |
+| Questo documento | **Mergiato su `main`** — unica base per la prossima implementazione |
 
-Il redesign **sostituisce** la logica persistenza di #144, non la affianca.
+Il redesign **sostituisce** la logica persistenza delle patch #144, non la affianca.
 
 ---
 
