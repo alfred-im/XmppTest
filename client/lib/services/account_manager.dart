@@ -1,9 +1,9 @@
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../models/open_account.dart';
 import '../models/account_view_state.dart';
 import '../models/chat_peer.dart';
+import '../models/open_account.dart';
 import '../utils/auth_redirect_url.dart';
 import 'account_session.dart';
 import 'account_storage_service.dart';
@@ -80,15 +80,15 @@ class AccountManager {
     _wireSession(session);
   }
 
-  @visibleForTesting
-  Future<void> persistAllOpenAccountsForTesting() => _persistAllOpenAccounts();
-
   Future<void> initialize() async {
     final stored = await _storage.loadAccounts();
     final savedFocus = await _storage.loadFocusUserId();
 
     for (final account in stored) {
-      if (account.refreshToken.isEmpty) continue;
+      if (account.refreshToken.isEmpty) {
+        await _storage.removeAccount(account.userId);
+        continue;
+      }
       try {
         final session = await AccountSession.restore(account);
         _wireSession(session);
@@ -144,17 +144,27 @@ class AccountManager {
   }) async {
     final existing = _sessions[session.userId];
     if (existing != null) {
+      final newToken = session.lastKnownRefreshToken;
+      final updatedProfile = session.profile;
       await session.disposeResources(clearAuthStorage: false);
+      if (newToken != null && newToken.isNotEmpty) {
+        await existing.persistOpenAccount(
+          refreshToken: newToken,
+          profile: updatedProfile,
+        );
+      }
       if (focus) {
         await setFocus(session.userId);
       }
-      await _persistAllOpenAccounts();
       return existing;
     }
 
     _sessions[session.userId] = session;
     _wireSession(session);
-    await _persistAllOpenAccounts();
+    final token = session.lastKnownRefreshToken;
+    if (token != null && token.isNotEmpty) {
+      await session.persistOpenAccount(refreshToken: token);
+    }
     if (focus) {
       await setFocus(session.userId);
     }
@@ -171,32 +181,14 @@ class AccountManager {
     final session = _sessions.remove(userId);
     _testOnlyAccountIds.remove(userId);
     _viewsByAccount.remove(userId);
-    await session?.close();
-    if (_sessions.isEmpty) {
-      await _storage.saveAllAccounts([]);
-    } else {
-      await _persistAllOpenAccounts();
+    if (session != null) {
+      await session.clearStoredAccount();
     }
 
     if (_focusUserId == userId) {
       _focusUserId = _sessions.keys.isEmpty ? null : _sessions.keys.first;
       await _storage.saveFocusUserId(_focusUserId);
     }
-  }
-
-  Future<void> persistSession(AccountSession session) => _persistAllOpenAccounts();
-
-  Future<void> _persistAllOpenAccounts() async {
-    final accounts = <OpenAccount>[];
-    for (final session in _sessions.values) {
-      final refresh = session.refreshToken;
-      if (refresh == null || refresh.isEmpty) continue;
-      accounts.add(
-        OpenAccount(profile: session.profile, refreshToken: refresh),
-      );
-    }
-    if (accounts.isEmpty) return;
-    await _storage.saveAllAccounts(accounts);
   }
 
   bool _isPermanentAuthFailure(Object e) {
@@ -213,14 +205,14 @@ class AccountManager {
   Future<void> _syncAllProfiles() async {
     for (final session in _sessions.values) {
       await session.syncProfileSummary();
+      await session.updateStoredProfile(session.profile);
     }
-    await _persistAllOpenAccounts();
   }
 
   Future<void> refreshOpenAccountProfiles() => _syncAllProfiles();
 
   void _wireSession(AccountSession session) {
-    session.onPersistRequested = _persistAllOpenAccounts;
+    session.wireStorage(_storage);
   }
 
   Future<bool> isUsernameAvailable(String username) async {

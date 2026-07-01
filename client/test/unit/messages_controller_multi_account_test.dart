@@ -128,6 +128,24 @@ void main() {
 
       controller.dispose();
     });
+
+    test('load reports expired session instead of silent empty chat', () async {
+      final controller = MessagesController(
+        userId: _agent1,
+        peerProfileId: _agent2,
+        messageService: messageService,
+        messageMediaService: mediaService,
+        inboxService: inboxService,
+        outboundQueue: OutboundMessageQueue(),
+        hasValidSession: () => false,
+      );
+      await waitForMessagesController(controller);
+
+      expect(controller.messages, isEmpty);
+      expect(controller.error, MessagesController.sessionExpiredMessage);
+
+      controller.dispose();
+    });
   });
 }
 

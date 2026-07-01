@@ -254,6 +254,7 @@ class _ChatWithMessages extends StatelessWidget {
         messageMediaService: session.messageMediaService,
         inboxService: session.inboxService,
         onMessagesChanged: onMessagesChanged,
+        hasValidSession: session.hasValidJwt,
       ),
       child: ChatPanel(
         peer: peer,

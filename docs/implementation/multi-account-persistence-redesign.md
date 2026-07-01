@@ -1,7 +1,7 @@
 # Multi-account: redesign persistenza (single source of truth)
 
 **Data**: 2026-07-01 (revisione design completa)  
-**Stato**: 🟢 **Documento su `main`** — implementazione codice **non ancora fatta**  
+**Stato**: ✅ **Implementato** (branch `cursor/multi-account-persistence-redesign-fed3`) — validazione manuale web mobile §7.3 ancora da fare pre-merge  
 **Audience**: AI in sessioni future — implementare **solo** secondo questo documento  
 **Obiettivo PR**: far **funzionare** il flusso normale multi-account (login → aggiungi → F5 → switch). Non coprire tutti i casi limite.
 

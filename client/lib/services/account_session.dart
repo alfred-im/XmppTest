@@ -11,6 +11,7 @@ import '../providers/inbox_controller.dart';
 import '../utils/auth_identity.dart';
 import '../utils/auth_redirect_url.dart';
 import '../utils/ephemeral_pkce_storage.dart';
+import 'account_storage_service.dart';
 import 'compose_service.dart';
 import 'contact_service.dart';
 import 'inbox_service.dart';
@@ -49,22 +50,71 @@ class AccountSession {
   ProfileSummary profile;
   UserProfile? fullProfile;
   StreamSubscription<AuthState>? _authSubscription;
-  Future<void> Function()? onPersistRequested;
+  AccountStorageService? _storage;
+  String? _lastKnownRefreshToken;
 
-  /// Solo test: refresh token senza setSession (evita rete GoTrue).
+  /// Solo test: **non** usare come unica prova di persistenza su disco.
   @visibleForTesting
   String? testRefreshTokenOverride;
 
-  String? get refreshToken =>
-      testRefreshTokenOverride ?? client.auth.currentSession?.refreshToken;
+  String? get lastKnownRefreshToken =>
+      _lastKnownRefreshToken ?? testRefreshTokenOverride;
 
   /// Chiave storage GoTrue per questo account (`SharedPreferencesLocalStorage`).
   static String authStorageKey(String userId) => 'alfred_auth_$userId';
 
   OpenAccount toOpenAccount() => OpenAccount(
         profile: profile,
-        refreshToken: refreshToken ?? '',
+        refreshToken: lastKnownRefreshToken ?? '',
       );
+
+  void wireStorage(AccountStorageService storage) {
+    _storage = storage;
+  }
+
+  AccountStorageService _requireStorage() {
+    final storage = _storage;
+    if (storage == null) {
+      throw StateError('AccountStorageService non collegato alla sessione.');
+    }
+    return storage;
+  }
+
+  Future<void> persistOpenAccount({
+    required String refreshToken,
+    ProfileSummary? profile,
+  }) async {
+    _lastKnownRefreshToken = refreshToken;
+    final profileToStore = profile ?? this.profile;
+    await _requireStorage().upsertAccount(
+      OpenAccount(profile: profileToStore, refreshToken: refreshToken),
+    );
+  }
+
+  Future<void> updateStoredRefresh(String refreshToken) async {
+    if (refreshToken.isEmpty) return;
+    await persistOpenAccount(refreshToken: refreshToken);
+  }
+
+  Future<void> updateStoredProfile(ProfileSummary profile) async {
+    this.profile = profile;
+    final token = _lastKnownRefreshToken;
+    if (token == null || token.isEmpty) return;
+    await persistOpenAccount(refreshToken: token, profile: profile);
+  }
+
+  Future<void> clearStoredAccount() async {
+    final storage = _storage;
+    if (storage != null) {
+      await storage.removeAccount(userId);
+    }
+    await disposeResources(clearAuthStorage: true);
+  }
+
+  bool hasValidJwt() {
+    final access = client.auth.currentSession?.accessToken;
+    return access != null && access.isNotEmpty;
+  }
 
   static SupabaseClient createClient(String storageScope) {
     return SupabaseClient(
@@ -120,19 +170,23 @@ class AccountSession {
       accessToken: session.accessToken,
     );
 
-    return _fromClient(
+    final accountSession = await _fromClient(
       client: client,
       initialProfile: profileOverride ?? _profileFromUser(session.user),
     );
+    accountSession._lastKnownRefreshToken = refresh;
+    return accountSession;
   }
 
   static Future<AccountSession> restore(OpenAccount stored) async {
     final client = createClient(stored.userId);
     await client.auth.setSession(stored.refreshToken);
-    return _fromClient(
+    final accountSession = await _fromClient(
       client: client,
       initialProfile: stored.profile,
     );
+    accountSession._lastKnownRefreshToken = stored.refreshToken;
+    return accountSession;
   }
 
   static Future<AccountSession> signInWithPassword({
@@ -227,7 +281,10 @@ class AccountSession {
   void _listenAuth() {
     _authSubscription = client.auth.onAuthStateChange.listen((state) {
       if (state.event == AuthChangeEvent.tokenRefreshed) {
-        unawaited(onPersistRequested?.call());
+        final token = state.session?.refreshToken;
+        if (token != null && token.isNotEmpty) {
+          unawaited(updateStoredRefresh(token));
+        }
       }
     });
   }
@@ -326,7 +383,7 @@ class AccountSession {
         enableRealtime: false,
       ),
       profile: profile,
-    )..testRefreshTokenOverride = refreshToken;
+    ).._lastKnownRefreshToken = refreshToken;
     return session;
   }
 

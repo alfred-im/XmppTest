@@ -91,9 +91,11 @@ Ogni sessione client usa JWT proprio → RLS e Realtime rispettano `auth.uid()` 
 
 | Chiave | Contenuto |
 |--------|-----------|
-| `alfred_saved_accounts` | JSON array `OpenAccount` (compatibile con ex `SavedAccount`) |
+| `alfred_saved_accounts` | JSON array `OpenAccount` — **unica verità F5**; scritto da `AccountSession` al login/refresh (persistenza dichiarativa, vedi `multi-account-persistence-redesign.md`) |
 | `alfred_focus_user_id` | `userId` account in focus |
-| `alfred_auth_{userId}` | Sessione GoTrue per client dedicato (Supabase Flutter local storage) |
+| `alfred_auth_{userId}` | Sessione GoTrue per client dedicato (Supabase Flutter local storage) — **non** usato per ricostruire il manifest |
+
+**Stato normale (D15)**: account in lista = autenticato e in ascolto. Se restore fallisce (token revocato, caso raro), **rimuovere** l’entry e mostrare overlay login è accettabile.
 
 ---
 

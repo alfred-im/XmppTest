@@ -70,15 +70,21 @@ Il **focus** determina quale `inboxController` e quali servizi espone la UI via 
 
 ### 3.4 Chiusura account
 
-1. `removeAccount(userId)` → `session.close()` — **logout locale** (clear storage, no `signOut` GoTrue)
-2. Rimuove da storage e mappa
+1. `removeAccount(userId)` → `session.clearStoredAccount()` — rimuove entry manifest + logout locale (clear `alfred_auth_{userId}`, no `signOut` GoTrue)
+2. Rimuove da mappa RAM
 3. Se era focus: focus sul primo rimasto o `null`
 4. Se 0 account: overlay obbligatorio
 
-### 3.5 Refresh token
+### 3.5 Persistenza dichiarativa (PR redesign persistenza)
 
-- Ogni `AccountSession` registra `onAuthStateChange`
-- Su `tokenRefreshed`: callback → `AccountManager._persistSession` → aggiorna `OpenAccount.refreshToken`
+**Implementazione**: `docs/implementation/multi-account-persistence-redesign.md`
+
+- `AccountSession` scrive **solo la propria** entry in `alfred_saved_accounts` (`upsertAccount` / `removeAccount`)
+- Login/sign-up: `persistOpenAccount` con token dalla **risposta HTTP** — mai da `currentSession`
+- `tokenRefreshed`: `updateStoredRefresh` con token dall’evento auth
+- Sync profilo: `updateStoredProfile`
+- `AccountManager` **non** ricostruisce mai la lista (`saveAllAccounts` vietato nel runtime)
+- `_lastKnownRefreshToken` in RAM per `toOpenAccount()` e sidebar
 
 ---
 

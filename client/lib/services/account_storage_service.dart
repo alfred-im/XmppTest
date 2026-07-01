@@ -36,7 +36,10 @@ class AccountStorageService {
     await prefs.setString(_focusUserIdKey, userId);
   }
 
-  /// Sostituisce l'intera lista (scrittura atomica, niente race multi-account).
+  /// Sostituisce l'intera lista (scrittura atomica).
+  ///
+  /// **Runtime**: non usare nel flusso multi-account — preferire [upsertAccount] /
+  /// [removeAccount]. Ammesso solo in test che verificano il round-trip del metodo.
   Future<void> saveAllAccounts(List<OpenAccount> accounts) async {
     await _serializedWrite(() async {
       await _saveAccounts(accounts);
