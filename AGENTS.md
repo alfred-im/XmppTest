@@ -1,5 +1,20 @@
 # AGENTS.md
 
+## Regola prioritaria — completare il task
+
+In questa repository, **completare un task** (issue, PR, richiesta Cloud Agent) significa **seguire integralmente** [`.cursor-rules.md`](../.cursor-rules.md) — **non** modificare il codice al primo turno.
+
+| Fase | Consentito senza ok per le modifiche | Richiede conferma |
+|------|--------------------------------------|-------------------|
+| Discussione, analisi, diagnosi | Leggere codice/docs, grep, test diagnostici se richiesti | — |
+| Scrittura | — | Modificare file, migrazioni, SQL live, commit, push |
+
+Prima di **qualsiasi modifica persistente**, chiedere: **«Vuoi che proceda con le modifiche?»** (o attendere «Procedi» / «Implementa» / equivalente).
+
+Un turno con solo analisi o risposta è un task **completato con successo** se le regole sono state rispettate.
+
+---
+
 ## Cursor Cloud specific instructions
 
 Alfred is a **Flutter web** messaging client (`client/`) backed by a **live, hosted Supabase**

@@ -11,6 +11,8 @@ Prima di **qualsiasi** analisi, modifica al codice, comando o proposta di implem
 
 Quel file è la fonte autoritativa delle regole di sviluppo. **Non modificarlo.** Non sostituirlo con interpretazioni proprie. In caso di dubbio, fermati e chiedi.
 
+**Completare un task** = rispettare `.cursor-rules.md` (analisi lecita; **modifiche ai file solo con conferma** — vedi regola 0).
+
 ## Documentazione di riferimento (già presente nel repo)
 
 Dopo `.cursor-rules.md`, consulta la documentazione esistente secondo necessità:
@@ -20,5 +22,8 @@ Dopo `.cursor-rules.md`, consulta la documentazione esistente secondo necessità
 | Obbligatorio all'avvio sessione | `PROJECT_MAP.md` | Architettura, struttura, vincoli del software |
 | Indice navigazione | `docs/INDICE.md` | Trovare documenti tecnici per area (architettura, implementazione, fix, decisioni) |
 | Stato progetto | `README.md` | Contesto generale e feature implementate |
+| Agenti Cloud | `AGENTS.md` | Toolchain, test, definizione di task completato |
 
 Per approfondimenti tematici, usa `docs/INDICE.md` — non inventare architettura se è già documentata.
+
+**Lettura e analisi** (inclusi `docs/`, grep, codice) sono parte del lavoro quando l'utente chiede diagnosi o analisi — non richiedono conferma per le modifiche. **Scrivere** nel repository richiede sempre conferma esplicita.

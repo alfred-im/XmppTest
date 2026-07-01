@@ -49,7 +49,7 @@ Vedi `docs/fixes/multi-account-chat-persistence-pr143.md`. Tenere fix **runtime*
 |--------|-----------|
 | Account debug | **Solo** `alfredagent1` / `alfredagent2` — `docs/AGENT_DEBUG_ACCOUNTS.md` |
 | Non toccare | `test1`/`test2`/`test3` |
-| Sviluppo | `.cursor-rules.md` — comando esplicito prima di codice |
+| Sviluppo | `.cursor-rules.md` — analisi sì; **modifiche ai file solo con conferma** (`AGENTS.md`) |
 | Persistenza | Solo secondo `multi-account-persistence-redesign.md` |
 
 ---
