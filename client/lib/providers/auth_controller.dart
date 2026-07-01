@@ -99,7 +99,6 @@ class AuthController extends ChangeNotifier {
 
     await _withLoading(() async {
       await _manager.openWithPassword(email: email, password: password);
-      await _manager.refreshOpenAccountProfiles();
       showAuthOverlay = false;
     });
   }
@@ -141,7 +140,6 @@ class AuthController extends ChangeNotifier {
         username: username,
         displayName: displayName.trim(),
       );
-      await _manager.refreshOpenAccountProfiles();
       showAuthOverlay = false;
     });
   }

@@ -102,7 +102,7 @@ void main() {
       expect(stored.single.refreshToken, 'refresh-agent-a');
     });
 
-    test('updateStoredRefresh updates only the matching entry', () async {
+    test('persistOpenAccount updates only the matching entry', () async {
       final sessionA = await sessionFor(
         id: 'agent-a',
         username: 'alfredagent1',
@@ -116,7 +116,7 @@ void main() {
 
       await sessionA.persistOpenAccount(refreshToken: 'refresh-agent-a-v1');
       await sessionB.persistOpenAccount(refreshToken: 'refresh-agent-b');
-      await sessionA.updateStoredRefresh('refresh-agent-a-v2');
+      await sessionA.persistOpenAccount(refreshToken: 'refresh-agent-a-v2');
 
       final stored = await storage.loadAccounts();
       expect(stored.length, 2);
@@ -137,7 +137,7 @@ void main() {
         refreshToken: 'refresh-agent-a-v1',
       );
       await session.persistOpenAccount(refreshToken: 'refresh-agent-a-v1');
-      await session.updateStoredRefresh('refresh-agent-a-v2');
+      await session.persistOpenAccount(refreshToken: 'refresh-agent-a-v2');
 
       final stored = await storage.loadAccounts();
       expect(stored.single.refreshToken, 'refresh-agent-a-v2');

@@ -92,11 +92,6 @@ class AccountSession {
     );
   }
 
-  Future<void> updateStoredRefresh(String refreshToken) async {
-    if (refreshToken.isEmpty) return;
-    await persistOpenAccount(refreshToken: refreshToken);
-  }
-
   Future<void> updateStoredProfile(ProfileSummary profile) async {
     this.profile = profile;
     final token = _lastKnownRefreshToken;
@@ -136,7 +131,7 @@ class AccountSession {
   /// crasha lato client. [EphemeralPkceStorage] tiene il code verifier in RAM.
   ///
   /// Non chiamare mai [GoTrueClient.signOut] sul bootstrap dopo
-  /// [_sessionFromAuthResponse]: bootstrap e client dedicato condividono la
+  /// [openAccountFromAuthResponse]: bootstrap e client dedicato condividono la
   /// stessa sessione GoTrue; il logout server-side revoca il refresh token appena
   /// adottato («Invalid Refresh Token: Refresh Token Not Found»).
   static SupabaseClient createBootstrapClient() {
@@ -152,7 +147,9 @@ class AccountSession {
     );
   }
 
-  static Future<AccountSession> _sessionFromAuthResponse(
+  /// Login/sign-up: scrive la sessione GoTrue locale e restituisce la voce manifest.
+  /// Nessun oggetto runtime — [AccountManager] ricostruisce la RAM con [restore].
+  static Future<OpenAccount> openAccountFromAuthResponse(
     AuthResponse response, {
     ProfileSummary? profileOverride,
   }) async {
@@ -171,12 +168,10 @@ class AccountSession {
       accessToken: session.accessToken,
     );
 
-    final accountSession = await _fromClient(
-      client: client,
-      initialProfile: profileOverride ?? _profileFromUser(session.user),
+    return OpenAccount(
+      profile: profileOverride ?? _profileFromUser(session.user),
+      refreshToken: refresh,
     );
-    accountSession._lastKnownRefreshToken = refresh;
-    return accountSession;
   }
 
   /// Ripristina sessione da manifest + storage GoTrue locale.
@@ -235,7 +230,7 @@ class AccountSession {
     }
   }
 
-  static Future<AccountSession> signInWithPassword({
+  static Future<OpenAccount> signInOpenAccount({
     required String email,
     required String password,
   }) async {
@@ -245,10 +240,10 @@ class AccountSession {
       email: normalizedEmail,
       password: password,
     );
-    return _sessionFromAuthResponse(response);
+    return openAccountFromAuthResponse(response);
   }
 
-  static Future<AccountSession> signUp({
+  static Future<OpenAccount> signUpOpenAccount({
     required String email,
     required String password,
     required String username,
@@ -280,7 +275,7 @@ class AccountSession {
         'Registrazione inviata. Conferma l\'email prima di accedere.',
       );
     }
-    return _sessionFromAuthResponse(
+    return openAccountFromAuthResponse(
       response,
       profileOverride: ProfileSummary(
         id: session.user.id,
@@ -333,7 +328,7 @@ class AccountSession {
       if (state.event == AuthChangeEvent.tokenRefreshed) {
         final token = state.session?.refreshToken;
         if (token != null && token.isNotEmpty) {
-          unawaited(updateStoredRefresh(token));
+          unawaited(persistOpenAccount(refreshToken: token));
         }
       }
     });
