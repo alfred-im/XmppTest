@@ -1,9 +1,22 @@
+import 'dart:async';
+
 import 'package:geolocator/geolocator.dart';
 
-import '../config/location_config.dart';
+import '../models/location_reading.dart';
 
 class LocationService {
-  Future<({double latitude, double longitude})> getCurrentPosition() async {
+  Stream<LocationReading> watchCurrentPosition() async* {
+    await _ensureReady();
+
+    yield* Geolocator.getPositionStream(
+      locationSettings: const LocationSettings(
+        accuracy: LocationAccuracy.high,
+        distanceFilter: 0,
+      ),
+    ).map(_readingFromPosition);
+  }
+
+  Future<void> _ensureReady() async {
     final serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
       throw const LocationServiceException(
@@ -27,17 +40,13 @@ class LocationService {
         'Permesso posizione negato in modo permanente. Abilitalo nelle impostazioni del dispositivo.',
       );
     }
+  }
 
-    final position = await Geolocator.getCurrentPosition(
-      locationSettings: const LocationSettings(
-        accuracy: LocationAccuracy.high,
-        timeLimit: Duration(seconds: 20),
-      ),
-    );
-
-    return (
-      latitude: LocationConfig.roundCoordinate(position.latitude),
-      longitude: LocationConfig.roundCoordinate(position.longitude),
+  LocationReading _readingFromPosition(Position position) {
+    return LocationReading(
+      latitude: position.latitude,
+      longitude: position.longitude,
+      accuracyMeters: position.accuracy,
     );
   }
 }

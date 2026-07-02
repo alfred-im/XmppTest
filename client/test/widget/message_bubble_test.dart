@@ -120,7 +120,7 @@ void main() {
       ),
     );
 
-    expect(find.byIcon(Icons.location_on_outlined), findsWidgets);
+    expect(find.byIcon(Icons.location_on_outlined), findsOneWidget);
     expect(find.textContaining('45.46420°N'), findsOneWidget);
     expect(find.text('Tocca per aprire la mappa'), findsOneWidget);
   });

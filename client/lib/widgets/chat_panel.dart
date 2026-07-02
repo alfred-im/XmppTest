@@ -61,7 +61,10 @@ class ChatPanel extends StatelessWidget {
               bytes: bytes,
               durationMs: durationMs,
             ),
-            onSendLocation: messagesController.sendLocation,
+            onSendLocation: (latitude, longitude) => messagesController.sendLocation(
+              latitude: latitude,
+              longitude: longitude,
+            ),
           ),
         ],
       ),

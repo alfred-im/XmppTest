@@ -17,15 +17,23 @@ Nessun bucket storage — solo coordinate in Postgres.
 
 ## UX invio (`ChatInputBar`)
 
-| Azione | Comportamento |
-|--------|---------------|
-| Pulsante **pin** (accanto a GIF) | Legge GPS corrente e invia |
-| Permesso negato | SnackBar / messaggio errore in `MessagesController` |
-| Retry | `OutboundMessageQueue` con `latitude`/`longitude` in coda |
+| Fase | Comportamento |
+|------|---------------|
+| Tap **pin** | Avvia stream GPS (`LocationService.watchCurrentPosition`) |
+| **Acquiring** | Overlay «Rilevamento posizione…» + spinner |
+| **Preview** | Appena arriva la prima coordinata (anche approssimativa): mappa OSM + pin, testo precisione |
+| Affinamento | Il pin si aggiorna se il GPS migliora (`distanceFilter: 0`) |
+| **Invia posizione** | Invia le coordinate **al momento del tap** (arrotondate) |
+| **Annulla** | Chiude stream e overlay senza inviare |
+| Permesso negato | SnackBar con messaggio da `LocationServiceException` |
+| Retry invio | `OutboundMessageQueue` con `latitude`/`longitude` in coda |
+
+**Scelta**: anteprima obbligatoria prima dell'invio — niente invio al solo tap sul pin.
 
 ## UX ricezione (`LocationMessageContent`)
 
-- Anteprima mappa statica OpenStreetMap (`staticmap.openstreetmap.de`, nessuna API key)
+- Mappa **tile OSM** renderizzata in client (`flutter_map` + `tile.openstreetmap.org`) — **non** `staticmap.openstreetmap.de` (servizio defunto)
+- Attribuzione «© OpenStreetMap» in bolla
 - Coordinate formattate (es. `45.12345°N, 9.54321°E`)
 - Tap → apre OpenStreetMap in browser (`url_launcher`)
 
@@ -34,12 +42,16 @@ Nessun bucket storage — solo coordinate in Postgres.
 | Area | File / componente |
 |------|-------------------|
 | Config | `lib/config/location_config.dart` |
-| Geolocalizzazione | `lib/services/location_service.dart` (`geolocator`) |
-| Invio | `MessagesController.sendLocation` → RPC `send_message_to_profile` |
+| Modello lettura GPS | `lib/models/location_reading.dart` |
+| Geolocalizzazione | `lib/services/location_service.dart` (`geolocator` stream) |
+| Mappa condivisa | `lib/widgets/location_map_preview.dart` |
+| Invio | `ChatInputBar` anteprima → `MessagesController.sendLocation(lat,lng)` → RPC |
 | Bolla | `lib/widgets/location_message_content.dart` |
 | Coda retry | `OutboundMessageQueue` — `OutboundContentKind.location` |
 
-Dipendenze aggiunte: `geolocator`, `url_launcher`.
+Dipendenze: `geolocator`, `flutter_map`, `latlong2`, `url_launcher`.
+
+Permessi Android: `ACCESS_FINE_LOCATION`, `ACCESS_COARSE_LOCATION` in `AndroidManifest.xml`.
 
 ## Supabase
 
@@ -57,6 +69,6 @@ Migrazioni **due step** (enum PostgreSQL deve commitare prima dell'uso):
 
 ## Non in scope (Alpha)
 
-- Posizione **live** con aggiornamenti periodici
+- Posizione **live** con aggiornamenti periodici in chat
 - Reverse geocoding (indirizzo testuale)
 - Federazione XMPP (outbox pronta, bridge stub)

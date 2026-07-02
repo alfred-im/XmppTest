@@ -1,11 +1,12 @@
-/// Static location message contract — coordinates + OSM preview (no API key).
+/// Static location message contract — coordinates + OSM tiles (no API key).
 class LocationConfig {
   LocationConfig._();
 
   static const coordinateDecimals = 5;
-  static const mapWidth = 400;
-  static const mapHeight = 200;
-  static const mapZoom = 15;
+  static const mapZoom = 15.0;
+  static const refiningAccuracyThresholdMeters = 50.0;
+  static const osmTileUrlTemplate = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+  static const osmAttribution = '© OpenStreetMap';
 
   static double roundCoordinate(double value) {
     final factor = _pow10(coordinateDecimals);
@@ -21,21 +22,10 @@ class LocationConfig {
         '${lng.abs().toStringAsFixed(coordinateDecimals)}°$lngSuffix';
   }
 
-  /// OpenStreetMap static map (no API key).
-  static String staticMapUrl(double latitude, double longitude) {
-    final lat = roundCoordinate(latitude);
-    final lng = roundCoordinate(longitude);
-    return 'https://staticmap.openstreetmap.de/staticmap.php'
-        '?center=$lat,$lng'
-        '&zoom=$mapZoom'
-        '&size=${mapWidth}x$mapHeight'
-        '&markers=$lat,$lng,red-pushpin';
-  }
-
   static String openInMapsUrl(double latitude, double longitude) {
     final lat = roundCoordinate(latitude);
     final lng = roundCoordinate(longitude);
-    return 'https://www.openstreetmap.org/?mlat=$lat&mlon=$lng#map=$mapZoom/$lat/$lng';
+    return 'https://www.openstreetmap.org/?mlat=$lat&mlon=$lng#map=${mapZoom.round()}/$lat/$lng';
   }
 
   static double _pow10(int exponent) {

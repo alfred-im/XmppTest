@@ -212,14 +212,16 @@ client/lib/
 **Dettaglio**: [location-sharing.md](../implementation/location-sharing.md)
 
 1. Pulsante pin in `ChatInputBar` (accanto a GIF)
-2. `LocationService.getCurrentPosition` → `geolocator` (permesso browser/dispositivo)
-3. RPC `send_message_to_profile` con `content_type=location`, `latitude`, `longitude`
-4. `LocationMessageContent` in bolla — mappa statica OSM + coordinate + tap apre OpenStreetMap
-5. Preview inbox: `📍 Posizione` (`format_location_preview`)
-6. Coda retry client unificata (`OutboundContentKind.location`)
+2. Stream GPS (`LocationService.watchCurrentPosition`) — anteprima alla **prima** coordinata, affinamento fino a conferma
+3. Overlay: mappa OSM (`LocationMapPreview` / `flutter_map`), precisione, **Annulla** / **Invia posizione**
+4. RPC `send_message_to_profile` con `content_type=location`, `latitude`, `longitude` (solo dopo conferma)
+5. `LocationMessageContent` in bolla — stesse tile OSM + tap apre OpenStreetMap
+6. Preview inbox: `📍 Posizione` (`format_location_preview`)
+7. Coda retry client unificata (`OutboundContentKind.location`)
 
 **Scelte**:
-- Coordinate arrotondate a 5 decimali lato client
+- Tile `tile.openstreetmap.org` in client — **non** `staticmap.openstreetmap.de` (defunto)
+- Coordinate arrotondate a 5 decimali al momento dell'invio
 - Nessun bucket storage — solo Postgres
 - Posizione live e reverse geocoding: fuori scope Alpha
 

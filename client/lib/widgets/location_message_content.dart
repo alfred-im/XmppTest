@@ -3,9 +3,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../config/location_config.dart';
 import '../theme/alfred_colors.dart';
-
-const double _locationMapWidth = 240;
-const double _locationMapHeight = 140;
+import 'location_map_preview.dart';
 
 class LocationMessageContent extends StatelessWidget {
   const LocationMessageContent({
@@ -37,41 +35,9 @@ class LocationMessageContent extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: Image.network(
-                LocationConfig.staticMapUrl(latitude, longitude),
-                width: _locationMapWidth,
-                height: _locationMapHeight,
-                fit: BoxFit.cover,
-                loadingBuilder: (context, child, loadingProgress) {
-                  if (loadingProgress == null) return child;
-                  return SizedBox(
-                    width: _locationMapWidth,
-                    height: _locationMapHeight,
-                    child: const Center(
-                      child: SizedBox(
-                        width: 24,
-                        height: 24,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      ),
-                    ),
-                  );
-                },
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    width: _locationMapWidth,
-                    height: _locationMapHeight,
-                    color: AlfredColors.border,
-                    alignment: Alignment.center,
-                    child: const Icon(
-                      Icons.location_on_outlined,
-                      color: AlfredColors.unreadBadge,
-                      size: 40,
-                    ),
-                  );
-                },
-              ),
+            LocationMapPreview(
+              latitude: latitude,
+              longitude: longitude,
             ),
             const SizedBox(height: 6),
             Row(

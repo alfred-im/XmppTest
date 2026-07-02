@@ -3,11 +3,11 @@ import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
+import '../config/location_config.dart';
 import '../config/voice_config.dart';
 import '../models/message.dart';
 import '../models/outbound_queue_item.dart';
 import '../services/inbox_service.dart';
-import '../services/location_service.dart';
 import '../services/message_media_service.dart';
 import '../services/message_service.dart';
 import '../services/outbound_message_queue.dart';
@@ -22,10 +22,8 @@ class MessagesController extends ChangeNotifier {
     required this.inboxService,
     this.onMessagesChanged,
     this.hasValidSession,
-    LocationService? locationService,
     OutboundMessageQueue? outboundQueue,
-  }) : locationService = locationService ?? LocationService(),
-       _outboundQueue = outboundQueue ?? OutboundMessageQueue() {
+  }) : _outboundQueue = outboundQueue ?? OutboundMessageQueue() {
     unawaited(_init());
   }
 
@@ -38,7 +36,6 @@ class MessagesController extends ChangeNotifier {
   final MessageService messageService;
   final MessageMediaService messageMediaService;
   final InboxService inboxService;
-  final LocationService locationService;
   final OutboundMessageQueue _outboundQueue;
   final _uuid = const Uuid();
 
@@ -267,50 +264,47 @@ class MessagesController extends ChangeNotifier {
     );
   }
 
-  Future<void> sendLocation() async {
+  Future<void> sendLocation({
+    required double latitude,
+    required double longitude,
+  }) async {
     if (isSending) return;
     if (!_ensureValidSession()) return;
 
+    final lat = LocationConfig.roundCoordinate(latitude);
+    final lng = LocationConfig.roundCoordinate(longitude);
     final clientId = _uuid.v4();
-    try {
-      final position = await locationService.getCurrentPosition();
-      await _sendOptimistic(
-        optimistic: ChatMessage(
-          id: clientId,
-          body: '',
-          timeLabel: formatMessageTime(DateTime.now()),
-          isMine: true,
-          status: MessageStatus.pending,
-          createdAt: DateTime.now(),
-          senderId: userId,
-          contentType: MessageContentType.location,
-          latitude: position.latitude,
-          longitude: position.longitude,
-        ),
-        queueItem: OutboundQueueItem(
-          clientId: clientId,
-          queueKey: _queueKey,
-          kind: OutboundContentKind.location,
-          attempts: 0,
-          queuedAt: DateTime.now(),
-          latitude: position.latitude,
-          longitude: position.longitude,
-        ),
-        send: (id) => messageService.sendLocationToProfile(
-          recipientProfileId: peerProfileId,
-          latitude: position.latitude,
-          longitude: position.longitude,
-          currentUserId: userId,
-          clientMessageId: id,
-        ),
-      );
-    } on LocationServiceException catch (e) {
-      error = e.message;
-      notifyListeners();
-    } catch (e) {
-      error = e.toString();
-      notifyListeners();
-    }
+
+    await _sendOptimistic(
+      optimistic: ChatMessage(
+        id: clientId,
+        body: '',
+        timeLabel: formatMessageTime(DateTime.now()),
+        isMine: true,
+        status: MessageStatus.pending,
+        createdAt: DateTime.now(),
+        senderId: userId,
+        contentType: MessageContentType.location,
+        latitude: lat,
+        longitude: lng,
+      ),
+      queueItem: OutboundQueueItem(
+        clientId: clientId,
+        queueKey: _queueKey,
+        kind: OutboundContentKind.location,
+        attempts: 0,
+        queuedAt: DateTime.now(),
+        latitude: lat,
+        longitude: lng,
+      ),
+      send: (id) => messageService.sendLocationToProfile(
+        recipientProfileId: peerProfileId,
+        latitude: lat,
+        longitude: lng,
+        currentUserId: userId,
+        clientMessageId: id,
+      ),
+    );
   }
 
   Future<void> retryMessage(String clientId) async {

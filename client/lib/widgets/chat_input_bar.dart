@@ -6,12 +6,20 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../config/voice_config.dart';
+import '../models/location_reading.dart';
+import '../services/location_service.dart';
 import '../services/voice_recording_service.dart';
 import '../theme/alfred_colors.dart';
 import '../utils/duration_format.dart';
+import '../config/location_config.dart';
+import 'location_map_preview.dart';
 import 'voice_message_content.dart';
 
 typedef VoiceSendCallback = Future<void> Function(Uint8List bytes, int durationMs);
+typedef LocationSendCallback = Future<void> Function(
+  double latitude,
+  double longitude,
+);
 
 class ChatInputBar extends StatefulWidget {
   const ChatInputBar({
@@ -27,7 +35,7 @@ class ChatInputBar extends StatefulWidget {
   final Future<void> Function(String body)? onSend;
   final Future<void> Function(Uint8List bytes)? onSendGif;
   final VoiceSendCallback? onSendVoice;
-  final Future<void> Function()? onSendLocation;
+  final LocationSendCallback? onSendLocation;
 
   @override
   State<ChatInputBar> createState() => _ChatInputBarState();
@@ -35,15 +43,21 @@ class ChatInputBar extends StatefulWidget {
 
 enum _VoicePhase { idle, recording, locked, preview }
 
+enum _LocationPhase { idle, acquiring, preview }
+
 class _ChatInputBarState extends State<ChatInputBar> {
   final _controller = TextEditingController();
   final _recorder = VoiceRecordingService();
+  final _locationService = LocationService();
 
   StreamSubscription<double>? _ampSub;
+  StreamSubscription<LocationReading>? _locationSub;
   Timer? _uiTimer;
   double? _pointerOriginY;
 
   _VoicePhase _voicePhase = _VoicePhase.idle;
+  _LocationPhase _locationPhase = _LocationPhase.idle;
+  LocationReading? _locationPreview;
   double _level = 0;
   bool _cancelArmed = false;
   bool _lockArmed = false;
@@ -53,6 +67,7 @@ class _ChatInputBarState extends State<ChatInputBar> {
   void dispose() {
     _controller.dispose();
     _ampSub?.cancel();
+    _locationSub?.cancel();
     _uiTimer?.cancel();
     unawaited(_recorder.dispose());
     super.dispose();
@@ -82,9 +97,79 @@ class _ChatInputBarState extends State<ChatInputBar> {
     await widget.onSendGif!(Uint8List.fromList(bytes));
   }
 
-  Future<void> _shareLocation() async {
-    if (!widget.enabled || widget.onSendLocation == null) return;
-    await widget.onSendLocation!();
+  bool get _isComposerLocked =>
+      _voicePhase != _VoicePhase.idle || _locationPhase != _LocationPhase.idle;
+
+  Future<void> _beginLocationShare() async {
+    if (!widget.enabled ||
+        widget.onSendLocation == null ||
+        _locationPhase != _LocationPhase.idle ||
+        _voicePhase != _VoicePhase.idle) {
+      return;
+    }
+
+    setState(() {
+      _locationPhase = _LocationPhase.acquiring;
+      _locationPreview = null;
+    });
+
+    try {
+      final stream = _locationService.watchCurrentPosition();
+      _locationSub = stream.listen(
+        (reading) {
+          if (!mounted) return;
+          setState(() {
+            _locationPreview = reading;
+            _locationPhase = _LocationPhase.preview;
+          });
+        },
+        onError: (Object error) {
+          if (!mounted) return;
+          _cancelLocationShare();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                error is LocationServiceException
+                    ? error.message
+                    : 'Impossibile rilevare la posizione.',
+              ),
+            ),
+          );
+        },
+      );
+    } on LocationServiceException catch (error) {
+      if (!mounted) return;
+      setState(() => _locationPhase = _LocationPhase.idle);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error.message)),
+      );
+    }
+  }
+
+  void _cancelLocationShare() {
+    _locationSub?.cancel();
+    _locationSub = null;
+    setState(() {
+      _locationPhase = _LocationPhase.idle;
+      _locationPreview = null;
+    });
+  }
+
+  Future<void> _confirmLocationShare() async {
+    final preview = _locationPreview;
+    if (preview == null || widget.onSendLocation == null) return;
+
+    _locationSub?.cancel();
+    _locationSub = null;
+    setState(() {
+      _locationPhase = _LocationPhase.idle;
+      _locationPreview = null;
+    });
+
+    await widget.onSendLocation!(
+      preview.roundedLatitude,
+      preview.roundedLongitude,
+    );
   }
 
   void _stopUiTracking() {
@@ -329,6 +414,98 @@ class _ChatInputBarState extends State<ChatInputBar> {
     );
   }
 
+  Widget _buildLocationOverlay() {
+    final preview = _locationPreview;
+
+    return Positioned(
+      left: 8,
+      right: 8,
+      bottom: 64,
+      child: Material(
+        elevation: 10,
+        shadowColor: Colors.black26,
+        borderRadius: BorderRadius.circular(20),
+        color: AlfredColors.panel,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (_locationPhase == _LocationPhase.acquiring) ...[
+                const Row(
+                  children: [
+                    SizedBox(
+                      width: 22,
+                      height: 22,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Rilevamento posizione…',
+                        style: TextStyle(
+                          color: AlfredColors.textSecondary,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+              if (_locationPhase == _LocationPhase.preview && preview != null) ...[
+                LocationMapPreview(
+                  latitude: preview.latitude,
+                  longitude: preview.longitude,
+                  width: double.infinity,
+                  height: 160,
+                  interactive: true,
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  LocationConfig.formatCoordinates(
+                    preview.latitude,
+                    preview.longitude,
+                  ),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  preview.accuracyLabel,
+                  style: const TextStyle(
+                    color: AlfredColors.textSecondary,
+                    fontSize: 12,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    TextButton(
+                      onPressed: _cancelLocationShare,
+                      child: const Text('Annulla'),
+                    ),
+                    const Spacer(),
+                    FilledButton.icon(
+                      onPressed: () => unawaited(_confirmLocationShare()),
+                      icon: const Icon(Icons.send_rounded, size: 18),
+                      label: const Text('Invia posizione'),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AlfredColors.charcoal,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildTrailingAction() {
     if (_hasText) {
       return Material(
@@ -424,7 +601,9 @@ class _ChatInputBarState extends State<ChatInputBar> {
                     ),
                   ),
                   IconButton(
-                    onPressed: widget.enabled ? () => unawaited(_shareLocation()) : null,
+                    onPressed: widget.enabled && !_isComposerLocked
+                        ? () => unawaited(_beginLocationShare())
+                        : null,
                     tooltip: 'Condividi posizione',
                     icon: Icon(
                       Icons.location_on_outlined,
@@ -436,7 +615,7 @@ class _ChatInputBarState extends State<ChatInputBar> {
                   Expanded(
                     child: TextField(
                       controller: _controller,
-                      enabled: widget.enabled && _voicePhase == _VoicePhase.idle,
+                      enabled: widget.enabled && !_isComposerLocked,
                       onChanged: (_) => setState(() {}),
                       decoration: const InputDecoration(
                         hintText: 'Scrivi un messaggio',
@@ -453,6 +632,7 @@ class _ChatInputBarState extends State<ChatInputBar> {
               ),
             ),
             if (_voicePhase != _VoicePhase.idle) _buildVoiceOverlay(),
+            if (_locationPhase != _LocationPhase.idle) _buildLocationOverlay(),
           ],
         ),
       ),

@@ -125,7 +125,7 @@
 
 **Non deducibile — voice**: hold-to-send, WebM/Opus canonico. Spec: `docs/implementation/voice-notes.md`.
 
-**Non deducibile — posizione statica**: tap pin in composer → GPS corrente → `content_type=location` con `latitude`/`longitude`; mappa OSM in bolla. Spec: `docs/implementation/location-sharing.md`.
+**Non deducibile — posizione statica**: tap pin → anteprima mappa OSM (`flutter_map`) con affinamento GPS → conferma invio; bolle ricevute stesso widget tile OSM. Spec: `docs/implementation/location-sharing.md`.
 
 **Non deducibile — profilo pubblico UI**: `ProfileSummary` (`lib/models/profile_summary.dart`) — unico modello per nome, username, avatar, pronomi; usato da `UserProfile.summary`, `OpenAccount.profile`, `ChatPeer.profile`. Fetch batch: `ProfileService.fetchSummariesByIds`. Widget condivisi: `ProfileAvatar`, `ProfileIdentityLines` (`lib/widgets/profile_identity.dart`).
 
