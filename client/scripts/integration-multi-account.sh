@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # Integrazione live Supabase — multi-account senza browser (no hang computerUse).
+# Hub: bash scripts/test.sh integration
 # Usa SOLO account agente documentati in docs/AGENT_DEBUG_ACCOUNTS.md
 set -euo pipefail
 

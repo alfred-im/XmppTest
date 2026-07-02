@@ -28,9 +28,11 @@ Flutter (client/)  →  Supabase (piattaforma)  →  bridge XMPP + bridge Matrix
 
 ```bash
 cd client
-bash scripts/verify.sh   # obbligatorio prima di git push
+bash scripts/test.sh gate   # gate CI — obbligatorio prima di git push
 flutter run -d chrome
 ```
+
+Suite test: `client/scripts/test/README.md`
 
 Deploy: `.github/workflows/deploy-pages.yml`.
 
