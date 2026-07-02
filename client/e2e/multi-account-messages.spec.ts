@@ -25,7 +25,7 @@ import {
  * subito — indipendentemente dall’UI Flutter.
  */
 test.use({ viewport: { width: 390, height: 844 } });
-test.setTimeout(300_000);
+test.setTimeout(90_000);
 
 test('multi-account mobile: messaggio in DB e visibile dall’altro account', async ({
   page,
@@ -47,9 +47,7 @@ test('multi-account mobile: messaggio in DB e visibile dall’altro account', as
     account1.displayName!,
     agent1Id,
   );
-  await openPeerInInbox(page, account2.displayName!, {
-    username: ACCOUNT2.username,
-  });
+  await openPeerInInbox(page, account2.displayName!);
   await sendChatMessage(page, msgFrom1);
   await backToInboxFromChat(page);
 
@@ -76,7 +74,7 @@ test('multi-account mobile: messaggio in DB e visibile dall’altro account', as
   await expectReceivedMessageOnAccount(
     page,
     { displayName: account2.displayName!, userId: agent2Id },
-    { displayName: account1.displayName!, username: ACCOUNT1.username },
+    { displayName: account1.displayName! },
     msgFrom1,
   );
 
@@ -106,7 +104,7 @@ test('multi-account mobile: messaggio in DB e visibile dall’altro account', as
   await expectReceivedMessageOnAccount(
     page,
     { displayName: account1.displayName!, userId: agent1Id },
-    { displayName: account2.displayName!, username: ACCOUNT2.username },
+    { displayName: account2.displayName! },
     msgFrom2,
   );
   await expectChatContains(page, [msgFrom1, msgFrom2]);
@@ -117,10 +115,5 @@ test('multi-account mobile: messaggio in DB e visibile dall’altro account', as
     expect.arrayContaining([msgFrom1, msgFrom2]),
   );
 
-  const meaningfulErrors = errors.filter(
-    (message) => message.trim() !== '' && message !== 'Error',
-  );
-  expect(meaningfulErrors, `errori JS: ${meaningfulErrors.join('; ')}`).toEqual(
-    [],
-  );
+  expect(errors, `errori JS: ${errors.join('; ')}`).toEqual([]);
 });

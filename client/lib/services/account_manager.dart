@@ -222,6 +222,9 @@ class AccountManager {
     if (!_hasAccount(userId)) return;
     _focusUserId = userId;
     await _storage.saveFocusUserId(userId);
+    // Inbox del focus: ricarica on-read al cambio account (realtime in background
+    // può non aggiornare la UI se nessun listener era attivo sul controller).
+    await _sessions[userId]?.inboxController.load();
   }
 
   Future<void> removeAccount(String userId) async {

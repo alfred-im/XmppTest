@@ -11,7 +11,7 @@ export async function enableFlutterAccessibility(page: Page) {
     return true;
   });
   if (enabled) {
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(400);
   }
 }
 

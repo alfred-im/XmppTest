@@ -1,5 +1,7 @@
 import { expect } from '@playwright/test';
 
+import { E2E_TIMEOUT } from './timeouts';
+
 const SUPABASE_URL =
   process.env.SUPABASE_URL ?? 'https://tvwpoxxcqwphryvuyqzu.supabase.co';
 
@@ -84,7 +86,7 @@ export type WaitForDbMessageOptions = {
 export async function waitForMessageInDb(
   options: WaitForDbMessageOptions,
 ): Promise<PeerMessage> {
-  const deadline = Date.now() + (options.timeoutMs ?? 60_000);
+  const deadline = Date.now() + (options.timeoutMs ?? E2E_TIMEOUT.db);
   const session = await loginSupabase(
     options.viewerEmail,
     options.viewerPassword,
@@ -105,7 +107,7 @@ export async function waitForMessageInDb(
       ).toBe(options.expectedSenderId);
       return match;
     }
-    await new Promise((r) => setTimeout(r, 2_000));
+    await new Promise((r) => setTimeout(r, 500));
   }
 
   throw new Error(

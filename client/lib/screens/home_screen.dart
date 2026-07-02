@@ -63,7 +63,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _onMessagesChanged() async {
     if (!mounted) return;
     final auth = context.read<AuthController>();
-    final inbox = context.read<InboxController?>();
+    final inbox = auth.focusedSession?.inboxController;
     final activePeer = auth.activePeer;
     if (inbox == null || activePeer == null) return;
 
@@ -149,8 +149,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _mainContent(BuildContext context) {
     final auth = context.watch<AuthController>();
-    final inbox = context.watch<InboxController?>();
     final session = auth.focusedSession;
+    final inbox = session?.inboxController;
     final accountUserId = session?.userId;
 
     final width = MediaQuery.sizeOf(context).width;
@@ -159,13 +159,17 @@ class _HomeScreenState extends State<HomeScreen> {
     final sidebarWidth = width >= 1100 ? 380.0 : 320.0;
 
     final inboxArea = accountUserId != null && inbox != null
-        ? _inboxPanel(
-            context: context,
-            auth: auth,
-            inbox: inbox,
-            accountUserId: accountUserId,
-            showDrawerButton: !isWide,
-            showTopBar: !isWide,
+        ? ListenableBuilder(
+            key: ValueKey(accountUserId),
+            listenable: inbox,
+            builder: (context, _) => _inboxPanel(
+              context: context,
+              auth: auth,
+              inbox: inbox,
+              accountUserId: accountUserId,
+              showDrawerButton: !isWide,
+              showTopBar: !isWide,
+            ),
           )
         : const NoAccountPlaceholder();
 

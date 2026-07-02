@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 
 import '../providers/auth_controller.dart';
 import '../providers/contacts_controller.dart';
-import '../providers/inbox_controller.dart';
 import '../providers/profile_controller.dart';
 import '../services/supabase_bootstrap.dart';
 import 'screens/app_shell.dart';
@@ -23,19 +22,6 @@ class AlfredApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(
           create: (_) => AuthController()..initialize(),
-        ),
-        ListenableProxyProvider<AuthController, InboxController?>(
-          create: (_) => null,
-          update: (_, auth, _) {
-            if (!auth.sessionReady) return null;
-            return auth.focusedSession?.inboxController;
-          },
-          // InboxController è di proprietà di AccountSession (dispose in close()).
-          // Non farlo smaltire dal Provider al cambio focus — altrimenti crash
-          // multi-account ("used after being disposed").
-          dispose: (context, inbox) {
-            // Lifecycle gestito da AccountSession.close().
-          },
         ),
         ChangeNotifierProxyProvider<AuthController, ContactsController?>(
           create: (_) => null,
