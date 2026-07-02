@@ -19,11 +19,19 @@ Client ufficiale Alfred — multi-piattaforma (web, mobile, desktop).
 
 ## Test
 
+Catalogo e launcher unificato:
+
 ```bash
 cd client
-bash scripts/verify.sh            # obbligatorio prima di git push
-npx playwright test e2e/
+bash scripts/test.sh list        # tutte le suite (gate + manuali)
+bash scripts/test.sh gate        # gate CI — obbligatorio prima di git push
+bash scripts/test.sh e2e-multi   # Playwright multi-account (Alpha)
+bash scripts/test.sh manual      # integration + e2e-multi + live
 ```
+
+Dettaglio: [`scripts/test/README.md`](scripts/test/README.md)
+
+Gate CI (equivale a `test.sh gate`): `bash scripts/verify.sh`
 
 ## Struttura
 

@@ -1,7 +1,7 @@
 # Multi-account: redesign persistenza (single source of truth)
 
 **Data**: 2026-07-01 (revisione design completa)  
-**Stato**: 🟢 **Documento su `main`** — implementazione codice **non ancora fatta**  
+**Stato**: ✅ **Implementato** (branch `cursor/multi-account-persistence-redesign-fed3`) — validazione manuale web mobile §7.3 ancora da fare pre-merge  
 **Audience**: AI in sessioni future — implementare **solo** secondo questo documento  
 **Obiettivo PR**: far **funzionare** il flusso normale multi-account (login → aggiungi → F5 → switch). Non coprire tutti i casi limite.
 
@@ -266,10 +266,14 @@ _listenAuth: tokenRefreshed →
 1. accounts = storage.loadAccounts()
 2. for each account:
      if refreshToken.isEmpty → storage.removeAccount(userId); continue   // D2
-     try AccountSession.restore(account) → registra in RAM
+     try AccountSession.restore(account, skipHydrate: true) → registra in RAM
+       — prima recoverSession da alfred_auth_{userId} (no rete se valida)
+       — poi fallback setSession(manifest.refreshToken) con retry transitori
      catch permanent auth failure → storage.removeAccount(userId)         // D1
-3. focus da alfred_focus_user_id (o primo account rimasto)
-4. sync profili per sessioni ripristinate → updateStoredProfile ciascuna
+3. wireStorage → avvia listener auth (mai prima del wiring)
+4. sync token manifest se ruotato durante restore
+5. focus da alfred_focus_user_id (o primo account rimasto)
+6. sync profili per sessioni ripristinate → updateStoredProfile ciascuna (errori ignorati)
 ```
 
 Se dopo il loop **0 account** → overlay login obbligatorio (comportamento attuale).

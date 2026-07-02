@@ -11,6 +11,7 @@ import '../providers/inbox_controller.dart';
 import '../utils/auth_identity.dart';
 import '../utils/auth_redirect_url.dart';
 import '../utils/ephemeral_pkce_storage.dart';
+import 'account_storage_service.dart';
 import 'compose_service.dart';
 import 'contact_service.dart';
 import 'inbox_service.dart';
@@ -49,22 +50,70 @@ class AccountSession {
   ProfileSummary profile;
   UserProfile? fullProfile;
   StreamSubscription<AuthState>? _authSubscription;
-  Future<void> Function()? onPersistRequested;
+  AccountStorageService? _storage;
+  String? _lastKnownRefreshToken;
 
-  /// Solo test: refresh token senza setSession (evita rete GoTrue).
+  /// Solo test: **non** usare come unica prova di persistenza su disco.
   @visibleForTesting
   String? testRefreshTokenOverride;
 
-  String? get refreshToken =>
-      testRefreshTokenOverride ?? client.auth.currentSession?.refreshToken;
+  String? get lastKnownRefreshToken =>
+      _lastKnownRefreshToken ?? testRefreshTokenOverride;
 
   /// Chiave storage GoTrue per questo account (`SharedPreferencesLocalStorage`).
   static String authStorageKey(String userId) => 'alfred_auth_$userId';
 
   OpenAccount toOpenAccount() => OpenAccount(
         profile: profile,
-        refreshToken: refreshToken ?? '',
+        refreshToken: lastKnownRefreshToken ?? '',
       );
+
+  void wireStorage(AccountStorageService storage) {
+    _storage = storage;
+    _ensureAuthListener();
+  }
+
+  AccountStorageService _requireStorage() {
+    final storage = _storage;
+    if (storage == null) {
+      throw StateError('AccountStorageService non collegato alla sessione.');
+    }
+    return storage;
+  }
+
+  Future<void> persistOpenAccount({
+    required String refreshToken,
+    ProfileSummary? profile,
+  }) async {
+    _lastKnownRefreshToken = refreshToken;
+    final profileToStore = profile ?? this.profile;
+    await _requireStorage().upsertAccount(
+      OpenAccount(profile: profileToStore, refreshToken: refreshToken),
+    );
+  }
+
+  Future<void> updateStoredProfile(ProfileSummary profile) async {
+    this.profile = profile;
+    // Non riscrivere il token da RAM: leggi quello già salvato per questo userId.
+    final accounts = await _requireStorage().loadAccounts();
+    final existing = accounts.where((a) => a.userId == userId).firstOrNull;
+    final token = existing?.refreshToken ?? _lastKnownRefreshToken;
+    if (token == null || token.isEmpty) return;
+    await persistOpenAccount(refreshToken: token, profile: profile);
+  }
+
+  Future<void> clearStoredAccount() async {
+    final storage = _storage;
+    if (storage != null) {
+      await storage.removeAccount(userId);
+    }
+    await disposeResources(clearAuthStorage: true);
+  }
+
+  bool hasValidJwt() {
+    final access = client.auth.currentSession?.accessToken;
+    return access != null && access.isNotEmpty;
+  }
 
   static SupabaseClient createClient(String storageScope) {
     return SupabaseClient(
@@ -85,7 +134,7 @@ class AccountSession {
   /// crasha lato client. [EphemeralPkceStorage] tiene il code verifier in RAM.
   ///
   /// Non chiamare mai [GoTrueClient.signOut] sul bootstrap dopo
-  /// [_sessionFromAuthResponse]: bootstrap e client dedicato condividono la
+  /// [openAccountFromAuthResponse]: bootstrap e client dedicato condividono la
   /// stessa sessione GoTrue; il logout server-side revoca il refresh token appena
   /// adottato («Invalid Refresh Token: Refresh Token Not Found»).
   static SupabaseClient createBootstrapClient() {
@@ -101,7 +150,9 @@ class AccountSession {
     );
   }
 
-  static Future<AccountSession> _sessionFromAuthResponse(
+  /// Login/sign-up: scrive la sessione GoTrue locale e restituisce la voce manifest.
+  /// Nessun oggetto runtime — [AccountManager] ricostruisce la RAM con [restore].
+  static Future<OpenAccount> openAccountFromAuthResponse(
     AuthResponse response, {
     ProfileSummary? profileOverride,
   }) async {
@@ -120,22 +171,69 @@ class AccountSession {
       accessToken: session.accessToken,
     );
 
-    return _fromClient(
-      client: client,
-      initialProfile: profileOverride ?? _profileFromUser(session.user),
+    return OpenAccount(
+      profile: profileOverride ?? _profileFromUser(session.user),
+      refreshToken: refresh,
     );
   }
 
-  static Future<AccountSession> restore(OpenAccount stored) async {
+  /// Ripristina sessione da manifest + storage GoTrue locale.
+  ///
+  /// Su F5 web prova prima [recoverSession] da `alfred_auth_{userId}` (senza
+  /// rete se la sessione locale è ancora valida), poi fallback su refresh token
+  /// del manifest.
+  static Future<AccountSession> restore(
+    OpenAccount stored, {
+    bool skipHydrate = true,
+  }) async {
     final client = createClient(stored.userId);
-    await client.auth.setSession(stored.refreshToken);
-    return _fromClient(
+    var refreshToken = stored.refreshToken;
+
+    final recoveredLocally = await _tryRecoverFromLocalAuth(client, stored.userId);
+    if (!recoveredLocally) {
+      final response = await client.auth.setSession(stored.refreshToken);
+      refreshToken =
+          response.session?.refreshToken ?? stored.refreshToken;
+    } else {
+      refreshToken =
+          client.auth.currentSession?.refreshToken ?? stored.refreshToken;
+    }
+
+    if (client.auth.currentUser == null) {
+      throw const AuthException('Sessione account non disponibile.');
+    }
+
+    final accountSession = await _fromClient(
       client: client,
       initialProfile: stored.profile,
+      skipHydrate: skipHydrate,
     );
+    accountSession._lastKnownRefreshToken = refreshToken;
+    return accountSession;
   }
 
-  static Future<AccountSession> signInWithPassword({
+  static Future<bool> _tryRecoverFromLocalAuth(
+    SupabaseClient client,
+    String userId,
+  ) async {
+    final storage = SharedPreferencesLocalStorage(
+      persistSessionKey: authStorageKey(userId),
+    );
+    await storage.initialize();
+    if (!await storage.hasAccessToken()) return false;
+
+    final persisted = await storage.accessToken();
+    if (persisted == null || persisted.isEmpty) return false;
+
+    try {
+      await client.auth.recoverSession(persisted);
+      return client.auth.currentSession != null;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  static Future<OpenAccount> signInOpenAccount({
     required String email,
     required String password,
   }) async {
@@ -145,10 +243,10 @@ class AccountSession {
       email: normalizedEmail,
       password: password,
     );
-    return _sessionFromAuthResponse(response);
+    return openAccountFromAuthResponse(response);
   }
 
-  static Future<AccountSession> signUp({
+  static Future<OpenAccount> signUpOpenAccount({
     required String email,
     required String password,
     required String username,
@@ -180,7 +278,7 @@ class AccountSession {
         'Registrazione inviata. Conferma l\'email prima di accedere.',
       );
     }
-    return _sessionFromAuthResponse(
+    return openAccountFromAuthResponse(
       response,
       profileOverride: ProfileSummary(
         id: session.user.id,
@@ -220,14 +318,32 @@ class AccountSession {
     );
 
     await session._hydrateProfile(skipNetwork: skipHydrate);
-    session._listenAuth();
     return session;
   }
 
+  void _ensureAuthListener() {
+    if (_authSubscription != null) return;
+    _listenAuth();
+  }
+
+  /// Silenzia il listener durante login add-account (evita token cross-account).
+  Future<void> pauseAuthListener() async {
+    await _authSubscription?.cancel();
+    _authSubscription = null;
+  }
+
+  void resumeAuthListener() => _ensureAuthListener();
+
   void _listenAuth() {
     _authSubscription = client.auth.onAuthStateChange.listen((state) {
-      if (state.event == AuthChangeEvent.tokenRefreshed) {
-        unawaited(onPersistRequested?.call());
+      if (state.event != AuthChangeEvent.tokenRefreshed) return;
+      final session = state.session;
+      // Ogni SupabaseClient ha il proprio storage, ma su web gli eventi auth
+      // possono propagarsi: persistere solo se la sessione è di QUESTO account.
+      if (session?.user.id != userId) return;
+      final token = session?.refreshToken;
+      if (token != null && token.isNotEmpty) {
+        unawaited(persistOpenAccount(refreshToken: token));
       }
     });
   }
@@ -326,7 +442,7 @@ class AccountSession {
         enableRealtime: false,
       ),
       profile: profile,
-    )..testRefreshTokenOverride = refreshToken;
+    ).._lastKnownRefreshToken = refreshToken;
     return session;
   }
 

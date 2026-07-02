@@ -28,10 +28,12 @@ backend out of the box.
   If `flutter` is not found in a non-interactive shell, call it by absolute path `/opt/flutter/bin/flutter`.
 
 ### Lint / test / build
-- Standard gate is `cd client && bash scripts/verify.sh` (= `flutter pub get` → `flutter analyze` → `flutter test`). See `scripts/verify.sh` / `README.md`. `flutter analyze` must be zero-issue (even `info`), matching CI.
+- **Hub test:** `cd client && bash scripts/test.sh list` — catalogo gate + suite manuali (`scripts/test/README.md`).
+- Standard gate CI: `bash scripts/test.sh gate` (= `verify.sh`: `flutter pub get` → `flutter analyze` → `flutter test`). `flutter analyze` must be zero-issue (even `info`), matching CI.
 - Web build: `bash scripts/verify.sh --build` (or `flutter build web --release --base-href "/XmppTest/"`).
-- **Prima di qualsiasi test GUI**: `bash scripts/diagnose-test-env.sh` — se fallisce su CDP: `bash scripts/reset-chrome-cdp.sh` (kill Chrome + profilo pulito `/tmp/chrome-cdp-profile`).
-- **Integrazione multi-account senza browser** (affidabile per agenti): `bash scripts/integration-multi-account.sh` — login agent1/agent2 + RPC inbox/messaggi su Supabase live.
+- **Prima di qualsiasi test GUI**: `bash scripts/test.sh diagnose` — se fallisce su CDP: `bash scripts/reset-chrome-cdp.sh` (kill Chrome + profilo pulito `/tmp/chrome-cdp-profile`).
+- **Integrazione multi-account senza browser** (affidabile per agenti): `bash scripts/test.sh integration` — login agent1/agent2 + RPC inbox/messaggi su Supabase live.
+- **E2E multi-account** (browser): `bash scripts/test.sh e2e-multi`
 
 ### Running the app (dev)
 - `cd client && flutter run -d web-server --web-port=8080 --web-hostname=0.0.0.0`, then open `http://localhost:8080/`.
@@ -51,11 +53,12 @@ backend out of the box.
 
 ### Browser (computerUse) testing of Flutter web
 - **Eseguire sempre `bash scripts/diagnose-test-env.sh` prima.** Se Chrome CDP `:9222` non risponde: `bash scripts/reset-chrome-cdp.sh` poi ritestare. Non usare computerUse con CDP morto.
-- **Preferire** `scripts/integration-multi-account.sh` per auth + messaggistica multi-account; Playwright/`verify.sh` per il client Dart.
+- **Preferire** `bash scripts/test.sh integration` per auth + messaggistica multi-account; `bash scripts/test.sh gate` per il client Dart.
 - **Non** riavviare flutter in loop per "sbloccare" i test GUI — peggiora lo stato (port conflict, CDP morto).
 - Inputs are typeable: **click directly into a field to focus it, then type** (don't assume canvas blocks input).
 - A brief (~1s) white flash can appear during navigation transitions in the debug web build; it self-resolves and is not a crash.
 
 ### Optional e2e (Playwright, in `client/`)
+- Hub: `bash scripts/test.sh e2e` o `bash scripts/test.sh e2e-multi`
 - `npm install` then `npx playwright install chromium`. Tests default to the deployed GitHub Pages URL; override with `ALFRED_BASE_URL` (e.g. `http://localhost:8080/`).
 - `e2e/pages-smoke.spec.ts` uses DOM text matching and is unreliable against Flutter's canvas (it does not enable the accessibility tree); `e2e/inbox-load.spec.ts` enables accessibility first. Treat this suite as a best-effort smoke harness.

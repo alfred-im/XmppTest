@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # Verifica standard client Flutter — stesso gate della CI (deploy-pages.yml).
 # Exit code != 0 su qualsiasi issue di flutter analyze (inclusi livello info).
+#
+# Catalogo completo suite: bash scripts/test.sh list  (vedi scripts/test/README.md)
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

@@ -20,14 +20,18 @@ class MessagesController extends ChangeNotifier {
     required this.messageMediaService,
     required this.inboxService,
     this.onMessagesChanged,
+    this.hasValidSession,
     OutboundMessageQueue? outboundQueue,
   }) : _outboundQueue = outboundQueue ?? OutboundMessageQueue() {
     unawaited(_init());
   }
 
+  static const sessionExpiredMessage = 'Sessione scaduta — accedi di nuovo';
+
   final String userId;
   final String peerProfileId;
   final Future<void> Function()? onMessagesChanged;
+  final bool Function()? hasValidSession;
   final MessageService messageService;
   final MessageMediaService messageMediaService;
   final InboxService inboxService;
@@ -96,7 +100,18 @@ class MessagesController extends ChangeNotifier {
     await load();
   }
 
+  bool _ensureValidSession() {
+    if (hasValidSession != null && !hasValidSession!()) {
+      error = sessionExpiredMessage;
+      isLoading = false;
+      notifyListeners();
+      return false;
+    }
+    return true;
+  }
+
   Future<void> load() async {
+    if (!_ensureValidSession()) return;
     try {
       final loaded = await messageService.fetchPeerMessages(
         peerProfileId: peerProfileId,
@@ -114,6 +129,7 @@ class MessagesController extends ChangeNotifier {
 
   Future<void> send(String body) async {
     if (body.trim().isEmpty || isSending) return;
+    if (!_ensureValidSession()) return;
     final clientId = _uuid.v4();
     await _sendOptimistic(
       optimistic: ChatMessage(
@@ -144,6 +160,7 @@ class MessagesController extends ChangeNotifier {
 
   Future<void> sendGif(Uint8List bytes) async {
     if (bytes.isEmpty || isSending) return;
+    if (!_ensureValidSession()) return;
     final clientId = _uuid.v4();
     final mediaPath = await _outboundQueue.persistMediaBytes(
       clientId: clientId,
@@ -192,6 +209,7 @@ class MessagesController extends ChangeNotifier {
     required int durationMs,
   }) async {
     if (bytes.isEmpty || isSending) return;
+    if (!_ensureValidSession()) return;
 
     final durationSeconds =
         (durationMs / 1000).ceil().clamp(1, VoiceConfig.maxDurationSeconds);
