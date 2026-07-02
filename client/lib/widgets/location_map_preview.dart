@@ -57,43 +57,48 @@ class _LocationMapPreviewState extends State<LocationMapPreview> {
       child: SizedBox(
         width: widget.width,
         height: widget.height,
-        child: FlutterMap(
-          mapController: _mapController,
-          options: MapOptions(
-            initialCenter: center,
-            initialZoom: widget.zoom,
-            interactionOptions: InteractionOptions(
-              flags: widget.interactive ? InteractiveFlag.all : InteractiveFlag.none,
+        child: IgnorePointer(
+          ignoring: !widget.interactive,
+          child: FlutterMap(
+            mapController: _mapController,
+            options: MapOptions(
+              initialCenter: center,
+              initialZoom: widget.zoom,
+              interactionOptions: InteractionOptions(
+                flags: widget.interactive
+                    ? InteractiveFlag.all
+                    : InteractiveFlag.none,
+              ),
             ),
-          ),
-          children: [
-            TileLayer(
-              urlTemplate: LocationConfig.osmTileUrlTemplate,
-              userAgentPackageName: 'com.alfred.client',
-            ),
-            MarkerLayer(
-              markers: [
-                Marker(
-                  point: center,
-                  width: 36,
-                  height: 36,
-                  alignment: Alignment.topCenter,
-                  child: const Icon(
-                    Icons.location_on,
-                    color: AlfredColors.unreadBadge,
-                    size: 36,
+            children: [
+              TileLayer(
+                urlTemplate: LocationConfig.osmTileUrlTemplate,
+                userAgentPackageName: 'com.alfred.client',
+              ),
+              MarkerLayer(
+                markers: [
+                  Marker(
+                    point: center,
+                    width: 36,
+                    height: 36,
+                    alignment: Alignment.topCenter,
+                    child: const Icon(
+                      Icons.location_on,
+                      color: AlfredColors.unreadBadge,
+                      size: 36,
+                    ),
                   ),
-                ),
-              ],
-            ),
-            const RichAttributionWidget(
-              attributions: [
-                TextSourceAttribution(LocationConfig.osmAttribution),
-              ],
-              alignment: AttributionAlignment.bottomRight,
-              showFlutterMapAttribution: false,
-            ),
-          ],
+                ],
+              ),
+              const RichAttributionWidget(
+                attributions: [
+                  TextSourceAttribution(LocationConfig.osmAttribution),
+                ],
+                alignment: AttributionAlignment.bottomRight,
+                showFlutterMapAttribution: false,
+              ),
+            ],
+          ),
         ),
       ),
     );

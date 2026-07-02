@@ -43,7 +43,7 @@ class ChatInputBar extends StatefulWidget {
 
 enum _VoicePhase { idle, recording, locked, preview }
 
-enum _LocationPhase { idle, acquiring, preview }
+enum _LocationPhase { idle, sharing }
 
 class _ChatInputBarState extends State<ChatInputBar> {
   final _controller = TextEditingController();
@@ -109,7 +109,7 @@ class _ChatInputBarState extends State<ChatInputBar> {
     }
 
     setState(() {
-      _locationPhase = _LocationPhase.acquiring;
+      _locationPhase = _LocationPhase.sharing;
       _locationPreview = null;
     });
 
@@ -118,10 +118,7 @@ class _ChatInputBarState extends State<ChatInputBar> {
       _locationSub = stream.listen(
         (reading) {
           if (!mounted) return;
-          setState(() {
-            _locationPreview = reading;
-            _locationPhase = _LocationPhase.preview;
-          });
+          setState(() => _locationPreview = reading);
         },
         onError: (Object error) {
           if (!mounted) return;
@@ -414,8 +411,49 @@ class _ChatInputBarState extends State<ChatInputBar> {
     );
   }
 
+  Widget _buildLocationMapSlot(LocationReading? preview) {
+    return SizedBox(
+      width: double.infinity,
+      height: 160,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: preview == null
+            ? const ColoredBox(
+                color: AlfredColors.border,
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SizedBox(
+                        width: 28,
+                        height: 28,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                      SizedBox(height: 12),
+                      Text(
+                        'Rilevamento posizione…',
+                        style: TextStyle(
+                          color: AlfredColors.textSecondary,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+            : LocationMapPreview(
+                latitude: preview.latitude,
+                longitude: preview.longitude,
+                width: double.infinity,
+                height: 160,
+              ),
+      ),
+    );
+  }
+
   Widget _buildLocationOverlay() {
     final preview = _locationPreview;
+    final canSend = preview != null;
 
     return Positioned(
       left: 8,
@@ -432,46 +470,24 @@ class _ChatInputBarState extends State<ChatInputBar> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              if (_locationPhase == _LocationPhase.acquiring) ...[
-                const Row(
-                  children: [
-                    SizedBox(
-                      width: 22,
-                      height: 22,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    ),
-                    SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        'Rilevamento posizione…',
-                        style: TextStyle(
-                          color: AlfredColors.textSecondary,
-                          fontSize: 13,
-                        ),
+              _buildLocationMapSlot(preview),
+              const SizedBox(height: 10),
+              Text(
+                preview == null
+                    ? 'In attesa del segnale GPS…'
+                    : LocationConfig.formatCoordinates(
+                        preview.latitude,
+                        preview.longitude,
                       ),
-                    ),
-                  ],
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                  color: preview == null
+                      ? AlfredColors.textSecondary
+                      : AlfredColors.textPrimary,
                 ),
-              ],
-              if (_locationPhase == _LocationPhase.preview && preview != null) ...[
-                LocationMapPreview(
-                  latitude: preview.latitude,
-                  longitude: preview.longitude,
-                  width: double.infinity,
-                  height: 160,
-                  interactive: true,
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  LocationConfig.formatCoordinates(
-                    preview.latitude,
-                    preview.longitude,
-                  ),
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 13,
-                  ),
-                ),
+              ),
+              if (preview != null) ...[
                 const SizedBox(height: 4),
                 Text(
                   preview.accuracyLabel,
@@ -480,25 +496,28 @@ class _ChatInputBarState extends State<ChatInputBar> {
                     fontSize: 12,
                   ),
                 ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    TextButton(
-                      onPressed: _cancelLocationShare,
-                      child: const Text('Annulla'),
-                    ),
-                    const Spacer(),
-                    FilledButton.icon(
-                      onPressed: () => unawaited(_confirmLocationShare()),
-                      icon: const Icon(Icons.send_rounded, size: 18),
-                      label: const Text('Invia posizione'),
-                      style: FilledButton.styleFrom(
-                        backgroundColor: AlfredColors.charcoal,
-                      ),
-                    ),
-                  ],
-                ),
               ],
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  TextButton(
+                    onPressed: _cancelLocationShare,
+                    child: const Text('Annulla'),
+                  ),
+                  const Spacer(),
+                  FilledButton.icon(
+                    onPressed: canSend
+                        ? () => unawaited(_confirmLocationShare())
+                        : null,
+                    icon: const Icon(Icons.send_rounded, size: 18),
+                    label: const Text('Invia posizione'),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AlfredColors.charcoal,
+                      disabledBackgroundColor: AlfredColors.border,
+                    ),
+                  ),
+                ],
+              ),
             ],
           ),
         ),
@@ -586,9 +605,11 @@ class _ChatInputBarState extends State<ChatInputBar> {
         child: Stack(
           clipBehavior: Clip.none,
           children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
-              child: Row(
+            IgnorePointer(
+              ignoring: _locationPhase != _LocationPhase.idle,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
+                child: Row(
                 children: [
                   IconButton(
                     onPressed: widget.enabled ? _pickGif : null,
@@ -630,6 +651,7 @@ class _ChatInputBarState extends State<ChatInputBar> {
                   _buildTrailingAction(),
                 ],
               ),
+            ),
             ),
             if (_voicePhase != _VoicePhase.idle) _buildVoiceOverlay(),
             if (_locationPhase != _LocationPhase.idle) _buildLocationOverlay(),

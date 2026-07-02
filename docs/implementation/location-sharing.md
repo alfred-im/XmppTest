@@ -19,9 +19,8 @@ Nessun bucket storage — solo coordinate in Postgres.
 
 | Fase | Comportamento |
 |------|---------------|
-| Tap **pin** | Avvia stream GPS (`LocationService.watchCurrentPosition`) |
-| **Acquiring** | Overlay «Rilevamento posizione…» + spinner |
-| **Preview** | Appena arriva la prima coordinata (anche approssimativa): mappa OSM + pin, testo precisione |
+| Tap **pin** | Apre subito il box anteprima (area mappa con loader interno) |
+| **Sharing** | Stream GPS; **Invia posizione** disabilitato fino alla prima coordinata |
 | Affinamento | Il pin si aggiorna se il GPS migliora (`distanceFilter: 0`) |
 | **Invia posizione** | Invia le coordinate **al momento del tap** (arrotondate) |
 | **Annulla** | Chiude stream e overlay senza inviare |
