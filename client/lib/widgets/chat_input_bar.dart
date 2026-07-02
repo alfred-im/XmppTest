@@ -46,6 +46,7 @@ enum _VoicePhase { idle, recording, locked, preview }
 enum _LocationPhase { idle, sharing }
 
 class _ChatInputBarState extends State<ChatInputBar> {
+  final _barKey = GlobalKey();
   final _controller = TextEditingController();
   final _recorder = VoiceRecordingService();
   final _locationService = LocationService();
@@ -54,6 +55,7 @@ class _ChatInputBarState extends State<ChatInputBar> {
   StreamSubscription<LocationReading>? _locationSub;
   Timer? _uiTimer;
   double? _pointerOriginY;
+  OverlayEntry? _locationOverlayEntry;
 
   _VoicePhase _voicePhase = _VoicePhase.idle;
   _LocationPhase _locationPhase = _LocationPhase.idle;
@@ -65,6 +67,7 @@ class _ChatInputBarState extends State<ChatInputBar> {
 
   @override
   void dispose() {
+    _hideLocationOverlay();
     _controller.dispose();
     _ampSub?.cancel();
     _locationSub?.cancel();
@@ -112,6 +115,9 @@ class _ChatInputBarState extends State<ChatInputBar> {
       _locationPhase = _LocationPhase.sharing;
       _locationPreview = null;
     });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _showLocationOverlay();
+    });
 
     try {
       final stream = _locationService.watchCurrentPosition();
@@ -119,6 +125,7 @@ class _ChatInputBarState extends State<ChatInputBar> {
         (reading) {
           if (!mounted) return;
           setState(() => _locationPreview = reading);
+          _locationOverlayEntry?.markNeedsBuild();
         },
         onError: (Object error) {
           if (!mounted) return;
@@ -150,6 +157,7 @@ class _ChatInputBarState extends State<ChatInputBar> {
       _locationPhase = _LocationPhase.idle;
       _locationPreview = null;
     });
+    _hideLocationOverlay();
   }
 
   Future<void> _confirmLocationShare() async {
@@ -162,6 +170,7 @@ class _ChatInputBarState extends State<ChatInputBar> {
       _locationPhase = _LocationPhase.idle;
       _locationPreview = null;
     });
+    _hideLocationOverlay();
 
     await widget.onSendLocation!(
       preview.roundedLatitude,
@@ -451,75 +460,119 @@ class _ChatInputBarState extends State<ChatInputBar> {
     );
   }
 
-  Widget _buildLocationOverlay() {
+  void _showLocationOverlay() {
+    if (!mounted || _locationPhase == _LocationPhase.idle) return;
+    if (_locationOverlayEntry == null) {
+      _locationOverlayEntry = OverlayEntry(
+        builder: (context) => _buildLocationOverlayLayer(context),
+      );
+      Overlay.of(context).insert(_locationOverlayEntry!);
+    } else {
+      _locationOverlayEntry!.markNeedsBuild();
+    }
+  }
+
+  void _hideLocationOverlay() {
+    _locationOverlayEntry?.remove();
+    _locationOverlayEntry = null;
+  }
+
+  double _locationOverlayBottom(BuildContext context) {
+    final screenHeight = MediaQuery.sizeOf(context).height;
+    final barBox = _barKey.currentContext?.findRenderObject() as RenderBox?;
+    if (barBox == null || !barBox.hasSize) {
+      return MediaQuery.viewPaddingOf(context).bottom + 64;
+    }
+    return screenHeight - barBox.localToGlobal(Offset.zero).dy;
+  }
+
+  Widget _buildLocationOverlayLayer(BuildContext context) {
+    return Material(
+      type: MaterialType.transparency,
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: _cancelLocationShare,
+              child: const ColoredBox(color: Color(0x33000000)),
+            ),
+          ),
+          Positioned(
+            left: 8,
+            right: 8,
+            bottom: _locationOverlayBottom(context),
+            child: _buildLocationOverlayCard(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLocationOverlayCard() {
     final preview = _locationPreview;
     final canSend = preview != null;
 
-    return Positioned(
-      left: 8,
-      right: 8,
-      bottom: 64,
-      child: Material(
-        elevation: 10,
-        shadowColor: Colors.black26,
-        borderRadius: BorderRadius.circular(20),
-        color: AlfredColors.panel,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _buildLocationMapSlot(preview),
-              const SizedBox(height: 10),
+    return Material(
+      elevation: 10,
+      shadowColor: Colors.black26,
+      borderRadius: BorderRadius.circular(20),
+      color: AlfredColors.panel,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _buildLocationMapSlot(preview),
+            const SizedBox(height: 10),
+            Text(
+              preview == null
+                  ? 'In attesa del segnale GPS…'
+                  : LocationConfig.formatCoordinates(
+                      preview.latitude,
+                      preview.longitude,
+                    ),
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 13,
+                color: preview == null
+                    ? AlfredColors.textSecondary
+                    : AlfredColors.textPrimary,
+              ),
+            ),
+            if (preview != null) ...[
+              const SizedBox(height: 4),
               Text(
-                preview == null
-                    ? 'In attesa del segnale GPS…'
-                    : LocationConfig.formatCoordinates(
-                        preview.latitude,
-                        preview.longitude,
-                      ),
-                style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 13,
-                  color: preview == null
-                      ? AlfredColors.textSecondary
-                      : AlfredColors.textPrimary,
+                preview.accuracyLabel,
+                style: const TextStyle(
+                  color: AlfredColors.textSecondary,
+                  fontSize: 12,
                 ),
               ),
-              if (preview != null) ...[
-                const SizedBox(height: 4),
-                Text(
-                  preview.accuracyLabel,
-                  style: const TextStyle(
-                    color: AlfredColors.textSecondary,
-                    fontSize: 12,
+            ],
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                TextButton(
+                  onPressed: _cancelLocationShare,
+                  child: const Text('Annulla'),
+                ),
+                const Spacer(),
+                FilledButton.icon(
+                  onPressed: canSend
+                      ? () => unawaited(_confirmLocationShare())
+                      : null,
+                  icon: const Icon(Icons.send_rounded, size: 18),
+                  label: const Text('Invia posizione'),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AlfredColors.charcoal,
+                    disabledBackgroundColor: AlfredColors.border,
                   ),
                 ),
               ],
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  TextButton(
-                    onPressed: _cancelLocationShare,
-                    child: const Text('Annulla'),
-                  ),
-                  const Spacer(),
-                  FilledButton.icon(
-                    onPressed: canSend
-                        ? () => unawaited(_confirmLocationShare())
-                        : null,
-                    icon: const Icon(Icons.send_rounded, size: 18),
-                    label: const Text('Invia posizione'),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: AlfredColors.charcoal,
-                      disabledBackgroundColor: AlfredColors.border,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -599,6 +652,7 @@ class _ChatInputBarState extends State<ChatInputBar> {
   @override
   Widget build(BuildContext context) {
     return Material(
+      key: _barKey,
       color: AlfredColors.panel,
       child: SafeArea(
         top: false,
@@ -654,7 +708,6 @@ class _ChatInputBarState extends State<ChatInputBar> {
             ),
             ),
             if (_voicePhase != _VoicePhase.idle) _buildVoiceOverlay(),
-            if (_locationPhase != _LocationPhase.idle) _buildLocationOverlay(),
           ],
         ),
       ),
