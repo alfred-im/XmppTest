@@ -26,4 +26,4 @@ fi
 
 export ALFRED_BASE_URL="$BASE"
 echo "==> Playwright multi-account (${ALFRED_BASE_URL})"
-npx playwright test e2e/multi-account-persist.spec.ts "$@"
+npx playwright test e2e/multi-account-persist.spec.ts e2e/multi-account-messages.spec.ts "$@"
