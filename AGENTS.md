@@ -9,7 +9,7 @@ In questa repository, **completare un task** (issue, PR, richiesta Cloud Agent) 
 | Discussione, analisi, diagnosi | Leggere codice/docs, grep, test diagnostici se richiesti | — |
 | Scrittura | — | Modificare file, migrazioni, SQL live, commit, push |
 
-Prima di **qualsiasi modifica persistente**, chiedere: **«Vuoi che proceda con le modifiche?»** (o attendere «Procedi» / «Implementa» / equivalente).
+Prima di **qualsiasi modifica persistente**, chiedere **sempre**: **«Vuoi che proceda con le modifiche?»**. La conferma esiste solo come risposta affermativa a quella domanda — se non l'hai chiesta, nulla autorizza la scrittura.
 
 Un turno con solo analisi o risposta è un task **completato con successo** se le regole sono state rispettate.
 
