@@ -117,11 +117,11 @@ Account debug: **solo** `alfredagent1` / `alfredagent2` — `docs/AGENT_DEBUG_AC
 
 ---
 
-## Prossimi passi (non fatti in #143)
+## Prossimi passi — ✅ coperti da #147 / #152 / e2e
 
-1. E2E Playwright: login 2 agent, chat reciproca, F5, switch focus
-2. Widget/integration test con `SharedPreferences` + restore reale (no fake message service)
-3. Punti architetturali 4–5 se utente li riapre
+1. ~~E2E Playwright multi-account~~ → `e2e/multi-account-messages.spec.ts`
+2. Persistenza F5 → PR #147
+3. Inbox al switch web → PR #152
 
 ---
 
@@ -129,5 +129,6 @@ Account debug: **solo** `alfredagent1` / `alfredagent2` — `docs/AGENT_DEBUG_AC
 
 - `docs/fixes/conversations-empty-diagnosis.md`
 - `docs/fixes/auth-bootstrap-gotrue-revoke.md` (PR #142)
+- `docs/fixes/multi-account-single-active-gotrue-pr152.md` (PR #152)
 - `docs/implementation/multi-account-client.md`
 - `docs/SESSION_HANDOFF.md`
