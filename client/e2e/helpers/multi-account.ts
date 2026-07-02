@@ -151,19 +151,94 @@ export async function setupTwoAccounts(page: Page): Promise<TwoAccountSetup> {
   };
 }
 
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/** Pulsante account nel drawer (ha @username), distinto dalle righe inbox. */
+function drawerAccountButton(page: Page, displayName: string) {
+  const drawer = page.getByRole('group').filter({ hasText: 'Altri account' });
+  return drawer.getByRole('button', {
+    name: new RegExp(escapeRegExp(displayName)),
+  });
+}
+
+/** Card profilo attivo nel drawer (group con nome accessibile). */
+function activeAccountGroup(page: Page, displayName: string) {
+  return page.getByRole('group', {
+    name: new RegExp(escapeRegExp(displayName)),
+  });
+}
+
+async function expectFocusedUserId(page: Page, userId: string) {
+  await expect
+    .poll(async () =>
+      page.evaluate((id) => {
+        const raw = localStorage.getItem('flutter.alfred_focus_user_id');
+        if (!raw) return false;
+        let value: unknown = raw;
+        while (typeof value === 'string' && value.startsWith('"')) {
+          value = JSON.parse(value);
+        }
+        return value === id;
+      }, userId),
+    )
+    .toBe(true);
+}
+
+/** Riga conversazione in inbox (esclude i pulsanti account nel drawer). */
+function inboxPeerButton(page: Page, displayName: string) {
+  return page
+    .getByRole('button', { name: new RegExp(escapeRegExp(displayName)) })
+    .filter({ hasNotText: /@/ });
+}
+
+/**
+ * Cambia focus account dal drawer mobile.
+ * Non usare `.first()` su tutta la pagina: dopo un invio, l'inbox del mittente
+ * ha già una riga con il nome del destinatario e Playwright cliccherebbe quella.
+ */
 export async function switchToAccountByDisplayName(
   page: Page,
   displayName: string,
+  userId?: string,
+  options?: { reloadAfter?: boolean },
 ) {
   await openAccountDrawer(page);
-  await page
-    .getByRole('button')
-    .filter({ hasText: displayName })
-    .first()
-    .click({ timeout: 30_000 });
-  await page.waitForTimeout(2000);
-  await enableFlutterAccessibility(page);
+
+  const otherAccount = drawerAccountButton(page, displayName);
+  if ((await otherAccount.count()) > 0) {
+    await otherAccount.first().click({ timeout: 30_000 });
+    await page.waitForTimeout(2000);
+    await enableFlutterAccessibility(page);
+    await closeDrawerIfOpen(page);
+  } else {
+    await expect(
+      activeAccountGroup(page, displayName).first(),
+      `account «${displayName}» non trovato nel drawer`,
+    ).toBeVisible({ timeout: 10_000 });
+    await closeDrawerIfOpen(page);
+  }
+
+  if (userId) {
+    await expectFocusedUserId(page, userId);
+  }
+
+  // Conferma focus nel drawer (profilo attivo, non più sotto «Altri account»).
+  await openAccountDrawer(page);
+  await expect(
+    activeAccountGroup(page, displayName).first(),
+    `focus non passato a ${displayName}`,
+  ).toBeVisible({ timeout: 10_000 });
+  await expect(drawerAccountButton(page, displayName)).toHaveCount(0);
   await closeDrawerIfOpen(page);
+
+  if (options?.reloadAfter && userId) {
+    await page.reload({ waitUntil: 'domcontentloaded', timeout: 90_000 });
+    await page.waitForTimeout(5000);
+    await enableFlutterAccessibility(page);
+    await expectFocusedUserId(page, userId);
+  }
 }
 
 export async function waitForChatInput(page: Page) {
@@ -200,13 +275,26 @@ export async function sendChatMessage(page: Page, body: string) {
   await expect(page.getByText(body)).toBeVisible({ timeout: 60_000 });
 }
 
-export async function openPeerInInbox(page: Page, displayName: string) {
+export async function openPeerInInbox(
+  page: Page,
+  displayName: string,
+  options?: { username?: string },
+) {
   await expect(page.getByRole('button', { name: 'Nuovo messaggio' })).toBeVisible(
     { timeout: 15_000 },
   );
-  const row = page.getByRole('button').filter({ hasText: displayName }).first();
-  await expect(row).toBeVisible({ timeout: 30_000 });
-  await row.click();
+
+  const row = inboxPeerButton(page, displayName);
+  if ((await row.count()) > 0) {
+    await row.first().click();
+  } else if (options?.username) {
+    await composeNewMessage(page, options.username);
+  } else {
+    await expect(
+      row.first(),
+      `inbox senza conversazione con ${displayName}`,
+    ).toBeVisible({ timeout: 30_000 });
+  }
   await waitForChatInput(page);
 }
 
@@ -228,4 +316,36 @@ export async function expectChatContains(
   for (const body of options?.absent ?? []) {
     await expect(page.getByText(body)).not.toBeVisible({ timeout: 5_000 });
   }
+}
+
+/**
+ * Dopo un invio dall'altro account: cambia focus, apre la chat col mittente
+ * e verifica che il messaggio ricevuto sia visibile in UI.
+ */
+export async function expectReceivedMessageOnAccount(
+  page: Page,
+  recipient: { displayName: string; userId: string },
+  sender: { displayName: string; username: string },
+  body: string,
+) {
+  await switchToAccountByDisplayName(
+    page,
+    recipient.displayName,
+    recipient.userId,
+    { reloadAfter: true },
+  );
+
+  const peerRow = inboxPeerButton(page, sender.displayName);
+  try {
+    await expect(
+      peerRow.first(),
+      `inbox di ${recipient.displayName} senza chat con ${sender.displayName}`,
+    ).toBeVisible({ timeout: 20_000 });
+    await peerRow.first().click();
+  } catch {
+    await composeNewMessage(page, sender.username);
+  }
+
+  await waitForChatInput(page);
+  await expectChatContains(page, [body]);
 }

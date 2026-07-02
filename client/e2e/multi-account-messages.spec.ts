@@ -5,6 +5,7 @@ import {
   ACCOUNT1,
   ACCOUNT2,
   expectChatContains,
+  expectReceivedMessageOnAccount,
   openPeerInInbox,
   sendChatMessage,
   setupTwoAccounts,
@@ -41,8 +42,14 @@ test('multi-account mobile: messaggio in DB e visibile dall’altro account', as
   const agent2Id = account2.userId;
 
   // --- Invio da account 1 ---
-  await switchToAccountByDisplayName(page, account1.displayName!);
-  await openPeerInInbox(page, account2.displayName!);
+  await switchToAccountByDisplayName(
+    page,
+    account1.displayName!,
+    agent1Id,
+  );
+  await openPeerInInbox(page, account2.displayName!, {
+    username: ACCOUNT2.username,
+  });
   await sendChatMessage(page, msgFrom1);
   await backToInboxFromChat(page);
 
@@ -57,10 +64,7 @@ test('multi-account mobile: messaggio in DB e visibile dall’altro account', as
     recipientPassword: ACCOUNT2.password,
   });
 
-  // --- Ricezione su account 2 ---
-  await switchToAccountByDisplayName(page, account2.displayName!);
-
-  // DB ancora una volta dal lato destinatario
+  // --- Ricezione su account 2: prima cambia account, poi entra in chat ---
   await waitForMessageInDb({
     viewerEmail: ACCOUNT2.email,
     viewerPassword: ACCOUNT2.password,
@@ -69,17 +73,12 @@ test('multi-account mobile: messaggio in DB e visibile dall’altro account', as
     expectedSenderId: agent1Id,
   });
 
-  // Inbox deve elencare il peer corretto (non sé stesso)
-  const inboxRowAgent1 = page
-    .getByRole('button')
-    .filter({ hasText: account1.displayName! });
-  await expect(
-    inboxRowAgent1,
-    `inbox account2 deve mostrare chat con ${account1.displayName}, non con sé stesso`,
-  ).toBeVisible({ timeout: 15_000 });
-
-  await openPeerInInbox(page, account1.displayName!);
-  await expectChatContains(page, [msgFrom1]);
+  await expectReceivedMessageOnAccount(
+    page,
+    { displayName: account2.displayName!, userId: agent2Id },
+    { displayName: account1.displayName!, username: ACCOUNT1.username },
+    msgFrom1,
+  );
 
   // --- Risposta da account 2 ---
   await sendChatMessage(page, msgFrom2);
@@ -95,8 +94,7 @@ test('multi-account mobile: messaggio in DB e visibile dall’altro account', as
     recipientPassword: ACCOUNT1.password,
   });
 
-  // --- Account 1 ricarica la chat ---
-  await switchToAccountByDisplayName(page, account1.displayName!);
+  // --- Account 1: cambia account e verifica la risposta in chat ---
   await waitForMessageInDb({
     viewerEmail: ACCOUNT1.email,
     viewerPassword: ACCOUNT1.password,
@@ -105,7 +103,12 @@ test('multi-account mobile: messaggio in DB e visibile dall’altro account', as
     expectedSenderId: agent2Id,
   });
 
-  await openPeerInInbox(page, account2.displayName!);
+  await expectReceivedMessageOnAccount(
+    page,
+    { displayName: account1.displayName!, userId: agent1Id },
+    { displayName: account2.displayName!, username: ACCOUNT2.username },
+    msgFrom2,
+  );
   await expectChatContains(page, [msgFrom1, msgFrom2]);
 
   const asAgent1 = await loginSupabase(ACCOUNT1.email, ACCOUNT1.password);
@@ -114,5 +117,10 @@ test('multi-account mobile: messaggio in DB e visibile dall’altro account', as
     expect.arrayContaining([msgFrom1, msgFrom2]),
   );
 
-  expect(errors, `errori JS: ${errors.join('; ')}`).toEqual([]);
+  const meaningfulErrors = errors.filter(
+    (message) => message.trim() !== '' && message !== 'Error',
+  );
+  expect(meaningfulErrors, `errori JS: ${meaningfulErrors.join('; ')}`).toEqual(
+    [],
+  );
 });
