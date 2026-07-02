@@ -409,7 +409,11 @@ class AccountSession {
   /// l'account in locale (altri dispositivi restano connessi).
   Future<void> close() => disposeResources(clearAuthStorage: true);
 
-  Future<void> _clearLocalAuthOnly() async {
+  Future<void> _clearLocalAuthOnly() async =>
+      clearLocalAuthStorage(userId);
+
+  /// Rimuove `alfred_auth_{userId}` senza toccare il manifest.
+  static Future<void> clearLocalAuthStorage(String userId) async {
     final storage = SharedPreferencesLocalStorage(
       persistSessionKey: authStorageKey(userId),
     );

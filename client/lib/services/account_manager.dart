@@ -8,10 +8,12 @@ import '../utils/auth_redirect_url.dart';
 import 'account_session.dart';
 import 'account_storage_service.dart';
 
-/// Gestisce account messaggistica aperti in parallelo e il focus UI.
+/// Gestisce account messaggistica aperti e il focus UI.
 ///
-/// Un solo percorso per popolare la RAM: leggere il manifest e [AccountSession.restore]
-/// per ogni token. Vale per F5 ([initialize]) e per aggiunta account (dopo upsert).
+/// Il manifest ([alfred_saved_accounts]) elenca tutti gli account aperti; in RAM
+/// c'è **al massimo una** [AccountSession] GoTrue attiva (quella in focus).
+/// Al cambio focus la sessione corrente viene rilasciata (storage auth locale
+/// conservato) e si ripristina solo il nuovo account da manifest.
 class AccountManager {
   AccountManager({AccountStorageService? storage})
       : _storage = storage ?? AccountStorageService();
@@ -20,10 +22,20 @@ class AccountManager {
   final Map<String, AccountSession> _sessions = {};
   final Map<String, AccountViewState> _viewsByAccount = {};
   final Set<String> _testOnlyAccountIds = {};
+  List<OpenAccount> _manifestAccounts = [];
   String? _focusUserId;
 
-  List<OpenAccount> get openAccounts =>
-      _sessions.values.map((s) => s.toOpenAccount()).toList();
+  /// Tutti gli account aperti (manifest); il focus può avere profilo aggiornato
+  /// dalla sessione viva.
+  List<OpenAccount> get openAccounts => _manifestAccounts
+      .map((account) {
+        if (account.userId == _focusUserId) {
+          final live = _sessions[_focusUserId];
+          if (live != null) return live.toOpenAccount();
+        }
+        return account;
+      })
+      .toList();
 
   List<AccountSession> get sessions => _sessions.values.toList();
 
@@ -34,7 +46,8 @@ class AccountManager {
 
   AccountViewState get viewState => _viewFor(_focusUserId);
 
-  bool get hasOpenAccounts => _sessions.isNotEmpty;
+  bool get hasOpenAccounts =>
+      _manifestAccounts.isNotEmpty || _testOnlyAccountIds.isNotEmpty;
 
   void openConversation(ChatPeer peer) {
     final userId = _focusUserId;
@@ -70,7 +83,8 @@ class AccountManager {
   }
 
   bool _hasAccount(String userId) =>
-      _sessions.containsKey(userId) || _testOnlyAccountIds.contains(userId);
+      _manifestAccounts.any((a) => a.userId == userId) ||
+      _testOnlyAccountIds.contains(userId);
 
   @visibleForTesting
   void seedTestAccount(String userId) {
@@ -83,12 +97,12 @@ class AccountManager {
     session.wireStorage(_storage);
   }
 
-  /// F5 / avvio app: ricostruisce tutta la RAM dal manifest.
+  /// F5 / avvio app: manifest in cache + ripristina solo il focus.
   Future<void> initialize() async {
     await _rebuildFromManifest();
   }
 
-  /// Scrive il token nel manifest e ricostruisce tutta la RAM (come F5).
+  /// Scrive il token nel manifest e attiva la sessione del nuovo focus.
   Future<AccountSession> openWithPassword({
     required String email,
     required String password,
@@ -135,36 +149,23 @@ class AccountManager {
     }
   }
 
-  /// Legge [alfred_saved_accounts], butta le sessioni in RAM e le ricrea da token.
+  /// Aggiorna cache manifest, rilascia sessioni RAM e ripristina solo il focus.
   Future<AccountSession?> _rebuildFromManifest({
     String? focusUserId,
     bool requireSession = false,
   }) async {
     await _disposeSessionsInRam(clearAuthStorage: false);
+    await _refreshManifestCache();
 
     final stored = await _storage.loadAccounts();
-    final savedFocus = focusUserId ?? await _storage.loadFocusUserId();
-
     for (final account in stored) {
       if (account.refreshToken.isEmpty) {
         await _storage.removeAccount(account.userId);
-        continue;
-      }
-      try {
-        final session = await _restoreWithRetry(account);
-        _sessions[session.userId] = session;
-      } catch (e) {
-        if (_isPermanentAuthFailure(e)) {
-          await _storage.removeAccount(account.userId);
-        }
       }
     }
+    await _refreshManifestCache();
 
-    for (final session in _sessions.values) {
-      session.wireStorage(_storage);
-    }
-
-    if (_sessions.isEmpty) {
+    if (_manifestAccounts.isEmpty) {
       _focusUserId = null;
       if (requireSession) {
         throw const AuthException('Sessione account non disponibile.');
@@ -172,15 +173,78 @@ class AccountManager {
       return null;
     }
 
-    if (savedFocus != null && _sessions.containsKey(savedFocus)) {
+    final savedFocus = focusUserId ?? await _storage.loadFocusUserId();
+    if (savedFocus != null && _hasAccount(savedFocus)) {
       _focusUserId = savedFocus;
     } else {
-      _focusUserId = _sessions.keys.first;
+      _focusUserId = _manifestAccounts.first.userId;
     }
     await _storage.saveFocusUserId(_focusUserId);
 
-    await _syncAllProfiles();
-    return focusedSession;
+    return _activateFocusedSession(requireSession: requireSession);
+  }
+
+  Future<void> _refreshManifestCache() async {
+    final stored = await _storage.loadAccounts();
+    _manifestAccounts =
+        stored.where((a) => a.refreshToken.isNotEmpty).toList();
+  }
+
+  /// Ripristina GoTrue solo per [_focusUserId]; su auth permanente prova altro account.
+  Future<AccountSession?> _activateFocusedSession({
+    bool requireSession = false,
+  }) async {
+    while (_focusUserId != null) {
+      if (_testOnlyAccountIds.contains(_focusUserId)) {
+        return null;
+      }
+
+      final userId = _focusUserId!;
+      final accountIndex =
+          _manifestAccounts.indexWhere((a) => a.userId == userId);
+      if (accountIndex < 0) {
+        if (_manifestAccounts.isEmpty) {
+          _focusUserId = null;
+          break;
+        }
+        _focusUserId = _manifestAccounts.first.userId;
+        await _storage.saveFocusUserId(_focusUserId);
+        continue;
+      }
+      final account = _manifestAccounts[accountIndex];
+
+      try {
+        final session = await _restoreWithRetry(account);
+        _sessions.clear();
+        _sessions[session.userId] = session;
+        session.wireStorage(_storage);
+        await _syncFocusedProfile(session);
+        return session;
+      } catch (e) {
+        if (_isPermanentAuthFailure(e)) {
+          await _storage.removeAccount(userId);
+          await AccountSession.clearLocalAuthStorage(userId);
+          await _refreshManifestCache();
+          if (_manifestAccounts.isEmpty) {
+            _focusUserId = null;
+            await _storage.saveFocusUserId(null);
+            break;
+          }
+          if (!_manifestAccounts.any((a) => a.userId == _focusUserId)) {
+            _focusUserId = _manifestAccounts.first.userId;
+            await _storage.saveFocusUserId(_focusUserId);
+          }
+          continue;
+        }
+        if (requireSession) rethrow;
+        return null;
+      }
+    }
+
+    if (requireSession) {
+      throw const AuthException('Sessione account non disponibile.');
+    }
+    return null;
   }
 
   Future<void> _disposeSessionsInRam({required bool clearAuthStorage}) async {
@@ -220,24 +284,50 @@ class AccountManager {
 
   Future<void> setFocus(String userId) async {
     if (!_hasAccount(userId)) return;
+
+    if (_focusUserId == userId) {
+      await _sessions[userId]?.inboxController.load();
+      return;
+    }
+
+    await _disposeSessionsInRam(clearAuthStorage: false);
+
     _focusUserId = userId;
     await _storage.saveFocusUserId(userId);
-    // Inbox del focus: ricarica on-read al cambio account (realtime in background
-    // può non aggiornare la UI se nessun listener era attivo sul controller).
+
+    if (!_testOnlyAccountIds.contains(userId)) {
+      await _activateFocusedSession();
+    }
+
     await _sessions[userId]?.inboxController.load();
   }
 
   Future<void> removeAccount(String userId) async {
-    final session = _sessions.remove(userId);
     _testOnlyAccountIds.remove(userId);
     _viewsByAccount.remove(userId);
+
+    final wasFocused = _focusUserId == userId;
+    final session = _sessions.remove(userId);
+
     if (session != null) {
       await session.clearStoredAccount();
+    } else {
+      await _storage.removeAccount(userId);
+      await AccountSession.clearLocalAuthStorage(userId);
     }
 
-    if (_focusUserId == userId) {
-      _focusUserId = _sessions.keys.isEmpty ? null : _sessions.keys.first;
-      await _storage.saveFocusUserId(_focusUserId);
+    await _refreshManifestCache();
+
+    if (wasFocused) {
+      await _disposeSessionsInRam(clearAuthStorage: false);
+      if (_manifestAccounts.isNotEmpty) {
+        _focusUserId = _manifestAccounts.first.userId;
+        await _storage.saveFocusUserId(_focusUserId);
+        await _activateFocusedSession();
+      } else {
+        _focusUserId = null;
+        await _storage.saveFocusUserId(null);
+      }
     }
   }
 
@@ -252,23 +342,25 @@ class AccountManager {
     return false;
   }
 
-  Future<void> _syncAllProfiles() async {
-    for (final session in _sessions.values) {
-      try {
-        await session.syncProfileSummary();
-        await session.updateStoredProfile(session.profile);
-      } catch (_) {
-        // Mantieni la sessione ripristinata anche se il sync profilo fallisce.
-      }
+  Future<void> _syncFocusedProfile(AccountSession session) async {
+    try {
+      await session.syncProfileSummary();
+      await session.updateStoredProfile(session.profile);
+      await _refreshManifestCache();
+    } catch (_) {
+      // Mantieni la sessione ripristinata anche se il sync profilo fallisce.
     }
   }
 
-  Future<void> refreshOpenAccountProfiles() => _syncAllProfiles();
+  Future<void> refreshOpenAccountProfiles() async {
+    final session = focusedSession;
+    if (session == null) return;
+    await _syncFocusedProfile(session);
+  }
 
   Future<bool> isUsernameAvailable(String username) async {
-    final client = _sessions.values.isEmpty
-        ? AccountSession.createBootstrapClient()
-        : _sessions.values.first.client;
+    final client = focusedSession?.client ??
+        AccountSession.createBootstrapClient();
     final normalized = username.trim().toLowerCase();
     final available = await client.rpc(
       'is_username_available',
@@ -290,6 +382,7 @@ class AccountManager {
     await _disposeSessionsInRam(clearAuthStorage: true);
     _viewsByAccount.clear();
     _testOnlyAccountIds.clear();
+    _manifestAccounts = [];
     _focusUserId = null;
   }
 }
