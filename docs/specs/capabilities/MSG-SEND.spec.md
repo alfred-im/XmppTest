@@ -24,26 +24,32 @@ L’utente invia messaggi a un account Alfred per `recipient_profile_id` (risolt
 
 ### MUST
 
-- **Unico punto invio server**: RPC `send_message_to_profile` — vedi [contracts/rpc.md](../contracts/rpc.md).
-- Idempotenza client: `client_message_id` (UUID v4) su ogni invio.
-- Stati consegna post-invio: vedi [MSG-READ](./MSG-READ.spec.md) (`sent` → `delivered` → `read`).
-- Tipi `content_type` supportati su `main`: `text`, `gif`, `voice`, `location`.
-- Upload media (GIF, voice) in bucket `chat-media` sotto `{auth.uid()}/{uuid}.*` prima dell’RPC.
-- Coda retry client `OutboundMessageQueue` per testo, GIF, voice, location — retry periodico + «Riprova invio» su bolle `failed`.
-- Indirizzo esterno `username@server`: rifiutato in Alpha con messaggio utente chiaro.
+| ID | Requisito |
+|----|-----------|
+| **MSG-SEND-REQ-001** | Unico punto invio server: RPC `send_message_to_profile` — [contracts/rpc.md](../contracts/rpc.md) |
+| **MSG-SEND-REQ-002** | Idempotenza client: `client_message_id` (UUID v4) su ogni invio |
+| **MSG-SEND-REQ-003** | Tipi `content_type` su `main`: `text`, `gif`, `voice`, `location` |
+| **MSG-SEND-REQ-004** | Upload media (GIF, voice) in bucket `chat-media` sotto `{auth.uid()}/{uuid}.*` prima dell’RPC |
+| **MSG-SEND-REQ-005** | Coda retry `OutboundMessageQueue` per testo, GIF, voice, location |
+| **MSG-SEND-REQ-006** | Stati post-invio: vedi [MSG-READ](./MSG-READ.spec.md) (`sent` → `delivered` → `read`) |
 
 ### SHOULD
 
-- UI optimistic: bolla in lista prima della risposta RPC; merge su `client_message_id`.
-- Preview inbox coerente con tipo (trigger / `format_*_preview` lato DB).
+| ID | Requisito |
+|----|-----------|
+| **MSG-SEND-REQ-007** | UI optimistic: merge bolle su `client_message_id` |
+| **MSG-SEND-REQ-008** | Preview inbox coerente con tipo (`format_*_preview` / trigger) |
 
 ### MUST NOT
 
-- RPC `send_message` legacy o overload ambigui (PostgREST).
-- Invio a sé stessi (`recipient_profile_id = auth.uid()`).
-- Invio testo vuoto (`content_type=text` e body vuoto).
-- GIF/voice senza `media_url`; voice senza `duration_seconds` e `media_mime`.
-- Location senza `latitude` e `longitude` in range valido.
+| ID | Requisito |
+|----|-----------|
+| **MSG-SEND-REQ-009** | RPC `send_message` legacy o overload ambigui PostgREST |
+| **MSG-SEND-REQ-010** | Invio a sé stessi (`recipient_profile_id = auth.uid()`) |
+| **MSG-SEND-REQ-011** | Testo vuoto con `content_type=text` |
+| **MSG-SEND-REQ-012** | GIF/voice senza `media_url`; voice senza `duration_seconds` + `media_mime` |
+| **MSG-SEND-REQ-013** | Location senza coordinate in range valido |
+| **MSG-SEND-REQ-014** | Indirizzo esterno `username@server` senza errore utente chiaro (Alpha) |
 
 ---
 
@@ -63,47 +69,44 @@ L’utente invia messaggi a un account Alfred per `recipient_profile_id` (risolt
 | `content_type` | Campi obbligatori | Storage | Preview inbox |
 |----------------|-------------------|---------|---------------|
 | `text` | `body` non vuoto | — | testo troncato |
-| `gif` | `media_url` | `chat-media`, max 10 MB, `image/gif` | `[GIF]` |
-| `voice` | `media_url`, `duration_seconds` > 0, `media_mime` (`audio/webm`) | `{userId}/{uuid}.webm`, max 15 MB | `🎤 m:ss` |
+| `gif` | `media_url` | `chat-media`, max 10 MB | `[GIF]` |
+| `voice` | `media_url`, `duration_seconds` > 0, `media_mime` | `{userId}/{uuid}.webm`, max 15 MB | `🎤 m:ss` |
 | `location` | `latitude` [-90,90], `longitude` [-180,180] | Postgres only | `📍 Posizione` |
 
-Coordinate arrotondate a 5 decimali lato client (`LocationConfig.coordinateDecimals`).
+Schema colonne: [contracts/schema.md](../contracts/schema.md) § `messages`.
 
-### 4.2 Backend
-
-- Firma RPC: 10 parametri (location) — [contracts/rpc.md](../contracts/rpc.md).
-- `on_message_inserted`: internal → `delivered`; federato → riga `outbox` con payload esteso (voice/location metadata).
-- `mark_peer_read` include tutti i `content_type` sopra.
-
-Migrazioni: `20260624230000_message_gif_support.sql`, `20260627120100_message_voice_support.sql`, `20260702120100_message_location_support.sql`, `20260627220000_fix_send_message_to_profile_overload.sql`.
-
-### 4.3 Client
+### 4.2 Client
 
 | Area | File / componente |
 |------|-------------------|
-| Invio testo | `MessagesController.sendText` → `ComposeService` / RPC |
-| GIF | `MessageMediaService.uploadGif` → RPC `content_type=gif` |
-| Voice | `VoiceRecordingService`, `uploadVoice`, `VoiceMessageContent` |
-| Location | `LocationService` stream → anteprima obbligatoria → `sendLocation` |
+| Invio testo | `MessagesController.sendText` |
+| GIF | `MessageMediaService.uploadGif` |
+| Voice | `VoiceRecordingService`, `uploadVoice` |
+| Location | `LocationService` → `sendLocation` |
 | Coda | `OutboundMessageQueue`, `OutboundMediaCache` (web) |
-| UI stato | `MessageBubble` / `MessageStatus` (✓ / ✓✓ / ✓✓ blu) |
 
-### 4.4 UX invio (voice / location)
+### 4.3 UX invio (voice / location)
 
-**Voice** (`ChatInputBar`): microfono se campo vuoto; tieni premuto registra; rilascio invia (≥1s); swipe ↑ blocca; max 10 min.
-
-**Location**: tap pin → overlay anteprima mappa; Invia disabilitato fino a prima coordinata; Invia usa coordinate al tap; Annulla chiude senza invio.
+**Voice**: microfono se campo vuoto; hold-to-record; rilascio invia (≥1s).  
+**Location**: anteprima obbligatoria prima dell’invio.
 
 ---
 
-## 5. Verifica
+## 5. Tracciabilità
 
-| Tipo | Riferimento |
-|------|-------------|
-| Gate | `cd client && bash scripts/verify.sh` |
-| Smoke RPC | `supabase/tests/send_message_to_profile_smoke.sql`, overload 8/10 arg in `schema_smoke.sql` |
-| Integrazione | `bash scripts/test.sh integration` |
-| E2E | `bash scripts/test.sh e2e-multi` |
+| REQ-ID | Verifica |
+|--------|----------|
+| MSG-SEND-REQ-001 | `supabase/tests/send_message_to_profile_smoke.sql`, `schema_smoke.sql` (overload unico) |
+| MSG-SEND-REQ-002 | `messages_controller_multi_account_test.dart` (coda per `userId\|peer`) |
+| MSG-SEND-REQ-003 | `models_and_utils_test.dart` — parse `gif` / `voice` / `location` |
+| MSG-SEND-REQ-005 | `messages_controller_multi_account_test.dart` (`OutboundMessageQueue`) |
+| MSG-SEND-REQ-006 | `MSG-READ.spec.md`; `message_bubble_test.dart` (checkmarks) |
+| MSG-SEND-REQ-009 | `schema_smoke.sql` — assenza overload ambigui |
+| MSG-SEND-REQ-011–013 | validazione RPC in `20260702120100_message_location_support.sql` |
+| MSG-SEND-REQ-014 | `ComposeService.resolveAddress` → `StateError` esterno |
+| MSG-SEND-REQ-003 (UI) | `message_bubble_test.dart` — gif, voice, location render |
+
+Gate: `cd client && bash scripts/verify.sh` · Integrazione: `bash scripts/test.sh integration`
 
 ---
 
@@ -111,9 +114,8 @@ Migrazioni: `20260624230000_message_gif_support.sql`, `20260627120100_message_vo
 
 | Documento | Ruolo |
 |-----------|--------|
-| [voice-notes.md](../../implementation/voice-notes.md) | Dettaglio voice |
-| [location-sharing.md](../../implementation/location-sharing.md) | Dettaglio location |
-| [alpha-full-stack.md](../../architecture/alpha-full-stack.md) §2.7–2.13 | Panoramica |
+| [voice-notes.md](../../implementation/voice-notes.md) | Evidenza voice |
+| [location-sharing.md](../../implementation/location-sharing.md) | Evidenza location |
 | [MSG-INBOX](./MSG-INBOX.spec.md) | Inbox dopo invio |
 
-**Codice**: `client/lib/providers/messages_controller.dart`, `services/message_service.dart`, `services/outbound_message_queue.dart`, `widgets/chat_input_bar.dart`
+**Codice**: `client/lib/providers/messages_controller.dart`, `services/message_service.dart`, `services/outbound_message_queue.dart`

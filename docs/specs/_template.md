@@ -23,17 +23,25 @@ Breve descrizione del bisogno e del perimetro.
 
 ## 2. Requisiti
 
-### MUST (vincolanti)
+Ogni requisito vincolante ha un **REQ-ID** stabile: `{SPEC-ID}-REQ-NNN` (es. `MSG-SEND-REQ-001`).
 
-- …
+### MUST
+
+| ID | Requisito |
+|----|-----------|
+| `{ID}-REQ-001` | … |
 
 ### SHOULD
 
-- …
+| ID | Requisito |
+|----|-----------|
+| `{ID}-REQ-0xx` | … |
 
 ### MUST NOT
 
-- …
+| ID | Requisito |
+|----|-----------|
+| `{ID}-REQ-0xx` | … |
 
 ---
 
@@ -45,13 +53,9 @@ Breve descrizione del bisogno e del perimetro.
 
 ## 4. Contratto
 
-### 4.1 Backend / RPC
+### 4.1 Backend
 
-Vedi [contracts/rpc.md](../contracts/rpc.md) per firme condivise. Dettagli specifici:
-
-| Elemento | Comportamento |
-|----------|---------------|
-| … | … |
+Vedi [contracts/schema.md](../contracts/schema.md) e [contracts/rpc.md](../contracts/rpc.md).
 
 ### 4.2 Client
 
@@ -67,18 +71,28 @@ Vedi [contracts/rpc.md](../contracts/rpc.md) per firme condivise. Dettagli speci
 
 ---
 
-## 5. Verifica
+## 5. Tracciabilità (requisito → verifica)
 
-| Tipo | Riferimento |
-|------|-------------|
-| Gate | `cd client && bash scripts/verify.sh` |
-| Smoke DB | `supabase/tests/…` |
-| Integrazione | `bash scripts/test.sh integration` |
-| E2E | `bash scripts/test.sh e2e-multi` (se applicabile) |
+| REQ-ID | Verifica |
+|--------|----------|
+| `{ID}-REQ-001` | `client/test/…` o `supabase/tests/…` |
+
+Aggiornare questa tabella quando si aggiungono test dedicati a un requisito.
 
 ---
 
-## 6. Riferimenti
+## 6. Scenari di accettazione (opzionale)
+
+```gherkin
+Scenario: …
+  Given …
+  When …
+  Then …
+```
+
+---
+
+## 7. Riferimenti
 
 | Documento | Ruolo |
 |-----------|--------|

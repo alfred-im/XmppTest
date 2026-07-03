@@ -13,14 +13,16 @@ Prima di **qualsiasi modifica persistente**, chiedere **sempre**: **«Vuoi che p
 
 Un turno con solo analisi o risposta è un task **completato con successo** se le regole sono state rispettate.
 
-### Spec-Driven Development (SDD)
+### Spec-Driven Development (SDD v1)
 
-Per capability nuove o modifiche al contratto messaggistica/auth:
+Per capability **nuove** o cambio contratto:
 
-1. Leggere o creare la spec in `docs/specs/capabilities/` (template: `docs/specs/_template.md`).
-2. Stato `approved` prima dell'implementazione; `implemented` dopo merge su `main`.
-3. Aggiornare `docs/specs/index.md` e colonna **Spec** in `docs/architecture/alpha-pr-registry.md`.
-4. Contratti RPC condivisi: `docs/specs/contracts/rpc.md` — allineare a `supabase/migrations/`.
+1. Spec in `docs/specs/capabilities/` con **REQ-ID** (`{SPEC}-REQ-NNN`) — template: `docs/specs/_template.md`.
+2. Stato **`approved`** prima dell'implementazione; **`implemented`** dopo merge.
+3. Tabella **tracciabilità** REQ → test nella spec (pilota: `MSG-SEND.spec.md`).
+4. Contratti: `docs/specs/contracts/rpc.md`, `schema.md`.
+5. Gate: `bash scripts/check-spec-sync.sh` + `cd client && bash scripts/verify.sh`.
+6. PR template: `.github/PULL_REQUEST_TEMPLATE.md`.
 
 Catalogo: [docs/specs/index.md](docs/specs/index.md). Metodo: [docs/specs/README.md](docs/specs/README.md).
 
