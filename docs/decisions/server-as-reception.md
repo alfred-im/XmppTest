@@ -19,7 +19,7 @@ Questo è il modello semantico dell'applicazione: il server è il punto in cui u
 
 | Fase | Comportamento |
 |------|----------------|
-| **Oggi (Alpha interna)** | Invio e ricezione *sembrano* coincidenti: il mittente chiama `send_message`, il messaggio è subito nel DB piattaforma, il destinatario lo vede via Realtime. Il passaggio «consegnato» può avvenire nello stesso istante dell'inserimento. |
+| **Oggi (Alpha)** | Invio e ricezione *sembrano* coincidenti: il mittente chiama `send_message_to_profile`, il messaggio è subito nel DB piattaforma, il destinatario lo vede via Realtime. Il passaggio «consegnato» può avvenire nello stesso istante dell'inserimento. |
 | **Domani (federazione / bridge)** | Invio e ricezione saranno **disaccoppiati**, come già accade tra server diversi in XMPP/Matrix: il messaggio resta `sent` o `pending` finché il bridge non lo consegna all'altro dominio; solo allora diventa «ricevuto» (sul server di destinazione o nella piattaforma come ack federato). |
 
 Il disaccoppiamento non è un'eccezione futura: è la **stessa logica** del caso federato, applicata progressivamente anche ai flussi che oggi appaiono sincroni.
@@ -30,7 +30,7 @@ Il disaccoppiamento non è un'eccezione futura: è la **stessa logica** del caso
 
 | Livello | UI | Significato nel modello cloud Alfred |
 |---------|-----|--------------------------------------|
-| **1 — Inviato** | ✓ grigia | Il messaggio è stato accettato dalla piattaforma (RPC `send_message` / outbox `queued` per federato). |
+| **1 — Inviato** | ✓ grigia | Il messaggio è stato accettato dalla piattaforma (RPC `send_message_to_profile` / outbox `queued` per federato). |
 | **2 — Consegnato** | ✓✓ grigie | Il messaggio è **ricevuto sul server** — cioè disponibile nella fonte di verità per il destinatario (inserimento DB interno, oppure ack bridge/XEP-0184 per federato). **Non** significa «aperto sul telefono del destinatario». |
 | **3 — Lettura** | ✓✓ blu | Il destinatario ha **visualizzato** la conversazione (`mark_peer_read` / XEP-0333 `displayed` via bridge). |
 

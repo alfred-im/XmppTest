@@ -11,19 +11,13 @@ Architecture Decision Records. Documento per AI.
 | [bridge-stateless.md](./bridge-stateless.md) | Bridge senza stato di business; verità su Supabase |
 | [server-as-reception.md](./server-as-reception.md) | Ricezione = ricezione sul server (spunte cloud) |
 | [multi-account-parallel-sessions.md](./multi-account-parallel-sessions.md) | Multi-account client Alpha: UX #140, una GoTrue attiva #152 |
+| [single-device-logout-open.md](./single-device-logout-open.md) | ✅ Logout locale (`close()` senza revoca GoTrue); futuro: «Disconnetti ovunque» |
 
-## Topic aperti (non vincolanti)
-
-| Doc | Summary |
-|-----|---------|
-| [single-device-logout-open.md](./single-device-logout-open.md) | Logout solo dispositivo corrente vs revoca globale GoTrue |
-
-## Visione e proposte
+## Visione e target
 
 | ADR | Summary |
 |-----|---------|
-| [project-revolution-discovery.md](./project-revolution-discovery.md) | Discovery migrazione Flutter + Supabase + bridge |
-| [no-message-deletion.md](./no-message-deletion.md) | No cancellazione messaggi lato protocollo |
-| [no-modify-source-data.md](./no-modify-source-data.md) | Non alterare la fonte dati; filtrare in lettura/UI |
+| [project-revolution-discovery.md](./project-revolution-discovery.md) | Discovery completata — visione stack Flutter + Supabase + bridge (storico) |
+| [mailbox-inbox-outbox-spec.md](../architecture/mailbox-inbox-outbox-spec.md) | 🟡 Target modello caselle — direzione confermata, non su `main` |
 
-Target modello caselle (direzione confermata): [../architecture/mailbox-inbox-outbox-spec.md](../architecture/mailbox-inbox-outbox-spec.md).
+**Storico client React / XMPP**: tag `legacy/web-client-final` — non documentato su `main`.

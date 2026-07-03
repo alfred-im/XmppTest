@@ -181,7 +181,7 @@ client/lib/
 2. Registrazione hold-to-send; swipe ↑ blocca, ↓ annulla; blocco → anteprima
 3. Web: WebM/Opus nativo; IO: transcode FFmpeg → unico formato in upload
 4. `MessageMediaService.uploadVoice` → bucket `chat-media` (max 15 MB)
-5. RPC `send_message` con `content_type=voice`, `duration_seconds`, `media_mime`, `media_size_bytes`
+5. RPC `send_message_to_profile` con `content_type=voice`, `duration_seconds`, `media_mime`, `media_size_bytes`
 6. `VoiceMessageContent` in bolla — play/pausa, waveform (`just_audio`)
 7. Preview inbox: `🎤 m:ss` (`format_voice_preview`)
 

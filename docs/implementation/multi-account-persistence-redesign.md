@@ -1,9 +1,9 @@
 # Multi-account: redesign persistenza (single source of truth)
 
-**Data**: 2026-07-01 (revisione design completa)  
-**Stato**: ✅ **Implementato** (PR #147, merge `fceecbb`) — runtime GoTrue: **una sessione attiva** (PR #152, vedi §0.6)  
-**Audience**: AI in sessioni future — implementare **solo** secondo questo documento  
-**Obiettivo PR**: far **funzionare** il flusso normale multi-account (login → aggiungi → F5 → switch). Non coprire tutti i casi limite.
+**Data**: 2026-07-01  
+**Stato**: ✅ **Implementato** (PR #147) + runtime GoTrue una sessione (PR #152)  
+**Audience**: AI — **storico design**; per il runtime attuale leggere `multi-account-client.md`  
+**Implementazione corrente**: `docs/implementation/multi-account-client.md` §3.5
 
 ---
 

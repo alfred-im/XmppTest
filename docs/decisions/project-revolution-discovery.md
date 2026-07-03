@@ -1,6 +1,8 @@
 # Rivoluzione Alfred — Discovery Q&A
 
-**Stato**: 🟡 In corso — **Supabase ✅** · **Fly.io ✅** · schema Alpha da espandere  
+**Stato**: ✅ **Discovery completata** (2026-06-24) — documento storico di visione  
+**Aggiornamento doc corrente**: usare `docs/architecture/alpha-pr-registry.md` e `PROJECT_MAP.md`  
+**Scope**: Stack Flutter + Supabase + bridge — **non** il client React (tag `legacy/web-client-final`)  
 
 ### Prima della prossima iterazione — test deploy
 

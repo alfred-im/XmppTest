@@ -79,7 +79,7 @@ Equivalente concettuale: una `VIEW` SQL normale (non `MATERIALIZED`). L’RPC è
 | `list_inbox()` | Aggregazione on-read: righe inbox da `messages` (preview, unread, ordine per peer) |
 | `list_peer_messages(peer_profile_id)` | Storico con un account |
 | `mark_peer_read(peer_profile_id)` | Segna letti i messaggi ricevuti da quel peer |
-| `send_message_to_profile` | Invio (testo, GIF, voice) |
+| `send_message_to_profile` | Invio (testo, GIF, voice, location) |
 | `find_profile_by_username` | Risoluzione indirizzo → profilo |
 
 ### Trigger `on_message_inserted`

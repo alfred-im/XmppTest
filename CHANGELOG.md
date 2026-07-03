@@ -23,6 +23,14 @@ Modifiche rilevanti al progetto per tracciare evoluzione tecnica e decisioni imp
 
 ## [Unreleased]
 
+### Documentazione (2026-07-03 — revisione sync)
+
+- Allineamento PR **#108–#153** in `PROJECT_MAP`, `README`, `INDICE`, `alpha-pr-registry`
+- Fix stato obsoleto: `auth-bootstrap-gotrue-revoke`, `conversations-empty-diagnosis`, `SESSION_HANDOFF`
+- RPC canonica `send_message_to_profile` in doc voice/spunte; location in ADR messaging
+- Rimossi ADR legacy React/XMPP: `no-message-deletion`, `no-modify-source-data`, `TEST_CREDENTIALS.md`
+- Gate test: **70** test unit/widget in `verify.sh`
+
 ### Alpha Flutter — PR #153 (condivisione posizione statica)
 
 - **`content_type=location`**: colonne `latitude`/`longitude` in `messages`; RPC `send_message_to_profile` a 10 parametri
@@ -55,10 +63,10 @@ Modifiche rilevanti al progetto per tracciare evoluzione tecnica e decisioni imp
 - **View per account**: `Map<userId, AccountViewState>`; `sanitizedForAccount()`; niente reset globale su `setFocus`
 - **Inbox lifecycle**: `ListenableProxyProvider` con dispose noop — `InboxController` owned da `AccountSession`
 - **Persistenza**: `_persistAllOpenAccounts()` + `saveAllAccounts` atomico; write lock storage; restore solo errori auth definitivi
-- **Test**: 9 casi regressione multi-account (mock) — `verify.sh` 59 test
+- **Test**: 9 casi regressione multi-account (mock); gate attuale **70** test in `verify.sh`
 - **Harness**: `integration-multi-account.sh`, `diagnose-test-env.sh`, `reset-chrome-cdp.sh`
-- **Doc**: `docs/fixes/multi-account-chat-persistence-pr143.md`, `SESSION_HANDOFF.md` aggiornato
-- **Nota**: validazione browser utente ancora negativa al handoff — gap e2e documentato
+- **Doc**: `docs/fixes/multi-account-chat-persistence-pr143.md`
+- **Follow-up**: persistenza (#147) e switch web (#152) + e2e multi-account
 
 ### Alpha Flutter — PR #142 (auth bootstrap + PKCE)
 
@@ -66,7 +74,7 @@ Modifiche rilevanti al progetto per tracciare evoluzione tecnica e decisioni imp
 - **`EphemeralPkceStorage`**: PKCE su client bootstrap effimero (recupero password senza crash null)
 - **Test**: `password_reset_live_test.dart` (tag `live`), `account_session_bootstrap_test.dart`
 - **Doc**: `docs/fixes/auth-bootstrap-gotrue-revoke.md`, `docs/SESSION_HANDOFF.md`, `docs/AGENT_DEBUG_ACCOUNTS.md`
-- **Topic aperto**: logout solo dispositivo — `docs/decisions/single-device-logout-open.md`
+- **Logout locale**: `docs/decisions/single-device-logout-open.md` (implementato in #143)
 
 ### Alpha Flutter — PR #141 (add-account parziale, superseded da #142 su signOut)
 
@@ -191,237 +199,14 @@ Modifiche rilevanti al progetto per tracciare evoluzione tecnica e decisioni imp
 
 ---
 
-### Legacy React (pre-3.0.0-alpha) — storico
+## Storico pre-Flutter (tag `legacy/web-client-final`)
 
-Le voci sotto riguardano il client React (`legacy/web-client-final`), non il Flutter su `main`.
+Il client **React + XMPP** (IndexedDB, Stanza.js, MAM) è stato rimosso da `main` con **3.0.0-alpha** (2026-06-24).
 
-### Corretti (2026-06-24 — multi-account XMPP)
-- **Isolamento storage per account XMPP** (v2.2):
-  - Un IndexedDB per JID: `conversations-db-{account}`
-  - `account-session.ts`: `switchAccountContext()`, `onAccountChanged()`
-  - Migrazione automatica da DB legacy condiviso `conversations-db`
-  - Storico locale **conservato al logout** (nessun wipe)
-- **Cursor project rules**: `.cursor/rules/main.mdc` — vincolo lettura `.cursor-rules.md`
-- **Documentazione**: `docs/fixes/account-storage-isolation.md`; aggiornati PROJECT_MAP, INDICE, README, sync-system-complete
-
-### Corretti
-- **Cambio account**: conversazioni e messaggi del precedente account non più visibili dopo logout/login con altro JID
-- **ConversationsContext**: ricarica da DB dell'account attivo (`accountJid` da ConnectionContext)
-- **Memoria React**: reset virtual messages e cache UI su `onAccountChanged` senza cancellare IndexedDB
-
-### Rimosso (approccio scartato)
-- ~~Wipe IndexedDB al logout~~ — incompatibile con storico lungo; sostituito da DB per account
-
-### Aggiunto (batch v4.0 — giugno 2026)
-- **Spunte WhatsApp 3 livelli**: ✓ inviato, ✓✓ grigie (XEP-0184), ✓✓ blu (XEP-0333)
-- **Virtual UI + MAM-only DB**: listener campanello, outbox, origin-id canonico
-- **XEP-0184**: `receipt request` in invio, listener `receipt`, overlay `deliveredUi`
-- **Documentazione**: `message-states.md` v2.1, `delivery-receipts-xep-0184.md`, `sync-system-complete.md` v4.0
-- **Sync Boundary Handoff**: all'avvio salva momento T, attiva listener da T, sync MAM fino a T + 5s overlap
-- **Allineamento documentazione**: PROJECT_MAP, README, WISHLIST, architecture README aggiornati a v4.0
-
-### Rimosso
-- **Codice morto**: `sync.ts`, `SyncService.ts`, `usePullToRefresh.ts`, `src/repositories/`, `App.css`
-- **Funzioni non usate**: `loadAllConversations`, `updateConversationOnNewMessage`, `reloadAllMessagesFromServer`, `handleIncomingMessage`
-- **Documentazione obsoleta**: `pull-to-refresh-fix.md`, `INTEGRAZIONE_MAPPA_COMPLETATA.md`, riferimenti a sync legacy e pull-to-refresh custom
-
-### Corretti / Completati
-- **Re-sync su reconnect**: `AppInitializer` resetta lo stato sync alla disconnessione
-- **LoginPopup**: gestisce correttamente errori di `connect()`
-- **Lista conversazioni**: aggiornamento mirato con `refreshConversation()` invece di reload completo
-- **Persistence messaggi**: salvataggio unificato via `messageRepository` (rimosso wrapper circolare in `conversations-db`)
-- **CSS morto**: rimossi stili pull-to-refresh non usati
-
-### Da Fare
-- Chat di gruppo (MUC - XEP-0045)
-- Crittografia E2E (OMEMO - XEP-0384)
-- Condivisione file (HTTP Upload - XEP-0363)
-- Voice/Video calls (Jingle - XEP-0166)
-- PWA con service worker migliorato
-- Dark mode nativo
-- Emoji picker
-- Markdown support
-- XEP-0280 Message Carbons (multi-device)
+- **Codice e documentazione completa**: tag git `legacy/web-client-final` @ `6e792eb`
+- **Non documentato su `main`**: ADR/fix/architettura del vecchio stack non vanno replicati qui
+- **Changelog dettagliato 0.1.0–2.x**: disponibile nella history git del tag legacy, non mantenuto in questo file
 
 ---
 
-## [0.9.0] - 2025-11-30
-
-### Aggiunte
-- **Sistema vCard completo**: Supporto per avatar, nomi display e informazioni profilo
-- **Pagina profilo utente**: Interfaccia per modifica profilo e avatar
-- **Pull-to-refresh**: Gesto di refresh per conversazioni e chat
-- **Message Archive Management**: Supporto XEP-0313 per storico messaggi
-- **Paginazione messaggi**: Caricamento lazy con scroll infinito
-- **Ricerca conversazioni**: Filtro in tempo reale
-- **Typing indicators**: Indicatori di scrittura in corso
-- **Presence management**: Gestione stato presenza utenti
-
-### Modifiche
-- **Refactoring Flexbox First**: Migrazione completa da CSS Grid a Flexbox per layout responsive
-  - Convertiti 3 layout in `App.css`
-  - Conformità 100% alle design guidelines
-  - Migliorate performance rendering
-  
-- **Scrollable Containers**: Creazione classe utility `.scrollable-container`
-  - Riduzione CSS ridondante del 71% (25 righe)
-  - Centralizzazione gestione scroll in singola classe
-  - Aggiornati 4 componenti TSX e 4 file CSS
-  - Bundle size ridotto di 550 bytes
-  
-- **Ottimizzazione sincronizzazione**: Strategia cache-first per apertura istantanea chat
-  - Apertura chat < 100ms grazie a cache locale
-  - Riduzione query MAM del 80%
-  - Migliorata gestione offline
-
-### Corretti
-- **Profile Save Error**: Migliorata gestione errori con messaggi specifici
-  - Validazione preventiva dati
-  - Gestione errori XMPP granulare (not-authorized, forbidden, service-unavailable)
-  - Logging dettagliato per debug
-  
-- **vCard Photo Base64**: Risolto timeout salvataggio foto profilo
-  - Corretto formato dati da Buffer a stringa base64
-  - Ridotto tempo salvataggio da 15s+ a ~105ms
-  - Testato con PNG e JPEG
-  
-- **Profile Scroll Conflict**: Risolto conflitto scroll tra pagina e contenitore
-  - Riprogettata architettura layout ProfilePage
-  - Separazione responsabilità scroll
-  - Fix overflow e touch-action
-  
-- **Race Conditions Messaggi**: Eliminati messaggi duplicati
-  - Implementato merge intelligente messaggi
-  - De-duplicazione basata su messageId
-  - Gestione corretta transizioni stato
-  
-- **Memory Leak**: Prevenuti setState dopo unmount
-  - Aggiunto flag isMountedRef
-  - Cleanup corretto in useEffect
-  - Eliminati warning React
-  
-- **Paginazione MAM**: Corretta gestione token RSM
-  - Uso corretto di beforeToken/afterToken
-  - Persistenza token per conversazione
-  - Fix loadMore messaggi vecchi
-  
-- **Performance getAll()**: Ottimizzate query database
-  - Aggiunto index by-tempId
-  - Ridotte query da O(n) a O(1)
-  - Migliorata scalabilità con migliaia di messaggi
-
-- **WebSocket URL Fallback**: Corretti URL alternativi connessione XMPP
-  - Fix path `/ws` → `/websocket` per conversations.im
-  - Aggiunto supporto porta 443 esplicita
-  - Migliorata robustezza connessione
-
-### Sicurezza
-- **Validazione Input**: Aggiunta validazione dati vCard e messaggi
-- **Error Boundary**: Implementato React Error Boundary per gestione crash
-- **Sanitizzazione**: Sanitizzazione input utente per prevenire XSS
-
-### Documentazione
-- **Riorganizzazione completa**: Struttura docs/ con categorie logiche
-  - `architecture/` - Documentazione architetturale
-  - `implementation/` - Dettagli implementativi
-  - `design/` - Design e UI/UX
-  - `guides/` - Guide pratiche
-  - `decisions/` - Architecture Decision Records
-  - `fixes/` - Bug fix e ottimizzazioni
-  - `archive/` - Documenti storici
-  
-- **INDICE.md**: Indice navigabile completo con link rapidi
-- **README principale**: Espanso con guida completa al progetto
-- **JSDoc completo**: Documentazione funzioni principali
-- **Guide implementazione**: 
-  - Sistema login
-  - Sistema sincronizzazione
-  - Scrollable containers
-  - Routing system
-  
-- **Revisioni tecniche**:
-  - Revisione ingegnerizzazione completa
-  - Analisi problemi critici
-  - Metriche code quality
-
----
-
-## [0.5.0] - 2025-01-27
-
-### Aggiunte
-- **Utility Functions**: Moduli centralizzati per funzioni comuni
-  - `utils/jid.ts` - Gestione JID (normalizeJid, parseJid, isValidJid)
-  - `utils/date.ts` - Formattazione date (formatDateSeparator, formatMessageTime)
-  - `utils/message.ts` - Gestione messaggi (generateTempId, mergeMessages, truncateMessage)
-  
-- **Costanti Centralizzate**: File `config/constants.ts` espanso
-  - Costanti paginazione (PAGE_SIZE, MAX_RESULTS)
-  - Timeout e limiti
-  - Storage keys
-  - Message status
-  
-- **Error Boundary**: Componente per gestione errori React
-  - UI fallback user-friendly
-  - Logging errori in development
-  - Opzioni di recovery
-
-### Modifiche
-- **Type Safety**: Migliorata type safety complessiva
-  - Rimossi type assertions non sicure
-  - Uso di `as const` per costanti
-  - Tipi espliciti per utility functions
-  
-- **Code Organization**: Migliorata organizzazione codice
-  - Eliminata duplicazione tra servizi
-  - Separazione chiara utilities/services/components
-  - Import organizzati e coerenti
-
-### Documentazione
-- **REVISIONE_INGEGNERIZZAZIONE.md**: Documento completo revisione tecnica (~328 righe)
-- **SOMMARIO_MIGLIORAMENTI.md**: Riepilogo miglioramenti implementati
-
----
-
-## [0.3.0] - 2024-11-30
-
-### Aggiunte
-- **Login System**: Sistema login con popup glassmorphism
-- **XMPP Connection**: Integrazione Stanza.js completa
-- **Conversations List**: Lista conversazioni con avatar e preview
-- **Chat Interface**: UI chat Telegram-style con dark mode
-- **Local Database**: IndexedDB per cache completa
-- **Real-time Messaging**: Invio e ricezione messaggi in tempo reale
-- **Optimistic Updates**: Feedback immediato per azioni utente
-
-### Architettura
-- **XmppContext**: Context React per stato XMPP globale
-- **Services Layer**: Servizi per XMPP, database, messaggi, conversazioni
-- **Offline-First**: Strategia cache-first per performance
-- **HashRouter**: Routing client-side per compatibilità hosting statico
-
-### Design
-- **Brand Identity**: Definito colore istituzionale #2D2926 (Dark Charcoal)
-- **Design System**: Linee guida Flexbox First
-- **Responsive**: Layout mobile-first responsive
-- **Accessibility**: WCAG 2.1 AA compliance
-
----
-
-## [0.1.0] - 2024-10-15
-
-### Aggiunte
-- Setup iniziale progetto React + TypeScript + Vite
-- Configurazione ESLint e TypeScript strict mode
-- Struttura base cartelle (components, pages, services, contexts)
-- GitHub Pages deployment workflow
-- README e documentazione base
-
----
-
-## Note Storiche
-
-Documenti storici pre-0.9.0 consolidati in questo changelog. Documentazione client React rimossa dal repo (2026-06-28); codice storico solo su tag `legacy/web-client-final`.
-
----
-
-**Ultimo aggiornamento**: 2025-12-06
+**Ultimo aggiornamento**: 2026-07-03

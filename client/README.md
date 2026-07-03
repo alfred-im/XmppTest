@@ -12,10 +12,12 @@ Client ufficiale Alfred — multi-piattaforma (web, mobile, desktop).
 | **Auth** | Overlay su shell (`AuthOverlay`), non schermata piena |
 | **Live (Alpha dev)** | https://alfred-im.github.io/XmppTest/ |
 | **Layout** | Lista inbox + chat (stile WhatsApp Web) |
-| **Inbox** | RPC `list_inbox()` — aggregazione on-read su `messages`; nessuna tabella/cache inbox |
+| **Inbox** | RPC `list_inbox()` — aggregazione on-read su `messages` |
 | **Chat** | Identificata da `peer_profile_id` (`ChatPeer`) |
+| **Media** | Testo, GIF, voice (WebM/Opus), location (mappa OSM) |
 | **Nuovo messaggio** | FAB → username → stessa chat (vuota o con storico) |
 | **Invio** | `send_message_to_profile` |
+| **Gate test** | `verify.sh` — 70 test unit/widget (zero issue analyze) |
 
 ## Test
 

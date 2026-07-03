@@ -1,6 +1,6 @@
 # Wishlist Funzionalità
 
-**Ultimo aggiornamento**: 2026-06-28
+**Ultimo aggiornamento**: 2026-07-03
 
 Funzionalità **future** desiderate per Alfred (client Flutter + piattaforma + bridge).
 
@@ -149,17 +149,17 @@ Ogni nuova XEP deve includere test bridge, integrazione piattaforma e documentaz
 
 ---
 
-**Prossimi Passi**:
-1. Implementare XEP-0280 (Carbons) per sync multi-device
-2. Aggiungere XEP-0308 (Message Correction) per edit messaggi
-3. Valutare XEP-0363 (File Upload) dopo testing server
-- Esperienza multi-device fluida
-- Storia messaggi consistente
-
-**Note implementazione**:
-- Via bridge XMPP quando federazione attiva
-- Stato su piattaforma Supabase (non cache locale)
+**Ultimo aggiornamento**: 2026-07-03
 
 ---
 
-## 🚀 Funzionalità in Roadmap
+## Prossimi passi (roadmap)
+
+1. Implementare XEP-0280 (Carbons) per sync multi-device
+2. Aggiungere XEP-0308 (Message Correction) per edit messaggi
+3. Valutare XEP-0363 (File Upload) dopo testing server
+
+### Riferimenti utili
+
+- **XEP Index**: https://xmpp.org/extensions/
+- **Compliance Suites**: https://xmpp.org/extensions/xep-0459.html (2024)

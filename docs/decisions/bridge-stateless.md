@@ -3,7 +3,7 @@
 **Data**: 2026-06-24  
 **Status**: ✅ Accettata — **regola vincolante**  
 **Categoria**: Architettura bridge  
-**Correlata**: [project-revolution-discovery.md](./project-revolution-discovery.md) (principio cardine), [no-modify-source-data.md](./no-modify-source-data.md)
+**Correlata**: [project-revolution-discovery.md](./project-revolution-discovery.md) (principio cardine)
 
 ---
 
@@ -70,7 +70,7 @@ I bridge Python (**XMPP** e **Matrix**) sono **sempre stateless** rispetto allo 
 |--------|-----------|
 | **Principio cardine** | Il bridge resta facciata XMPP/Matrix; la logica e i dati sono in piattaforma |
 | **Flutter → solo piattaforma** | Stesso pattern: nessun layer intermedio tiene verità |
-| **No modify source data** | La piattaforma è la fonte; i bridge non “correggono” dati localmente |
+| **Piattaforma = fonte di verità** | I bridge non “correggono” dati localmente; stato duraturo solo su Supabase |
 
 ### Implementazione (quando si scrive il codice)
 

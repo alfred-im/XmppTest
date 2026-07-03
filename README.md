@@ -4,13 +4,13 @@
 
 Traccia lo stato del progetto per continuità del lavoro. Non è documentazione per utenti esterni.
 
-## Stato attuale (2026-07-02)
+## Stato attuale (2026-07-03)
 
-**Flutter + Supabase + bridge Python** (`docs/decisions/project-revolution-discovery.md`). PR Alpha **#108–#152** su `main` (multi-account: persistenza dichiarativa #147, una GoTrue attiva #152).
+**Flutter + Supabase + bridge Python**. PR Alpha **#108–#153** su `main`.
 
 | Componente | Stato |
 |------------|-------|
-| **`client/`** | App Supabase — shell messaggistica, multi-account (manifest + focus), overlay auth, chat testo/GIF/voice/location, `verify.sh` |
+| **`client/`** | App Supabase — shell messaggistica, multi-account (manifest + focus), overlay auth, chat testo/GIF/voice/location, `verify.sh` (70 test gate) |
 | **`supabase/`** | Schema dominio (profiles, contacts, messages, outbox, …) |
 | **`bridge-xmpp/`** · **`bridge-matrix/`** | Stub health Fly.io |
 
@@ -42,6 +42,7 @@ Deploy: `.github/workflows/deploy-pages.yml`.
 |------|-----------|
 | `PROJECT_MAP.md` | Mappa progetto (leggere a ogni sessione) |
 | `docs/INDICE.md` | Indice per area |
+| `docs/SESSION_HANDOFF.md` | Handoff rapido per agenti |
 | `docs/architecture/alpha-full-stack.md` | Architettura Alpha |
 | `docs/architecture/alpha-pr-registry.md` | Registro PR → documentazione |
 
@@ -56,4 +57,4 @@ MIT — `LICENSE`
 
 ---
 
-**Ultimo aggiornamento**: 2026-06-28
+**Ultimo aggiornamento**: 2026-07-03
