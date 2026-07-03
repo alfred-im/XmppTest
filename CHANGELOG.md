@@ -23,6 +23,11 @@ Modifiche rilevanti al progetto per tracciare evoluzione tecnica e decisioni imp
 
 ## [Unreleased]
 
+### Documentazione (2026-07-03 — INBOX-SEARCH spec)
+
+- **`INBOX-SEARCH.spec.md`**: ricerca on-demand inbox, filtro client-side, `_dismissSearch`
+- Header `design/inbox-search-toggle.md`; registro PR #132
+
 ### Documentazione (2026-07-03 — MSG-READ spec)
 
 - **`MSG-READ.spec.md`**: spunte delivered/read, `mark_peer_read`, semantica cloud

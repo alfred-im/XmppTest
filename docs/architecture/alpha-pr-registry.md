@@ -32,7 +32,7 @@ Documento per AI. Ogni PR deve riflettersi in: `PROJECT_MAP.md`, `CHANGELOG.md`,
 | **#127** | Gate `flutter analyze` | `client/scripts/verify.sh` | — | `.cursor-rules.md`, `client/scripts/test/README.md` |
 | **#130** | Inbox solo messaggi | Drop `inbox_threads`; `ChatPeer`; RPC peer-based | MSG-INBOX, MSG-READ | `messages-only-inbox.md`, `address-based-messaging.md` |
 | **#131** | Sidebar logout | Logout in card profilo | AUTH-MULTI | `PROJECT_MAP` § layout |
-| **#132** | Ricerca on-demand inbox | Barra ricerca toggle + `TapRegion` | — | `inbox-search-toggle.md` |
+| **#132** | Ricerca on-demand inbox | Barra ricerca toggle + `TapRegion` | INBOX-SEARCH | `inbox-search-toggle.md` |
 | **#133** | Sync doc post-merge | Allineamento doc dopo #126–#132 | — | `CHANGELOG`, `INDICE` |
 | **#134** | Profilo arricchito | Avatar, pronomi, `ProfileSummary`, inbox peer fields | MSG-INBOX | `PROJECT_MAP` § profilo, migrazioni `202606280*` |
 | **#135** | `AGENTS.md` | Istruzioni Cloud Agent / toolchain | — | `AGENTS.md` |

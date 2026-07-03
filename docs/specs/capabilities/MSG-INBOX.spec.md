@@ -33,6 +33,7 @@ L’utente deve vedere l’elenco delle conversazioni (preview, ordine, unread) 
 - Storico chat: RPC `list_peer_messages(peer_profile_id)`.
 - Segna letti: vedi [MSG-READ](./MSG-READ.spec.md) — RPC `mark_peer_read` all’apertura chat.
 - Realtime inbox: subscribe su `messages` dove `sender_id` o `recipient_profile_id` = utente corrente → `InboxController.load()`.
+- Ricerca conversazioni: vedi [INBOX-SEARCH](./INBOX-SEARCH.spec.md) (client-side su `filteredPeers`).
 - Realtime chat: canale `messages-peer-{me}-{peer}` su INSERT/UPDATE.
 
 ### SHOULD
@@ -54,7 +55,7 @@ L’utente deve vedere l’elenco delle conversazioni (preview, ordine, unread) 
 ## 3. Fuori scope
 
 - Indirizzi esterni `user@server` (Alpha: `unsupported` fino ai bridge).
-- Ricerca inbox on-demand (spec separata INBOX-SEARCH, #132).
+- Ricerca inbox on-demand (spec [INBOX-SEARCH](./INBOX-SEARCH.spec.md), #132).
 - Modello caselle per-owner (target futuro mailbox).
 - Offline / cache locale inbox (web online-only, D-031).
 
