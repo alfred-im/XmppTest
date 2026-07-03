@@ -24,37 +24,32 @@ L’utente deve poter filtrare la lista conversazioni per nome peer, anteprima u
 
 ### MUST
 
-- Barra «Cerca messaggi» **nascosta** di default in `InboxPanel`.
-- Apertura: tap icona lente (`Icons.search`) → barra visibile + `requestFocus` sul campo.
-- Filtro: `InboxController.filteredPeers` — substring case-insensitive su:
-  - `displayName`
-  - `preview` (ultimo messaggio)
-  - `address` (username / indirizzo peer)
-- Chiusura unificata: **un solo** metodo `_dismissSearch()` in `InboxPanel`:
-  - nasconde barra
-  - svuota `TextEditingController`
-  - `onSearchChanged('')` se c’era testo
-  - `unfocus` sul campo
-- Trigger chiusura:
-  - secondo tap sulla lente (toggle)
-  - `TapRegion.onTapOutside` mentre barra visibile (barra + lente stesso `groupId`)
-  - `dispose` del widget se filtro attivo
-- Cambio account: `ValueKey(accountUserId)` su `InboxPanel` in `HomeScreen` → stato ricerca reset (widget nuovo).
-- Layout:
-  - **Mobile** (`showTopBar: true`): lente nell’header «Alfred», prima di Contatti; barra sotto header
-  - **Desktop** (`showTopBar: false`): lente nella riga «Conversazioni»; barra sotto titolo
+| ID | Requisito |
+|----|-----------|
+| **INBOX-SEARCH-REQ-001** | Barra «Cerca messaggi» **nascosta** di default in `InboxPanel` |
+| **INBOX-SEARCH-REQ-002** | Apertura: tap icona lente (`Icons.search`) → barra visibile + `requestFocus` sul campo |
+| **INBOX-SEARCH-REQ-003** | Filtro: `InboxController.filteredPeers` — substring case-insensitive su `displayName`, `preview`, `address` |
+| **INBOX-SEARCH-REQ-004** | Chiusura unificata: **un solo** metodo `_dismissSearch()` in `InboxPanel` (nasconde barra, svuota controller, `onSearchChanged('')` se testo, `unfocus`) |
+| **INBOX-SEARCH-REQ-005** | Trigger chiusura: secondo tap lente (toggle); `TapRegion.onTapOutside` (barra + lente stesso `groupId`); `dispose` se filtro attivo |
+| **INBOX-SEARCH-REQ-006** | Cambio account: `ValueKey(accountUserId)` su `InboxPanel` in `HomeScreen` → stato ricerca reset |
+| **INBOX-SEARCH-REQ-007** | Layout **mobile** (`showTopBar: true`): lente nell’header «Alfred», prima di Contatti; barra sotto header |
+| **INBOX-SEARCH-REQ-008** | Layout **desktop** (`showTopBar: false`): lente nella riga «Conversazioni»; barra sotto titolo |
 
 ### SHOULD
 
-- Hint campo: «Cerca messaggi».
-- Tooltip lente: «Cerca messaggi».
+| ID | Requisito |
+|----|-----------|
+| **INBOX-SEARCH-REQ-009** | Hint campo: «Cerca messaggi» |
+| **INBOX-SEARCH-REQ-010** | Tooltip lente: «Cerca messaggi» |
 
 ### MUST NOT
 
-- Ricerca server-side / RPC dedicata in Alpha.
-- Barra ricerca sempre visibile.
-- Callback sparse in `HomeScreen` (o parent) per chiudere la ricerca su ogni azione (contatti, drawer, selezione peer).
-- Duplicare logica dismiss fuori da `_dismissSearch()` (o equivalente esposto).
+| ID | Requisito |
+|----|-----------|
+| **INBOX-SEARCH-REQ-011** | Ricerca server-side / RPC dedicata in Alpha |
+| **INBOX-SEARCH-REQ-012** | Barra ricerca sempre visibile |
+| **INBOX-SEARCH-REQ-013** | Callback sparse in `HomeScreen` (o parent) per chiudere la ricerca su ogni azione |
+| **INBOX-SEARCH-REQ-014** | Duplicare logica dismiss fuori da `_dismissSearch()` (o equivalente esposto) |
 
 ---
 
@@ -93,14 +88,19 @@ Switch account → nuovo InboxPanel → ricerca chiusa
 
 ---
 
-## 5. Verifica
+## 5. Tracciabilità
 
-| Tipo | Riferimento |
-|------|-------------|
-| Gate | `cd client && bash scripts/verify.sh` |
-| Manuale | Apri/chiudi ricerca mobile + desktop; tap outside; switch account |
+| REQ-ID | Verifica |
+|--------|----------|
+| INBOX-SEARCH-REQ-001, REQ-002, REQ-004, REQ-005 | `inbox_panel.dart` — `_searchVisible`, `_toggleSearch`, `_dismissSearch`, `TapRegion` |
+| INBOX-SEARCH-REQ-003 | `list_filter_test.dart` — `filterByQueryFields`; `inbox_controller.dart` `filteredPeers`; `MSG-INBOX.spec.md` REQ-010 |
+| INBOX-SEARCH-REQ-006 | `home_screen.dart` — `key: ValueKey(accountUserId)` su `_inboxPanel` |
+| INBOX-SEARCH-REQ-007, REQ-008 | `inbox_panel.dart` — layout `showTopBar`; `design/inbox-search-toggle.md` |
+| INBOX-SEARCH-REQ-009, REQ-010 | `inbox_panel.dart` — hint e tooltip «Cerca messaggi» |
+| INBOX-SEARCH-REQ-011 | Nessuna RPC ricerca; filtro solo su `peers` in memoria |
+| INBOX-SEARCH-REQ-012, REQ-013, REQ-014 | `inbox-search-toggle.md` PR #132; dismiss centralizzato in `InboxPanel` |
 
-Nessun test widget dedicato in Alpha — comportamento coperto da review UX (#132).
+Gate: `cd client && bash scripts/verify.sh` · Manuale: apri/chiudi ricerca mobile + desktop; tap outside; switch account
 
 ---
 

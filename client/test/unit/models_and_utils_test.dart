@@ -29,6 +29,7 @@ void main() {
     });
   });
 
+  // spec: CONTACTS-REQ-002
   group('ContactProtocol', () {
     test('parses protocol names', () {
       expect(contactProtocolFromString('xmpp'), ContactProtocol.xmpp);

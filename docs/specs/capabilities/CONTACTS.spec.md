@@ -24,34 +24,38 @@ L’utente può salvare contatti (utenti Alfred interni o indirizzi federati fut
 
 ### MUST
 
-- Tabella `contacts` scoped per owner: `owner_id = auth.uid()` (RLS).
-- Tipi contatto (`contact_protocol`): `internal`, `xmpp`, `matrix` — solo routing backend; **nessuna** tipologia chat distinta in UI ([no-internal-external-chat-distinction](../../decisions/no-internal-external-chat-distinction.md)).
-- **Internal**: `linked_profile_id` obbligatorio, `external_address` null; `display_name` + `avatar_url` opzionale (snapshot al momento dell’aggiunta).
-- **Esterno** (xmpp/matrix): `external_address` obbligatorio, `linked_profile_id` null; `display_name` obbligatorio.
-- Unicità: `(owner_id, linked_profile_id)` per internal; `(owner_id, lower(external_address))` per esterni.
-- CRUD via PostgREST diretto su `contacts` (nessuna RPC dedicata add/delete).
-- Lista contatti: `ContactService.fetchContacts(ownerId)` ordinata per `display_name`.
-- Ricerca utenti Alfred per aggiunta: RPC `search_profiles(p_query, p_limit)` — min **2** caratteri lato client; max 50 server-side.
-- Aggiunta internal: `search_profiles` → selezione → `insert` con `protocol=internal`.
-- Aggiunta esterna: form manuale (protocollo, nome, JID/ID Matrix) → `insert`.
-- «Scrivi» da rubrica (icona chat):
-  - **Internal** → `ComposeService.peerFromContact` → `ChatPeer` con `linked_profile_id`
-  - **Esterno** → errore utente «Indirizzo esterno non ancora supportato» (Alpha)
-- `ContactsController` legato all’account in **focus** (`ChangeNotifierProxyProvider` + `ownerId`).
-- Filtro lista: client-side su `display_name` (`filteredContacts`).
+| ID | Requisito |
+|----|-----------|
+| **CONTACTS-REQ-001** | Tabella `contacts` scoped per owner: `owner_id = auth.uid()` (RLS) |
+| **CONTACTS-REQ-002** | Tipi contatto (`contact_protocol`): `internal`, `xmpp`, `matrix` — solo routing backend; **nessuna** tipologia chat distinta in UI ([no-internal-external-chat-distinction](../../decisions/no-internal-external-chat-distinction.md)) |
+| **CONTACTS-REQ-003** | **Internal**: `linked_profile_id` obbligatorio, `external_address` null; `display_name` + `avatar_url` opzionale (snapshot al momento dell’aggiunta) |
+| **CONTACTS-REQ-004** | **Esterno** (xmpp/matrix): `external_address` obbligatorio, `linked_profile_id` null; `display_name` obbligatorio |
+| **CONTACTS-REQ-005** | Unicità: `(owner_id, linked_profile_id)` per internal; `(owner_id, lower(external_address))` per esterni |
+| **CONTACTS-REQ-006** | CRUD via PostgREST diretto su `contacts` (nessuna RPC dedicata add/delete) |
+| **CONTACTS-REQ-007** | Lista contatti: `ContactService.fetchContacts(ownerId)` ordinata per `display_name` |
+| **CONTACTS-REQ-008** | Ricerca utenti Alfred per aggiunta: RPC `search_profiles(p_query, p_limit)` — min **2** caratteri lato client; max 50 server-side |
+| **CONTACTS-REQ-009** | Aggiunta internal: `search_profiles` → selezione → `insert` con `protocol=internal` |
+| **CONTACTS-REQ-010** | Aggiunta esterna: form manuale (protocollo, nome, JID/ID Matrix) → `insert` |
+| **CONTACTS-REQ-011** | «Scrivi» da rubrica (icona chat): **Internal** → `ComposeService.peerFromContact` → `ChatPeer`; **Esterno** → errore «Indirizzo esterno non ancora supportato» (Alpha) |
+| **CONTACTS-REQ-012** | `ContactsController` legato all’account in **focus** (`ChangeNotifierProxyProvider` + `ownerId`) — [AUTH-MULTI](./AUTH-MULTI.spec.md) |
+| **CONTACTS-REQ-013** | Filtro lista: client-side su `display_name` (`filteredContacts`) |
 
 ### SHOULD
 
-- UI rubrica: sottotitolo «Utente Alfred» per internal; indirizzo esterno per federati (senza etichetta protocollo in inbox).
-- Dopo aggiunta contatto: reload lista.
+| ID | Requisito |
+|----|-----------|
+| **CONTACTS-REQ-014** | UI rubrica: sottotitolo «Utente Alfred» per internal; indirizzo esterno per federati (senza etichetta protocollo in inbox) |
+| **CONTACTS-REQ-015** | Dopo aggiunta contatto: reload lista |
 
 ### MUST NOT
 
-- Prerequisito `contact_id` per inviare messaggi a utenti Alfred.
-- Creare conversazione/thread al salvataggio contatto.
-- Mostrare protocollo in inbox o come tipo chat separato.
-- `contacts` come fonte di verità inbox (inbox deriva da `messages` only).
-- Messaggistica verso esterni da rubrica in Alpha (solo salvataggio rubrica).
+| ID | Requisito |
+|----|-----------|
+| **CONTACTS-REQ-016** | Prerequisito `contact_id` per inviare messaggi a utenti Alfred |
+| **CONTACTS-REQ-017** | Creare conversazione/thread al salvataggio contatto |
+| **CONTACTS-REQ-018** | Mostrare protocollo in inbox o come tipo chat separato |
+| **CONTACTS-REQ-019** | `contacts` come fonte di verità inbox (inbox deriva da `messages` only) — [MSG-INBOX](./MSG-INBOX.spec.md) |
+| **CONTACTS-REQ-020** | Messaggistica verso esterni da rubrica in Alpha (solo salvataggio rubrica) |
 
 ---
 
@@ -103,14 +107,23 @@ Migrazione base: `20260624200000_alfred_domain_schema.sql`.
 
 ---
 
-## 5. Verifica
+## 5. Tracciabilità
 
-| Tipo | Riferimento |
-|------|-------------|
-| Gate | `cd client && bash scripts/verify.sh` |
-| Smoke DB | `send_message_to_profile_smoke.sql` — invio **senza** contatto in rubrica |
-| Unit | `models_and_utils_test.dart` — `ContactProtocol` parsing |
-| Manuale | Aggiungi contatto Alfred; «Scrivi»; aggiungi XMPP in rubrica (no chat federata) |
+| REQ-ID | Verifica |
+|--------|----------|
+| CONTACTS-REQ-001, REQ-005 | `schema_smoke.sql` — tabella `contacts`; migrazione `20260624200000_alfred_domain_schema.sql` |
+| CONTACTS-REQ-002 | `models_and_utils_test.dart` — `ContactProtocol` parsing |
+| CONTACTS-REQ-006, REQ-007 | `contact_service.dart` — PostgREST fetch/insert/delete |
+| CONTACTS-REQ-008, REQ-009 | `contact_service.dart` — `search_profiles`; `contacts_screen.dart` — min 2 caratteri |
+| CONTACTS-REQ-010 | `contacts_screen.dart` — tab Esterno + `addExternal` |
+| CONTACTS-REQ-011 | `compose_service_test.dart` — `peerFromContact` internal/external |
+| CONTACTS-REQ-012 | `main.dart` — `ChangeNotifierProxyProvider<AuthController, ContactsController?>` |
+| CONTACTS-REQ-013 | `list_filter_test.dart` — `filterByQuery`; `contacts_controller.dart` `filteredContacts` |
+| CONTACTS-REQ-015 | `contacts_controller.dart` — `addInternal` / `addExternal` → `load()` |
+| CONTACTS-REQ-016, REQ-019 | `send_message_to_profile_smoke.sql` — invio senza contatto in rubrica; `MSG-INBOX-REQ-018` |
+| CONTACTS-REQ-020 | `compose_service.dart` — `peerFromContact` errore esterno Alpha |
+
+Gate: `cd client && bash scripts/verify.sh` · Manuale: aggiungi contatto Alfred; «Scrivi»; aggiungi XMPP in rubrica (no chat federata)
 
 ---
 

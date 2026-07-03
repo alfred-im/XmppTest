@@ -1,11 +1,11 @@
 # Catalogo spec — Alfred Alpha
 
 **Ultima revisione**: 2026-07-03  
-**REQ-ID**: MSG-INBOX ✅ · MSG-READ ✅ · MSG-SEND ✅ · AUTH-MULTI ✅ · PROFILE ✅ (CONTACTS, INBOX-SEARCH: backlog)
+**REQ-ID**: tutte le 7 capability ✅ (SDD v1 completo su `main`)
 
 Indice capability con stato e tracciabilità PR. Contratti: [rpc.md](./contracts/rpc.md), [schema.md](./contracts/schema.md).
 
-**SDD v1**: REQ-ID + tracciabilità su MSG-INBOX, MSG-READ, MSG-SEND, AUTH-MULTI, PROFILE. Metodo: [README.md](./README.md).
+**SDD v1**: REQ-ID + tracciabilità su tutte le capability Alpha (MSG-*, AUTH-MULTI, PROFILE, CONTACTS, INBOX-SEARCH). Metodo: [README.md](./README.md).
 
 ---
 
