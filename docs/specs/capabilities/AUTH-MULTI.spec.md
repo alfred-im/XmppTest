@@ -24,34 +24,40 @@ L’utente opera Alfred con una o più identità messaggistica sulla stessa shel
 
 ### MUST
 
-- Shell `HomeScreen` **sempre** visibile (sidebar + inbox + chat).
-- Account in lista sidebar = account **aperti** nel manifest — non bookmark disconnessi.
-- Storage manifest: `alfred_saved_accounts` (JSON `OpenAccount[]`) — verità dopo F5 (PR #147).
-- Focus: `alfred_focus_user_id` — quale account mostra inbox/chat.
-- Auth per account: `alfred_auth_{userId}` — sessione GoTrue dedicata; non ricostruisce il manifest.
-- **Una** `AccountSession` / connessione GoTrue attiva in RAM (PR #152); al `setFocus`: dispose sessione corrente (`clearAuthStorage: false`), restore nuovo account da manifest.
-- Bootstrap app: `bootstrapApp()` — nessun `Supabase.initialize` globale per utente.
-- Servizi dati usano `session.client` della sessione in focus, non singleton globale.
-- `InboxController` + realtime inbox solo sul focus.
-- `AccountViewState` per `userId`: `activePeer` e stato mobile inbox/chat **persistono** al cambio focus.
-- 0 account → `AuthOverlay` obbligatorio, non dismissibile.
-- ≥1 account → overlay solo da «Aggiungi account», dismissibile.
-- Login e registrazione sulla stessa card (`AuthScreen`); toggle Accedi/Registrati.
-- «Chiudi account» (`removeAccount`): rimuove manifest + `alfred_auth_{userId}`; se ultimo account → overlay obbligatorio.
-- Token refresh: sessione attiva aggiorna propria entry manifest su `tokenRefreshed`.
+| ID | Requisito |
+|----|-----------|
+| **AUTH-MULTI-REQ-001** | Shell `HomeScreen` **sempre** visibile (sidebar + inbox + chat) — mai sostituita da auth full-screen |
+| **AUTH-MULTI-REQ-002** | Account in lista sidebar = account **aperti** nel manifest — non bookmark disconnessi |
+| **AUTH-MULTI-REQ-003** | Storage manifest: `alfred_saved_accounts` (JSON `OpenAccount[]`) — verità dopo F5 (PR #147) |
+| **AUTH-MULTI-REQ-004** | Focus: `alfred_focus_user_id` — quale account mostra inbox/chat |
+| **AUTH-MULTI-REQ-005** | Auth per account: `alfred_auth_{userId}` — sessione GoTrue dedicata; non ricostruisce il manifest |
+| **AUTH-MULTI-REQ-006** | **Una** `AccountSession` / connessione GoTrue attiva in RAM (PR #152); al `setFocus`: dispose sessione corrente (`clearAuthStorage: false`), restore nuovo account da manifest |
+| **AUTH-MULTI-REQ-007** | Bootstrap app: `bootstrapApp()` — nessun `Supabase.initialize` globale per utente |
+| **AUTH-MULTI-REQ-008** | Servizi dati usano `session.client` della sessione in focus, non singleton globale |
+| **AUTH-MULTI-REQ-009** | `InboxController` + realtime inbox solo sul focus — [MSG-INBOX](./MSG-INBOX.spec.md) REQ-011 |
+| **AUTH-MULTI-REQ-010** | `AccountViewState` per `userId`: `activePeer` e stato mobile inbox/chat **persistono** al cambio focus |
+| **AUTH-MULTI-REQ-011** | 0 account → `AuthOverlay` obbligatorio, non dismissibile |
+| **AUTH-MULTI-REQ-012** | ≥1 account → overlay solo da «Aggiungi account», dismissibile |
+| **AUTH-MULTI-REQ-013** | Login e registrazione sulla stessa card (`AuthScreen`); toggle Accedi/Registrati |
+| **AUTH-MULTI-REQ-014** | «Chiudi account» (`removeAccount`): rimuove manifest + `alfred_auth_{userId}`; se ultimo account → overlay obbligatorio |
+| **AUTH-MULTI-REQ-015** | Token refresh: sessione attiva aggiorna propria entry manifest su `tokenRefreshed` |
 
 ### SHOULD
 
-- Switch focus senza loading auth visibile (restore in background).
-- `NoAccountPlaceholder` in area inbox quando nessun account/focus.
+| ID | Requisito |
+|----|-----------|
+| **AUTH-MULTI-REQ-016** | Switch focus senza loading auth visibile (restore in background) |
+| **AUTH-MULTI-REQ-017** | `NoAccountPlaceholder` in area inbox quando nessun account/focus |
 
 ### MUST NOT
 
-- `AuthScreen` a tutto schermo che sostituisce `HomeScreen` (eccetto card in overlay).
-- N client GoTrue paralleli in RAM su web (BroadcastChannel collision).
-- `switchAccount` legacy con `setSession` tra account già in RAM.
-- Overlay dismissibile con 0 account.
-- Rotella globale che nasconde shell durante switch.
+| ID | Requisito |
+|----|-----------|
+| **AUTH-MULTI-REQ-018** | `AuthScreen` a tutto schermo che sostituisce `HomeScreen` (eccetto card in overlay) |
+| **AUTH-MULTI-REQ-019** | N client GoTrue paralleli in RAM su web (BroadcastChannel collision) |
+| **AUTH-MULTI-REQ-020** | `switchAccount` legacy con `setSession` tra account già in RAM |
+| **AUTH-MULTI-REQ-021** | Overlay dismissibile con 0 account |
+| **AUTH-MULTI-REQ-022** | Rotella globale che nasconde shell durante switch |
 
 ---
 
@@ -117,14 +123,24 @@ Layout: `Stack` — `HomeScreen` sotto, `AuthOverlay` (45% nero) + `AuthScreen` 
 
 ---
 
-## 5. Verifica
+## 5. Tracciabilità
 
-| Tipo | Riferimento |
-|------|-------------|
-| Gate | `cd client && bash scripts/verify.sh` |
-| Unit | `account_storage_test.dart`, `account_manager_view_state_test.dart`, `account_manager_persistence_test.dart`, `multi_account_chat_scenario_test.dart` |
-| Integrazione | `bash scripts/test.sh integration` |
-| E2E | `bash scripts/test.sh e2e-multi` |
+| REQ-ID | Verifica |
+|--------|----------|
+| AUTH-MULTI-REQ-001 | `app_shell.dart` — `sessionReady` → sempre `HomeScreen`; `design/auth-overlay-shell.md` |
+| AUTH-MULTI-REQ-002, REQ-003 | `account_storage_test.dart` — round-trip `OpenAccount[]` |
+| AUTH-MULTI-REQ-004 | `account_storage_test.dart` — `saveFocusUserId` / `loadFocusUserId` |
+| AUTH-MULTI-REQ-005 | `account_manager_persistence_test.dart` — `persistOpenAccount` + `alfred_auth_*` via `AccountSession` |
+| AUTH-MULTI-REQ-006 | `account_manager_persistence_test.dart` — adopt A then B, single active session |
+| AUTH-MULTI-REQ-010 | `account_manager_view_state_test.dart` — `setFocus` preserva `activePeer` per account |
+| AUTH-MULTI-REQ-011, REQ-012, REQ-021 | `auth_overlay_shell.md`; `auth_controller.dart` — gate overlay |
+| AUTH-MULTI-REQ-014 | `account_manager_persistence_test.dart` — `removeAccount drops only the closed entry` |
+| AUTH-MULTI-REQ-009, REQ-019 | `inbox_provider_lifecycle_test.dart` — inbox non disposed al focus switch |
+| AUTH-MULTI-REQ-010, REQ-016 | `multi_account_chat_scenario_test.dart` — storico chat per account al cambio focus |
+| AUTH-MULTI-REQ-015 | `auth_service_multi_account_test.dart` — upsert refresh token in manifest |
+| AUTH-MULTI-REQ-018, REQ-022 | `design/auth-overlay-shell.md`; PR #140 |
+
+Gate: `cd client && bash scripts/verify.sh` · Integrazione: `bash scripts/test.sh integration` · E2E: `bash scripts/test.sh e2e-multi`
 
 ---
 

@@ -36,6 +36,7 @@ void main() {
     });
   });
 
+  // spec: PROFILE-REQ-007
   group('ProfileSummary.fromProfilesRow', () {
     test('parses public profile fields', () {
       final summary = ProfileSummary.fromProfilesRow({
@@ -54,6 +55,7 @@ void main() {
     });
   });
 
+  // spec: PROFILE-REQ-012
   group('UserProfile.fromJson', () {
     test('parses pronouns and avatar via summary', () {
       final profile = UserProfile.fromJson({
@@ -73,6 +75,7 @@ void main() {
     });
   });
 
+  // spec: PROFILE-REQ-013
   group('avatarColorForId', () {
     test('is deterministic', () {
       expect(avatarColorForId('abc'), avatarColorForId('abc'));
