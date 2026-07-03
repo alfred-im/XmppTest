@@ -77,4 +77,4 @@ Indice documenti tecnici per navigazione rapida. Documento per AI, non per utent
 
 ---
 
-**Ultimo aggiornamento**: 2026-07-02 — multi-account: persistenza #147 + single-active GoTrue #152
+**Ultimo aggiornamento**: 2026-07-03 — posizione statica in chat #153

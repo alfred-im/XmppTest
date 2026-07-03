@@ -1,6 +1,6 @@
 # Alfred - Mappa Completa del Progetto
 
-**Ultimo aggiornamento**: 2026-07-02 (multi-account: persistenza dichiarativa #147 + una GoTrue attiva #152)  
+**Ultimo aggiornamento**: 2026-07-03 (condivisione posizione statica #153)  
 **Versione repository**: 3.1.0-alpha (client Flutter + piattaforma Supabase; bridge stub)
 
 ---

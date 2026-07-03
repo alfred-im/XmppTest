@@ -21,10 +21,10 @@ Nessun bucket storage — solo coordinate in Postgres.
 |------|---------------|
 | Tap **pin** | Apre subito il box anteprima (area mappa con loader interno) |
 | **Sharing** | Stream GPS; **Invia posizione** disabilitato fino alla prima coordinata |
-| Overlay | `OverlayEntry` a schermo intero + velo — blocca tap sulla conversazione sotto |
+| Overlay | `OverlayEntry` a schermo intero + velo semitrasparente — blocca **tutti** i tap sulla chat sotto |
 | Affinamento | Il pin si aggiorna se il GPS migliora (`distanceFilter: 0`) |
 | **Invia posizione** | Invia le coordinate **al momento del tap** (arrotondate) |
-| **Annulla** | Chiude stream e overlay senza inviare |
+| **Annulla** | Pulsante o **tap sul velo** fuori dal pannello bianco → chiude stream e overlay senza inviare |
 | Permesso negato | SnackBar con messaggio da `LocationServiceException` |
 | Retry invio | `OutboundMessageQueue` con `latitude`/`longitude` in coda |
 
