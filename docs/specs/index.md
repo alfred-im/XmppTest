@@ -3,7 +3,9 @@
 **Ultima revisione**: 2026-07-03  
 **Metodo**: [README.md](./README.md)
 
-Indice capability con stato e tracciabilità PR. Per contratti RPC condivisi: [contracts/rpc.md](./contracts/rpc.md).
+Indice capability con stato e tracciabilità PR. Contratti: [rpc.md](./contracts/rpc.md), [schema.md](./contracts/schema.md).
+
+**SDD v1**: requisiti con REQ-ID + tabella tracciabilità (pilota: MSG-SEND). Metodo: [README.md](./README.md).
 
 ---
 

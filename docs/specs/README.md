@@ -1,9 +1,24 @@
 # Spec-Driven Development (SDD) — Alfred Alpha
 
 **Audience**: AI / implementazione  
-**Ultima revisione**: 2026-07-03
+**Ultima revisione**: 2026-07-03  
+**Versione metodo**: **SDD v1** (tracciabilità REQ-ID + contratti schema/RPC + gate leggero)
 
-Metodo canonico per definire, approvare e verificare le capability del client Alfred e della piattaforma Supabase.
+Metodo per definire, approvare e verificare le capability del client Alfred e della piattaforma Supabase.
+
+---
+
+## SDD v1 — cosa cambia rispetto al catalogo iniziale
+
+| Elemento | SDD v0 (catalogo) | SDD v1 (canonico) |
+|----------|-------------------|-------------------|
+| Requisiti | Bullet MUST/SHOULD | **REQ-ID** stabili (`MSG-SEND-REQ-001`) |
+| Tracciabilità | Solo PR | Tabella **REQ → test** in ogni spec |
+| Contratto DB | Sparso in `alpha-full-stack.md` | [contracts/schema.md](./contracts/schema.md) |
+| Contratto RPC | `contracts/rpc.md` | invariato, referenziato dalle spec |
+| Panoramica arch | Duplicava le spec | [alpha-full-stack.md](../architecture/alpha-full-stack.md) **slim** + link |
+| Gate PR | Checklist manuale | [PULL_REQUEST_TEMPLATE.md](../../.github/PULL_REQUEST_TEMPLATE.md) + `scripts/check-spec-sync.sh` |
+| Lifecycle | Saltato (retro-spec) | **Obbligatorio** per feature nuove: `approved` prima del codice |
 
 ---
 
@@ -11,14 +26,16 @@ Metodo canonico per definire, approvare e verificare le capability del client Al
 
 | Layer | Dove | Ruolo |
 |-------|------|--------|
-| **ADR** | `docs/decisions/` | Vincoli architetturali immutabili o difficili da cambiare |
-| **Spec** | `docs/specs/` | **Contratto** di capability — cosa deve fare il sistema |
-| **Implementazione** | `docs/implementation/`, codice | Evidenza di come è stato costruito (può essere storica) |
-| **Test** | `client/test/`, `supabase/tests/` | Verifica automatica del contratto |
+| **ADR** | `docs/decisions/` | Vincoli architetturali |
+| **Spec** | `docs/specs/capabilities/` | Contratto capability + REQ-ID |
+| **Contratti** | `docs/specs/contracts/` | Schema DB + RPC condivisi |
+| **Panoramica** | `alpha-full-stack.md`, `PROJECT_MAP.md` | Orientamento — **non** duplicare requisiti |
+| **Evidenza** | `docs/implementation/`, `docs/design/` | Storico; header verso spec |
+| **Test** | `client/test/`, `supabase/tests/` | Verifica; citati in tracciabilità |
 
-**Regola**: prima di codice o migrazione su una capability nuova o modificata, esiste una spec in stato `approved` o superiore. Dopo il merge, la spec passa a `implemented`.
+**Regola (feature nuove)**: spec `approved` → implementazione → spec `implemented` + tabella tracciabilità aggiornata.
 
-`PROJECT_MAP.md` resta la mappa operativa di sessione — **non** sostituisce le spec per-feature.
+**Retro-spec esistenti**: restano `implemented`; aggiungere REQ-ID progressivamente (pilota: [MSG-SEND](./capabilities/MSG-SEND.spec.md)).
 
 ---
 
@@ -30,17 +47,10 @@ draft → approved → implemented → deprecated | superseded
 
 | Stato | Significato |
 |-------|-------------|
-| `draft` | Bozza in discussione; **non** vincolante per PR |
-| `approved` | Contratto concordato; implementazione autorizzata |
-| `implemented` | Su `main`; allineata a codice e test gate |
-| `deprecated` | Non usare per nuovo lavoro; rimane per storico |
-| `superseded` | Sostituita da un'altra spec (`superseded_by`) |
-
-Transizioni tipiche:
-
-- Nuova capability: `draft` → review → `approved` → merge PR → `implemented`
-- Refactor maggiore: nuova spec `approved` → implementazione → vecchia spec → `superseded`
-- Target futuro (es. mailbox): resta `approved` finché non su `main`, poi `implemented` e sostituisce la spec message-centric
+| `draft` | Bozza; non vincolante |
+| `approved` | **Contratto congelato** — si può implementare |
+| `implemented` | Su `main`; tracciabilità verificata |
+| `deprecated` / `superseded` | Non usare per nuovo lavoro |
 
 ---
 
@@ -48,45 +58,42 @@ Transizioni tipiche:
 
 ```
 docs/specs/
-├── README.md              # questo file
-├── _template.md           # template canonico
-├── index.md               # catalogo spec + tracciabilità PR
-├── capabilities/          # una spec per capability
-│   └── *.spec.md
-└── contracts/             # contratti trasversali (RPC, schema)
-    └── rpc.md
+├── README.md
+├── _template.md           # REQ-ID + tracciabilità
+├── index.md
+├── capabilities/*.spec.md
+└── contracts/
+    ├── rpc.md
+    └── schema.md
 ```
 
-**Naming**: `{CAPABILITY-ID}.spec.md` — ID in maiuscolo con trattino (es. `MSG-INBOX`, `AUTH-MULTI`).
+---
+
+## Workflow PR
+
+1. Creare/aggiornare spec (`approved` se nuova capability).
+2. Assegnare **REQ-ID** ai requisiti; compilare tabella tracciabilità.
+3. Implementare + test che coprono i REQ-ID toccati.
+4. Aggiornare `contracts/schema.md` o `rpc.md` se cambia piattaforma.
+5. `bash scripts/check-spec-sync.sh` + `cd client && bash scripts/verify.sh`.
+6. PR template: checkbox spec compilata.
+7. Post-merge: `implemented`, `index.md`, `alpha-pr-registry.md`, `CHANGELOG.md`.
 
 ---
 
-## Workflow PR (agenti e umani)
+## Gate automatico (leggero)
 
-1. Identificare o creare la **spec** (`capabilities/` o aggiornamento `contracts/`).
-2. Portare la spec a `approved` (o aggiornare quella `implemented` se il delta è piccolo e documentato).
-3. Implementare codice + test allineati al contratto.
-4. Aggiornare `index.md`, `alpha-pr-registry.md` (colonna Spec), `CHANGELOG.md`.
-5. Marcare la spec `implemented`; doc storica in `implementation/` / `design/` → header «Superseded by SPEC-…».
+```bash
+bash scripts/check-spec-sync.sh
+```
 
-Checklist post-merge: vedi [alpha-pr-registry.md](../architecture/alpha-pr-registry.md) § checklist.
-
----
-
-## Relazione con altri documenti
-
-| Documento | Relazione |
-|-----------|-----------|
-| [mailbox-inbox-outbox-spec.md](../architecture/mailbox-inbox-outbox-spec.md) | Target futuro; quando su `main` diventerà spec capability e sostituirà MSG-INBOX message-centric |
-| [alpha-full-stack.md](../architecture/alpha-full-stack.md) | Panoramica; link alle spec, non duplicare contratti |
-| `docs/implementation/*` | Evidenza implementativa; header verso spec canonica |
-| `docs/decisions/*` | Vincoli referenziati dalle spec, non riscritti |
+Verifica: ogni `*.spec.md` in catalogo; contratti presenti; warn se migrazioni SQL senza diff `docs/specs/`.
 
 ---
 
 ## Creare una nuova spec
 
-1. Copiare [`_template.md`](./_template.md) in `capabilities/{ID}.spec.md`.
-2. Compilare metadata, requisiti, contratto, verifica.
-3. Aggiungere riga in [`index.md`](./index.md).
-4. Aprire PR con spec + implementazione (o spec-only se fase design).
+1. Copiare [`_template.md`](./_template.md).
+2. Compilare REQ-ID, contratto, tracciabilità.
+3. Stato `approved` → PR implementazione (o stessa PR se piccola).
+4. Aggiungere riga in [`index.md`](./index.md).

@@ -59,12 +59,13 @@ Dopo ogni merge su `main`:
 
 1. **`PROJECT_MAP.md`** — stato corrente, caratteristiche
 2. **`CHANGELOG.md`** — voce in `[Unreleased]` con numero PR
-3. **`docs/specs/`** — spec capability (`approved` → `implemented`) se cambia contratto
+3. **`docs/specs/`** — spec capability (`approved` → `implemented`); REQ-ID + tracciabilità; `contracts/schema.md` / `rpc.md` se piattaforma
 4. **`docs/architecture/alpha-full-stack.md`** — sezione client o piattaforma interessata
 5. **`docs/INDICE.md`** — data ultimo aggiornamento
 6. **`README.md`** / **`client/README.md`** — se cambia stato dev
 7. **Fix dedicato** (`docs/fixes/`) — solo per bug/regressioni non ovvie
 8. **Questo registro** — nuova riga in tabella (colonna Spec)
+9. **`scripts/check-spec-sync.sh`** — se toccate spec o migrazioni
 
 ---
 

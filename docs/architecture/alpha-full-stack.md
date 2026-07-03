@@ -1,9 +1,13 @@
-# Alfred Alpha — Architettura completa (client + piattaforma)
+# Alfred Alpha — Architettura (panoramica)
 
 **Data**: 2026-07-03  
 **Scope**: App completa **senza bridge** (XMPP/Matrix restano stub Fly.io)  
 **Stato**: PR Alpha **#108–#153** su `main`  
 **Registro PR**: [alpha-pr-registry.md](./alpha-pr-registry.md)
+
+> **Contratti capability**: [docs/specs/index.md](../specs/index.md) — fonte canonica per inbox, invio, spunte, profilo, rubrica, multi-account.  
+> **Contratti piattaforma**: [contracts/schema.md](../specs/contracts/schema.md), [contracts/rpc.md](../specs/contracts/rpc.md).  
+> Questo file è **panoramica architetturale** — non duplicare i requisiti delle spec.
 
 ---
 
@@ -12,7 +16,7 @@
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │  Flutter Web (`client/`)                                   │
-│  Auth · Contatti · Conversazioni · Chat (testo/GIF/voice/location) · Profilo · Multi-account │
+│  Auth · Contatti · Conversazioni · Chat · Profilo · Multi-account │
 └───────────────────────────┬─────────────────────────────────┘
                             │ HTTPS (REST + Realtime + Auth)
                             ▼
@@ -24,397 +28,150 @@
                             ▼
 ┌─────────────────────────────────────────────────────────────┐
 │  Bridge XMPP / Matrix — **FUORI SCOPE** (stub health only)   │
-│  Leggeranno `outbox`, `sync_cursors`, `bridge_jobs`          │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-### Decisioni vincolanti rispettate
+### ADR vincolanti
 
 | ADR | Scelta |
 |-----|--------|
 | D-008 | Flutter parla **solo** con Supabase |
 | D-051 | Stato bridge in piattaforma (`outbox`, `sync_cursors`, `bridge_jobs`) |
 | D-034 | Protocollo **mai** visibile in UI contatti/inbox |
-| D-024 | Multi-account Alfred — manifest + focus UI; **una GoTrue attiva** in RAM (PR #152; ex sessioni parallele PR #140) |
-| D-031 | Web **online-only** (no cache offline) |
-
-**Spec capability (contratti)**: [docs/specs/index.md](../specs/index.md) — catalogo completo su `main` (MSG-*, INBOX-SEARCH, PROFILE, CONTACTS, AUTH-MULTI).
+| D-024 | Multi-account — manifest + focus; **una GoTrue attiva** (PR #152) |
+| D-031 | Web **online-only** |
 
 ---
 
-## 2. Layer client Flutter
+## 2. Client Flutter — struttura e bootstrap
 
-### 2.1 Struttura directory
+### 2.1 Directory
 
 ```
 client/lib/
-├── config/           # URL Supabase, publishable key (--dart-define override)
-├── models/           # DTO UI ↔ JSON Supabase
-├── services/         # Accesso API (thin layer, no business logic duplicata)
-├── providers/        # ChangeNotifier + Provider (stato UI)
-├── screens/          # Shell, auth, home, contatti, profilo
-├── widgets/          # Componenti presentazionali (AnchoredMessageList, ChatPanel, …)
-└── utils/            # Formattazione date, colori avatar, ConversationScrollAnchor
+├── config/      # Supabase URL, chiavi
+├── models/      # DTO UI ↔ JSON
+├── services/    # Thin API layer
+├── providers/   # ChangeNotifier (stato UI)
+├── screens/     # Shell, auth, home, contatti, profilo
+├── widgets/     # Componenti presentazionali
+└── utils/       # Formattazione, scroll anchor, filtri
 ```
 
-### 2.2 Perché Provider (e non Riverpod/BLoC)
+### 2.2 Provider
 
-- Scope Alpha: pochi controller globali (`Auth`, `Inbox`, `Contacts`, `Profile`)
-- `ChangeNotifierProxyProvider` per inbox/contatti/profilo — altrimenti `notifyListeners()` del controller non aggiorna la UI (fix PR #114; vedi `docs/fixes/flutter-inbox-stability.md`)
-- **Inbox (PR #140 + #152)**: `HomeScreen` usa `ListenableBuilder` su `focusedSession?.inboxController` — una sessione GoTrue attiva; inbox del focus
+- `ChangeNotifierProxyProvider` per contatti/profilo al cambio focus (fix PR #114)
+- Inbox: `ListenableBuilder` su `focusedSession?.inboxController` (PR #140 + #152)
+- Dettaglio: [AUTH-MULTI.spec.md](../specs/capabilities/AUTH-MULTI.spec.md)
 
-### 2.3 Flusso bootstrap
+### 2.3 Bootstrap
 
-1. `main()` → `bootstrapApp()` (`WidgetsFlutterBinding` only — **nessuna** sessione utente globale)
-2. `MultiProvider` registra controller; `AuthController.initialize()` → `AccountManager` ripristina manifest + sessione del focus → `sessionReady = true`
-3. `AppShell` → sempre `HomeScreen`; se 0 account → `AuthOverlay` obbligatorio
-4. Contatti/profilo: `ChangeNotifierProxyProvider` ricreati al cambio focus; inbox: binding diretto in `HomeScreen`
-
-**Nota storica**: PR #113 usava `waitForSupabaseSessionReady()` dopo `Supabase.initialize` globale — superato da sessioni per-account (vedi `fixes/flutter-inbox-stability.md` §3).
-
-### 2.4 Multi-account (PR #140 UX, #147 persistenza, #152 GoTrue)
-
-**ADR vincolante**: [multi-account-parallel-sessions.md](../decisions/multi-account-parallel-sessions.md)
-
-| Componente | Ruolo |
-|------------|-------|
-| `AccountManager` | Cache manifest; **una** `AccountSession` in RAM; focus UI; swap GoTrue al `setFocus` |
-| `AccountSession` | `SupabaseClient` quando attiva; servizi; `InboxController` + realtime sul focus |
-| `OpenAccount` | Modello persistito (`profile` + `refreshToken`) — ex `SavedAccount`, stesso JSON |
-| `AccountStorageService` | `alfred_saved_accounts`, `alfred_focus_user_id` |
-| `AuthOverlay` + `AuthScreen` | Credenziali su shell semi-trasparente (non schermata piena) |
-| `AccountSidebar` | Cambio **focus**; Aggiungi account; Chiudi account |
-
-**Regole**:
-
-- Account in lista = aperti nel manifest — **non** bookmark
-- `setFocus(userId)` — focus UI + restore GoTrue da manifest (nessun overlay login)
-- Login/registrazione: client bootstrap → manifest + sessione focus
-- 0 account → overlay obbligatorio; ≥1 account → overlay solo da «Aggiungi account»
-- Realtime inbox **solo** sull’account in focus (trade-off PR #152)
-
-**Scelta identità**: login e recupero via **email reale** (GoTrue). L’**username** è l’identità pubblica (profilo, ricerca, `@username` in sidebar).
-
-**Implementazione**: [multi-account-client.md](../implementation/multi-account-client.md) · **UX**: [auth-overlay-shell.md](../design/auth-overlay-shell.md)
-
-**Scelta**: refresh token in locale per account (web) — accettabile per Alpha; encryption pianificata post-Alpha.
-
-### 2.5 Caricamento inbox (lista chat)
-
-**Regola vincolante**: [address-based-messaging.md](../decisions/address-based-messaging.md) — inbox = **aggregazione derivata on-read** su `messages` (RPC `list_inbox()`), raggruppata per `peer_profile_id`; **nessuna tabella, vista materializzata o cache inbox**.
-
-1. `InboxController.load()` → RPC `list_inbox()` (**un round-trip**, derivato da messaggi)
-2. Payload UI: `peer_profile_id`, `display_name`, `last_message_preview`, `last_message_at`, `unread_count`, `protocol`
-3. Realtime (`inbox-messages-{userId}`) su `messages` (sender o recipient = io) → `load()`
-
-**Nuova chat**: FAB o rubrica → indirizzo → `ChatPeer` → stessa chat per `profile_id` (vuota finché non ci sono messaggi).
-
-**Scelta**: niente tabella/cache inbox, niente vista materializzata, niente FK verso aggregati inbox; indici su `messages` + `list_inbox()` on-read.
-
-### 2.6 Realtime
-
-| Canale | Tabelle | Scopo |
-|--------|---------|-------|
-| `inbox-messages-{userId}` | `messages` | Aggiorna lista inbox |
-| `messages-peer-{me}-{peer}` | `messages` INSERT/UPDATE | Chat live (coppia sender/recipient) |
-
-### 2.7 Invio messaggi
-
-1. RPC `send_message_to_profile(recipient_profile_id, …)` — unico punto invio
-2. UI optimistic con `client_message_id` (UUID v4)
-3. Trigger `on_message_inserted`: solo `delivered` (interno) o `outbox` (federato)
-4. **Retry client**: `OutboundMessageQueue` (testo, GIF, voice)
-
-### 2.8 GIF in chat
-
-1. Utente seleziona file `.gif` (`ChatInputBar` + `file_picker`)
-2. `MessageMediaService.uploadGif` → bucket Supabase `chat-media` (`{userId}/{uuid}.gif`)
-3. RPC `send_message_to_profile` con `content_type=gif` e `media_url` pubblico
-4. `MessageBubble` renderizza `Image.network` (placeholder durante upload ottimistico)
-5. Preview inbox: `[GIF]` (trigger `on_message_inserted`)
-
-**Scelte**:
-- Storage pubblico per URL semplici in Realtime (Alpha); signed URL post-Alpha se serve
-- Solo `image/gif`, max 10 MB — bucket RLS: upload solo in cartella `auth.uid()`
-- `body` può essere vuoto per GIF; `mark_peer_read` include `content_type=gif`
-
-### 2.9 Spunte lettura
-
-**Concept vincolante**: [server-as-reception.md](../decisions/server-as-reception.md) — in un client cloud multidispositivo con fonte di verità sul server, la **ricezione coincide con la ricezione sul server**. Oggi il recapito in piattaforma può sembrare sincrono; con bridge la tempistica si disaccoppia — stessa semantica per **tutte** le chat ([no-internal-external-chat-distinction.md](../decisions/no-internal-external-chat-distinction.md)).
-
-| Livello | UI | Meccanismo Alpha |
-|---------|-----|------------------|
-| Inviato | ✓ grigia | `send_message_to_profile` → `delivery_status = 'sent'` |
-| Consegnato | ✓✓ grigie | `on_message_inserted` → `delivered` quando in fonte di verità |
-| Lettura | ✓✓ blu | `mark_peer_read` → `read` |
-
-- `mark_peer_read(peer_profile_id)` all'apertura chat
-- UI: `MessageStatus` → ✓ / ✓✓ / ✓✓ blu (`message_bubble.dart`)
-- Migrazione `20260626100000_internal_delivered_on_server.sql`: promozione a `delivered` — **debito tecnico** (nome/branch «internal»; da unificare)
-
-**Nota**: recapito via bridge (XEP-0184/0333) mappa su `delivered`/`read`; schema supporta `marker_type`/`marker_for`. La semantica ✓✓ grigia **non** è «arrivato sul device del destinatario» (legacy XMPP diretto) ma «arrivato nella fonte di verità».
-
-### 2.10 Aggancio al fondo conversazione
-
-**Specifica**: [conversation-bottom-anchor.md](../design/conversation-bottom-anchor.md) — vincolante, identica per **tutte** le chat ([no-internal-external-chat-distinction.md](../decisions/no-internal-external-chat-distinction.md)).
-
-| Stato | Comportamento |
-|-------|---------------|
-| Agganciato (≤48 px dal fondo) | Nuovi messaggi → auto-scroll al fondo |
-| Staccato | Messaggi altrui non spostano la vista; badge + pulsante freccia |
-| Invio proprio | Riaggancio forzato |
-| Riaggancio | Tap pulsante o scroll manuale al fondo |
-
-| Componente | Ruolo |
-|------------|-------|
-| `AnchoredMessageList` | `ListView.builder(reverse: true)` + UI riaggancio |
-| `ConversationScrollAnchor` | Soglia e regole `shouldAutoScrollOnAppend` |
-| `ChatPanel` | Integra lista ancorata + `ChatInputBar` |
-
-**Scelta tecnica**: lista `reverse: true` (pattern chat Flutter); messaggi cronologici nel modello, indice invertito in build. Cambio peer: `ValueKey(peer.profileId)` su pannello chat resetta lo scroll.
-
-**PR**: #125
-
-### 2.11 Note vocali (WebM/Opus)
-
-**Dettaglio**: [voice-notes.md](../implementation/voice-notes.md)
-
-1. Campo messaggio vuoto → pulsante microfono (`ChatInputBar`)
-2. Registrazione hold-to-send; swipe ↑ blocca, ↓ annulla; blocco → anteprima
-3. Web: WebM/Opus nativo; IO: transcode FFmpeg → unico formato in upload
-4. `MessageMediaService.uploadVoice` → bucket `chat-media` (max 15 MB)
-5. RPC `send_message_to_profile` con `content_type=voice`, `duration_seconds`, `media_mime`, `media_size_bytes`
-6. `VoiceMessageContent` in bolla — play/pausa, waveform (`just_audio`)
-7. Preview inbox: `🎤 m:ss` (`format_voice_preview`)
-
-**Scelte**:
-- Formato canonico unico (`audio/webm`) — bridge futuri ricevono sempre lo stesso blob
-- Coda retry client unificata con testo/GIF (`OutboundMessageQueue`)
-- Migrazioni enum in due file (commit enum prima del CHECK/RPC)
-
-**PR**: #126
-
-### 2.12 Ricerca on-demand inbox
-
-**Dettaglio**: [INBOX-SEARCH.spec.md](../specs/capabilities/INBOX-SEARCH.spec.md) · evidenza [inbox-search-toggle.md](../design/inbox-search-toggle.md)
-
-1. Barra «Cerca messaggi» **nascosta** di default in `InboxPanel`
-2. Icona lente: mobile nell’header «Alfred» (prima di Contatti); desktop nella riga «Conversazioni»
-3. Apertura → focus automatico sul campo; filtro client-side su `InboxController.filteredPeers` (invariato)
-4. Chiusura → un solo `_dismissSearch()`: nasconde UI, svuota testo, `onSearchChanged('')`
-5. Tap fuori da barra + lente (`TapRegion` stesso `groupId`) — **vietata** lista di trigger per azione nel parent
-6. `ValueKey(userId)` su `InboxPanel` — reset al cambio account
-
-**Non coperto (follow-up)**: Back Android, Escape web.
-
-**PR**: #132
-
-### 2.13 Condivisione posizione statica
-
-**Dettaglio**: [location-sharing.md](../implementation/location-sharing.md)
-
-1. Pulsante pin in `ChatInputBar` (accanto a GIF)
-2. Stream GPS (`LocationService.watchCurrentPosition`) — anteprima alla **prima** coordinata, affinamento fino a conferma
-3. Overlay full-screen: mappa OSM (`LocationMapPreview` / `flutter_map`), precisione, **Annulla** o tap sul velo / **Invia posizione**
-4. RPC `send_message_to_profile` con `content_type=location`, `latitude`, `longitude` (solo dopo conferma)
-5. `LocationMessageContent` in bolla — stesse tile OSM + tap apre OpenStreetMap
-6. Preview inbox: `📍 Posizione` (`format_location_preview`)
-7. Coda retry client unificata (`OutboundContentKind.location`)
-
-**Scelte**:
-- Tile `tile.openstreetmap.org` in client — **non** `staticmap.openstreetmap.de` (defunto)
-- Coordinate arrotondate a 5 decimali al momento dell'invio
-- Nessun bucket storage — solo Postgres
-- Posizione live e reverse geocoding: fuori scope Alpha
-
-**PR**: #153
+1. `bootstrapApp()` — nessuna sessione globale
+2. `AuthController.initialize()` → manifest + restore focus
+3. `AppShell` → sempre `HomeScreen`; overlay se 0 account
 
 ---
 
-## 3. Layer piattaforma Supabase
+## 3. Capability → spec (contratti su `main`)
 
-### 3.1 Migrazioni
+| Area | Spec | Note |
+|------|------|------|
+| Multi-account, overlay auth | [AUTH-MULTI](../specs/capabilities/AUTH-MULTI.spec.md) | PR #140, #147, #152 |
+| Inbox on-read, `ChatPeer` | [MSG-INBOX](../specs/capabilities/MSG-INBOX.spec.md) | PR #130 |
+| Invio testo/GIF/voice/location | [MSG-SEND](../specs/capabilities/MSG-SEND.spec.md) | PR #115, #126, #153 |
+| Spunte delivered/read | [MSG-READ](../specs/capabilities/MSG-READ.spec.md) | PR #122 |
+| Ricerca conversazioni | [INBOX-SEARCH](../specs/capabilities/INBOX-SEARCH.spec.md) | PR #132 |
+| Profilo, avatar, pronomi | [PROFILE](../specs/capabilities/PROFILE.spec.md) | PR #118, #134 |
+| Rubrica | [CONTACTS](../specs/capabilities/CONTACTS.spec.md) | PR #109 |
 
-| File | Contenuto |
+### UI cross-cutting (senza spec capability dedicata)
+
+| Area | Documento |
 |------|-----------|
-| `20260624200000_alfred_domain_schema.sql` | Schema dominio, RLS, trigger, RPC base |
-| `20260624210000_rpc_grants_hardening.sql` | Grant EXECUTE RPC solo `authenticated` |
-| `20260624220000_list_conversations_rpc.sql` | RPC inbox un round-trip |
-| `20260627220000_fix_send_message_to_profile_overload.sql` | Fix PostgREST HTTP 300 |
-| `20260627230000_messages_only_inbox.sql` | Drop `inbox_threads`; inbox query-only |
-| `20260624230000_message_gif_support.sql` | GIF — `content_type`, `media_url`, bucket `chat-media` |
-| `20260626100000_internal_delivered_on_server.sql` | Spunte — `delivered` su insert (debito nome «internal») |
-| `20260627120000_message_voice_support.sql` | Enum `voice` (step 1) |
-| `20260627120100_message_voice_support.sql` | Voice — colonne media, RPC 8 arg, bucket `audio/webm` |
-| `20260702120000_message_location_support.sql` | Enum `location` (step 1) |
-| `20260702120100_message_location_support.sql` | Colonne `latitude`/`longitude`, RPC 10 arg, inbox preview |
+| Scroll ancorato chat | [conversation-bottom-anchor.md](../design/conversation-bottom-anchor.md) (PR #125) |
 
-### 3.2 Modello dati (su `main`, PR #130)
+### Target futuro
 
-```
-auth.users 1──1 profiles
-profiles 1──* contacts (owner)
-profiles *──* messages (sender_id / recipient_profile_id)
-messages 1──* message_read_receipts (se presente)
-messages 1──0..1 outbox (peer federato)
-profiles 1──* sync_cursors
-bridge_jobs (coda bridge)
-storage.chat-media (GIF + voice WebM)
-```
+| Area | Documento |
+|------|-----------|
+| Modello caselle | [mailbox-inbox-outbox-spec.md](./mailbox-inbox-outbox-spec.md) — migrare in `docs/specs/capabilities/` all’implementazione |
 
-Inbox: **nessuna tabella dedicata** — `list_inbox()` aggrega da `messages`.
+---
 
-### 3.3 Enum
+## 4. Piattaforma Supabase
 
-| Tipo | Valori | Uso |
-|------|--------|-----|
-| `contact_protocol` | internal, xmpp, matrix | Routing interno (invisibile UI) |
-| `message_content_type` | text, gif, voice, location | Tipo contenuto messaggio |
-| `message_delivery_status` | pending…failed | Spunte + outbox |
-| `queue_status` | queued…failed | Outbox / bridge_jobs |
+Schema, enum, RLS, storage: **[contracts/schema.md](../specs/contracts/schema.md)**  
+RPC business logic: **[contracts/rpc.md](../specs/contracts/rpc.md)**  
+Migrazioni: [alpha-pr-registry.md](./alpha-pr-registry.md) § migrazioni
 
-### 3.4 Contatti unificati
-
-| `protocol` | `linked_profile_id` | `external_address` |
-|------------|---------------------|--------------------|
-| `internal` | obbligatorio | null |
-| `xmpp` | null | JID |
-| `matrix` | null | Matrix ID |
-
-**Vincolo CHECK** in tabella — impossibile stato ibrido incoerente.
-
-### 3.5 Inbox (solo messaggi)
-
-- **`messages`**: unica fonte di verità
-- **`list_inbox()`**: aggregazione on-read su `messages` — preview, unread, ordine per `peer_profile_id`
-- **Nessuna** tabella `inbox_threads`, `conversations`, `conversation_participants`
-
-### 3.6 RPC (business logic server)
-
-| RPC | Responsabilità |
-|-----|----------------|
-| `search_profiles` | Trova utenti Alfred |
-| `list_inbox` | Inbox da messaggi |
-| `find_profile_by_username` | Username → profilo |
-| `send_message_to_profile` | Invio testo, GIF, voice, location |
-| `list_peer_messages` | Storico con un account |
-| `mark_peer_read` | Lettura messaggi da peer |
-
-### 3.7 Trigger
-
-| Trigger | Evento | Azione |
-|---------|--------|--------|
-| `messages_after_insert` | INSERT `messages` | `delivered` interno o `outbox` federato |
-
-### 3.8 RLS
-
-| Tabella | Policy client |
-|---------|---------------|
-| `profiles` | SELECT tutti; UPDATE proprio |
-| `contacts` | CRUD `owner_id = auth.uid()` |
-| `messages` | SELECT/INSERT se parte del messaggio |
-| `outbox`, `sync_cursors`, `bridge_jobs` | DENY authenticated |
-
-### 3.9 Punti integrazione bridge (non implementati)
+### Integrazione bridge (non implementata)
 
 ```
 Client → send_message_to_profile → messages
-                                 → outbox (status=queued)  ← bridge worker poll/claim
-Bridge → aggiorna messages.external_id, delivery_status
-       → sync_cursors (MAM/Matrix token)
-       → bridge_jobs (handshake, sync batch)
+                                 → outbox (queued)  ← bridge worker
+Bridge → aggiorna delivery_status, external_id, sync_cursors
 ```
 
-**PostgREST**: `send_message_to_profile` deve restare **un solo overload** — due firme compatibili con gli stessi tre argomenti client causano HTTP 300 e invio fallito.
-
-Vedi `docs/decisions/bridge-stateless.md`.
+Vedi [bridge-stateless.md](../decisions/bridge-stateless.md). PostgREST: **un solo overload** di `send_message_to_profile`.
 
 ---
 
-## 4. Sicurezza Alpha
+## 5. Sicurezza Alpha
 
-- Password solo via GoTrue (mai in Postgres)
-- RLS su tutte le tabelle dominio
-- Publishable key nel client (standard Supabase SPA)
-- Bridge tables inaccessibili ad `anon`/`authenticated`
-
----
-
-## 5. Testing
-
-| Livello | Path | Cosa verifica |
-|---------|------|---------------|
-| Unit | `client/test/unit/` | Modelli, utils, account storage, parsing RPC |
-| Widget | `client/test/widget/` | MessageBubble, AlfredLogo, provider listen, voice UI |
-| E2E | `client/e2e/` | Playwright — inbox load senza interazione (`inbox-load.spec.ts`) |
-| SQL smoke | `supabase/tests/schema_smoke.sql` | Tabelle + RPC presenti |
-| SQL smoke invio | `supabase/tests/send_message_to_profile_smoke.sql` | Invio a profilo non in rubrica, un solo overload RPC |
-| Build | `flutter build web` | Compilazione release GitHub Pages |
-| CI | `.github/workflows/deploy-pages.yml` | `client/scripts/verify.sh` (analyze + test, zero issue) + build; job `deploy-alpha` |
-| Analyze | `flutter analyze` | Fallisce su qualsiasi issue, incluso livello `info` |
+- Password solo GoTrue; RLS su tabelle dominio
+- Publishable key nel client (SPA standard)
+- `outbox`, `bridge_jobs`, `sync_cursors`: inaccessibili a `authenticated`
 
 ---
 
-## 6. Deploy
+## 6. Testing
+
+| Livello | Path |
+|---------|------|
+| Gate CI | `client/scripts/verify.sh` |
+| SDD sync | `scripts/check-spec-sync.sh` |
+| Integrazione | `client/scripts/integration-multi-account.sh` |
+| E2E | `client/e2e/` |
+| SQL smoke | `supabase/tests/` |
+
+Tracciabilità requisiti → test: sezione **Tracciabilità** in ogni spec (pilota: MSG-SEND).
+
+---
+
+## 7. Deploy
 
 | Target | Meccanismo |
 |--------|------------|
-| Web Alpha (sviluppo) | GitHub Pages `/XmppTest/` — **non è produzione** |
+| Web Alpha | GitHub Pages `/XmppTest/` — job `deploy-alpha` |
 | Supabase | Migrazioni in repo → MCP/dashboard |
-| Bridge | **Non toccati** — health Fly.io invariato |
 
-### CI `deploy-alpha`
+**Non deducibile**: URL Alpha = ultimo `deploy-alpha` riuscito (PR o push su `main`), non sempre = tip di `main`.
 
-| Evento | Job | URL aggiornato |
-|--------|-----|----------------|
-| Pull request su `main` (path `client/**`) | `build` → `deploy-alpha` | https://alfred-im.github.io/XmppTest/ |
-| Push su `main` | idem | idem |
+**Web**: `passkeys` `bundle.js` obbligatorio in `client/web/index.html` (PR #110).
 
-**Non deducibile**: ambiente GitHub `github-pages` deve permettere *All branches* per il deploy da PR. Default (solo `main`) → errore `environment protection rules`. Rimosso `deploy-preview` / `deploy-prod` — un solo job `deploy-alpha` per ambiente sviluppo condiviso.
-
-**Non deducibile — errore comune agente**: ❌ «il sito live builda da `main`». ✅ L’URL Alpha riflette l’**ultimo deploy riuscito** tra PR aperte su `main` e push su `main`; non mappare automaticamente lo stato di `main`.
-
-Concurrency: `pages-alpha` (ultimo build vince).
-
-### Override config build
-
-```bash
-flutter build web \
-  --dart-define=SUPABASE_URL=https://... \
-  --dart-define=SUPABASE_ANON_KEY=...
-```
-
-### Web: script Passkeys obbligatorio
-
-`supabase_flutter` include `passkeys_web`. Senza `bundle.js` in `client/web/index.html` l'app crasha a schermo bianco su GitHub Pages.
-
-```html
-<script src="https://github.com/corbado/flutter-passkeys/releases/download/2.5.0/bundle.js"></script>
-```
-
-Vedi README ufficiale `supabase_flutter`. Test E2E: `client/e2e/pages-smoke.spec.ts` (Playwright).
+Dettaglio deploy: `PROJECT_MAP.md` § Build, workflow `.github/workflows/deploy-pages.yml`.
 
 ---
 
-## 7. Limitazioni Alpha (senza bridge)
+## 8. Limitazioni Alpha (senza bridge)
 
 | Funzionalità | Stato |
 |--------------|-------|
-| Chat tra utenti Alfred stessa istanza | ✅ Testo + GIF + **voice** (PR #126) |
-| Aggiunta contatti XMPP/Matrix in rubrica | ✅ |
-| Invio verso contatti federati | ⏸ Messaggio in `outbox`, status `pending` |
-| Ricezione da XMPP/Matrix | ❌ Richiede bridge |
-| Push, E2EE | ❌ Fuori scope |
+| Chat Alfred stessa istanza | ✅ testo, GIF, voice, location |
+| Rubrica XMPP/Matrix | ✅ salvataggio |
+| Invio federato | ⏸ outbox `pending` |
+| Ricezione federata | ❌ bridge |
+| Push, E2EE | ❌ fuori scope |
 
 ---
 
-## 8. Prossimi passi (post-bridge)
+## 9. Prossimi passi (post-bridge)
 
-1. Worker bridge: claim `outbox` con lock, invio slixmpp/matrix-nio
-2. Ingestione inbound → insert `messages` + Realtime
-3. Spunte XEP-0184/0333 via `marker_type`/`marker_for`
-4. Edge Function opzionale per webhook bridge
+1. Worker bridge: claim `outbox`
+2. Ingestione inbound → `messages` + Realtime
+3. Spunte XEP-0184/0333
+4. Spec `MAILBOX-*` se si implementa modello caselle
 
 ---
 
-**Riferimenti**: `PROJECT_MAP.md`, `docs/architecture/alpha-pr-registry.md`, `docs/decisions/project-revolution-discovery.md`, `docs/decisions/bridge-stateless.md`
+**Riferimenti**: `PROJECT_MAP.md`, [alpha-pr-registry.md](./alpha-pr-registry.md), [docs/specs/README.md](../specs/README.md)

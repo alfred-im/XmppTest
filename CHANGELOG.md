@@ -23,6 +23,14 @@ Modifiche rilevanti al progetto per tracciare evoluzione tecnica e decisioni imp
 
 ## [Unreleased]
 
+### Documentazione (2026-07-03 — SDD v1 canonico)
+
+- **REQ-ID** nel template + pilota `MSG-SEND.spec.md` (tabella tracciabilità)
+- **`contracts/schema.md`**: tabelle, enum, RLS, storage
+- **`alpha-full-stack.md` slim**: panoramica + link spec (niente duplicazione requisiti)
+- **`.github/PULL_REQUEST_TEMPLATE.md`** + `scripts/check-spec-sync.sh`
+- `docs/specs/README.md` aggiornato a SDD v1
+
 ### Documentazione (2026-07-03 — CONTACTS spec)
 
 - **`CONTACTS.spec.md`**: rubrica personale, `search_profiles`, isolamento da messaggistica

@@ -32,6 +32,7 @@ MANUALE (rete / browser, non in CI):
 
 UTILITÀ:
   diagnose          ambiente flutter web / Chrome CDP / Playwright
+  spec-sync         bash ../scripts/check-spec-sync.sh (SDD catalogo/contratti)
 
 Esempi:
   bash scripts/test.sh gate
@@ -107,6 +108,9 @@ case "$CMD" in
     ;;
   diagnose|diag)
     run_diagnose "$@"
+    ;;
+  spec-sync|sdd)
+    bash ../scripts/check-spec-sync.sh "$@"
     ;;
   manual|all-manual)
     run_manual
