@@ -1,7 +1,7 @@
 # Fix: bootstrap auth revoca refresh token condiviso
 
 **Data**: 2026-06-29  
-**Status**: Fix su branch `cursor/debug-add-account-session-bb4e` (PR #142), parziale su `main` (PR #141)  
+**Status**: ✅ **Risolto su `main`** (PR #142)  
 **Categoria**: Auth / multi-account
 
 Documento per AI.
@@ -30,7 +30,7 @@ Riproduzione documentata in `client/test/unit/account_session_bootstrap_test.dar
 
 ---
 
-## Fix client (PR #142)
+## Fix client (PR #142 — su `main`)
 
 | File | Cambiamento |
 |------|-------------|
@@ -40,11 +40,7 @@ Riproduzione documentata in `client/test/unit/account_session_bootstrap_test.dar
 
 **Non usare** `AuthFlowType.implicit` come workaround PKCE (scartato dall'utente).
 
----
-
-## Stato su `main` (post PR #141)
-
-PR #141 ha introdotto `_sessionFromAuthResponse` (fast path access+refresh) ma **lasciava** `bootstrap.auth.signOut()` nel `finally` → revoca ancora presente su Alpha finché #142 non è mergiata.
+PR #141 aveva introdotto `_sessionFromAuthResponse` ma **lasciava** `signOut` nel `finally` — completamente risolto in #142.
 
 ---
 
@@ -59,5 +55,5 @@ PR #141 ha introdotto `_sessionFromAuthResponse` (fast path access+refresh) ma *
 ## Riferimenti
 
 - `docs/decisions/multi-account-parallel-sessions.md`
-- `docs/decisions/single-device-logout-open.md` (topic aperto)
+- `docs/decisions/single-device-logout-open.md`
 - `client/lib/services/account_session.dart`

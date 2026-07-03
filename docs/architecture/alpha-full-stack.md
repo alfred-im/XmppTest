@@ -38,6 +38,8 @@
 | D-024 | Multi-account Alfred — manifest + focus UI; **una GoTrue attiva** in RAM (PR #152; ex sessioni parallele PR #140) |
 | D-031 | Web **online-only** (no cache offline) |
 
+**Spec capability (contratti)**: [docs/specs/index.md](../specs/index.md) — MSG-INBOX, MSG-SEND, AUTH-MULTI su `main`.
+
 ---
 
 ## 2. Layer client Flutter
@@ -181,7 +183,7 @@ client/lib/
 2. Registrazione hold-to-send; swipe ↑ blocca, ↓ annulla; blocco → anteprima
 3. Web: WebM/Opus nativo; IO: transcode FFmpeg → unico formato in upload
 4. `MessageMediaService.uploadVoice` → bucket `chat-media` (max 15 MB)
-5. RPC `send_message` con `content_type=voice`, `duration_seconds`, `media_mime`, `media_size_bytes`
+5. RPC `send_message_to_profile` con `content_type=voice`, `duration_seconds`, `media_mime`, `media_size_bytes`
 6. `VoiceMessageContent` in bolla — play/pausa, waveform (`just_audio`)
 7. Preview inbox: `🎤 m:ss` (`format_voice_preview`)
 

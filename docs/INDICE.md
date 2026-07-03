@@ -9,17 +9,34 @@ Indice documenti tecnici per navigazione rapida. Documento per AI, non per utent
 
 ---
 
+## Spec (SDD) — contratti capability
+
+**Metodo**: [specs/README.md](./specs/README.md) · **Catalogo**: [specs/index.md](./specs/index.md)
+
+| Spec | Stato | Contenuto |
+|------|-------|-----------|
+| [MSG-INBOX](./specs/capabilities/MSG-INBOX.spec.md) | `implemented` | Inbox on-read, `ChatPeer`, realtime |
+| [MSG-SEND](./specs/capabilities/MSG-SEND.spec.md) | `implemented` | Invio testo/GIF/voice/location, coda retry |
+| [AUTH-MULTI](./specs/capabilities/AUTH-MULTI.spec.md) | `implemented` | Multi-account, focus, overlay shell |
+| [contracts/rpc.md](./specs/contracts/rpc.md) | `implemented` | Firme RPC messaggistica |
+
+Target futuro caselle: [architecture/mailbox-inbox-outbox-spec.md](./architecture/mailbox-inbox-outbox-spec.md) (non ancora spec capability).
+
+---
+
 ## Documenti root
 
 - **[.cursor/rules/main.mdc](../.cursor/rules/main.mdc)** — Vincolo Cursor → `.cursor-rules.md`
 - **[PROJECT_MAP.md](../PROJECT_MAP.md)** — **Leggere all'inizio di ogni sessione**
 - **[README.md](../README.md)** — Stato progetto
-- **[CHANGELOG.md](../CHANGELOG.md)** — Storia modifiche
+- **[CHANGELOG.md](../CHANGELOG.md)** — Storia modifiche Alpha
 - **[.cursor-rules.md](../.cursor-rules.md)** — Regole sviluppo AI
-- **[TEST_CREDENTIALS.md](../TEST_CREDENTIALS.md)** — Credenziali test XMPP (legacy)
+- **[AGENTS.md](../AGENTS.md)** — Toolchain Cloud Agent
 - **[AGENT_DEBUG_ACCOUNTS.md](./AGENT_DEBUG_ACCOUNTS.md)** — **Account Supabase solo agente** + regola non toccare test1/2/3
 - **[SESSION_HANDOFF.md](./SESSION_HANDOFF.md)** — **Handoff sessione** — stato corrente per nuova chat AI
 - **[WISHLIST.md](./WISHLIST.md)** — Funzionalità future (riferimenti XEP)
+
+> Storico client React/XMPP: tag `legacy/web-client-final` — non su `main`.
 
 ---
 
@@ -29,11 +46,9 @@ Indice documenti tecnici per navigazione rapida. Documento per AI, non per utent
 - [decisions/no-internal-external-chat-distinction.md](./decisions/no-internal-external-chat-distinction.md) — **🟢 Vincolante** — chat unificate
 - [decisions/server-as-reception.md](./decisions/server-as-reception.md) — Concept spunte cloud
 - [decisions/bridge-stateless.md](./decisions/bridge-stateless.md) — Bridge senza stato di business
-- [decisions/multi-account-parallel-sessions.md](./decisions/multi-account-parallel-sessions.md) — **🟢 Vincolante** — multi-account client Alpha (UX #140, una GoTrue attiva #152)
-- [decisions/single-device-logout-open.md](./decisions/single-device-logout-open.md) — **🟡 Aperto** — logout per dispositivo vs revoca globale
-- [decisions/project-revolution-discovery.md](./decisions/project-revolution-discovery.md) — Visione e discovery Alpha
-- [decisions/no-message-deletion.md](./decisions/no-message-deletion.md) — No cancellazione messaggi
-- [decisions/no-modify-source-data.md](./decisions/no-modify-source-data.md) — Non modificare la fonte dati
+- [decisions/multi-account-parallel-sessions.md](./decisions/multi-account-parallel-sessions.md) — **🟢 Vincolante** — multi-account (UX #140, una GoTrue #152)
+- [decisions/single-device-logout-open.md](./decisions/single-device-logout-open.md) — **🟢** Logout locale; futuro «Disconnetti ovunque»
+- [decisions/project-revolution-discovery.md](./decisions/project-revolution-discovery.md) — Visione stack (discovery completata, storico)
 - [decisions/README.md](./decisions/README.md) — Indice ADR
 
 ---
@@ -41,8 +56,8 @@ Indice documenti tecnici per navigazione rapida. Documento per AI, non per utent
 ## Architettura
 
 - [architecture/alpha-full-stack.md](./architecture/alpha-full-stack.md) — **🟢 Alpha** — client + Supabase
-- [architecture/alpha-pr-registry.md](./architecture/alpha-pr-registry.md) — Registro PR #108–#152
-- [architecture/mailbox-inbox-outbox-spec.md](./architecture/mailbox-inbox-outbox-spec.md) — **🟡 Target** — modello caselle (direzione confermata; non su `main`)
+- [architecture/alpha-pr-registry.md](./architecture/alpha-pr-registry.md) — Registro PR **#108–#153**
+- [architecture/mailbox-inbox-outbox-spec.md](./architecture/mailbox-inbox-outbox-spec.md) — **🟡 Target** — modello caselle (non su `main`)
 - [architecture/README.md](./architecture/README.md) — Indice architettura
 
 ---
@@ -51,19 +66,20 @@ Indice documenti tecnici per navigazione rapida. Documento per AI, non per utent
 
 - [implementation/messages-only-inbox.md](./implementation/messages-only-inbox.md) — Inbox solo messaggi (PR #130)
 - [implementation/voice-notes.md](./implementation/voice-notes.md) — Note vocali WebM/Opus (PR #126)
-- [implementation/location-sharing.md](./implementation/location-sharing.md) — Posizione statica in chat
-- [implementation/multi-account-client.md](./implementation/multi-account-client.md) — **🟢** Multi-account client (#140 UX, #147 persistenza, #152 GoTrue)
-- [implementation/multi-account-persistence-redesign.md](./implementation/multi-account-persistence-redesign.md) — **✅ Implementato** (#147) — persistenza dichiarativa F5
+- [implementation/location-sharing.md](./implementation/location-sharing.md) — Posizione statica in chat (PR #153)
+- [implementation/multi-account-client.md](./implementation/multi-account-client.md) — **🟢** Multi-account (#140, #147, #152)
+- [implementation/multi-account-persistence-redesign.md](./implementation/multi-account-persistence-redesign.md) — **✅ Storico design** (#147 implementato)
 - [implementation/README.md](./implementation/README.md) — Indice implementazione
 
 ---
 
 ## Fix
 
-- [fixes/flutter-inbox-stability.md](./fixes/flutter-inbox-stability.md) — Race auth + provider inbox (#113/#114); evoluzione multi-account
-- [fixes/auth-bootstrap-gotrue-revoke.md](./fixes/auth-bootstrap-gotrue-revoke.md) — Bootstrap signOut revoca refresh; PKCE (#141/#142)
-- [fixes/multi-account-chat-persistence-pr143.md](./fixes/multi-account-chat-persistence-pr143.md) — **PR #143** — logout locale, view per account
-- [fixes/multi-account-single-active-gotrue-pr152.md](./fixes/multi-account-single-active-gotrue-pr152.md) — **PR #152** — una GoTrue attiva; fix inbox al switch web
+- [fixes/flutter-inbox-stability.md](./fixes/flutter-inbox-stability.md) — Race auth + provider (#113/#114); evoluzione multi-account
+- [fixes/auth-bootstrap-gotrue-revoke.md](./fixes/auth-bootstrap-gotrue-revoke.md) — Bootstrap signOut / PKCE (#142)
+- [fixes/conversations-empty-diagnosis.md](./fixes/conversations-empty-diagnosis.md) — Chat vuota vs sessione morta (risolto #143/#147/#152)
+- [fixes/multi-account-chat-persistence-pr143.md](./fixes/multi-account-chat-persistence-pr143.md) — PR #143 — logout locale, view per account
+- [fixes/multi-account-single-active-gotrue-pr152.md](./fixes/multi-account-single-active-gotrue-pr152.md) — PR #152 — una GoTrue attiva
 - [fixes/README.md](./fixes/README.md) — Indice fix
 
 ---
@@ -77,4 +93,4 @@ Indice documenti tecnici per navigazione rapida. Documento per AI, non per utent
 
 ---
 
-**Ultimo aggiornamento**: 2026-07-03 — posizione statica in chat #153
+**Ultimo aggiornamento**: 2026-07-03 — SDD Phase 0+1 (MSG-INBOX, MSG-SEND, AUTH-MULTI) + revisione sync #108–#153

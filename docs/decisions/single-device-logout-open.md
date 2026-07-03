@@ -1,10 +1,10 @@
-# Topic aperto: logout su un solo dispositivo
+# Logout solo dispositivo (locale)
 
-**Data**: 2026-06-29  
-**Status**: ✅ Implementato — logout locale in `AccountSession.close()` (nessuna revoca GoTrue)  
+**Data**: 2026-06-29 · **aggiornato** 2026-07-03  
+**Status**: ✅ **Implementato** — `AccountSession.close()` senza revoca GoTrue  
 **Categoria**: Auth / multi-account
 
-Documento per AI. L'utente ha chiesto esplicitamente un sistema per fare logout **solo sul dispositivo corrente**, senza buttare fuori gli altri client.
+Documento per AI. **Chiudi account** = logout **solo su questo dispositivo**, senza buttare fuori gli altri client.
 
 ---
 

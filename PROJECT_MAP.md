@@ -1,13 +1,13 @@
 # Alfred - Mappa Completa del Progetto
 
-**Ultimo aggiornamento**: 2026-07-03 (condivisione posizione statica #153)  
+**Ultimo aggiornamento**: 2026-07-03 (SDD specs + posizione statica #153)  
 **Versione repository**: 3.1.0-alpha (client Flutter + piattaforma Supabase; bridge stub)
 
 ---
 
 ## 📋 Indice
 
-1. [Stato repository](#-stato-repository-2026-06-28)
+1. [Stato repository](#-stato-repository)
 2. [Panoramica](#-panoramica-progetto)
 3. [Architettura](#️-architettura)
 4. [Struttura e responsabilità](#-struttura-file-e-responsabilità)
@@ -20,7 +20,7 @@
 
 ---
 
-## ⚠️ Stato repository (2026-06-28)
+## ⚠️ Stato repository (2026-07-03)
 
 | Elemento | Dettaglio |
 |----------|-----------|
@@ -31,7 +31,8 @@
 **Non deducibile — URL Alpha ≠ branch `main`**: https://alfred-im.github.io/XmppTest/ pubblica l’**ultimo** `deploy-alpha` riuscito (PR o push). **Non** è vero che «il sito live builda sempre da `main`». Per sapere quale codice è live, controllare quale workflow/PR ha deployato per ultimo (`concurrency: pages-alpha` → ultimo vince).
 | **Piattaforma** | Supabase `tvwpoxxcqwphryvuyqzu` — schema dominio + RLS + RPC |
 | **Bridge** | `bridge-xmpp/` · `bridge-matrix/` — stub health Fly.io (federazione non implementata) |
-| **PR Alpha** | **#108–#152** su `main` — registro `docs/architecture/alpha-pr-registry.md` |
+| **PR Alpha** | **#108–#153** su `main` — registro `docs/architecture/alpha-pr-registry.md` |
+| **Spec (SDD)** | Contratti capability: `docs/specs/index.md` — MSG-INBOX, MSG-SEND, AUTH-MULTI |
 
 **Stack su `main`**: `client/` · `supabase/` · `bridge-xmpp/` · `bridge-matrix/`
 
@@ -212,10 +213,9 @@ bash scripts/verify.sh --build   # + build web
 
 ## 🔄 Ultima Revisione
 
-**Data**: 2026-07-02
+**Data**: 2026-07-03
 
-- Condivisione posizione statica (`content_type=location`, coordinate in Postgres, mappa OSM in bolla)
-- Multi-account: una GoTrue attiva in RAM (PR #152); persistenza dichiarativa (PR #147); e2e multi-account messaggi
-- UX multi-account invariata: shell + overlay auth; doc ADR + implementation aggiornati
+- Revisione documentazione: sync PR #108–#153, rimozione doc legacy React (ADR XMPP/IndexedDB)
+- Condivisione posizione statica (#153); multi-account stabile (#147/#152)
 
 **Riferimenti**: `docs/INDICE.md`, `docs/architecture/alpha-pr-registry.md`, `CHANGELOG.md`
