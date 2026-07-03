@@ -18,6 +18,7 @@ Indice documenti tecnici per navigazione rapida. Documento per AI, non per utent
 | [MSG-INBOX](./specs/capabilities/MSG-INBOX.spec.md) | `implemented` | Inbox on-read, `ChatPeer`, realtime |
 | [MSG-SEND](./specs/capabilities/MSG-SEND.spec.md) | `implemented` | Invio testo/GIF/voice/location, coda retry |
 | [MSG-READ](./specs/capabilities/MSG-READ.spec.md) | `implemented` | Spunte delivered/read, `mark_peer_read` |
+| [INBOX-SEARCH](./specs/capabilities/INBOX-SEARCH.spec.md) | `implemented` | Ricerca conversazioni on-demand |
 | [AUTH-MULTI](./specs/capabilities/AUTH-MULTI.spec.md) | `implemented` | Multi-account, focus, overlay shell |
 | [contracts/rpc.md](./specs/contracts/rpc.md) | `implemented` | Firme RPC messaggistica |
 
@@ -94,4 +95,4 @@ Target futuro caselle: [architecture/mailbox-inbox-outbox-spec.md](./architectur
 
 ---
 
-**Ultimo aggiornamento**: 2026-07-03 — MSG-READ spec + SDD Phase 0+1
+**Ultimo aggiornamento**: 2026-07-03 — INBOX-SEARCH spec + MSG-READ + SDD

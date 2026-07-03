@@ -196,7 +196,7 @@ client/lib/
 
 ### 2.12 Ricerca on-demand inbox
 
-**Dettaglio**: [inbox-search-toggle.md](../design/inbox-search-toggle.md)
+**Dettaglio**: [INBOX-SEARCH.spec.md](../specs/capabilities/INBOX-SEARCH.spec.md) · evidenza [inbox-search-toggle.md](../design/inbox-search-toggle.md)
 
 1. Barra «Cerca messaggi» **nascosta** di default in `InboxPanel`
 2. Icona lente: mobile nell’header «Alfred» (prima di Contatti); desktop nella riga «Conversazioni»

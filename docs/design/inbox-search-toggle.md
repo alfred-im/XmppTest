@@ -1,5 +1,7 @@
 # Ricerca on-demand nella lista conversazioni
 
+> **Superseded by spec**: [INBOX-SEARCH.spec.md](../specs/capabilities/INBOX-SEARCH.spec.md) — design UX PR #132; per contratto usare la spec.
+
 **Data**: 2026-06-28  
 **Status**: ✅ Specifica vincolante — implementata in client Flutter (PR #132)  
 **Categoria**: Inbox, UX, layout  
