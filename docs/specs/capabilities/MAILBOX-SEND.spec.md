@@ -4,7 +4,7 @@
 |-------|--------|
 | **Spec ID** | `MAILBOX-SEND` |
 | **Layer** | capability |
-| **Status** | `approved` |
+| **Status** | `implemented` |
 | **Ultima revisione** | 2026-07-04 |
 | **ADR** | [mailbox-inbox-outbox-spec.md](../../architecture/mailbox-inbox-outbox-spec.md), [bridge-stateless.md](../../decisions/bridge-stateless.md) |
 | **PR** | — (spec) |

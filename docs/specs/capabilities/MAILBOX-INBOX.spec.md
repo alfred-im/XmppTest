@@ -4,7 +4,7 @@
 |-------|--------|
 | **Spec ID** | `MAILBOX-INBOX` |
 | **Layer** | capability |
-| **Status** | `approved` |
+| **Status** | `implemented` |
 | **Ultima revisione** | 2026-07-04 |
 | **ADR** | [mailbox-inbox-outbox-spec.md](../../architecture/mailbox-inbox-outbox-spec.md), [no-internal-external-chat-distinction.md](../../decisions/no-internal-external-chat-distinction.md) |
 | **PR** | — (spec) |

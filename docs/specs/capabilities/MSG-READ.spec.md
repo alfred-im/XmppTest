@@ -4,12 +4,12 @@
 |-------|--------|
 | **Spec ID** | `MSG-READ` |
 | **Layer** | capability |
-| **Status** | `implemented` |
+| **Status** | `superseded` |
 | **Ultima revisione** | 2026-07-03 |
 | **ADR** | [server-as-reception.md](../../decisions/server-as-reception.md), [no-internal-external-chat-distinction.md](../../decisions/no-internal-external-chat-distinction.md) |
 | **PR** | #122 (delivered), #130 (peer-based `mark_peer_read`) |
 | **Correlata** | [MSG-SEND](./MSG-SEND.spec.md), [MSG-INBOX](./MSG-INBOX.spec.md) |
-| **Superseded by** | `MAILBOX-READ` (al merge implementazione mailbox) |
+| **Superseded by** | `MAILBOX-READ` |
 
 Documento per AI — contratto spunte (delivery status) e lettura messaggi su `main`.
 

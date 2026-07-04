@@ -158,10 +158,9 @@ class MessageService {
     required void Function(ChatMessage message) onMessage,
   }) {
     bool isRelevant(Map<String, dynamic> record) {
-      final sender = record['sender_id'] as String?;
-      final recipient = record['recipient_profile_id'] as String?;
-      return (sender == currentUserId && recipient == peerProfileId) ||
-          (sender == peerProfileId && recipient == currentUserId);
+      final owner = record['owner_id'] as String?;
+      final peer = record['peer_profile_id'] as String?;
+      return owner == currentUserId && peer == peerProfileId;
     }
 
     void handle(PostgresChangePayload payload) {
@@ -181,12 +180,22 @@ class MessageService {
           event: PostgresChangeEvent.insert,
           schema: 'public',
           table: 'messages',
+          filter: PostgresChangeFilter(
+            type: PostgresChangeFilterType.eq,
+            column: 'owner_id',
+            value: currentUserId,
+          ),
           callback: handle,
         )
         .onPostgresChanges(
           event: PostgresChangeEvent.update,
           schema: 'public',
           table: 'messages',
+          filter: PostgresChangeFilter(
+            type: PostgresChangeFilterType.eq,
+            column: 'owner_id',
+            value: currentUserId,
+          ),
           callback: handle,
         )
         .subscribe();

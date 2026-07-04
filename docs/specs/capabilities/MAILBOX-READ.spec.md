@@ -4,7 +4,7 @@
 |-------|--------|
 | **Spec ID** | `MAILBOX-READ` |
 | **Layer** | capability |
-| **Status** | `approved` |
+| **Status** | `implemented` |
 | **Ultima revisione** | 2026-07-04 |
 | **ADR** | [server-as-reception.md](../../decisions/server-as-reception.md), [mailbox-inbox-outbox-spec.md](../../architecture/mailbox-inbox-outbox-spec.md) |
 | **PR** | — (spec) |

@@ -2,6 +2,28 @@ enum MessageStatus { sent, delivered, read, pending, failed }
 
 enum MessageContentType { text, gif, voice, location }
 
+/// Parses ISO8601 timestamps from PostgREST (nullable).
+DateTime? _parseOptionalTimestamp(dynamic value) {
+  if (value == null) return null;
+  if (value is String && value.isEmpty) return null;
+  return DateTime.parse(value as String);
+}
+
+/// Maps mailbox archive timestamps to [MessageStatus] for outgoing bubbles.
+MessageStatus messageStatusFromMailbox({
+  required bool isMine,
+  DateTime? deliveredAt,
+  DateTime? readAt,
+  DateTime? failedAt,
+}) {
+  if (!isMine) return MessageStatus.sent;
+  if (failedAt != null) return MessageStatus.failed;
+  if (readAt != null) return MessageStatus.read;
+  if (deliveredAt != null) return MessageStatus.delivered;
+  return MessageStatus.sent;
+}
+
+/// Legacy helper — kept for tests that still pass delivery_status strings.
 MessageStatus messageStatusFromDelivery(String? value) {
   switch (value) {
     case 'delivered':
@@ -38,7 +60,8 @@ class ChatMessage {
     required this.isMine,
     this.status = MessageStatus.sent,
     this.createdAt,
-    this.senderId,
+    String? authorId,
+    String? senderId,
     this.contentType = MessageContentType.text,
     this.mediaUrl,
     this.durationSeconds,
@@ -47,7 +70,10 @@ class ChatMessage {
     this.latitude,
     this.longitude,
     this.retryPayloadPath,
-  });
+    this.deliveredAt,
+    this.readAt,
+    this.failedAt,
+  }) : authorId = authorId ?? senderId;
 
   final String id;
   final String body;
@@ -55,7 +81,7 @@ class ChatMessage {
   final bool isMine;
   final MessageStatus status;
   final DateTime? createdAt;
-  final String? senderId;
+  final String? authorId;
   final MessageContentType contentType;
   final String? mediaUrl;
   final int? durationSeconds;
@@ -64,6 +90,12 @@ class ChatMessage {
   final double? latitude;
   final double? longitude;
   final String? retryPayloadPath;
+  final DateTime? deliveredAt;
+  final DateTime? readAt;
+  final DateTime? failedAt;
+
+  /// Back-compat for code that still reads [senderId].
+  String? get senderId => authorId;
 
   bool get isGif =>
       contentType == MessageContentType.gif &&
@@ -92,14 +124,30 @@ class ChatMessage {
     required String currentUserId,
   }) {
     final createdAt = DateTime.parse(json['created_at'] as String);
+    final authorId =
+        json['author_id'] as String? ?? json['sender_id'] as String?;
+    final isMine = authorId == currentUserId;
+    final deliveredAt = _parseOptionalTimestamp(json['delivered_at']);
+    final readAt = _parseOptionalTimestamp(json['read_at']);
+    final failedAt = _parseOptionalTimestamp(json['failed_at']);
+
+    final status = json.containsKey('delivery_status')
+        ? messageStatusFromDelivery(json['delivery_status'] as String?)
+        : messageStatusFromMailbox(
+            isMine: isMine,
+            deliveredAt: deliveredAt,
+            readAt: readAt,
+            failedAt: failedAt,
+          );
+
     return ChatMessage(
       id: json['id'] as String,
       body: json['body'] as String? ?? '',
       timeLabel: '',
-      isMine: json['sender_id'] == currentUserId,
-      status: messageStatusFromDelivery(json['delivery_status'] as String?),
+      isMine: isMine,
+      status: status,
       createdAt: createdAt,
-      senderId: json['sender_id'] as String?,
+      authorId: authorId,
       contentType: messageContentTypeFromString(json['content_type'] as String?),
       mediaUrl: json['media_url'] as String?,
       durationSeconds: json['duration_seconds'] as int?,
@@ -107,6 +155,9 @@ class ChatMessage {
       mediaSizeBytes: json['media_size_bytes'] as int?,
       latitude: (json['latitude'] as num?)?.toDouble(),
       longitude: (json['longitude'] as num?)?.toDouble(),
+      deliveredAt: deliveredAt,
+      readAt: readAt,
+      failedAt: failedAt,
     );
   }
 
@@ -117,7 +168,7 @@ class ChatMessage {
     bool? isMine,
     MessageStatus? status,
     DateTime? createdAt,
-    String? senderId,
+    String? authorId,
     MessageContentType? contentType,
     String? mediaUrl,
     int? durationSeconds,
@@ -126,6 +177,9 @@ class ChatMessage {
     double? latitude,
     double? longitude,
     String? retryPayloadPath,
+    DateTime? deliveredAt,
+    DateTime? readAt,
+    DateTime? failedAt,
   }) {
     return ChatMessage(
       id: id ?? this.id,
@@ -134,7 +188,7 @@ class ChatMessage {
       isMine: isMine ?? this.isMine,
       status: status ?? this.status,
       createdAt: createdAt ?? this.createdAt,
-      senderId: senderId ?? this.senderId,
+      authorId: authorId ?? this.authorId,
       contentType: contentType ?? this.contentType,
       mediaUrl: mediaUrl ?? this.mediaUrl,
       durationSeconds: durationSeconds ?? this.durationSeconds,
@@ -143,6 +197,9 @@ class ChatMessage {
       latitude: latitude ?? this.latitude,
       longitude: longitude ?? this.longitude,
       retryPayloadPath: retryPayloadPath ?? this.retryPayloadPath,
+      deliveredAt: deliveredAt ?? this.deliveredAt,
+      readAt: readAt ?? this.readAt,
+      failedAt: failedAt ?? this.failedAt,
     );
   }
 }

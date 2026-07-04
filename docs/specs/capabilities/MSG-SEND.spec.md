@@ -4,12 +4,12 @@
 |-------|--------|
 | **Spec ID** | `MSG-SEND` |
 | **Layer** | capability |
-| **Status** | `implemented` |
+| **Status** | `superseded` |
 | **Ultima revisione** | 2026-07-03 |
 | **ADR** | [address-based-messaging.md](../../decisions/address-based-messaging.md), [server-as-reception.md](../../decisions/server-as-reception.md) |
 | **PR** | #115 (GIF), #126 (voice), #153 (location), #122 (delivered) |
 | **Supersedes** | `implementation/voice-notes.md`, `implementation/location-sharing.md` (evidenza) |
-| **Superseded by** | `MAILBOX-SEND` (al merge implementazione mailbox) |
+| **Superseded by** | `MAILBOX-SEND` |
 
 Documento per AI — contratto invio unificato: un solo RPC, tipi contenuto, coda retry client.
 

@@ -37,7 +37,7 @@ rpc() {
     -H "Authorization: Bearer ${jwt}" \
     -H "Content-Type: application/json" \
     -d "$body")"
-  if [[ "$http" != "200" ]]; then
+  if [[ "$http" != "200" && "$http" != "204" ]]; then
     echo "RPC ${fn} failed HTTP ${http}: $(cat "$tmp")" >&2
     rm -f "$tmp"
     return 1
@@ -89,8 +89,29 @@ A2_PEER_COUNT="$(rpc "$A2_JWT" list_peer_messages "$(peer_body "$AGENT1_ID")" | 
 echo "    messages=$A2_PEER_COUNT"
 
 if [[ "$A1_PEER_COUNT" -lt 1 || "$A2_PEER_COUNT" -lt 1 ]]; then
+  echo "==> mailbox: agent1 send_message_to_profile → agent2"
+  SEND_BODY="$(python3 -c "import json,uuid; print(json.dumps({'p_recipient_profile_id':'${AGENT2_ID}','p_body':'integration mailbox','p_client_message_id':str(uuid.uuid4()),'p_content_type':'text'}))")"
+  SEND_JSON="$(rpc "$A1_JWT" send_message_to_profile "$SEND_BODY")"
+  echo "$SEND_JSON" | python3 -c "import json,sys; m=json.load(sys.stdin); assert m.get('delivered_at'), 'missing delivered_at'; print('    sent id='+m['id'][:8]+'… delivered_at ok')"
+
+  A1_INBOX_COUNT="$(rpc "$A1_JWT" list_inbox | count_inbox_rows)"
+  A2_INBOX_COUNT="$(rpc "$A2_JWT" list_inbox | count_inbox_rows)"
+  echo "    inbox after send: agent1=$A1_INBOX_COUNT agent2=$A2_INBOX_COUNT"
+
+  A1_PEER_COUNT="$(rpc "$A1_JWT" list_peer_messages "$(peer_body "$AGENT2_ID")" | count_peer_messages)"
+  A2_PEER_COUNT="$(rpc "$A2_JWT" list_peer_messages "$(peer_body "$AGENT1_ID")" | count_peer_messages)"
+  echo "    peer messages after send: agent1=$A1_PEER_COUNT agent2=$A2_PEER_COUNT"
+
+  echo "==> mailbox: agent2 mark_peer_read(agent1)"
+  rpc "$A2_JWT" mark_peer_read "$(python3 -c "import json; print(json.dumps({'p_peer_profile_id':'${AGENT1_ID}'}))")" > /dev/null
+  READ_CHECK="$(rpc "$A1_JWT" list_peer_messages "$(peer_body "$AGENT2_ID")" | python3 -c "import json,sys; rows=json.load(sys.stdin); mine=[r for r in rows if r.get('author_id')=='${AGENT1_ID}']; assert mine, 'no outgoing'; assert mine[-1].get('read_at'), 'read_at missing on sender copy'; print('    read_at ok on sender copy')")"
+  echo "$READ_CHECK"
+fi
+
+if [[ "$A1_PEER_COUNT" -lt 1 || "$A2_PEER_COUNT" -lt 1 ]]; then
   echo "integration_warn: conversazione bidirezionale vuota o monodirezionale sul backend" >&2
   echo "  (il client può essere OK mentre il DB non ha messaggi tra gli agenti)" >&2
+  exit 1
 fi
 
 echo "integration_ok"

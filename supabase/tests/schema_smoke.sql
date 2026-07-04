@@ -19,6 +19,17 @@ BEGIN
     missing := array_append(missing, 'outbox');
   END IF;
 
+  IF to_regclass('public.message_read_receipts') IS NOT NULL THEN
+    RAISE EXCEPTION 'Legacy table message_read_receipts must be removed';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'messages' AND column_name = 'owner_id'
+  ) THEN
+    RAISE EXCEPTION 'messages must use mailbox owner_id column';
+  END IF;
+
   IF to_regclass('public.conversations') IS NOT NULL THEN
     RAISE EXCEPTION 'Legacy table conversations must be removed';
   END IF;

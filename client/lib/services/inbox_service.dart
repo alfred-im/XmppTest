@@ -39,25 +39,14 @@ class InboxService {
     void handle(PostgresChangePayload _) => onChange();
 
     return _client
-        .channel('inbox-messages-$userId')
+        .channel('inbox-archive-$userId')
         .onPostgresChanges(
           event: PostgresChangeEvent.all,
           schema: 'public',
           table: 'messages',
           filter: PostgresChangeFilter(
             type: PostgresChangeFilterType.eq,
-            column: 'sender_id',
-            value: userId,
-          ),
-          callback: handle,
-        )
-        .onPostgresChanges(
-          event: PostgresChangeEvent.all,
-          schema: 'public',
-          table: 'messages',
-          filter: PostgresChangeFilter(
-            type: PostgresChangeFilterType.eq,
-            column: 'recipient_profile_id',
+            column: 'owner_id',
             value: userId,
           ),
           callback: handle,

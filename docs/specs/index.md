@@ -1,7 +1,7 @@
 # Catalogo spec — Alfred (prototipo)
 
 **Ultima revisione**: 2026-07-04  
-**REQ-ID**: capability message-centric ✅ su `main`; **MAILBOX-*** `approved` (implementazione in corso)
+**REQ-ID**: MAILBOX-* `implemented` su `main`; MSG-INBOX/SEND/READ `superseded`.
 
 Indice capability con stato e tracciabilità PR. Contratti: [rpc.md](./contracts/rpc.md), [schema.md](./contracts/schema.md).
 
@@ -9,30 +9,30 @@ Indice capability con stato e tracciabilità PR. Contratti: [rpc.md](./contracts
 
 ---
 
-## Capability (message-centric, su `main`)
+## Capability mailbox (modello caselle — su `main`)
 
 | Spec ID | Titolo | Status | PR | File |
 |---------|--------|--------|-----|------|
-| **MSG-INBOX** | Inbox derivata da messaggi | `implemented` | #130, #134 | [MSG-INBOX.spec.md](./capabilities/MSG-INBOX.spec.md) |
-| **MSG-SEND** | Invio messaggi (testo, media, location) | `implemented` | #115, #126, #153 | [MSG-SEND.spec.md](./capabilities/MSG-SEND.spec.md) |
-| **MSG-READ** | Spunte delivered/read | `implemented` | #122, #130 | [MSG-READ.spec.md](./capabilities/MSG-READ.spec.md) |
+| **MAILBOX-CORE** | Archivio per owner, identificatori, migrazione | `implemented` | — | [MAILBOX-CORE.spec.md](./capabilities/MAILBOX-CORE.spec.md) |
+| **MAILBOX-SEND** | Invio e outbox sempre | `implemented` | — | [MAILBOX-SEND.spec.md](./capabilities/MAILBOX-SEND.spec.md) |
+| **MAILBOX-INBOX** | Inbox da archivio owner | `implemented` | — | [MAILBOX-INBOX.spec.md](./capabilities/MAILBOX-INBOX.spec.md) |
+| **MAILBOX-READ** | Date consegna e lettura | `implemented` | — | [MAILBOX-READ.spec.md](./capabilities/MAILBOX-READ.spec.md) |
+
+MSG-INBOX / MSG-SEND / MSG-READ → `superseded`.
+
+---
+
+## Capability message-centric (superseded)
+
+| Spec ID | Titolo | Status | PR | File |
+|---------|--------|--------|-----|------|
+| **MSG-INBOX** | Inbox derivata da messaggi | `superseded` | #130, #134 | [MSG-INBOX.spec.md](./capabilities/MSG-INBOX.spec.md) |
+| **MSG-SEND** | Invio messaggi (testo, media, location) | `superseded` | #115, #126, #153 | [MSG-SEND.spec.md](./capabilities/MSG-SEND.spec.md) |
+| **MSG-READ** | Spunte delivered/read | `superseded` | #122, #130 | [MSG-READ.spec.md](./capabilities/MSG-READ.spec.md) |
 | **INBOX-SEARCH** | Ricerca on-demand inbox | `implemented` | #132 | [INBOX-SEARCH.spec.md](./capabilities/INBOX-SEARCH.spec.md) |
 | **PROFILE** | Profilo utente (avatar, pronomi) | `implemented` | #118, #134 | [PROFILE.spec.md](./capabilities/PROFILE.spec.md) |
 | **CONTACTS** | Rubrica personale | `implemented` | #109 | [CONTACTS.spec.md](./capabilities/CONTACTS.spec.md) |
 | **AUTH-MULTI** | Multi-account client | `implemented` | #140, #147, #152 | [AUTH-MULTI.spec.md](./capabilities/AUTH-MULTI.spec.md) |
-
----
-
-## Capability mailbox (modello caselle — `approved`, non su `main`)
-
-| Spec ID | Titolo | Status | PR | File |
-|---------|--------|--------|-----|------|
-| **MAILBOX-CORE** | Archivio per owner, identificatori, migrazione | `approved` | — | [MAILBOX-CORE.spec.md](./capabilities/MAILBOX-CORE.spec.md) |
-| **MAILBOX-SEND** | Invio e outbox sempre | `approved` | — | [MAILBOX-SEND.spec.md](./capabilities/MAILBOX-SEND.spec.md) |
-| **MAILBOX-INBOX** | Inbox da archivio owner | `approved` | — | [MAILBOX-INBOX.spec.md](./capabilities/MAILBOX-INBOX.spec.md) |
-| **MAILBOX-READ** | Date consegna e lettura | `approved` | — | [MAILBOX-READ.spec.md](./capabilities/MAILBOX-READ.spec.md) |
-
-ADR architetturale: [mailbox-inbox-outbox-spec.md](../architecture/mailbox-inbox-outbox-spec.md). Al merge implementazione: MSG-INBOX / MSG-SEND / MSG-READ → `superseded`.
 
 ---
 
