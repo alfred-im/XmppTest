@@ -149,12 +149,16 @@ Vedi [Identificatori](#identificatori--livelli-distinti-vincolante). In sintesi:
 ### Flusso internal (sintesi)
 
 ```
-Invio → copia mittente (sent, λ) → outbox → copia destinatario (λ)
-                              → segnale delivered su copia mittente
+Invio → copia mittente (λ) — livello ✓ (accettato server)
+      → gate reception_allowlist(destinatario)
+      → SE allowed: copia destinatario (λ) + delivered_at su mittente — livello ✓✓
+      → outbox completed
 
 Paolo apre chat → mark_peer_read sul SUO archivio
                → segnale read sulla copia Mario WHERE logical_message_id = λ
 ```
+
+Gate allow list: [RECEPTION-ALLOWLIST.spec.md](../specs/capabilities/RECEPTION-ALLOWLIST.spec.md).
 
 ### Flusso federato (sintesi)
 
@@ -194,6 +198,7 @@ Quando si implementa: **migra e basta** — DB solo dev, niente produzione da pr
 - 2026-06-28: direzione caselle confermata; Q&A identità, outbox sempre, media condivisi/GC, **spunte = segnali** (modello XMPP/Matrix) confermato.
 - 2026-06-29: identificatori a livelli distinti (`id` / `client_message_id` / λ / `external_id`), idempotenza per operazione, consegna parziale = stato normale pipeline.
 - 2026-07-04: discovery chiuso; spec SDD `MAILBOX-CORE/SEND/INBOX/READ` approved; spunte v1 = `delivered_at`/`read_at` (no enum status); federato UI blocked v1.
+- 2026-07-04: gate `RECEPTION-ALLOWLIST` (#161) nel driver internal — recapito condizionato; semantica ✓ (accettato) vs ✓✓ (consegnato).
 
 ---
 
@@ -204,4 +209,5 @@ Quando si implementa: **migra e basta** — DB solo dev, niente produzione da pr
 | [address-based-messaging.md](../decisions/address-based-messaging.md) | Indirizzamento e rubrica isolata (vincolante) |
 | [alpha-full-stack.md](./alpha-full-stack.md) | Flussi Alpha da riusare |
 | [server-as-reception.md](../decisions/server-as-reception.md) | Spunte |
+| [RECEPTION-ALLOWLIST.spec.md](../specs/capabilities/RECEPTION-ALLOWLIST.spec.md) | Gate recapito destinatario |
 | [bridge-stateless.md](../decisions/bridge-stateless.md) | Outbox / bridge (se/un quando) |

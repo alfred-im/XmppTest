@@ -16,8 +16,9 @@ Client ufficiale Alfred — multi-piattaforma (web, mobile, desktop).
 | **Chat** | Identificata da `peer_profile_id` (`ChatPeer`) |
 | **Media** | Testo, GIF, voice (WebM/Opus), location (mappa OSM) |
 | **Nuovo messaggio** | FAB → username → stessa chat (vuota o con storico) |
+| **Ricezione** | Allow list personale (`reception_allowlist`) — UI «Persone consentite»; lista vuota = nessun recapito |
 | **Invio** | `send_message_to_profile` |
-| **Gate test** | `verify.sh` — 82 test unit/widget (zero issue analyze) |
+| **Gate test** | `verify.sh` — 86 test unit/widget (zero issue analyze) |
 
 ## Test
 

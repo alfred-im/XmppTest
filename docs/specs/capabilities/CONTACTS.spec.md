@@ -16,7 +16,7 @@ Documento per AI — contratto rubrica opzionale: scorciatoie personali, **isola
 
 ## 1. Problema / obiettivo
 
-L’utente può salvare contatti (utenti Alfred interni o indirizzi federati futuri) come rubrica personale. La rubrica **non** abilita né blocca l’invio messaggi: si scrive sempre per indirizzo ([MAILBOX-INBOX](./MAILBOX-INBOX.spec.md)). «Scrivi» da rubrica apre la chat come scorciatoia verso `profile_id` o indirizzo esterno.
+L’utente può salvare contatti (utenti Alfred interni o indirizzi federati futuri) come rubrica personale. La rubrica **non** abilita né blocca l’invio messaggi: si scrive sempre per indirizzo ([MAILBOX-INBOX](./MAILBOX-INBOX.spec.md)). La rubrica **non** è l’allow list di ricezione ([RECEPTION-ALLOWLIST](./RECEPTION-ALLOWLIST.spec.md)). «Scrivi» da rubrica apre la chat come scorciatoia verso `profile_id` o indirizzo esterno.
 
 ---
 

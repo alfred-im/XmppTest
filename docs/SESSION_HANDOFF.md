@@ -8,11 +8,21 @@ Documento per AI — **leggere prima di task multi-account o messaggistica**.
 
 | Item | Valore |
 |------|--------|
-| Branch `main` | PR Alpha **#108–#160** (mailbox #159) |
+| Branch `main` | PR Alpha **#108–#161** (mailbox #159, allow list #161) |
 | Alpha live | https://alfred-im.github.io/XmppTest/ — ultimo `deploy-alpha` riuscito |
 | Multi-account | Manifest tutti gli account; **una** GoTrue in RAM (focus) |
 | Messaggistica | Modello **caselle** (`MAILBOX-*`): archivio per `owner_id`, outbox sempre, spunte `delivered_at`/`read_at` |
+| **Ricezione filtrata** | **`RECEPTION-ALLOWLIST`**: allow list sempre attiva; lista vuota = nessun recapito; rifiuto silenzioso (✓ senza ✓✓) |
 | Chat media | Testo, GIF, voice (WebM), location (OSM) |
+
+---
+
+## Breaking change allow list (#161)
+
+- Ogni account parte con **`reception_allowlist` vuota** → nessuno può consegnare messaggi finché non si aggiunge qualcuno in **Persone consentite** (icona inbox accanto a Contatti).
+- Account esistenti: **nessuna** voce pre-popolata; aggiunta manuale obbligatoria per ripristinare recapito.
+- Mittente non in lista: RPC **ok**, copia mittente su server (✓), **mai** `delivered_at` (no ✓✓) — non è errore di invio.
+- Rubrica (`contacts`) **≠** allow list.
 
 ---
 
@@ -36,6 +46,8 @@ Documento per AI — **leggere prima di task multi-account o messaggistica**.
 4. `docs/implementation/multi-account-client.md` §3.5 — persistenza dichiarativa (PR #147)
 5. `docs/architecture/alpha-pr-registry.md` — registro PR → doc
 6. `docs/architecture/mailbox-inbox-outbox-spec.md` + `docs/specs/capabilities/MAILBOX-*.spec.md` — messaggistica caselle (PR #159)
+7. `docs/specs/capabilities/RECEPTION-ALLOWLIST.spec.md` — allow list ricezione (PR #161)
+8. `docs/decisions/server-as-reception.md` — semantica spunte a due livelli (✓ accettato server → ✓✓ consegnato destinatario)
 
 ---
 
@@ -46,7 +58,7 @@ Documento per AI — **leggere prima di task multi-account o messaggistica**.
 | Account debug | **Solo** `alfredagent1` / `alfredagent2` — `docs/AGENT_DEBUG_ACCOUNTS.md` |
 | Non toccare | `test1`/`test2`/`test3` |
 | Sviluppo | `.cursor-rules.md` — analisi sì; **modifiche solo con conferma** |
-| Verifica | `bash scripts/verify.sh` prima di push (82 test gate) |
+| Verifica | `bash scripts/verify.sh` prima di push (86 test gate) |
 
 ---
 
@@ -54,7 +66,7 @@ Documento per AI — **leggere prima di task multi-account o messaggistica**.
 
 ```bash
 cd client && bash scripts/verify.sh
-cd client && bash scripts/integration-multi-account.sh
+cd client && bash scripts/integration-multi-account.sh   # include setup allowlist se invio
 cd client && bash scripts/test.sh e2e-multi    # Playwright — Alpha o localhost
 ```
 
@@ -67,7 +79,8 @@ cd client && bash scripts/test.sh e2e-multi    # Playwright — Alpha o localhos
 | Badge / realtime account in background | Rinviato — serve fix BroadcastChannel o upstream |
 | Multi-tab stesso browser | Last-write-wins (limite noto) |
 | «Disconnetti ovunque» (revoca globale) | Futuro opzionale — logout locale già in `AccountSession.close()` (`single-device-logout-open.md`) |
-| Bridge federazione (consumer outbox) | Stub health only — vedi `docs/architecture/alpha-full-stack.md` |
+| Bridge federazione (consumer outbox) | Stub health only — gate allow list anche su bridge (fase B) |
+| Toggle allow list in scheda profilo peer | Fuori scope #161 — scheda profilo peer non esiste |
 
 ---
 

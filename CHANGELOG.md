@@ -19,6 +19,15 @@ Modifiche rilevanti al progetto per tracciare evoluzione tecnica e decisioni imp
 
 ## [Unreleased]
 
+### Aggiunto (2026-07-04 — RECEPTION-ALLOWLIST, PR #161)
+
+- **Migrazione** `20260704130000_reception_allowlist.sql`: tabella `reception_allowlist`, helper `is_sender_allowed_for_reception`, gate in `send_message_to_profile`
+- **Semantica**: lista vuota = nessun recapito; rifiuto silenzioso (RPC ok, `delivered_at` null → ✓ senza ✓✓); messaggi rifiutati non materializzati in archivio destinatario
+- **Client**: schermata «Persone consentite», `ReceptionAllowlistController`, icona in `InboxPanel`
+- **Spec SDD**: `RECEPTION-ALLOWLIST` → `implemented`; delta `MAILBOX-SEND` REQ-004
+- **Test**: `reception_allowlist_schema_smoke.sql`, `reception_allowlist_gate_smoke.sql`; smoke mailbox con setup allowlist; `reception_allowlist_controller_test.dart`
+- **Doc**: hub (`INDICE`, `SESSION_HANDOFF`, `alpha-full-stack`, registro PR); semantica spunte a due livelli in spec + ADR
+
 ### Documentazione (2026-07-04 — rimozione contenuto obsoleto)
 
 - Eliminati spec superseded `MSG-INBOX`/`MSG-SEND`/`MSG-READ` e doc storici (`messages-only-inbox`, `multi-account-persistence-redesign`, `conversations-empty-diagnosis`)

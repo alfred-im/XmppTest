@@ -29,7 +29,7 @@
 **Non deducibile — URL Alpha ≠ branch `main`**: https://alfred-im.github.io/XmppTest/ pubblica l’**ultimo** `deploy-alpha` riuscito (PR o push). **Non** è vero che «il sito live builda sempre da `main`». Per sapere quale codice è live, controllare quale workflow/PR ha deployato per ultimo (`concurrency: pages-alpha` → ultimo vince).
 | **Piattaforma** | Supabase `tvwpoxxcqwphryvuyqzu` — schema dominio + RLS + RPC |
 | **Bridge** | `bridge-xmpp/` · `bridge-matrix/` — stub health Fly.io (federazione non implementata) |
-| **PR Alpha** | **#108–#160** su `main` — registro `docs/architecture/alpha-pr-registry.md` |
+| **PR Alpha** | **#108–#161** su `main` — registro `docs/architecture/alpha-pr-registry.md` |
 | **Spec (SDD)** | Contratti capability: `docs/specs/index.md` — `MAILBOX-*` e capability correlate `implemented` |
 
 **Stack su `main`**: `client/` · `supabase/` · `bridge-xmpp/` · `bridge-matrix/`
@@ -158,7 +158,7 @@ Avvio container: `scripts/start-bridges.sh`.
 
 | Storage | Uso |
 |---------|-----|
-| Postgres | `profiles` (+ `pronouns`), `contacts`, `messages`, `outbox`, `sync_cursors`, `bridge_jobs` |
+| Postgres | `profiles` (+ `pronouns`), `contacts`, `reception_allowlist`, `messages`, `outbox`, `sync_cursors`, `bridge_jobs` |
 | Storage `chat-media` | GIF + voice WebM (`{userId}/{uuid}.…`) |
 | Storage `avatars` | Foto profilo (`{userId}/avatar.{jpg|png|webp}`, max 2 MB) |
 | Client `SharedPreferences` | Account aperti (`OpenAccount` + refresh token) e `focusUserId` |
@@ -214,6 +214,7 @@ bash scripts/verify.sh --build   # + build web
 
 **Data**: 2026-07-04
 
+- RECEPTION-ALLOWLIST (#161): allow list ricezione, gate server, UI «Persone consentite»; doc hub + semantica spunte ✓/✓✓
 - Modello caselle mailbox (#159): migrazione `20260704120000`, spec `MAILBOX-*`, client allineato (`delivered_at`/`read_at`)
 - Revisione precedente: sync PR #108–#153; posizione statica (#153); multi-account (#147/#152)
 - Revisione doc 2026-07-04: allineamento post-mailbox (#159), contratti promossi, INDICE/README

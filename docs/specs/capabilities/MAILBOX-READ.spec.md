@@ -19,6 +19,8 @@ Documento per AI — spunte da **date nullable** su copia mittente; lettura loca
 
 Il mittente vede ✓ / ✓✓ / ✓✓ blu da `delivered_at` e `read_at` sulla **propria** riga in uscita. Il destinatario, aprendo la chat, marca `read_at` sulle righe in entrata nel **proprio** archivio e innesca aggiornamento `read_at` sulla copia mittente (stesso λ).
 
+**Due livelli prima della lettura** ([server-as-reception.md](../../decisions/server-as-reception.md)): ✓ = accettato server (copia mittente); ✓✓ grigie = consegnato (`delivered_at` set). `delivered_at` null **permanente** può indicare blocco allow list ([RECEPTION-ALLOWLIST](./RECEPTION-ALLOWLIST.spec.md)) — non confondere con errore di invio.
+
 ---
 
 ## 2. Requisiti
@@ -118,5 +120,6 @@ Gate: `verify.sh` + `integration` + `e2e-multi`
 | Documento | Ruolo |
 |-----------|--------|
 | [MAILBOX-SEND](./MAILBOX-SEND.spec.md) | `delivered_at` |
+| [RECEPTION-ALLOWLIST](./RECEPTION-ALLOWLIST.spec.md) | `delivered_at` null permanente su blocco |
 
 **Codice target**: migrazioni `mark_peer_read`, `message.dart`, `message_bubble.dart`

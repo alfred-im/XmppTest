@@ -2,7 +2,7 @@
 
 **Data**: 2026-07-04  
 **Scope**: App completa **senza bridge** (XMPP/Matrix restano stub Fly.io)  
-**Stato**: PR Alpha **#108–#159** su `main`  
+**Stato**: PR Alpha **#108–#161** su `main`  
 **Registro PR**: [alpha-pr-registry.md](./alpha-pr-registry.md)
 
 > **Contratti capability**: [docs/specs/index.md](../specs/index.md) — fonte canonica per inbox, invio, spunte, profilo, rubrica, multi-account.  
@@ -16,7 +16,7 @@
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │  Flutter Web (`client/`)                                   │
-│  Auth · Contatti · Conversazioni · Chat · Profilo · Multi-account │
+│  Auth · Contatti · Persone consentite · Conversazioni · Chat · Profilo · Multi-account │
 └───────────────────────────┬─────────────────────────────────┘
                             │ HTTPS (REST + Realtime + Auth)
                             ▼
@@ -60,7 +60,7 @@ client/lib/
 
 ### 2.2 Provider
 
-- `ChangeNotifierProxyProvider` per contatti/profilo al cambio focus (fix PR #114)
+- `ChangeNotifierProxyProvider` per contatti, profilo e allow list ricezione al cambio focus (fix PR #114)
 - Inbox: `ListenableBuilder` su `focusedSession?.inboxController` (PR #140 + #152)
 - Dettaglio: [AUTH-MULTI.spec.md](../specs/capabilities/AUTH-MULTI.spec.md)
 
@@ -84,6 +84,7 @@ client/lib/
 | Ricerca conversazioni | [INBOX-SEARCH](../specs/capabilities/INBOX-SEARCH.spec.md) | PR #132 |
 | Profilo, avatar, pronomi | [PROFILE](../specs/capabilities/PROFILE.spec.md) | PR #118, #134 |
 | Rubrica | [CONTACTS](../specs/capabilities/CONTACTS.spec.md) | PR #109 |
+| Allow list ricezione | [RECEPTION-ALLOWLIST](../specs/capabilities/RECEPTION-ALLOWLIST.spec.md) | PR #161 |
 
 ### UI cross-cutting (senza spec capability dedicata)
 
@@ -103,13 +104,15 @@ Migrazioni: [alpha-pr-registry.md](./alpha-pr-registry.md) § migrazioni
 ### Integrazione bridge (non implementata)
 
 ```
-Client → send_message_to_profile → outbox (sempre)
-                                 → copia archivio mittente
-                                 → copia archivio destinatario (+ delivered_at)
+Client → send_message_to_profile → copia archivio mittente (✓ — accettato server)
+                                 → gate reception_allowlist(destinatario)
+                                 → SE allowed: copia archivio destinatario + delivered_at (✓✓)
+                                 → outbox completed (sempre)
 Bridge → claim outbox; aggiorna external_id, sync_cursors
+       → stesso gate allow list prima di materializzare copia ingresso (fase B)
 ```
 
-Vedi [bridge-stateless.md](../decisions/bridge-stateless.md), [mailbox-inbox-outbox-spec.md](./mailbox-inbox-outbox-spec.md). PostgREST: **un solo overload** di `send_message_to_profile`.
+Vedi [RECEPTION-ALLOWLIST](../specs/capabilities/RECEPTION-ALLOWLIST.spec.md), [bridge-stateless.md](../decisions/bridge-stateless.md), [mailbox-inbox-outbox-spec.md](./mailbox-inbox-outbox-spec.md). PostgREST: **un solo overload** di `send_message_to_profile`.
 
 ---
 
@@ -154,7 +157,8 @@ Dettaglio deploy: `PROJECT_MAP.md` § Build, workflow `.github/workflows/deploy-
 
 | Funzionalità | Stato |
 |--------------|-------|
-| Chat Alfred stessa istanza | ✅ testo, GIF, voice, location |
+| Chat Alfred stessa istanza | ✅ testo, GIF, voice, location (recapito solo se mittente ∈ allow list destinatario) |
+| Allow list ricezione | ✅ sempre attiva; lista vuota = nessun recapito; UI «Persone consentite» |
 | Rubrica XMPP/Matrix | ✅ salvataggio |
 | Invio federato | ⏸ outbox `pending` |
 | Ricezione federata | ❌ bridge |

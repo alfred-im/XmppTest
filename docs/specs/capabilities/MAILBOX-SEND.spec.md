@@ -17,7 +17,7 @@ Documento per AI — invio unificato: copia mittente, outbox sempre (anche inter
 
 ## 1. Problema / obiettivo
 
-L’utente invia a un account Alfred (`peer_profile_id`). Il server crea la copia nel **proprio** archivio, accoda outbox, materializza la copia destinatario e valorizza `delivered_at` sul mittente — **nella stessa transazione RPC** per internal.
+L’utente invia a un account Alfred (`peer_profile_id`). Il server crea la copia nel **proprio** archivio (livello ✓ — accettato), accoda outbox, e **se** il mittente è nell’allow list del destinatario materializza la copia destinatario e valorizza `delivered_at` (livello ✓✓) — **nella stessa transazione RPC** per internal. Vedi [RECEPTION-ALLOWLIST](./RECEPTION-ALLOWLIST.spec.md).
 
 ---
 
@@ -71,14 +71,14 @@ L’utente invia a un account Alfred (`peer_profile_id`). Il server crea la copi
 
 ```
 send_message_to_profile
-  → INSERT messages (owner=mittente, author=mittente, λ, peer=dest)
-  → INSERT outbox (protocol=internal, payload con λ)
-  → SE mittente allowed per destinatario (reception_allowlist):
-       INSERT messages (owner=destinatario, author=mittente, stesso λ, stesso contenuto/media_url)
-       UPDATE messages SET delivered_at=now() WHERE owner=mittente AND λ
+  → INSERT messages (owner=mittente, author=mittente, λ, peer=dest)     ← livello ✓
+  → gate reception_allowlist (destinatario)
+  → SE allowed:
+       INSERT messages (owner=destinatario, …)
+       UPDATE messages SET delivered_at=now() WHERE owner=mittente AND λ  ← livello ✓✓
      ALTRIMENTI:
-       (nessuna copia destinatario; delivered_at resta null)
-  → outbox completed
+       delivered_at resta null (✓ senza ✓✓ — es. blocco allow list)
+  → INSERT outbox completed
   → RETURN riga mittente
 ```
 
@@ -95,11 +95,11 @@ Vedi [RECEPTION-ALLOWLIST](./RECEPTION-ALLOWLIST.spec.md).
 
 ### 4.3 Stati UI mittente (da date)
 
-| `delivered_at` | `read_at` | UI |
-|----------------|-----------|-----|
-| null | null | ✓ (inviato / in consegna) |
-| set | null | ✓✓ grigie |
-| set | set | ✓✓ blu |
+| `delivered_at` | `read_at` | UI | Significato |
+|----------------|-----------|-----|-------------|
+| null | null | ✓ | **Accettato dal server** (copia mittente persistita). Può essere «in attesa recapito» (federato) oppure **blocco permanente** (allow list — [RECEPTION-ALLOWLIST](./RECEPTION-ALLOWLIST.spec.md)) |
+| set | null | ✓✓ grigie | **Consegnato** — copia destinatario materializzata |
+| set | set | ✓✓ blu | Letto dal destinatario |
 
 `pending` / `failed` restano **solo client** fino ad ACK server o `failed_at`.
 
@@ -110,7 +110,7 @@ Vedi [RECEPTION-ALLOWLIST](./RECEPTION-ALLOWLIST.spec.md).
 | REQ-ID | Verifica |
 |--------|----------|
 | MAILBOX-SEND-REQ-001 | `schema_smoke.sql` + `mailbox_send_smoke.sql` |
-| MAILBOX-SEND-REQ-003, REQ-004 | `mailbox_delivery_smoke.sql` |
+| MAILBOX-SEND-REQ-003, REQ-004 | `mailbox_delivery_smoke.sql`, `reception_allowlist_gate_smoke.sql` |
 | MAILBOX-SEND-REQ-005 | `mailbox_idempotency_smoke.sql` |
 | MAILBOX-SEND-REQ-006 | `mailbox_send_media_smoke.sql` |
 | MAILBOX-SEND-REQ-008 | `messages_controller_multi_account_test.dart`, `multi_account_scope_test.dart` |

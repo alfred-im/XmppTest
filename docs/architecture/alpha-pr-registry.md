@@ -1,6 +1,6 @@
 # Registro PR Alpha Flutter (main)
 
-**Ultimo aggiornamento**: 2026-07-04 (mailbox #158–#159; revisione doc; #160 regole)  
+**Ultimo aggiornamento**: 2026-07-04 (mailbox #158–#159; RECEPTION-ALLOWLIST #161; #160 regole)  
 **Scope**: PR mergiate su `main` dopo migrazione Flutter — riferimento per allineamento documentazione.
 
 Documento per AI. Ogni PR deve riflettersi in: `PROJECT_MAP.md`, `CHANGELOG.md`, `docs/architecture/alpha-full-stack.md` (e fix dedicato se applicabile).
@@ -55,6 +55,7 @@ Documento per AI. Ogni PR deve riflettersi in: `PROJECT_MAP.md`, `CHANGELOG.md`,
 | **#158** | Spec MAILBOX-* (SDD) | Spec capability `MAILBOX-CORE/SEND/INBOX/READ` approved | MAILBOX-* | `docs/specs/capabilities/MAILBOX-*.spec.md` — **incorporata in #159** |
 | **#159** | Modello caselle mailbox | Drop/recreate `messages` per-owner; outbox sempre; `delivered_at`/`read_at`; client + test | MAILBOX-* | `mailbox-inbox-outbox-spec.md`, `contracts/rpc.md`, `contracts/schema.md`, migrazione `20260704120000` |
 | **#160** | Regole consenso esplicito | Conferma verbale prima di scrittura repo; SDD gate unico | — | `.cursor-rules.md`, `AGENTS.md` |
+| **#161** | RECEPTION-ALLOWLIST | Allow list ricezione; gate `send_message_to_profile`; UI «Persone consentite»; rifiuto silenzioso | RECEPTION-ALLOWLIST | `RECEPTION-ALLOWLIST.spec.md`, `contracts/schema.md`, `contracts/rpc.md`, migrazione `20260704130000` |
 
 ---
 
@@ -101,6 +102,7 @@ Dopo ogni merge su `main`:
 | `20260702120000_message_location_support.sql` | #153 | Enum `location` (step 1) |
 | `20260702120100_message_location_support.sql` | #153 | Lat/lng, RPC 10 arg, preview inbox |
 | `20260704120000_mailbox_per_owner_archive.sql` | #159 | Modello caselle: archivio per `owner_id`, outbox sempre, spunte date |
+| `20260704130000_reception_allowlist.sql` | #161 | Allow list ricezione; gate recapito in `send_message_to_profile` |
 
 ---
 

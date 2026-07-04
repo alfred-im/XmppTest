@@ -16,7 +16,14 @@ Documento per AI — allow list personale di ricezione: chi non è in lista non 
 
 ## 1. Problema / obiettivo
 
-L’utente Alfred controlla **chi può consegnargli messaggi** tramite una lista personale di profili consentiti. Il filtro è **sempre attivo** (nessun toggle on/off). Lista vuota = nessuno può recapitare. Il mittente non in lista riceve risposta RPC di successo ma la spunta resta su ✓ singola (`delivered_at` null) — come blocco XMPP, senza errore né etichetta «bloccato». I messaggi rifiutati non vengono mai scritti nell’archivio destinatario e non sono recuperabili in seguito.
+L’utente Alfred controlla **chi può consegnargli messaggi** tramite una lista personale di profili consentiti. Il filtro è **sempre attivo** (nessun toggle on/off). Lista vuota = nessuno può recapitare.
+
+**Semantica spunte (mittente)** — due livelli distinti ([server-as-reception.md](../../decisions/server-as-reception.md)):
+
+1. **✓** — il server ha **accettato** il messaggio (copia mittente persistita; RPC ok).
+2. **✓✓ grigie** — il messaggio è **consegnato** al destinatario (copia nel suo archivio; `delivered_at` valorizzato).
+
+Su rifiuto allow list: il mittente resta al livello **1** per sempre (mai livello 2) — come blocco XMPP, senza errore né etichetta «bloccato». I messaggi rifiutati non vengono mai scritti nell’archivio destinatario.
 
 La rubrica (`contacts`) resta **isolata**: essere in rubrica non implica essere consentiti in ricezione.
 
@@ -94,14 +101,14 @@ Vedi [contracts/schema.md](../contracts/schema.md).
 
 ```
 send_message_to_profile
-  → INSERT copia mittente + outbox (invariato)
+  → INSERT copia mittente (livello ✓ — accettato server)
   → SE EXISTS reception_allowlist(owner=dest, allowed=mittente):
        INSERT copia destinatario
-       UPDATE mittente delivered_at = now()
+       UPDATE mittente delivered_at = now()  (livello ✓✓)
        outbox status = completed
      ALTRIMENTI:
        skip copia destinatario
-       delivered_at resta null
+       delivered_at resta null  (resta livello ✓)
        outbox status = completed (payload opz. reception_rejected)
   → RETURN copia mittente
 ```
@@ -130,7 +137,7 @@ Stesso gate nel consumer bridge **prima** di INSERT copia ingresso su archivio A
 |------------|----------------------|
 | Header inbox | Icona «Persone consentite» accanto a icona rubrica |
 | Lista vuota (UI) | Messaggio esplicativo: nessuno può consegnarti messaggi finché non aggiungi qualcuno |
-| Mittente non allowed | (lato mittente) messaggio inviato, ✓ singola permanente — nessun feedback blocco |
+| Mittente non allowed | Livello **✓** permanente (server ha accettato; mai ✓✓) — nessun feedback blocco |
 | Destinatario | Non vede messaggi rifiutati; inbox invariata per messaggi già archiviati |
 
 ---
@@ -154,6 +161,14 @@ Gate implementazione: `check-spec-sync.sh` + `verify.sh` + smoke SQL + `integrat
 ## 6. Scenari di accettazione
 
 ```gherkin
+Scenario: Rifiuto silenzioso — accettato server ma non consegnato
+  Given destinatario D con reception_allowlist vuota
+  When mittente M invia messaggio a D
+  Then RPC successo per M
+  And copia mittente esiste in archivio M (livello ✓)
+  And copia M ha delivered_at null (mai livello ✓✓)
+  And nessuna riga in archivio D per quel λ
+
 Scenario: Lista vuota rifiuta tutti
   Given destinatario D con reception_allowlist vuota
   When mittente M invia messaggio a D
