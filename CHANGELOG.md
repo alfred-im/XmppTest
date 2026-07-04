@@ -23,6 +23,14 @@ Modifiche rilevanti al progetto per tracciare evoluzione tecnica e decisioni imp
 
 ## [Unreleased]
 
+### Documentazione (2026-07-04 — revisione sync post-mailbox)
+
+- Allineamento post-#159: `INDICE`, `README`, `SESSION_HANDOFF`, `architecture/README`, `decisions/README`
+- Contratti `contracts/rpc.md` e `contracts/schema.md` promossi a modello mailbox; storico pre-#159 in sezione dedicata
+- ADR `address-based-messaging`, `no-internal-external-chat-distinction`, `server-as-reception` aggiornati
+- Spec MAILBOX-*: PR #159, tracciabilità smoke; `INBOX-SEARCH` → `MAILBOX-INBOX`
+- Registro PR: #154, #155, #160; fix riferimenti sezioni `alpha-full-stack` slim
+
 ### Aggiunto (2026-07-04 — modello caselle mailbox, PR #159)
 
 - **Migrazione** `20260704120000_mailbox_per_owner_archive.sql`: drop/recreate `messages` con archivio per `owner_id`, `author_id`, `peer_profile_id`, `logical_message_id`, `delivered_at`/`read_at`; rimozione `message_read_receipts` e enum `delivery_status`
@@ -259,4 +267,4 @@ Il client **React + XMPP** (IndexedDB, Stanza.js, MAM) è stato rimosso da `main
 
 ---
 
-**Ultimo aggiornamento**: 2026-07-03
+**Ultimo aggiornamento**: 2026-07-04

@@ -8,16 +8,18 @@
 
 ## Sintomo 1 — Inbox bloccata su rotella (PR #113)
 
+> **Nota storica**: i file citati in questa sezione (`ConversationsController`, `conversations_controller.dart`) sono stati **sostituiti** da `InboxController` / `inbox_controller.dart` nel refactor multi-account (PR #140). La causa e il pattern `sessionReady` restano validi.
+
 **Comportamento**: All'apertura dell'app la lista conversazioni restava in caricamento infinito finché l'utente non navigava su un'altra schermata (es. contatti) e tornava.
 
 **Causa radice**: Race tra `Supabase.initialize` e la prima RPC. Su web, `recoverSession` parte in background; le RPC partivano prima che la sessione fosse idratata.
 
 **Fix**:
 - `waitForSupabaseSessionReady()` in `supabase_bootstrap.dart` dopo `Supabase.initialize`
-- `AuthController.sessionReady` — i `ProxyProvider` creano `ConversationsController` solo se `sessionReady && userId`
-- `ConversationsController`: realtime dopo primo `load()`; timeout 30s; UI errore + Riprova
+- `AuthController.sessionReady` — i `ProxyProvider` creano `InboxController` solo se `sessionReady && userId`
+- `InboxController`: realtime dopo primo `load()`; timeout 30s; UI errore + Riprova
 
-**File**: `client/lib/services/supabase_bootstrap.dart`, `client/lib/providers/auth_controller.dart`, `client/lib/providers/conversations_controller.dart`, `client/lib/main.dart`
+**File (storico PR #113)**: `client/lib/services/supabase_bootstrap.dart`, `client/lib/providers/auth_controller.dart`, `client/lib/providers/conversations_controller.dart` (→ `inbox_controller.dart`), `client/lib/main.dart`
 
 ---
 

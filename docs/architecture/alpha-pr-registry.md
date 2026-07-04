@@ -1,6 +1,6 @@
 # Registro PR Alpha Flutter (main)
 
-**Ultimo aggiornamento**: 2026-07-04 (mailbox #158–#159)  
+**Ultimo aggiornamento**: 2026-07-04 (mailbox #158–#159; revisione doc; #160 regole)  
 **Scope**: PR mergiate su `main` dopo migrazione Flutter — riferimento per allineamento documentazione.
 
 Documento per AI. Ogni PR deve riflettersi in: `PROJECT_MAP.md`, `CHANGELOG.md`, `docs/architecture/alpha-full-stack.md` (e fix dedicato se applicabile).
@@ -20,15 +20,15 @@ Documento per AI. Ogni PR deve riflettersi in: `PROJECT_MAP.md`, `CHANGELOG.md`,
 | **#112** | `list_conversations` RPC | Inbox un round-trip — **sostituito da `list_inbox` #130** | — | migrazione `20260624220000` |
 | **#113** | Fix race auth inbox | `waitForSupabaseSessionReady`, `sessionReady` | — | `fixes/flutter-inbox-stability.md` |
 | **#114** | Fix provider listen | `ChangeNotifierProxyProvider` contatti/profilo | — | `fixes/flutter-inbox-stability.md` |
-| **#115** | GIF in chat | `content_type`, `media_url`, bucket `chat-media` | MSG-SEND | `alpha-full-stack.md` §2.8 |
+| **#115** | GIF in chat | `content_type`, `media_url`, bucket `chat-media` | MSG-SEND | `voice-notes.md`, migrazioni `20260624230000` |
 | **#118** | Login email reale | Auth GoTrue con email; username come identità pubblica | PROFILE | migrazioni auth `202606251*` |
 | **#119** | Review refactoring | Ciclo revisione codice client | — | — |
 | **#120** | Sidebar profilo | Layout card profilo in sidebar | — | `PROJECT_MAP` § layout |
 | **#122** | Spunte `delivered` | Promozione `delivered` su insert server | MSG-READ | `server-as-reception.md`, migrazione `20260626100000` |
 | **#123** | Spec caselle (bozza) | Prima stesura `mailbox-inbox-outbox-spec.md` | (target) | `mailbox-inbox-outbox-spec.md` storico |
 | **#124** | ADR chat unificate | Nessuna distinzione interna/esterna | MSG-INBOX | `no-internal-external-chat-distinction.md` |
-| **#125** | Aggancio al fondo | `AnchoredMessageList`, scroll ancorato | — | `conversation-bottom-anchor.md`, `alpha-full-stack.md` §2.10 |
-| **#126** | Note vocali | WebM/Opus, `OutboundMessageQueue` | MSG-SEND | `voice-notes.md`, `alpha-full-stack.md` §2.11 |
+| **#125** | Aggancio al fondo | `AnchoredMessageList`, scroll ancorato | — | `conversation-bottom-anchor.md` |
+| **#126** | Note vocali | WebM/Opus, `OutboundMessageQueue` | MSG-SEND | `voice-notes.md` |
 | **#127** | Gate `flutter analyze` | `client/scripts/verify.sh` | — | `.cursor-rules.md`, `client/scripts/test/README.md` |
 | **#130** | Inbox solo messaggi | Drop `inbox_threads`; `ChatPeer`; RPC peer-based | MSG-INBOX, MSG-READ | `messages-only-inbox.md`, `address-based-messaging.md` |
 | **#131** | Sidebar logout | Logout in card profilo | AUTH-MULTI | `PROJECT_MAP` § layout |
@@ -49,9 +49,12 @@ Documento per AI. Ogni PR deve riflettersi in: `PROJECT_MAP.md`, `CHANGELOG.md`,
 | **#149** | Regole DRY/KISS | Sezione in `.cursor-rules.md` | — | `.cursor-rules.md` |
 | **#150** | Regole conferma agente | Conferma scrittura solo dopo domanda esplicita | — | `.cursor-rules.md` |
 | **#152** | Una GoTrue attiva | Fix BroadcastChannel web; `setFocus` swap | AUTH-MULTI | `multi-account-single-active-gotrue-pr152.md` |
-| **#153** | Posizione statica | `content_type=location`; mappa OSM in bolla | MSG-SEND | `location-sharing.md`, `alpha-full-stack.md` §2.13 |
+| **#153** | Posizione statica | `content_type=location`; mappa OSM in bolla | MSG-SEND | `location-sharing.md` |
+| **#154** | Revisione sync + SDD Phase 0+1 | Allineamento #108–#153; spec MSG-INBOX/SEND, AUTH-MULTI | MSG-*, AUTH-MULTI | `CHANGELOG` [Unreleased], `docs/specs/` |
+| **#155** | MSG-READ spec | Capability spunte delivered/read | MSG-READ | `MSG-READ.spec.md`, `server-as-reception.md` |
 | **#158** | Spec MAILBOX-* (SDD) | Spec capability `MAILBOX-CORE/SEND/INBOX/READ` approved | MAILBOX-* | `docs/specs/capabilities/MAILBOX-*.spec.md` — **incorporata in #159** |
-| **#159** | Modello caselle mailbox | Drop/recreate `messages` per-owner; outbox sempre; `delivered_at`/`read_at`; client + test | MAILBOX-* | `mailbox-inbox-outbox-spec.md`, migrazione `20260704120000` |
+| **#159** | Modello caselle mailbox | Drop/recreate `messages` per-owner; outbox sempre; `delivered_at`/`read_at`; client + test | MAILBOX-* | `mailbox-inbox-outbox-spec.md`, `contracts/rpc.md`, `contracts/schema.md`, migrazione `20260704120000` |
+| **#160** | Regole consenso esplicito | Conferma verbale prima di scrittura repo; SDD gate unico | — | `.cursor-rules.md`, `AGENTS.md` |
 
 ---
 

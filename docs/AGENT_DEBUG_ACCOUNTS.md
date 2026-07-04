@@ -75,4 +75,4 @@ Presenti nel DB live; **non** usare per esperimenti che cambiano credenziali o d
 
 ---
 
-**Ultimo aggiornamento:** 2026-06-29 (handoff PR #142)
+**Ultimo aggiornamento:** 2026-07-04 (revisione doc post-mailbox; credenziali invariate)

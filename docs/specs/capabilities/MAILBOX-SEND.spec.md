@@ -7,7 +7,7 @@
 | **Status** | `implemented` |
 | **Ultima revisione** | 2026-07-04 |
 | **ADR** | [mailbox-inbox-outbox-spec.md](../../architecture/mailbox-inbox-outbox-spec.md), [bridge-stateless.md](../../decisions/bridge-stateless.md) |
-| **PR** | — (spec) |
+| **PR** | #159 |
 | **Supersedes** | [MSG-SEND.spec.md](./MSG-SEND.spec.md) (al merge) |
 | **Superseded by** | — |
 
@@ -51,7 +51,7 @@ L’utente invia a un account Alfred (`peer_profile_id`). Il server crea la copi
 |----|-----------|
 | **MAILBOX-SEND-REQ-013** | Shortcut trigger `sent → delivered` senza outbox e senza copia destinatario |
 | **MAILBOX-SEND-REQ-014** | Invio a sé stessi |
-| **MAILBOX-SEND-REQ-015** | Indirizzo esterno `user@server` senza errore utente (v1: **unsupported** in compose — discovery D2=A) |
+| **MAILBOX-SEND-REQ-015** | Indirizzo esterno `user@server` senza errore utente (v1: **unsupported** in compose) |
 | **MAILBOX-SEND-REQ-016** | Overload ambigui `send_message_to_profile` PostgREST |
 | **MAILBOX-SEND-REQ-017** | Pipeline invio distinta per internal vs federato (solo driver recapito differisce in fase B) |
 
@@ -103,16 +103,16 @@ send_message_to_profile
 
 | REQ-ID | Verifica |
 |--------|----------|
-| MAILBOX-SEND-REQ-001 | `schema_smoke.sql` + `mailbox_send_smoke.sql` (da creare) |
-| MAILBOX-SEND-REQ-003, REQ-004 | `mailbox_delivery_smoke.sql` — copia destinatario + `delivered_at` |
-| MAILBOX-SEND-REQ-005 | `mailbox_idempotency_smoke.sql` |
-| MAILBOX-SEND-REQ-006 | `mailbox_send_media_smoke.sql` — text/gif/voice/location |
+| MAILBOX-SEND-REQ-001 | `schema_smoke.sql` + `mailbox_send_smoke.sql` |
+| MAILBOX-SEND-REQ-003, REQ-004 | `mailbox_delivery_smoke.sql` **(da creare)** — copia destinatario + `delivered_at` |
+| MAILBOX-SEND-REQ-005 | `mailbox_idempotency_smoke.sql` **(da creare)** |
+| MAILBOX-SEND-REQ-006 | `mailbox_send_media_smoke.sql` **(da creare)** — text/gif/voice/location |
 | MAILBOX-SEND-REQ-008 | `messages_controller_multi_account_test.dart` (adattare) |
 | MAILBOX-SEND-REQ-013 | assenza trigger `on_message_inserted` legacy internal delivered |
 | MAILBOX-SEND-REQ-015 | `ComposeService` → errore esterno |
 | MAILBOX-SEND-REQ-001–008 | `bash scripts/test.sh integration` |
 
-Gate: `verify.sh` + `integration` + `e2e-multi` (discovery D4=A)
+Gate: `verify.sh` + `integration` + `e2e-multi`
 
 ---
 

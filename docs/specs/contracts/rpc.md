@@ -1,8 +1,8 @@
 # Contratto RPC — messaggistica Alpha
 
-**Ultima revisione**: 2026-07-03  
-**Status**: `implemented` (allineato a `main`, migrazioni fino a `20260702120100`)  
-**Spec**: [MSG-INBOX](../capabilities/MSG-INBOX.spec.md), [MSG-SEND](../capabilities/MSG-SEND.spec.md), [CONTACTS](../capabilities/CONTACTS.spec.md)
+**Ultima revisione**: 2026-07-04  
+**Status**: `implemented` (allineato a `main`, migrazioni fino a `20260704120000`)  
+**Spec**: [MAILBOX-SEND](../capabilities/MAILBOX-SEND.spec.md), [MAILBOX-INBOX](../capabilities/MAILBOX-INBOX.spec.md), [MAILBOX-READ](../capabilities/MAILBOX-READ.spec.md), [CONTACTS](../capabilities/CONTACTS.spec.md), [PROFILE](../capabilities/PROFILE.spec.md)
 
 Fonte di verità: `supabase/migrations/`. PostgREST espone solo overload **espliciti** — niente ambiguità di firma.
 
@@ -38,9 +38,19 @@ send_message_to_profile(
 
 Errori comuni: `not authenticated`, `cannot message yourself`, `recipient not found`, `empty message`, `unsupported content_type`.
 
-Insert: `delivery_status = 'sent'`, `protocol = 'internal'`. Trigger `on_message_inserted` promuove a `delivered` (internal) o scrive `outbox` (federato).
+Semantica mailbox (transazione unica):
 
-**Migrazioni**: `20260627210000`, `20260627220000` (drop overload 5-arg), `20260627120100` (voice), `20260702120100` (location).
+1. INSERT copia mittente (`owner_id = author_id = auth.uid()`), λ nuovo, date null
+2. INSERT `outbox` (`protocol = internal`, payload con λ)
+3. INSERT copia destinatario (stesso λ, stesso contenuto/`media_url`)
+4. UPDATE mittente `delivered_at = now()`
+5. RETURN riga mittente
+
+Idempotenza: stesso `p_client_message_id` → stessa riga mittente (no duplicati).
+
+**MUST NOT**: promozione `delivered` senza outbox e copia destinatario; trigger `on_message_inserted` legacy.
+
+**Migrazioni**: `20260627210000`, `20260627220000` (drop overload 5-arg), `20260627120100` (voice), `20260702120100` (location), `20260704120000` (mailbox).
 
 ---
 
@@ -50,16 +60,16 @@ Insert: `delivery_status = 'sent'`, `protocol = 'internal'`. Trigger `on_message
 list_inbox() → setof record
 ```
 
-Righe derivate da `messages` per `auth.uid()`:
+Aggregazione su `messages` WHERE `owner_id = auth.uid()` GROUP BY `peer_profile_id`:
 
-- Raggruppamento per `peer_profile_id`
 - `display_name`, `last_message_preview`, `last_message_at`, `unread_count`, `protocol`
-- Campi profilo peer (#134): avatar, username, ecc. dove presenti in migrazione `20260628100000`
+- Campi profilo peer (#134): avatar, username, pronouns dove presenti
+- `unread_count` = righe in entrata con `read_at IS NULL`
 - Ordine: `last_message_at` DESC
 
 Preview per tipo: testo troncato, `[GIF]`, `format_voice_preview`, `format_location_preview`.
 
-**Migrazioni**: `20260627230000`, `20260628100000`, aggiornamenti voice/location.
+**Migrazioni**: `20260627230000`, `20260628100000`, aggiornamenti voice/location, `20260704120000`.
 
 ---
 
@@ -72,7 +82,7 @@ list_peer_messages(
 ) → setof messages
 ```
 
-Storico bidirezionale tra utente corrente e `p_peer_profile_id`, ordinato per `created_at`.
+Righe WHERE `owner_id = auth.uid()` AND `peer_profile_id = p_peer_profile_id` ORDER BY `created_at`.
 
 ---
 
@@ -86,12 +96,10 @@ Chiamata dal **destinatario** all’apertura chat con un peer.
 
 Effetti:
 
-1. `INSERT` in `message_read_receipts` per messaggi ricevuti da quel peer (body non vuoto o media/location), `on conflict do nothing`.
-2. `UPDATE messages SET delivery_status = 'read'` dove `sender_id = peer`, `recipient_profile_id = auth.uid()`, status in (`sent`, `delivered`).
+1. UPDATE righe in entrata nel mio archivio (`author_id = peer`, `read_at IS NULL`) SET `read_at = now()`
+2. Per ogni λ toccato: UPDATE copia mittente SET `read_at = now()` (SECURITY DEFINER)
 
-Esclude messaggi con `marker_type` non null.
-
-**Spec**: [MSG-READ.spec.md](../capabilities/MSG-READ.spec.md).
+**Spec**: [MAILBOX-READ.spec.md](../capabilities/MAILBOX-READ.spec.md).
 
 ---
 
@@ -135,8 +143,14 @@ Aggiunta enum in migrazioni separate (commit enum prima dell’uso in RPC).
 
 | File | Verifica |
 |------|----------|
-| `supabase/tests/schema_smoke.sql` | Assenza `inbox_threads`; overload RPC corretti |
+| `supabase/tests/schema_smoke.sql` | Assenza `inbox_threads`, `message_read_receipts`; schema mailbox |
+| `supabase/tests/mailbox_schema_smoke.sql` | `owner_id`, assenza `delivery_status` su `messages` |
+| `supabase/tests/mailbox_send_smoke.sql` | Invio + `delivered_at` (placeholder) |
 | `supabase/tests/send_message_to_profile_smoke.sql` | Invio a profilo non in rubrica |
+
+Smoke **da creare** (tracciabilità MAILBOX-*): `mailbox_read_smoke.sql`, `mailbox_inbox_smoke.sql`, `mailbox_idempotency_smoke.sql`, `mailbox_delivery_smoke.sql`, `mailbox_send_media_smoke.sql`.
+
+Gate client: `verify.sh` + `bash scripts/test.sh integration` + `bash scripts/test.sh e2e-multi`
 
 ---
 
@@ -160,44 +174,15 @@ Aggiunta enum in migrazioni separate (commit enum prima dell’uso in RPC).
 
 ---
 
-## Target mailbox (`approved` — non su `main`)
+## Storico pre-mailbox (message-centric, superseded)
 
-**Spec**: [MAILBOX-SEND](../capabilities/MAILBOX-SEND.spec.md), [MAILBOX-INBOX](../capabilities/MAILBOX-INBOX.spec.md), [MAILBOX-READ](../capabilities/MAILBOX-READ.spec.md)
+Modello sostituito da PR #159 (`20260704120000`). Spec: `MSG-*` → `superseded`.
 
-### `send_message_to_profile`
+| Aspetto | Comportamento storico (pre-#159) |
+|---------|----------------------------------|
+| `send_message_to_profile` | Insert con `delivery_status = 'sent'`; trigger `on_message_inserted` promuoveva a `delivered` (internal) o scriveva `outbox` (federato) |
+| `list_inbox` | Aggregazione su `messages` per `sender_id` OR `recipient_profile_id` = `auth.uid()` |
+| `list_peer_messages` | Storico bidirezionale su tabella condivisa |
+| `mark_peer_read` | INSERT in `message_read_receipts` + UPDATE `delivery_status = 'read'` |
 
-Stessa firma PostgREST di sopra. Semantica mailbox:
-
-1. INSERT copia mittente (`owner_id = author_id = auth.uid()`), λ nuovo, date null
-2. INSERT `outbox` (`protocol = internal`, payload con λ)
-3. INSERT copia destinatario (stesso λ, stesso contenuto/`media_url`)
-4. UPDATE mittente `delivered_at = now()`
-5. RETURN riga mittente
-
-Idempotenza: stesso `p_client_message_id` → stessa riga mittente (no duplicati).
-
-**MUST NOT**: promozione `delivered` senza outbox e copia destinatario.
-
-### `list_inbox`
-
-Aggregazione su `messages` WHERE `owner_id = auth.uid()` GROUP BY `peer_profile_id`. `unread_count` = righe in entrata con `read_at IS NULL`.
-
-### `list_peer_messages`
-
-Righe WHERE `owner_id = auth.uid()` AND `peer_profile_id = p_peer_profile_id` ORDER BY `created_at`.
-
-### `mark_peer_read`
-
-1. UPDATE righe in entrata nel mio archivio (`author_id = peer`, `read_at IS NULL`) SET `read_at = now()`
-2. Per ogni λ: UPDATE copia mittente SET `read_at = now()` (SECURITY DEFINER)
-
-### Smoke test (da creare a implementazione)
-
-| File | Verifica |
-|------|----------|
-| `supabase/tests/mailbox_schema_smoke.sql` | Schema owner_id, assenza receipts |
-| `supabase/tests/mailbox_send_smoke.sql` | Invio + delivered_at |
-| `supabase/tests/mailbox_read_smoke.sql` | mark_peer_read → read_at mittente |
-| `supabase/tests/mailbox_inbox_smoke.sql` | list_inbox + unread |
-
-Gate client: `verify.sh` + `bash scripts/test.sh integration` + `bash scripts/test.sh e2e-multi`
+Non usare per implementazioni nuove.

@@ -17,8 +17,8 @@
 | Concetto | Ruolo |
 |----------|--------|
 | **Indirizzo** | Destinatario del messaggio: `username` (Alfred) o `username@server` (esterno) |
-| **Messaggi** | **Unica fonte di verità** — `sender_id` + `recipient_profile_id` (o indirizzo esterno) |
-| **Inbox** | **Aggregazione derivata on-read** su `messages` (RPC `list_inbox()`), raggruppata per `peer_profile_id` — **nessuna tabella, vista materializzata o cache inbox** |
+| **Messaggi** | **Archivio per owner** in `messages` (`owner_id`, `author_id`, `peer_profile_id`, `logical_message_id`) — copie correlate per mittente/destinatario |
+| **Inbox** | **Aggregazione derivata on-read** sul **mio** archivio (`list_inbox()` WHERE `owner_id = io`), raggruppata per `peer_profile_id` — **nessuna tabella, vista materializzata o cache inbox** |
 | **Rubrica (`contacts`)** | Strumento personale opzionale; **isolata** dalle dinamiche di chat |
 
 ### Indirizzamento
@@ -52,26 +52,28 @@
 
 ---
 
-## Modello tecnico
+## Modello tecnico (mailbox — su `main` da PR #159)
 
 ### Inbox = aggregazione on-read (non materializzata)
 
-L’inbox **non** è una tabella né una vista materializzata. È il risultato di una query su `messages` a ogni chiamata:
+L’inbox **non** è una tabella né una vista materializzata. È il risultato di una query sul **mio archivio** `messages` a ogni chiamata:
 
-1. **Fonte di verità**: solo `messages` (+ join `profiles` per il nome)
-2. **Calcolo**: `list_inbox()` — `GROUP BY peer_profile_id`, ultimo messaggio, conteggio unread
-3. **Indici**: su coppia `(sender_id, recipient_profile_id, created_at)` — sufficienti per Alpha
-4. **Realtime**: il client rilegge `list_inbox()` su INSERT in `messages`; nessun trigger che mantenga una cache inbox
+1. **Fonte di verità**: `messages` con `owner_id = auth.uid()` (+ join `profiles` per il nome)
+2. **Calcolo**: `list_inbox()` — `GROUP BY peer_profile_id`, ultimo messaggio, conteggio unread (`read_at IS NULL` su righe in entrata)
+3. **Indici**: su `(owner_id, peer_profile_id, created_at)` — sufficienti per Alpha
+4. **Realtime inbox**: subscribe su `messages` con filtro `owner_id = io`; reload `list_inbox()` su INSERT
+5. **Realtime chat**: filtro server `owner_id = io`; filtro client `peer_profile_id` (Realtime EQ singola colonna)
 
 Equivalente concettuale: una `VIEW` SQL normale (non `MATERIALIZED`). L’RPC è usata per `security definer`, `auth.uid()` e payload già formattato.
 
-**Perché niente cache inbox**: una tabella con preview/unread duplicati (es. `inbox_threads`) richiede trigger, può divergere da `messages`, e invita FK verso il derivato — antipattern. Se in futuro servisse prestazione, eventuale materializzazione va trattata come **cache** (refresh, nessuna FK, non entità canonica).
+**Perché niente cache inbox**: una tabella con preview/unread duplicati (es. `inbox_threads`) richiede trigger, può divergere da `messages`, e invita FK verso il derivato — antipattern.
 
-### Solo messaggi
+### Solo messaggi (+ outbox)
 
 | Entità | Ruolo |
 |--------|--------|
-| `messages` | Fonte di verità |
+| `messages` | Archivio per owner (fonte di verità per inbox e chat) |
+| `outbox` | Coda invio — **sempre** (anche internal), consumer RPC o bridge |
 | `profiles` | Account Alfred |
 | `contacts` | Rubrica opzionale |
 
@@ -79,22 +81,28 @@ Equivalente concettuale: una `VIEW` SQL normale (non `MATERIALIZED`). L’RPC è
 
 | RPC | Responsabilità |
 |-----|----------------|
-| `list_inbox()` | Aggregazione on-read: righe inbox da `messages` (preview, unread, ordine per peer) |
-| `list_peer_messages(peer_profile_id)` | Storico con un account |
-| `mark_peer_read(peer_profile_id)` | Segna letti i messaggi ricevuti da quel peer |
-| `send_message_to_profile` | Invio (testo, GIF, voice, location) |
+| `list_inbox()` | Aggregazione on-read sul mio archivio |
+| `list_peer_messages(peer_profile_id)` | Storico nel mio archivio con un peer |
+| `mark_peer_read(peer_profile_id)` | `read_at` su entrata + propagazione su copia mittente (λ) |
+| `send_message_to_profile` | Outbox + copie mittente/destinatario in transazione |
 | `find_profile_by_username` | Risoluzione indirizzo → profilo |
 
-### Trigger `on_message_inserted`
+### Spunte
 
-Solo: `delivery_status` interno → `delivered`; federato → `outbox`. **Nessun** upsert inbox.
+`delivered_at` / `read_at` / `failed_at` su righe dell’archivio — non più enum `delivery_status` né `message_read_receipts`.
 
 ### Client
 
 - `ChatPeer` — identificato da `profileId`
 - `MessagesController` — sempre `peerProfileId`; carica subito (lista vuota se nessun messaggio)
 - `HomeScreen` — `_activePeer`; nessuna distinzione bozza/thread
-- Realtime inbox: subscribe su `messages` (sender o recipient = io)
+- Realtime inbox: subscribe su `messages` (`owner_id = io`)
+
+---
+
+## Storico pre-mailbox (message-centric)
+
+Prima di PR #159: tabella `messages` condivisa, `sender_id`/`recipient_profile_id`, trigger `on_message_inserted` per `delivery_status` e outbox federato, `message_read_receipts` per spunte. Vedi spec `MSG-*` (`superseded`).
 
 ---
 
@@ -103,7 +111,8 @@ Solo: `delivery_status` interno → `delivered`; federato → `outbox`. **Nessun
 - `20260627200000_address_based_messaging.sql` — `find_profile_by_username`
 - `20260627210000_message_centric_messaging.sql` — messaggi peer-based (storico)
 - `20260627220000_fix_send_message_to_profile_overload.sql` — PostgREST overload
-- `20260627230000_messages_only_inbox.sql` — **drop `inbox_threads`**, RPC peer-only
+- `20260627230000_messages_only_inbox.sql` — drop `inbox_threads` (storico)
+- `20260704120000_mailbox_per_owner_archive.sql` — modello caselle (PR #159)
 
 ---
 

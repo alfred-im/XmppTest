@@ -6,7 +6,7 @@
 | **Layer** | capability |
 | **Status** | `implemented` |
 | **Ultima revisione** | 2026-07-03 |
-| **ADR** | — (UX client; dipende da [MSG-INBOX](./MSG-INBOX.spec.md)) |
+| **ADR** | — (UX client; dipende da [MAILBOX-INBOX](./MAILBOX-INBOX.spec.md)) |
 | **PR** | #132 |
 | **Supersedes** | `design/inbox-search-toggle.md` (evidenza UX) |
 
@@ -66,7 +66,7 @@ L’utente deve poter filtrare la lista conversazioni per nome peer, anteprima u
 
 ### 4.1 Backend
 
-Nessuno — filtro su `peers` già in memoria da [MSG-INBOX](./MSG-INBOX.spec.md).
+Nessuno — filtro su `peers` già in memoria da [MAILBOX-INBOX](./MAILBOX-INBOX.spec.md).
 
 ### 4.2 Client
 

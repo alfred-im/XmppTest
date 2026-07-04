@@ -13,10 +13,10 @@ Indice capability con stato e tracciabilità PR. Contratti: [rpc.md](./contracts
 
 | Spec ID | Titolo | Status | PR | File |
 |---------|--------|--------|-----|------|
-| **MAILBOX-CORE** | Archivio per owner, identificatori, migrazione | `implemented` | — | [MAILBOX-CORE.spec.md](./capabilities/MAILBOX-CORE.spec.md) |
-| **MAILBOX-SEND** | Invio e outbox sempre | `implemented` | — | [MAILBOX-SEND.spec.md](./capabilities/MAILBOX-SEND.spec.md) |
-| **MAILBOX-INBOX** | Inbox da archivio owner | `implemented` | — | [MAILBOX-INBOX.spec.md](./capabilities/MAILBOX-INBOX.spec.md) |
-| **MAILBOX-READ** | Date consegna e lettura | `implemented` | — | [MAILBOX-READ.spec.md](./capabilities/MAILBOX-READ.spec.md) |
+| **MAILBOX-CORE** | Archivio per owner, identificatori, migrazione | `implemented` | #159 | [MAILBOX-CORE.spec.md](./capabilities/MAILBOX-CORE.spec.md) |
+| **MAILBOX-SEND** | Invio e outbox sempre | `implemented` | #159 | [MAILBOX-SEND.spec.md](./capabilities/MAILBOX-SEND.spec.md) |
+| **MAILBOX-INBOX** | Inbox da archivio owner | `implemented` | #159 | [MAILBOX-INBOX.spec.md](./capabilities/MAILBOX-INBOX.spec.md) |
+| **MAILBOX-READ** | Date consegna e lettura | `implemented` | #159 | [MAILBOX-READ.spec.md](./capabilities/MAILBOX-READ.spec.md) |
 
 MSG-INBOX / MSG-SEND / MSG-READ → `superseded`.
 
@@ -40,10 +40,10 @@ MSG-INBOX / MSG-SEND / MSG-READ → `superseded`.
 
 | Doc precedente | Spec canonica |
 |----------------|---------------|
-| `decisions/address-based-messaging.md` | MSG-INBOX (vincoli ADR) + MSG-SEND |
-| `implementation/messages-only-inbox.md` | MSG-INBOX |
-| `implementation/voice-notes.md`, `location-sharing.md` | MSG-SEND |
-| `decisions/server-as-reception.md` | MSG-READ (ADR) |
+| `decisions/address-based-messaging.md` | MAILBOX-INBOX + MAILBOX-SEND (vincoli ADR indirizzo/rubrica) |
+| `implementation/messages-only-inbox.md` | MSG-INBOX (storico) → MAILBOX-INBOX |
+| `implementation/voice-notes.md`, `location-sharing.md` | MAILBOX-SEND |
+| `decisions/server-as-reception.md` | MAILBOX-READ (ADR) |
 | `decisions/multi-account-parallel-sessions.md` | AUTH-MULTI (ADR) |
 | `implementation/multi-account-client.md`, `design/auth-overlay-shell.md` | AUTH-MULTI |
 | `design/inbox-search-toggle.md` | INBOX-SEARCH |
@@ -57,4 +57,4 @@ MSG-INBOX / MSG-SEND / MSG-READ → `superseded`.
 
 | ID proposto | Contenuto | Priorità |
 |-------------|-----------|----------|
-| BRIDGE-* | Consumer outbox federato (fase B post-mailbox) | dopo MAILBOX su `main` |
+| BRIDGE-* | Consumer outbox federato (fase B post-mailbox) | backlog |

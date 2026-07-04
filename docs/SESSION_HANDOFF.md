@@ -8,7 +8,7 @@ Documento per AI — **leggere prima di task multi-account o messaggistica**.
 
 | Item | Valore |
 |------|--------|
-| Branch `main` | PR Alpha **#108–#159** (mailbox #159) |
+| Branch `main` | PR Alpha **#108–#160** (mailbox #159) |
 | Alpha live | https://alfred-im.github.io/XmppTest/ — ultimo `deploy-alpha` riuscito |
 | Multi-account | Manifest tutti gli account; **una** GoTrue in RAM (focus) |
 | Messaggistica | Modello **caselle** (`MAILBOX-*`): archivio per `owner_id`, outbox sempre, spunte `delivered_at`/`read_at` |
@@ -54,8 +54,8 @@ Documento per AI — **leggere prima di task multi-account o messaggistica**.
 
 ```bash
 cd client && bash scripts/verify.sh
-bash scripts/integration-multi-account.sh
-bash scripts/test.sh e2e-multi    # Playwright — Alpha o localhost
+cd client && bash scripts/integration-multi-account.sh
+cd client && bash scripts/test.sh e2e-multi    # Playwright — Alpha o localhost
 ```
 
 ---
@@ -67,7 +67,7 @@ bash scripts/test.sh e2e-multi    # Playwright — Alpha o localhost
 | Badge / realtime account in background | Rinviato — serve fix BroadcastChannel o upstream |
 | Multi-tab stesso browser | Last-write-wins (limite noto) |
 | «Disconnetti ovunque» (revoca globale) | Futuro opzionale — logout locale già in `AccountSession.close()` (`single-device-logout-open.md`) |
-| Target modello caselle | `architecture/mailbox-inbox-outbox-spec.md` — direzione, non su `main` |
+| Bridge federazione (consumer outbox) | Stub health only — vedi `docs/decisions/project-revolution-discovery.md` |
 
 ---
 

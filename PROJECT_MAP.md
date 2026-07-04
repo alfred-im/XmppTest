@@ -31,7 +31,7 @@
 **Non deducibile — URL Alpha ≠ branch `main`**: https://alfred-im.github.io/XmppTest/ pubblica l’**ultimo** `deploy-alpha` riuscito (PR o push). **Non** è vero che «il sito live builda sempre da `main`». Per sapere quale codice è live, controllare quale workflow/PR ha deployato per ultimo (`concurrency: pages-alpha` → ultimo vince).
 | **Piattaforma** | Supabase `tvwpoxxcqwphryvuyqzu` — schema dominio + RLS + RPC |
 | **Bridge** | `bridge-xmpp/` · `bridge-matrix/` — stub health Fly.io (federazione non implementata) |
-| **PR Alpha** | **#108–#159** su `main` — registro `docs/architecture/alpha-pr-registry.md` |
+| **PR Alpha** | **#108–#160** su `main` — registro `docs/architecture/alpha-pr-registry.md` |
 | **Spec (SDD)** | Contratti capability: `docs/specs/index.md` — `MAILBOX-*` `implemented`; `MSG-*` `superseded` |
 
 **Stack su `main`**: `client/` · `supabase/` · `bridge-xmpp/` · `bridge-matrix/`
@@ -181,7 +181,7 @@ bash scripts/verify.sh --build   # + build web
 - CI: `.github/workflows/deploy-pages.yml` → `deploy-alpha` → GitHub Pages
 - **Vincolo GitHub**: Environment `github-pages` → *Deployment branches: All branches* (deploy da PR)
 - E2E: `client/e2e/` (Playwright)
-- SQL smoke: `supabase/tests/schema_smoke.sql`, `mailbox_schema_smoke.sql`, `mailbox_send_smoke.sql`
+- SQL smoke: `supabase/tests/schema_smoke.sql`, `mailbox_schema_smoke.sql`, `mailbox_send_smoke.sql`, `send_message_to_profile_smoke.sql`
 
 ---
 
@@ -218,5 +218,6 @@ bash scripts/verify.sh --build   # + build web
 
 - Modello caselle mailbox (#159): migrazione `20260704120000`, spec `MAILBOX-*`, client allineato (`delivered_at`/`read_at`)
 - Revisione precedente: sync PR #108–#153; posizione statica (#153); multi-account (#147/#152)
+- Revisione doc 2026-07-04: allineamento post-mailbox (#159), contratti promossi, INDICE/README
 
 **Riferimenti**: `docs/INDICE.md`, `docs/architecture/alpha-pr-registry.md`, `CHANGELOG.md`

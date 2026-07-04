@@ -6,18 +6,18 @@ Architecture Decision Records. Documento per AI.
 
 | ADR | Summary |
 |-----|---------|
-| [address-based-messaging.md](./address-based-messaging.md) | Messaggistica per indirizzo; inbox = aggregazione on-read su `messages` |
+| [address-based-messaging.md](./address-based-messaging.md) | Messaggistica per indirizzo; inbox on-read; archivio per-owner (MAILBOX-*) |
 | [no-internal-external-chat-distinction.md](./no-internal-external-chat-distinction.md) | Nessuna distinzione chat interna/esterna a tutti i livelli |
 | [bridge-stateless.md](./bridge-stateless.md) | Bridge senza stato di business; verità su Supabase |
 | [server-as-reception.md](./server-as-reception.md) | Ricezione = ricezione sul server (spunte cloud) |
 | [multi-account-parallel-sessions.md](./multi-account-parallel-sessions.md) | Multi-account client Alpha: UX #140, una GoTrue attiva #152 |
 | [single-device-logout-open.md](./single-device-logout-open.md) | ✅ Logout locale (`close()` senza revoca GoTrue); futuro: «Disconnetti ovunque» |
+| [mailbox-inbox-outbox-spec.md](../architecture/mailbox-inbox-outbox-spec.md) | ✅ Modello caselle — archivio per owner, outbox sempre (PR #159) |
 
-## Visione e target
+## Visione e storico
 
 | ADR | Summary |
 |-----|---------|
 | [project-revolution-discovery.md](./project-revolution-discovery.md) | Discovery completata — visione stack Flutter + Supabase + bridge (storico) |
-| [mailbox-inbox-outbox-spec.md](../architecture/mailbox-inbox-outbox-spec.md) | 🟡 Target modello caselle — direzione confermata, non su `main` |
 
 **Storico client React / XMPP**: tag `legacy/web-client-final` — non documentato su `main`.

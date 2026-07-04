@@ -7,7 +7,7 @@
 | **Status** | `implemented` |
 | **Ultima revisione** | 2026-07-04 |
 | **ADR** | [mailbox-inbox-outbox-spec.md](../../architecture/mailbox-inbox-outbox-spec.md), [server-as-reception.md](../../decisions/server-as-reception.md), [no-internal-external-chat-distinction.md](../../decisions/no-internal-external-chat-distinction.md) |
-| **PR** | — (spec) |
+| **PR** | #159 |
 | **Supersedes** | Modello message-centric condiviso (`MSG-INBOX` / `MSG-SEND` / `MSG-READ` al merge) |
 | **Superseded by** | — |
 
@@ -104,12 +104,12 @@ Regola: se `read_at` valorizzata su copia mittente, `delivered_at` tardivo non l
 
 | REQ-ID | Verifica |
 |--------|----------|
-| MAILBOX-CORE-REQ-001, REQ-002 | `supabase/tests/mailbox_schema_smoke.sql` (da creare) |
-| MAILBOX-CORE-REQ-004, REQ-005 | `supabase/tests/mailbox_idempotency_smoke.sql` (da creare) |
+| MAILBOX-CORE-REQ-001, REQ-002 | `supabase/tests/mailbox_schema_smoke.sql` |
+| MAILBOX-CORE-REQ-004, REQ-005 | `supabase/tests/mailbox_idempotency_smoke.sql` **(da creare)** |
 | MAILBOX-CORE-REQ-006 | stesso schema smoke — policy RLS |
 | MAILBOX-CORE-REQ-009 | migrazione `supabase/migrations/*mailbox*` |
 | MAILBOX-CORE-REQ-013, REQ-015 | schema smoke — assenza oggetti legacy |
-| MAILBOX-CORE-REQ-010 | `mailbox_send_media_smoke.sql` (da creare) |
+| MAILBOX-CORE-REQ-010 | `mailbox_send_media_smoke.sql` **(da creare)** |
 
 Gate implementazione: `bash scripts/check-spec-sync.sh` + `cd client && bash scripts/verify.sh`
 

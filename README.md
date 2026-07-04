@@ -4,14 +4,14 @@
 
 Traccia lo stato del progetto per continuità del lavoro. Non è documentazione per utenti esterni.
 
-## Stato attuale (2026-07-03)
+## Stato attuale (2026-07-04)
 
-**Flutter + Supabase + bridge Python**. PR Alpha **#108–#153** su `main`.
+**Flutter + Supabase + bridge Python**. PR Alpha **#108–#160** su `main`.
 
 | Componente | Stato |
 |------------|-------|
-| **`client/`** | App Supabase — shell messaggistica, multi-account (manifest + focus), overlay auth, chat testo/GIF/voice/location, `verify.sh` (70 test gate) |
-| **`supabase/`** | Schema dominio (profiles, contacts, messages, outbox, …) |
+| **`client/`** | App Supabase — shell messaggistica, multi-account (manifest + focus), overlay auth, chat testo/GIF/voice/location, modello caselle mailbox, `verify.sh` (70 test gate) |
+| **`supabase/`** | Schema dominio (profiles, contacts, messages per-owner, outbox, …) |
 | **`bridge-xmpp/`** · **`bridge-matrix/`** | Stub health Fly.io |
 
 ### URL live
@@ -29,7 +29,7 @@ Flutter (client/)  →  Supabase (piattaforma)  →  bridge XMPP + bridge Matrix
 ```bash
 cd client
 bash scripts/test.sh gate   # gate CI — obbligatorio prima di git push
-flutter run -d chrome
+flutter run -d web-server --web-port=8080 --web-hostname=0.0.0.0
 ```
 
 Suite test: `client/scripts/test/README.md`
@@ -57,4 +57,4 @@ MIT — `LICENSE`
 
 ---
 
-**Ultimo aggiornamento**: 2026-07-03
+**Ultimo aggiornamento**: 2026-07-04

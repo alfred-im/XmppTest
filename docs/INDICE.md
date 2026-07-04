@@ -53,8 +53,8 @@ ADR e panoramica: [architecture/mailbox-inbox-outbox-spec.md](./architecture/mai
 
 - [decisions/address-based-messaging.md](./decisions/address-based-messaging.md) — **🟢 Vincolante** — messaggistica per indirizzo; inbox on-read
 - [decisions/no-internal-external-chat-distinction.md](./decisions/no-internal-external-chat-distinction.md) — **🟢 Vincolante** — chat unificate
-- [decisions/server-as-reception.md](./decisions/server-as-reception.md) — Concept spunte cloud
-- [decisions/bridge-stateless.md](./decisions/bridge-stateless.md) — Bridge senza stato di business
+- [decisions/server-as-reception.md](./decisions/server-as-reception.md) — **🟢 Vincolante** — concept spunte cloud
+- [decisions/bridge-stateless.md](./decisions/bridge-stateless.md) — **🟢 Vincolante** — bridge senza stato di business
 - [decisions/multi-account-parallel-sessions.md](./decisions/multi-account-parallel-sessions.md) — **🟢 Vincolante** — multi-account (UX #140, una GoTrue #152)
 - [decisions/single-device-logout-open.md](./decisions/single-device-logout-open.md) — **🟢** Logout locale; futuro «Disconnetti ovunque»
 - [decisions/project-revolution-discovery.md](./decisions/project-revolution-discovery.md) — Visione stack (discovery completata, storico)
@@ -65,8 +65,8 @@ ADR e panoramica: [architecture/mailbox-inbox-outbox-spec.md](./architecture/mai
 ## Architettura
 
 - [architecture/alpha-full-stack.md](./architecture/alpha-full-stack.md) — **🟢 Alpha** — client + Supabase
-- [architecture/alpha-pr-registry.md](./architecture/alpha-pr-registry.md) — Registro PR **#108–#153**
-- [architecture/mailbox-inbox-outbox-spec.md](./architecture/mailbox-inbox-outbox-spec.md) — **🟡 Target** — modello caselle (non su `main`)
+- [architecture/alpha-pr-registry.md](./architecture/alpha-pr-registry.md) — Registro PR **#108–#160**
+- [architecture/mailbox-inbox-outbox-spec.md](./architecture/mailbox-inbox-outbox-spec.md) — **🟢 Implementato** — modello caselle (PR #159)
 - [architecture/README.md](./architecture/README.md) — Indice architettura
 
 ---
@@ -102,4 +102,4 @@ ADR e panoramica: [architecture/mailbox-inbox-outbox-spec.md](./architecture/mai
 
 ---
 
-**Ultimo aggiornamento**: 2026-07-04 — MAILBOX-* implemented; MSG-* superseded
+**Ultimo aggiornamento**: 2026-07-04 — revisione sync post-mailbox #159; contratti promossi; INDICE/README allineati

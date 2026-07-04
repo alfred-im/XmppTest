@@ -8,14 +8,14 @@
 
 ---
 
-## Delta rispetto a oggi
+## Modello attuale (implementato PR #159)
 
-| | Oggi (`main`) | Target caselle |
-|--|---------------|----------------|
-| **Archivio** | 1 riga `messages` condivisa tra i due peer | Un archivio per owner: io ho i miei messaggi in/out, tu i tuoi |
-| **Consegna** | Internal: insert diretto + `delivered`; federato: outbox | **Outbox sempre** (anche internal), poi materializzazione nell’archivio del destinatario — un solo tipo di pipeline |
-| **Inbox** | Query live su `messages` (`list_inbox()`) | Lista derivata dal **mio** archivio |
-| **Identità chat** | `(io, peer_profile_id)` | `(io, indirizzo peer)` — `username` o `username@server` |
+| Aspetto | Comportamento su `main` |
+|---------|-------------------------|
+| **Archivio** | Un archivio per owner: ogni utente ha le proprie righe `messages` (`owner_id`) |
+| **Consegna** | **Outbox sempre** (anche internal), poi materializzazione copia destinatario — un solo tipo di pipeline |
+| **Inbox** | Lista derivata dal **mio** archivio via `list_inbox()` |
+| **Identità chat** | `(io, peer_profile_id)` — indirizzo `username` o `username@server` in compose |
 
 Tutto il resto (UI, realtime, spunte, tipi messaggio, rubrica) si deduce dall’Alpha attuale salvo quanto sotto.
 
@@ -201,8 +201,8 @@ Quando si implementa: **migra e basta** — DB solo dev, niente produzione da pr
 
 | Documento | Ruolo |
 |-----------|--------|
-| [address-based-messaging.md](../decisions/address-based-messaging.md) | Modello **attuale** su `main` (da sostituire) |
-| [messages-only-inbox.md](../implementation/messages-only-inbox.md) | Implementazione attuale |
+| [address-based-messaging.md](../decisions/address-based-messaging.md) | Indirizzamento e rubrica isolata (vincolante); modello messaggi → MAILBOX-* |
+| [messages-only-inbox.md](../implementation/messages-only-inbox.md) | Storico pre-mailbox (inbox query-only, PR #130) |
 | [alpha-full-stack.md](./alpha-full-stack.md) | Flussi Alpha da riusare |
 | [server-as-reception.md](../decisions/server-as-reception.md) | Spunte |
 | [bridge-stateless.md](../decisions/bridge-stateless.md) | Outbox / bridge (se/un quando) |

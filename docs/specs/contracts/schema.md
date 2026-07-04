@@ -1,7 +1,7 @@
-# Contratto schema — dominio Alpha (message-centric)
+# Contratto schema — dominio Alpha (mailbox)
 
-**Ultima revisione**: 2026-07-03  
-**Status**: `implemented` (allineato a `main`, migrazioni fino a `20260702120100`)  
+**Ultima revisione**: 2026-07-04  
+**Status**: `implemented` (allineato a `main`, migrazioni fino a `20260704120000`)  
 **Fonte di verità**: `supabase/migrations/`
 
 Contratto **tabelle ed enum** usati dalle capability spec. Per RPC: [rpc.md](./rpc.md). Per capability: [index.md](../index.md).
@@ -13,15 +13,15 @@ Contratto **tabelle ed enum** usati dalle capability spec. Per RPC: [rpc.md](./r
 ```
 auth.users 1──1 profiles
 profiles 1──* contacts (owner_id)
-profiles *──* messages (sender_id / recipient_profile_id)
-messages 1──* message_read_receipts
-messages 0..1 outbox (federato)
+profiles 1──* messages (owner_id = archivio; author_id = autore contenuto)
+messages *── peer profiles (peer_profile_id denormalizzato)
+messages 0..1 outbox (sempre, anche internal)
 profiles 1──* sync_cursors (peer_profile_id)
 bridge_jobs (coda bridge)
 storage: chat-media, avatars
 ```
 
-**Inbox**: nessuna tabella dedicata — derivata da `messages` via `list_inbox()`.
+**Inbox**: nessuna tabella dedicata — derivata dal mio archivio `messages` via `list_inbox()`.
 
 ---
 
@@ -31,7 +31,7 @@ storage: chat-media, avatars
 |------|--------|-----|
 | `contact_protocol` | `internal`, `xmpp`, `matrix` | Routing backend; invisibile in UI inbox |
 | `message_content_type` | `text`, `gif`, `voice`, `location` | Tipo contenuto messaggio |
-| `message_delivery_status` | `pending`, `sent`, `delivered`, `read`, `failed` | Spunte + stati outbox |
+| `message_delivery_status` | `pending`, `sent`, `delivered`, `read`, `failed` | Stati `outbox` / `bridge_jobs` (non più su `messages`) |
 | `queue_status` | `queued`, … `failed` | `outbox`, `bridge_jobs` |
 
 ---
@@ -78,111 +78,6 @@ storage: chat-media, avatars
 
 | Colonna | Tipo | Note |
 |---------|------|------|
-| `id` | uuid PK | |
-| `sender_id` | uuid FK → profiles | |
-| `recipient_profile_id` | uuid FK nullable | Peer Alfred interno |
-| `recipient_external_address` | text nullable | Federato futuro |
-| `protocol` | contact_protocol | Default `internal` |
-| `body` | text | Può essere vuoto per media |
-| `delivery_status` | message_delivery_status | |
-| `client_message_id` | text nullable | Idempotenza client |
-| `content_type` | message_content_type | Default `text` |
-| `media_url` | text nullable | GIF, voice |
-| `duration_seconds` | integer nullable | voice |
-| `media_mime` | text nullable | voice |
-| `media_size_bytes` | bigint nullable | voice |
-| `latitude`, `longitude` | double nullable | location |
-| `external_id` | text nullable | Bridge federato |
-| `marker_type`, `marker_for` | text/uuid nullable | Receipt federato futuro |
-| `created_at` | timestamptz | |
-
-**Indici**: `(sender_id, recipient_profile_id, created_at)`, `(recipient_profile_id, sender_id, created_at)`.
-
-**RLS**: SELECT/INSERT se mittente o destinatario = `auth.uid()`.
-
-**Spec**: [MSG-SEND](../capabilities/MSG-SEND.spec.md), [MSG-INBOX](../capabilities/MSG-INBOX.spec.md), [MSG-READ](../capabilities/MSG-READ.spec.md).
-
----
-
-## `message_read_receipts`
-
-| Colonna | Tipo | Note |
-|---------|------|------|
-| `message_id` | uuid FK | |
-| `profile_id` | uuid FK | Lettore |
-| `status` | message_delivery_status | `delivered` o `read` |
-
-**Spec**: [MSG-READ.spec.md](../capabilities/MSG-READ.spec.md).
-
----
-
-## `outbox`
-
-Coda invio federato — bridge consumer futuro. Popolata da trigger `on_message_inserted` per `protocol` xmpp/matrix.
-
-**RLS**: DENY per `authenticated`.
-
----
-
-## `sync_cursors`, `bridge_jobs`
-
-Stato piattaforma bridge (ADR D-051). `sync_cursors.peer_profile_id` sostituisce `inbox_thread_id` storico.
-
-**RLS**: DENY per `authenticated`.
-
----
-
-## Storage buckets
-
-| Bucket | Uso | Limite | Path pattern |
-|--------|-----|--------|--------------|
-| `chat-media` | GIF, voice | 10 MB gif / 15 MB webm | `{auth.uid()}/{uuid}.*` |
-| `avatars` | Foto profilo | 2 MB | `{auth.uid()}/avatar.{ext}` |
-
-Pubblici in Alpha (URL diretti in Realtime).
-
----
-
-## Oggetti rimossi (non devono esistere)
-
-| Oggetto | Rimosso in |
-|---------|------------|
-| `inbox_threads` | `20260627230000_messages_only_inbox.sql` |
-| `conversations`, `conversation_participants` | message-centric refactor |
-
-Verifica: `supabase/tests/schema_smoke.sql`.
-
----
-
-## Migrazioni
-
-Elenco completo: [alpha-pr-registry.md](../../architecture/alpha-pr-registry.md) § migrazioni.
-
----
-
-## Target mailbox (`approved` — non su `main`)
-
-**Spec**: [MAILBOX-CORE](../capabilities/MAILBOX-CORE.spec.md), [MAILBOX-SEND](../capabilities/MAILBOX-SEND.spec.md), [MAILBOX-INBOX](../capabilities/MAILBOX-INBOX.spec.md), [MAILBOX-READ](../capabilities/MAILBOX-READ.spec.md)  
-**Status contratto**: `approved` — sostituisce sezione `messages` message-centric al merge.
-
-### Diagramma (target)
-
-```
-auth.users 1──1 profiles
-profiles 1──* messages (owner_id = archivio; author_id = autore contenuto)
-messages *── peer profiles (peer_profile_id denormalizzato)
-messages 0..1 outbox (sempre, anche internal)
-profiles 1──* sync_cursors
-bridge_jobs
-storage: chat-media, avatars
-```
-
-**Rimosso**: `message_read_receipts`, enum `message_delivery_status` su `messages`.
-
-### `messages` (ricreato)
-
-| Colonna | Tipo | Note |
-|---------|------|------|
 | `id` | uuid PK | Per owner |
 | `owner_id` | uuid FK → profiles | Archivio (`auth.uid()` in RLS) |
 | `author_id` | uuid FK → profiles | Autore originale |
@@ -206,10 +101,63 @@ storage: chat-media, avatars
 
 **RLS**: `owner_id = auth.uid()` per SELECT/INSERT/UPDATE.
 
-### `outbox` (esteso)
+**Spec**: [MAILBOX-CORE](../capabilities/MAILBOX-CORE.spec.md), [MAILBOX-SEND](../capabilities/MAILBOX-SEND.spec.md), [MAILBOX-INBOX](../capabilities/MAILBOX-INBOX.spec.md), [MAILBOX-READ](../capabilities/MAILBOX-READ.spec.md).
 
-Popolata per **ogni** invio (internal + federato). FK `message_id` → copia **mittente**. Consumer internal: transazione RPC; federato: fase B bridge.
+---
 
-### Migrazione prototipo
+## `outbox`
 
-Drop message-centric → ricrea → purge `chat-media` orfani (non referenziati da `messages.media_url`).
+Coda invio — popolata per **ogni** invio (internal + federato). FK `message_id` → copia **mittente**.
+
+Consumer internal: transazione RPC; federato: fase B bridge (stub).
+
+**RLS**: DENY per `authenticated`.
+
+**Spec**: [MAILBOX-SEND.spec.md](../capabilities/MAILBOX-SEND.spec.md).
+
+---
+
+## `sync_cursors`, `bridge_jobs`
+
+Stato piattaforma bridge ([bridge-stateless.md](../../decisions/bridge-stateless.md)). `sync_cursors.peer_profile_id` sostituisce `inbox_thread_id` storico.
+
+**RLS**: DENY per `authenticated`.
+
+---
+
+## Storage buckets
+
+| Bucket | Uso | Limite | Path pattern |
+|--------|-----|--------|--------------|
+| `chat-media` | GIF, voice | 10 MB gif / 15 MB webm | `{auth.uid()}/{uuid}.*` |
+| `avatars` | Foto profilo | 2 MB | `{auth.uid()}/avatar.{ext}` |
+
+Pubblici in Alpha (URL diretti in Realtime).
+
+---
+
+## Oggetti rimossi (non devono esistere)
+
+| Oggetto | Rimosso in |
+|---------|------------|
+| `inbox_threads` | `20260627230000_messages_only_inbox.sql` |
+| `conversations`, `conversation_participants` | message-centric refactor |
+| `message_read_receipts` | `20260704120000_mailbox_per_owner_archive.sql` |
+| `messages.delivery_status`, `sender_id`, `recipient_profile_id`, `marker_type`, `marker_for` | `20260704120000` (tabella ricreata) |
+| Trigger `on_message_inserted` | `20260704120000` |
+
+Verifica: `supabase/tests/schema_smoke.sql`, `mailbox_schema_smoke.sql`.
+
+---
+
+## Migrazioni
+
+Elenco completo: [alpha-pr-registry.md](../../architecture/alpha-pr-registry.md) § migrazioni.
+
+---
+
+## Storico pre-mailbox (message-centric, superseded)
+
+Modello sostituito da PR #159. Tabella `messages` condivisa tra peer con `sender_id` / `recipient_profile_id`, `delivery_status` enum, `message_read_receipts` per spunte. Outbox solo per federato via trigger.
+
+Non usare per implementazioni nuove. Spec storiche: `MSG-INBOX`, `MSG-SEND`, `MSG-READ` (`superseded`).

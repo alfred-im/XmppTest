@@ -79,20 +79,20 @@ L'aggancio al fondo della conversazione (scroll ancorato, stacco quando si legge
 
 ---
 
-## Violazioni note da eliminare (debito tecnico)
+## Violazioni note — stato post-mailbox (#159)
 
-Riferimenti esistenti che **violano** questa regola e non vanno replicati:
+Riferimenti che **violavano** questa regola; stato dopo `20260704120000`:
 
 **Client Flutter**
 - ~~Ramificazioni su `conversation.protocol` (es. sottotitolo header)~~ — rimosso con aggancio al fondo (2026-06-27)
 
 **Piattaforma Supabase**
-- Trigger `on_message_inserted`: branch `v_protocol = 'internal'` vs `xmpp`/`matrix` con semantica chat distinta
-- RPC `get_or_create_direct_conversation` descritta come «chat 1:1 interna»
-- Migrazione `20260626100000_internal_delivered_on_server.sql` (nome e commenti «chat interna»)
-- Documentazione in `alpha-full-stack.md` §2.9 che parla di «Alpha interna» / trigger solo per `internal`
+- ~~Trigger `on_message_inserted` con branch internal vs federato~~ — **rimosso** in #159; outbox sempre via RPC
+- ~~RPC `get_or_create_direct_conversation`~~ — non presente nel modello mailbox
+- Migrazione `20260626100000_internal_delivered_on_server.sql` — storico pre-mailbox (nome «internal»); sostituita da `delivered_at`/`read_at`
+- ~~Documentazione `alpha-full-stack.md` §2.9 «Alpha interna»~~ — slim + modello unificato mailbox
 
-**Obiettivo refactor**: un unico flusso messaggio/conversazione; `protocol` usato solo per selezionare l'handler di recapito uscente, senza biforcazioni di prodotto.
+**Obiettivo**: un unico flusso messaggio/conversazione; `protocol` solo per handler di recapito uscente (fase B bridge), senza biforcazioni di prodotto.
 
 ---
 

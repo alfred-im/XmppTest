@@ -7,7 +7,7 @@
 | **Status** | `implemented` |
 | **Ultima revisione** | 2026-07-04 |
 | **ADR** | [server-as-reception.md](../../decisions/server-as-reception.md), [mailbox-inbox-outbox-spec.md](../../architecture/mailbox-inbox-outbox-spec.md) |
-| **PR** | — (spec) |
+| **PR** | #159 |
 | **Supersedes** | [MSG-READ.spec.md](./MSG-READ.spec.md) (al merge) |
 | **Superseded by** | — |
 
@@ -79,7 +79,8 @@ Effetti:
 
 | Componente | Responsabilità |
 |------------|----------------|
-| `messageStatusFromDelivery` | **Sostituire** con helper da `delivered_at`/`read_at`/`failed_at` |
+| `messageStatusFromMailbox` | Helper da `delivered_at`/`read_at`/`failed_at` (implementato in `message.dart`) |
+| `messageStatusFromDelivery` | Legacy shim — solo test |
 | `MessageBubble` | Checkmarks da date |
 | `InboxService.markRead` | RPC invariato |
 
@@ -101,7 +102,7 @@ Paolo apre chat con Mario
 |--------|----------|
 | MAILBOX-READ-REQ-001 | `message_bubble_test.dart` (adattare a date) |
 | MAILBOX-READ-REQ-002 | `mailbox_delivery_smoke.sql` |
-| MAILBOX-READ-REQ-003–005 | `mailbox_read_smoke.sql` (da creare) |
+| MAILBOX-READ-REQ-003–005 | `mailbox_read_smoke.sql` **(da creare)** |
 | MAILBOX-READ-REQ-006 | smoke filtri content_type |
 | MAILBOX-READ-REQ-007 | `messages_controller_multi_account_test.dart` |
 | MAILBOX-READ-REQ-008 | `mailbox_inbox_smoke.sql` unread |

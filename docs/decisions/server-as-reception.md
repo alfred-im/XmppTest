@@ -1,11 +1,11 @@
 # Ricezione = ricezione sul server (client cloud)
 
-> **Contratto capability**: [MSG-READ.spec.md](../specs/capabilities/MSG-READ.spec.md) — questo ADR resta vincolante (semantica cloud); la spec consolidano il contratto operativo.
+> **Contratto capability**: [MAILBOX-READ.spec.md](../specs/capabilities/MAILBOX-READ.spec.md) (operativo); [MSG-READ.spec.md](../specs/capabilities/MSG-READ.spec.md) (`superseded`) — questo ADR resta vincolante (semantica cloud).
 
 **Data**: 2026-06-26  
 **Status**: ✅ Accettata — **concept vincolante** dell'applicazione  
 **Categoria**: Messaggistica, spunte, modello cloud  
-**Correlata**: [bridge-stateless.md](./bridge-stateless.md), [alpha-full-stack.md](../architecture/alpha-full-stack.md) §2.9
+**Correlata**: [bridge-stateless.md](./bridge-stateless.md), [alpha-full-stack.md](../architecture/alpha-full-stack.md) §3
 
 ---
 

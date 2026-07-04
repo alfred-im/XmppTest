@@ -7,7 +7,7 @@
 | **Status** | `implemented` |
 | **Ultima revisione** | 2026-07-04 |
 | **ADR** | [mailbox-inbox-outbox-spec.md](../../architecture/mailbox-inbox-outbox-spec.md), [no-internal-external-chat-distinction.md](../../decisions/no-internal-external-chat-distinction.md) |
-| **PR** | — (spec) |
+| **PR** | #159 |
 | **Supersedes** | [MSG-INBOX.spec.md](./MSG-INBOX.spec.md) (al merge) |
 | **Superseded by** | — |
 
@@ -95,7 +95,7 @@ L’inbox è **organizzazione UI** della chat: un posto dove convivono messaggi 
 
 | REQ-ID | Verifica |
 |--------|----------|
-| MAILBOX-INBOX-REQ-001, REQ-002 | `mailbox_inbox_smoke.sql` (da creare) |
+| MAILBOX-INBOX-REQ-001, REQ-002 | `mailbox_inbox_smoke.sql` **(da creare)** |
 | MAILBOX-INBOX-REQ-004 | stesso + `list_peer_messages` |
 | MAILBOX-INBOX-REQ-006 | invio senza rubrica — smoke |
 | MAILBOX-INBOX-REQ-007 | `inbox_provider_listen_test.dart` (adattare filtro) |

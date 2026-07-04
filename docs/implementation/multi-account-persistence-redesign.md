@@ -202,7 +202,7 @@ AccountManager NON ricostruisce mai la lista leggendo token dalle sessioni.
 | Metodo | Quando | Azione |
 |--------|--------|--------|
 | `persistOpenAccount({required String refreshToken, required ProfileSummary profile})` | Subito dopo login/signup riuscito | `storage.upsertAccount` — token dalla **risposta HTTP** |
-| `updateStoredRefresh(String refreshToken)` | `AuthChangeEvent.tokenRefreshed` | `upsertAccount` — token dall’**evento** (`state.session?.refreshToken`) |
+| `persistOpenAccount(refreshToken: …)` | `AuthChangeEvent.tokenRefreshed` | `upsertAccount` — token dall’**evento** (`state.session?.refreshToken`) |
 | `updateStoredProfile(ProfileSummary profile)` | Dopo `syncProfileSummary` | `upsertAccount` — stesso token, profilo aggiornato |
 | `clearStoredAccount()` | `close()` / remove | `storage.removeAccount` + clear `alfred_auth_{userId}` |
 | `hasValidJwt()` | Prima di fetch messaggi | `currentSession?.accessToken != null` (o equivalente) |
