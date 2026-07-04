@@ -9,6 +9,7 @@
 | **ADR** | [server-as-reception.md](../../decisions/server-as-reception.md), [no-internal-external-chat-distinction.md](../../decisions/no-internal-external-chat-distinction.md) |
 | **PR** | #122 (delivered), #130 (peer-based `mark_peer_read`) |
 | **Correlata** | [MSG-SEND](./MSG-SEND.spec.md), [MSG-INBOX](./MSG-INBOX.spec.md) |
+| **Superseded by** | `MAILBOX-READ` (al merge implementazione mailbox) |
 
 Documento per AI — contratto spunte (delivery status) e lettura messaggi su `main`.
 

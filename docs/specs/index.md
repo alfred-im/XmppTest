@@ -1,7 +1,7 @@
-# Catalogo spec — Alfred Alpha
+# Catalogo spec — Alfred (prototipo)
 
-**Ultima revisione**: 2026-07-03  
-**REQ-ID**: tutte le 7 capability ✅ (SDD v1 completo su `main`)
+**Ultima revisione**: 2026-07-04  
+**REQ-ID**: capability message-centric ✅ su `main`; **MAILBOX-*** `approved` (implementazione in corso)
 
 Indice capability con stato e tracciabilità PR. Contratti: [rpc.md](./contracts/rpc.md), [schema.md](./contracts/schema.md).
 
@@ -23,11 +23,16 @@ Indice capability con stato e tracciabilità PR. Contratti: [rpc.md](./contracts
 
 ---
 
-## Target futuro (non ancora spec capability)
+## Capability mailbox (modello caselle — `approved`, non su `main`)
 
-| Documento | Status | Nota |
-|-----------|--------|------|
-| [mailbox-inbox-outbox-spec.md](../architecture/mailbox-inbox-outbox-spec.md) | Direzione `approved` | Quando su `main`, migrare a `MAILBOX-*.spec.md` e marcare MSG-INBOX message-centric come `superseded` |
+| Spec ID | Titolo | Status | PR | File |
+|---------|--------|--------|-----|------|
+| **MAILBOX-CORE** | Archivio per owner, identificatori, migrazione | `approved` | — | [MAILBOX-CORE.spec.md](./capabilities/MAILBOX-CORE.spec.md) |
+| **MAILBOX-SEND** | Invio e outbox sempre | `approved` | — | [MAILBOX-SEND.spec.md](./capabilities/MAILBOX-SEND.spec.md) |
+| **MAILBOX-INBOX** | Inbox da archivio owner | `approved` | — | [MAILBOX-INBOX.spec.md](./capabilities/MAILBOX-INBOX.spec.md) |
+| **MAILBOX-READ** | Date consegna e lettura | `approved` | — | [MAILBOX-READ.spec.md](./capabilities/MAILBOX-READ.spec.md) |
+
+ADR architetturale: [mailbox-inbox-outbox-spec.md](../architecture/mailbox-inbox-outbox-spec.md). Al merge implementazione: MSG-INBOX / MSG-SEND / MSG-READ → `superseded`.
 
 ---
 
@@ -44,6 +49,7 @@ Indice capability con stato e tracciabilità PR. Contratti: [rpc.md](./contracts
 | `design/inbox-search-toggle.md` | INBOX-SEARCH |
 | `PROJECT_MAP.md` § profilo | PROFILE |
 | `decisions/address-based-messaging.md` | MSG-INBOX + CONTACTS (ADR rubrica isolata) |
+| `architecture/mailbox-inbox-outbox-spec.md` | MAILBOX-CORE, MAILBOX-SEND, MAILBOX-INBOX, MAILBOX-READ |
 
 ---
 
@@ -51,4 +57,4 @@ Indice capability con stato e tracciabilità PR. Contratti: [rpc.md](./contracts
 
 | ID proposto | Contenuto | Priorità |
 |-------------|-----------|----------|
-| MAILBOX-* | Modello caselle (target futuro) | quando si implementa |
+| BRIDGE-* | Consumer outbox federato (fase B post-mailbox) | dopo MAILBOX su `main` |

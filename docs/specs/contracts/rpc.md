@@ -157,3 +157,47 @@ Aggiunta enum in migrazioni separate (commit enum prima dell’uso in RPC).
 
 - [alpha-full-stack.md](../../architecture/alpha-full-stack.md) §3
 - Migrazioni in [alpha-pr-registry.md](../../architecture/alpha-pr-registry.md) § migrazioni
+
+---
+
+## Target mailbox (`approved` — non su `main`)
+
+**Spec**: [MAILBOX-SEND](../capabilities/MAILBOX-SEND.spec.md), [MAILBOX-INBOX](../capabilities/MAILBOX-INBOX.spec.md), [MAILBOX-READ](../capabilities/MAILBOX-READ.spec.md)
+
+### `send_message_to_profile`
+
+Stessa firma PostgREST di sopra. Semantica mailbox:
+
+1. INSERT copia mittente (`owner_id = author_id = auth.uid()`), λ nuovo, date null
+2. INSERT `outbox` (`protocol = internal`, payload con λ)
+3. INSERT copia destinatario (stesso λ, stesso contenuto/`media_url`)
+4. UPDATE mittente `delivered_at = now()`
+5. RETURN riga mittente
+
+Idempotenza: stesso `p_client_message_id` → stessa riga mittente (no duplicati).
+
+**MUST NOT**: promozione `delivered` senza outbox e copia destinatario.
+
+### `list_inbox`
+
+Aggregazione su `messages` WHERE `owner_id = auth.uid()` GROUP BY `peer_profile_id`. `unread_count` = righe in entrata con `read_at IS NULL`.
+
+### `list_peer_messages`
+
+Righe WHERE `owner_id = auth.uid()` AND `peer_profile_id = p_peer_profile_id` ORDER BY `created_at`.
+
+### `mark_peer_read`
+
+1. UPDATE righe in entrata nel mio archivio (`author_id = peer`, `read_at IS NULL`) SET `read_at = now()`
+2. Per ogni λ: UPDATE copia mittente SET `read_at = now()` (SECURITY DEFINER)
+
+### Smoke test (da creare a implementazione)
+
+| File | Verifica |
+|------|----------|
+| `supabase/tests/mailbox_schema_smoke.sql` | Schema owner_id, assenza receipts |
+| `supabase/tests/mailbox_send_smoke.sql` | Invio + delivered_at |
+| `supabase/tests/mailbox_read_smoke.sql` | mark_peer_read → read_at mittente |
+| `supabase/tests/mailbox_inbox_smoke.sql` | list_inbox + unread |
+
+Gate client: `verify.sh` + `bash scripts/test.sh integration` + `bash scripts/test.sh e2e-multi`

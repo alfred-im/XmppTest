@@ -9,7 +9,7 @@
 | **ADR** | [address-based-messaging.md](../../decisions/address-based-messaging.md), [no-internal-external-chat-distinction.md](../../decisions/no-internal-external-chat-distinction.md) |
 | **PR** | #130, #134 |
 | **Supersedes** | `implementation/messages-only-inbox.md` (evidenza), modello `inbox_threads` (rimosso) |
-| **Superseded by** | — (futuro: modello caselle `mailbox-inbox-outbox-spec.md`) |
+| **Superseded by** | `MAILBOX-INBOX` (al merge implementazione mailbox) |
 
 Documento per AI — contratto inbox Alpha su `main`: aggregazione on-read su `messages`, chat per `peer_profile_id`.
 

@@ -157,3 +157,59 @@ Verifica: `supabase/tests/schema_smoke.sql`.
 ## Migrazioni
 
 Elenco completo: [alpha-pr-registry.md](../../architecture/alpha-pr-registry.md) § migrazioni.
+
+---
+
+## Target mailbox (`approved` — non su `main`)
+
+**Spec**: [MAILBOX-CORE](../capabilities/MAILBOX-CORE.spec.md), [MAILBOX-SEND](../capabilities/MAILBOX-SEND.spec.md), [MAILBOX-INBOX](../capabilities/MAILBOX-INBOX.spec.md), [MAILBOX-READ](../capabilities/MAILBOX-READ.spec.md)  
+**Status contratto**: `approved` — sostituisce sezione `messages` message-centric al merge.
+
+### Diagramma (target)
+
+```
+auth.users 1──1 profiles
+profiles 1──* messages (owner_id = archivio; author_id = autore contenuto)
+messages *── peer profiles (peer_profile_id denormalizzato)
+messages 0..1 outbox (sempre, anche internal)
+profiles 1──* sync_cursors
+bridge_jobs
+storage: chat-media, avatars
+```
+
+**Rimosso**: `message_read_receipts`, enum `message_delivery_status` su `messages`.
+
+### `messages` (ricreato)
+
+| Colonna | Tipo | Note |
+|---------|------|------|
+| `id` | uuid PK | Per owner |
+| `owner_id` | uuid FK → profiles | Archivio (`auth.uid()` in RLS) |
+| `author_id` | uuid FK → profiles | Autore originale |
+| `peer_profile_id` | uuid FK nullable | Controparte internal |
+| `peer_external_address` | text nullable | Federato futuro |
+| `logical_message_id` | uuid NOT NULL | λ — correlazione copie |
+| `client_message_id` | text nullable | Solo copia mittente |
+| `protocol` | contact_protocol | Routing recapito |
+| `body` | text | |
+| `content_type` | message_content_type | |
+| `media_url` | text nullable | Condiviso tra copie |
+| `duration_seconds`, `media_mime`, `media_size_bytes` | | voice |
+| `latitude`, `longitude` | double nullable | location |
+| `delivered_at` | timestamptz nullable | Solo righe uscita (author = owner) |
+| `read_at` | timestamptz nullable | Uscita: spunta lettura; entrata: lettura locale |
+| `failed_at` | timestamptz nullable | Invio/outbox fallito (mittente) |
+| `external_id` | text nullable | Bridge fase B |
+| `created_at` | timestamptz | |
+
+**UNIQUE**: `(owner_id, client_message_id)` WHERE `client_message_id IS NOT NULL`; `(owner_id, logical_message_id)`.
+
+**RLS**: `owner_id = auth.uid()` per SELECT/INSERT/UPDATE.
+
+### `outbox` (esteso)
+
+Popolata per **ogni** invio (internal + federato). FK `message_id` → copia **mittente**. Consumer internal: transazione RPC; federato: fase B bridge.
+
+### Migrazione prototipo
+
+Drop message-centric → ricrea → purge `chat-media` orfani (non referenziati da `messages.media_url`).
