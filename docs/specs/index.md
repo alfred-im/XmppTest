@@ -43,6 +43,15 @@ Indice capability con stato e tracciabilità PR. Contratti: [rpc.md](./contracts
 | `design/inbox-search-toggle.md` | INBOX-SEARCH |
 | `PROJECT_MAP.md` § profilo | PROFILE |
 | `architecture/mailbox-inbox-outbox-spec.md` | MAILBOX-CORE, MAILBOX-SEND, MAILBOX-INBOX, MAILBOX-READ |
+| Ricezione filtrata / blocco silenzioso | RECEPTION-ALLOWLIST |
+
+---
+
+## In approvazione / implementazione
+
+| Spec ID | Titolo | Status | File |
+|---------|--------|--------|------|
+| **RECEPTION-ALLOWLIST** | Filtro ricezione personale (allow list) | `approved` | [RECEPTION-ALLOWLIST.spec.md](./capabilities/RECEPTION-ALLOWLIST.spec.md) |
 
 ---
 

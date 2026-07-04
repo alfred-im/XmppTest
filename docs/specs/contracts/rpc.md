@@ -2,7 +2,7 @@
 
 **Ultima revisione**: 2026-07-04  
 **Status**: `implemented` (allineato a `main`, migrazioni fino a `20260704120000`)  
-**Spec**: [MAILBOX-SEND](../capabilities/MAILBOX-SEND.spec.md), [MAILBOX-INBOX](../capabilities/MAILBOX-INBOX.spec.md), [MAILBOX-READ](../capabilities/MAILBOX-READ.spec.md), [CONTACTS](../capabilities/CONTACTS.spec.md), [PROFILE](../capabilities/PROFILE.spec.md)
+**Spec**: [MAILBOX-SEND](../capabilities/MAILBOX-SEND.spec.md), [MAILBOX-INBOX](../capabilities/MAILBOX-INBOX.spec.md), [MAILBOX-READ](../capabilities/MAILBOX-READ.spec.md), [CONTACTS](../capabilities/CONTACTS.spec.md), [PROFILE](../capabilities/PROFILE.spec.md), [RECEPTION-ALLOWLIST](../capabilities/RECEPTION-ALLOWLIST.spec.md) (delta `approved`)
 
 Fonte di verità: `supabase/migrations/`. PostgREST espone solo overload **espliciti** — niente ambiguità di firma.
 
@@ -42,15 +42,20 @@ Semantica mailbox (transazione unica):
 
 1. INSERT copia mittente (`owner_id = author_id = auth.uid()`), λ nuovo, date null
 2. INSERT `outbox` (`protocol = internal`, payload con λ)
-3. INSERT copia destinatario (stesso λ, stesso contenuto/`media_url`)
-4. UPDATE mittente `delivered_at = now()`
-5. RETURN riga mittente
+3. **Gate allow list** [RECEPTION-ALLOWLIST](../capabilities/RECEPTION-ALLOWLIST.spec.md): mittente ∈ `reception_allowlist` del destinatario?
+4. Se **sì**: INSERT copia destinatario (stesso λ, stesso contenuto/`media_url`); UPDATE mittente `delivered_at = now()`
+5. Se **no**: skip copia destinatario; `delivered_at` resta null; outbox `completed` (rifiuto silenzioso)
+6. RETURN riga mittente (sempre successo se validazione ok)
+
+Lista allow vuota → passo 3 sempre **no** (nessuno consentito).
 
 Idempotenza: stesso `p_client_message_id` → stessa riga mittente (no duplicati).
 
-**MUST NOT**: promozione `delivered` senza outbox e copia destinatario; trigger `on_message_inserted` legacy.
+**MUST NOT**: promozione `delivered` senza copia destinatario materializzata; errore RPC verso mittente su rifiuto allow list; trigger `on_message_inserted` legacy.
 
-**Migrazioni**: `20260627210000`, `20260627220000` (drop overload 5-arg), `20260627120100` (voice), `20260702120100` (location), `20260704120000` (mailbox).
+**Helper** (da implementare): `is_sender_allowed_for_reception(owner_id, sender_profile_id) → boolean`.
+
+**Migrazioni**: `20260627210000`, `20260627220000` (drop overload 5-arg), `20260627120100` (voice), `20260702120100` (location), `20260704120000` (mailbox); **pending** allow list gate.
 
 ---
 
@@ -167,6 +172,7 @@ Gate client: `verify.sh` + `bash scripts/test.sh integration` + `bash scripts/te
 | `mark_peer_read` | `InboxService.markPeerRead` |
 | `find_profile_by_username` | `ComposeService` / profile lookup |
 | `search_profiles` | `ContactService.searchProfiles` |
+| `reception_allowlist` (PostgREST) | `ReceptionAllowlistService` (da implementare) |
 
 ---
 

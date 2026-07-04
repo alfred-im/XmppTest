@@ -30,7 +30,7 @@ L’utente invia a un account Alfred (`peer_profile_id`). Il server crea la copi
 | **MAILBOX-SEND-REQ-001** | Unico RPC invio: `send_message_to_profile` — firma invariata PostgREST — [contracts/rpc.md](../contracts/rpc.md) § mailbox |
 | **MAILBOX-SEND-REQ-002** | Accettazione: INSERT copia mittente (`owner_id = author_id = auth.uid()`), `delivered_at`/`read_at` null, λ assegnato |
 | **MAILBOX-SEND-REQ-003** | **Outbox sempre**: INSERT `outbox` per ogni invio, incluso `protocol = internal` |
-| **MAILBOX-SEND-REQ-004** | Driver internal (stessa transazione RPC): materializza copia destinatario + valorizza `delivered_at` su copia mittente (match λ) |
+| **MAILBOX-SEND-REQ-004** | Driver internal (stessa transazione RPC): **se** mittente ∈ [RECEPTION-ALLOWLIST](./RECEPTION-ALLOWLIST.spec.md) del destinatario → materializza copia destinatario + valorizza `delivered_at` su copia mittente (match λ); **altrimenti** skip copia destinatario, `delivered_at` null, RPC successo (rifiuto silenzioso) |
 | **MAILBOX-SEND-REQ-005** | Idempotenza: retry stesso `(owner_id, client_message_id)` → stessa riga mittente, no duplicati |
 | **MAILBOX-SEND-REQ-006** | Tipi `content_type`: `text`, `gif`, `voice`, `location` — validazione invariata da Alpha pre-#159 |
 | **MAILBOX-SEND-REQ-007** | Upload media prima RPC: bucket `chat-media` `{auth.uid()}/{uuid}.*` |
@@ -73,10 +73,16 @@ L’utente invia a un account Alfred (`peer_profile_id`). Il server crea la copi
 send_message_to_profile
   → INSERT messages (owner=mittente, author=mittente, λ, peer=dest)
   → INSERT outbox (protocol=internal, payload con λ)
-  → INSERT messages (owner=destinatario, author=mittente, stesso λ, stesso contenuto/media_url)
-  → UPDATE messages SET delivered_at=now() WHERE owner=mittente AND λ
+  → SE mittente allowed per destinatario (reception_allowlist):
+       INSERT messages (owner=destinatario, author=mittente, stesso λ, stesso contenuto/media_url)
+       UPDATE messages SET delivered_at=now() WHERE owner=mittente AND λ
+     ALTRIMENTI:
+       (nessuna copia destinatario; delivered_at resta null)
+  → outbox completed
   → RETURN riga mittente
 ```
+
+Vedi [RECEPTION-ALLOWLIST](./RECEPTION-ALLOWLIST.spec.md).
 
 ### 4.2 Client
 
@@ -122,5 +128,6 @@ Gate: `verify.sh` + `integration` + `e2e-multi`
 |-----------|--------|
 | [MAILBOX-CORE](./MAILBOX-CORE.spec.md) | Schema e λ |
 | [MAILBOX-READ](./MAILBOX-READ.spec.md) | `read_at` |
+| [RECEPTION-ALLOWLIST](./RECEPTION-ALLOWLIST.spec.md) | Gate recapito destinatario |
 
 **Codice target**: `supabase/migrations/`, `message_service.dart`, `outbound_message_queue.dart`

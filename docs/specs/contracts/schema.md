@@ -1,7 +1,7 @@
 # Contratto schema — dominio Alpha (mailbox)
 
 **Ultima revisione**: 2026-07-04  
-**Status**: `implemented` (allineato a `main`, migrazioni fino a `20260704120000`)  
+**Status**: `implemented` + delta `approved` [RECEPTION-ALLOWLIST](../capabilities/RECEPTION-ALLOWLIST.spec.md) (migrazione da applicare)  
 **Fonte di verità**: `supabase/migrations/`
 
 Contratto **tabelle ed enum** usati dalle capability spec. Per RPC: [rpc.md](./rpc.md). Per capability: [index.md](../index.md).
@@ -13,6 +13,7 @@ Contratto **tabelle ed enum** usati dalle capability spec. Per RPC: [rpc.md](./r
 ```
 auth.users 1──1 profiles
 profiles 1──* contacts (owner_id)
+profiles 1──* reception_allowlist (owner_id → allowed_profile_id)
 profiles 1──* messages (owner_id = archivio; author_id = autore contenuto)
 messages *── peer profiles (peer_profile_id denormalizzato)
 messages 0..1 outbox (sempre, anche internal)
@@ -71,6 +72,25 @@ storage: chat-media, avatars
 **RLS**: CRUD `owner_id = auth.uid()`.
 
 **Spec**: [CONTACTS.spec.md](../capabilities/CONTACTS.spec.md).
+
+---
+
+## `reception_allowlist` (delta `approved`)
+
+| Colonna | Tipo | Note |
+|---------|------|------|
+| `id` | uuid PK | |
+| `owner_id` | uuid FK → profiles | Destinatario che filtra |
+| `allowed_profile_id` | uuid FK → profiles | Mittente consentito |
+| `created_at` | timestamptz | default `now()` |
+
+**UNIQUE**: `(owner_id, allowed_profile_id)`.
+
+**CHECK**: `allowed_profile_id IS NOT NULL` AND `allowed_profile_id <> owner_id`.
+
+**RLS**: CRUD `owner_id = auth.uid()`.
+
+**Spec**: [RECEPTION-ALLOWLIST.spec.md](../capabilities/RECEPTION-ALLOWLIST.spec.md).
 
 ---
 
