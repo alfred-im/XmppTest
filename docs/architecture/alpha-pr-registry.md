@@ -1,6 +1,6 @@
 # Registro PR Alpha Flutter (main)
 
-**Ultimo aggiornamento**: 2026-07-03 (SDD + revisione sync #108–#153)  
+**Ultimo aggiornamento**: 2026-07-04 (mailbox #158–#159)  
 **Scope**: PR mergiate su `main` dopo migrazione Flutter — riferimento per allineamento documentazione.
 
 Documento per AI. Ogni PR deve riflettersi in: `PROJECT_MAP.md`, `CHANGELOG.md`, `docs/architecture/alpha-full-stack.md` (e fix dedicato se applicabile).
@@ -50,6 +50,8 @@ Documento per AI. Ogni PR deve riflettersi in: `PROJECT_MAP.md`, `CHANGELOG.md`,
 | **#150** | Regole conferma agente | Conferma scrittura solo dopo domanda esplicita | — | `.cursor-rules.md` |
 | **#152** | Una GoTrue attiva | Fix BroadcastChannel web; `setFocus` swap | AUTH-MULTI | `multi-account-single-active-gotrue-pr152.md` |
 | **#153** | Posizione statica | `content_type=location`; mappa OSM in bolla | MSG-SEND | `location-sharing.md`, `alpha-full-stack.md` §2.13 |
+| **#158** | Spec MAILBOX-* (SDD) | Spec capability `MAILBOX-CORE/SEND/INBOX/READ` approved | MAILBOX-* | `docs/specs/capabilities/MAILBOX-*.spec.md` — **incorporata in #159** |
+| **#159** | Modello caselle mailbox | Drop/recreate `messages` per-owner; outbox sempre; `delivered_at`/`read_at`; client + test | MAILBOX-* | `mailbox-inbox-outbox-spec.md`, migrazione `20260704120000` |
 
 ---
 
@@ -95,6 +97,7 @@ Dopo ogni merge su `main`:
 | `20260628100000_inbox_peer_profile_fields.sql` | #134 | Avatar/pronouns peer in `list_inbox` |
 | `20260702120000_message_location_support.sql` | #153 | Enum `location` (step 1) |
 | `20260702120100_message_location_support.sql` | #153 | Lat/lng, RPC 10 arg, preview inbox |
+| `20260704120000_mailbox_per_owner_archive.sql` | #159 | Modello caselle: archivio per `owner_id`, outbox sempre, spunte date |
 
 ---
 

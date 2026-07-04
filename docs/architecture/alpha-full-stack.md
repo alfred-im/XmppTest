@@ -1,8 +1,8 @@
 # Alfred Alpha — Architettura (panoramica)
 
-**Data**: 2026-07-03  
+**Data**: 2026-07-04  
 **Scope**: App completa **senza bridge** (XMPP/Matrix restano stub Fly.io)  
-**Stato**: PR Alpha **#108–#153** su `main`  
+**Stato**: PR Alpha **#108–#159** su `main`  
 **Registro PR**: [alpha-pr-registry.md](./alpha-pr-registry.md)
 
 > **Contratti capability**: [docs/specs/index.md](../specs/index.md) — fonte canonica per inbox, invio, spunte, profilo, rubrica, multi-account.  
@@ -77,24 +77,22 @@ client/lib/
 | Area | Spec | Note |
 |------|------|------|
 | Multi-account, overlay auth | [AUTH-MULTI](../specs/capabilities/AUTH-MULTI.spec.md) | PR #140, #147, #152 |
-| Inbox on-read, `ChatPeer` | [MSG-INBOX](../specs/capabilities/MSG-INBOX.spec.md) | PR #130 |
-| Invio testo/GIF/voice/location | [MSG-SEND](../specs/capabilities/MSG-SEND.spec.md) | PR #115, #126, #153 |
-| Spunte delivered/read | [MSG-READ](../specs/capabilities/MSG-READ.spec.md) | PR #122 |
+| Archivio per owner, outbox sempre | [MAILBOX-CORE](../specs/capabilities/MAILBOX-CORE.spec.md) | PR #159 |
+| Inbox on-read, `ChatPeer` | [MAILBOX-INBOX](../specs/capabilities/MAILBOX-INBOX.spec.md) | PR #159 (ex MSG-INBOX) |
+| Invio testo/GIF/voice/location | [MAILBOX-SEND](../specs/capabilities/MAILBOX-SEND.spec.md) | PR #159 (ex MSG-SEND) |
+| Spunte delivered/read (`delivered_at`/`read_at`) | [MAILBOX-READ](../specs/capabilities/MAILBOX-READ.spec.md) | PR #159 (ex MSG-READ) |
 | Ricerca conversazioni | [INBOX-SEARCH](../specs/capabilities/INBOX-SEARCH.spec.md) | PR #132 |
 | Profilo, avatar, pronomi | [PROFILE](../specs/capabilities/PROFILE.spec.md) | PR #118, #134 |
 | Rubrica | [CONTACTS](../specs/capabilities/CONTACTS.spec.md) | PR #109 |
+
+Spec `MSG-INBOX` / `MSG-SEND` / `MSG-READ`: **`superseded`** da `MAILBOX-*` (storico PR #115–#153).
 
 ### UI cross-cutting (senza spec capability dedicata)
 
 | Area | Documento |
 |------|-----------|
 | Scroll ancorato chat | [conversation-bottom-anchor.md](../design/conversation-bottom-anchor.md) (PR #125) |
-
-### Target futuro
-
-| Area | Documento |
-|------|-----------|
-| Modello caselle | [mailbox-inbox-outbox-spec.md](./mailbox-inbox-outbox-spec.md) — migrare in `docs/specs/capabilities/` all’implementazione |
+| ADR modello caselle | [mailbox-inbox-outbox-spec.md](./mailbox-inbox-outbox-spec.md) (PR #123, #136, #159) |
 
 ---
 
@@ -107,12 +105,13 @@ Migrazioni: [alpha-pr-registry.md](./alpha-pr-registry.md) § migrazioni
 ### Integrazione bridge (non implementata)
 
 ```
-Client → send_message_to_profile → messages
-                                 → outbox (queued)  ← bridge worker
-Bridge → aggiorna delivery_status, external_id, sync_cursors
+Client → send_message_to_profile → outbox (sempre)
+                                 → copia archivio mittente
+                                 → copia archivio destinatario (+ delivered_at)
+Bridge → claim outbox; aggiorna external_id, sync_cursors
 ```
 
-Vedi [bridge-stateless.md](../decisions/bridge-stateless.md). PostgREST: **un solo overload** di `send_message_to_profile`.
+Vedi [bridge-stateless.md](../decisions/bridge-stateless.md), [mailbox-inbox-outbox-spec.md](./mailbox-inbox-outbox-spec.md). PostgREST: **un solo overload** di `send_message_to_profile`.
 
 ---
 
@@ -134,7 +133,7 @@ Vedi [bridge-stateless.md](../decisions/bridge-stateless.md). PostgREST: **un so
 | E2E | `client/e2e/` |
 | SQL smoke | `supabase/tests/` |
 
-Tracciabilità requisiti → test: sezione **Tracciabilità** in ogni spec (pilota: MSG-SEND).
+Tracciabilità requisiti → test: sezione **Tracciabilità** in ogni spec (pilota: MAILBOX-SEND).
 
 ---
 
@@ -168,9 +167,8 @@ Dettaglio deploy: `PROJECT_MAP.md` § Build, workflow `.github/workflows/deploy-
 ## 9. Prossimi passi (post-bridge)
 
 1. Worker bridge: claim `outbox`
-2. Ingestione inbound → `messages` + Realtime
-3. Spunte XEP-0184/0333
-4. Spec `MAILBOX-*` se si implementa modello caselle
+2. Ingestione inbound → copie archivio destinatario + Realtime
+3. Spunte XEP-0184/0333 via bridge
 
 ---
 

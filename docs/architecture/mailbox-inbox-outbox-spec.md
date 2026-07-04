@@ -1,10 +1,10 @@
 # Proposta — modello caselle (direzione)
 
 **Ultima revisione**: 2026-07-04  
-**Status**: 🟡 **Direzione confermata** — spec SDD `MAILBOX-*` **`approved`** (2026-07-04); implementazione su dev; **non** ancora su `main`  
+**Status**: ✅ **Implementato su `main`** (PR #159) — spec SDD `MAILBOX-*` `implemented`  
 **Audience**: AI / implementazione
 
-**Su `main` oggi** vale ancora [address-based-messaging.md](../decisions/address-based-messaging.md). Questo file descrive il **target** concordato; all’implementazione **sostituisce** quell’ADR.
+**Su `main`** vale il modello caselle descritto qui e nelle spec `MAILBOX-*`. L’ADR storico [address-based-messaging.md](../decisions/address-based-messaging.md) resta riferimento per indirizzamento e rubrica isolata; le spec `MSG-*` sono `superseded`.
 
 ---
 

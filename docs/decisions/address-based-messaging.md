@@ -1,9 +1,10 @@
 # Messaggistica per indirizzo (username / username@server)
 
-> **Contratto capability**: [MSG-INBOX.spec.md](../specs/capabilities/MSG-INBOX.spec.md), [MSG-SEND.spec.md](../specs/capabilities/MSG-SEND.spec.md), [CONTACTS.spec.md](../specs/capabilities/CONTACTS.spec.md) — questo ADR resta vincolante; le spec consolidano il contratto operativo.
+> **Contratto capability (storico)**: [MSG-INBOX.spec.md](../specs/capabilities/MSG-INBOX.spec.md), [MSG-SEND.spec.md](../specs/capabilities/MSG-SEND.spec.md) — **`superseded`** da [MAILBOX-INBOX](../specs/capabilities/MAILBOX-INBOX.spec.md), [MAILBOX-SEND](../specs/capabilities/MAILBOX-SEND.spec.md) (PR #159).  
+> **Rubrica**: [CONTACTS.spec.md](../specs/capabilities/CONTACTS.spec.md). Questo ADR resta vincolante per **indirizzamento** e **isolamento rubrica**; l’archivio messaggi è per-owner (vedi [mailbox-inbox-outbox-spec.md](../architecture/mailbox-inbox-outbox-spec.md)).
 
 **Data**: 2026-06-27  
-**Status**: ✅ Accettata — **regola vincolante**  
+**Status**: ✅ Accettata — **regola vincolante** (indirizzo + rubrica); schema messaggi → MAILBOX-*  
 **Categoria**: Chat, inbox, rubrica, client, piattaforma  
 **Correlata**: [no-internal-external-chat-distinction.md](./no-internal-external-chat-distinction.md), [server-as-reception.md](./server-as-reception.md)
 

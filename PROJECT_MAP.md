@@ -1,7 +1,7 @@
 # Alfred - Mappa Completa del Progetto
 
-**Ultimo aggiornamento**: 2026-07-03 (SDD specs + posizione statica #153)  
-**Versione repository**: 3.1.0-alpha (client Flutter + piattaforma Supabase; bridge stub)
+**Ultimo aggiornamento**: 2026-07-04 (modello caselle mailbox #159)  
+**Versione repository**: 3.2.0-alpha (client Flutter + piattaforma Supabase; bridge stub)
 
 ---
 
@@ -20,7 +20,7 @@
 
 ---
 
-## ⚠️ Stato repository (2026-07-03)
+## ⚠️ Stato repository (2026-07-04)
 
 | Elemento | Dettaglio |
 |----------|-----------|
@@ -31,8 +31,8 @@
 **Non deducibile — URL Alpha ≠ branch `main`**: https://alfred-im.github.io/XmppTest/ pubblica l’**ultimo** `deploy-alpha` riuscito (PR o push). **Non** è vero che «il sito live builda sempre da `main`». Per sapere quale codice è live, controllare quale workflow/PR ha deployato per ultimo (`concurrency: pages-alpha` → ultimo vince).
 | **Piattaforma** | Supabase `tvwpoxxcqwphryvuyqzu` — schema dominio + RLS + RPC |
 | **Bridge** | `bridge-xmpp/` · `bridge-matrix/` — stub health Fly.io (federazione non implementata) |
-| **PR Alpha** | **#108–#153** su `main` — registro `docs/architecture/alpha-pr-registry.md` |
-| **Spec (SDD)** | Contratti capability: `docs/specs/index.md` — catalogo completo message-centric (8 spec + rpc) |
+| **PR Alpha** | **#108–#159** su `main` — registro `docs/architecture/alpha-pr-registry.md` |
+| **Spec (SDD)** | Contratti capability: `docs/specs/index.md` — `MAILBOX-*` `implemented`; `MSG-*` `superseded` |
 
 **Stack su `main`**: `client/` · `supabase/` · `bridge-xmpp/` · `bridge-matrix/`
 
@@ -47,11 +47,11 @@
 - **Auth**: email + password (GoTrue); **username** obbligatorio in registrazione — identità IM pubblica; email non in rubrica/ricerca
 - **Multi-account**: manifest con tutti gli account aperti; **una** sessione GoTrue in RAM (focus); switch = focus UI + restore connessione — ADR `docs/decisions/multi-account-parallel-sessions.md` · fix web PR #152
 - **Contatti**: rubrica opzionale (interni + federati), **isolata** dalla messaggistica — spec `docs/specs/capabilities/CONTACTS.spec.md` · ADR `docs/decisions/address-based-messaging.md`
-- **Messaggistica per indirizzo**: `username` (Alfred) o `user@server` (esterno, `unsupported` in Alpha); solo `messages` + `profiles`; inbox = `list_inbox()` on-read; chat per `peer_profile_id`
+- **Messaggistica per indirizzo**: `username` (Alfred) o `user@server` (esterno, `unsupported` in Alpha); archivio **per owner** in `messages` (`owner_id`, `author_id`, `peer_profile_id`); inbox = `list_inbox()` on-read sul mio archivio; chat per `peer_profile_id`
 - **Inbox + chat realtime**: Postgres + Realtime; ricerca conversazioni on-demand (PR #132)
 - **GIF / voice / location**: bucket `chat-media` per media; posizione statica (lat/lng in Postgres); `OutboundMessageQueue` per retry client
 - **Federazione**: outbox `queued` — attende bridge
-- **Spunte**: `delivered` su insert server · `mark_peer_read` → `read` — `docs/decisions/server-as-reception.md`
+- **Spunte**: `delivered_at` / `read_at` nullable su copia archivio · `mark_peer_read` aggiorna lettura locale + segnale su copia mittente — spec `MAILBOX-READ`
 - **Brand**: `#2D2926`, layout responsive stile WhatsApp Web
 
 ### Tecnologie
@@ -84,7 +84,7 @@
 - **Bridge stateless**: `docs/decisions/bridge-stateless.md`
 - **Chat unificate** (nessuna distinzione interna/esterna): `docs/decisions/no-internal-external-chat-distinction.md`
 - **Dettaglio completo**: `docs/architecture/alpha-full-stack.md`
-- **Target caselle** (direzione confermata, non su `main`): `docs/architecture/mailbox-inbox-outbox-spec.md` — archivio per owner + outbox sempre; sostituirà ADR message-centric a implementazione
+- **Modello caselle (mailbox)**: `docs/architecture/mailbox-inbox-outbox-spec.md` — archivio per owner + outbox sempre; spec `MAILBOX-*` in `docs/specs/capabilities/` (PR #159)
 
 ---
 
@@ -155,7 +155,7 @@ Avvio container: `scripts/start-bridges.sh`.
 
 ## 💾 Database e Storage
 
-**Fonte di verità messaggistica**: tabella `messages` + `profiles`. Inbox = aggregazione on-read (`list_inbox()`), nessuna tabella/cache inbox.
+**Fonte di verità messaggistica**: tabella `messages` (archivio per `owner_id`) + `profiles`. Inbox = aggregazione on-read (`list_inbox()` sul mio archivio), nessuna tabella/cache inbox. Invio: outbox sempre → materializzazione copie mittente/destinatario in una RPC.
 
 | Storage | Uso |
 |---------|-----|
@@ -181,7 +181,7 @@ bash scripts/verify.sh --build   # + build web
 - CI: `.github/workflows/deploy-pages.yml` → `deploy-alpha` → GitHub Pages
 - **Vincolo GitHub**: Environment `github-pages` → *Deployment branches: All branches* (deploy da PR)
 - E2E: `client/e2e/` (Playwright)
-- SQL smoke: `supabase/tests/schema_smoke.sql`
+- SQL smoke: `supabase/tests/schema_smoke.sql`, `mailbox_schema_smoke.sql`, `mailbox_send_smoke.sql`
 
 ---
 
@@ -193,6 +193,7 @@ bash scripts/verify.sh --build   # + build web
 |------|-------|
 | Auth, profilo, multi-account | ✅ |
 | Contatti, inbox, chat testo/GIF/voice/location | ✅ |
+| Modello caselle (mailbox per-owner, outbox sempre) | ✅ |
 | Ricerca inbox on-demand, aggancio al fondo | ✅ |
 | Schema Supabase + RLS + RPC | ✅ |
 | Deploy Pages + gate `verify.sh` | ✅ |
@@ -213,9 +214,9 @@ bash scripts/verify.sh --build   # + build web
 
 ## 🔄 Ultima Revisione
 
-**Data**: 2026-07-03
+**Data**: 2026-07-04
 
-- Revisione documentazione: sync PR #108–#153, rimozione doc legacy React (ADR XMPP/IndexedDB)
-- Condivisione posizione statica (#153); multi-account stabile (#147/#152)
+- Modello caselle mailbox (#159): migrazione `20260704120000`, spec `MAILBOX-*`, client allineato (`delivered_at`/`read_at`)
+- Revisione precedente: sync PR #108–#153; posizione statica (#153); multi-account (#147/#152)
 
 **Riferimenti**: `docs/INDICE.md`, `docs/architecture/alpha-pr-registry.md`, `CHANGELOG.md`
