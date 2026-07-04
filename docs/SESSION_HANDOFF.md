@@ -1,4 +1,4 @@
-# Handoff sessione — 2026-07-03
+# Handoff sessione — 2026-07-04
 
 Documento per AI — **leggere prima di task multi-account o messaggistica**.
 
@@ -8,9 +8,10 @@ Documento per AI — **leggere prima di task multi-account o messaggistica**.
 
 | Item | Valore |
 |------|--------|
-| Branch `main` | PR Alpha **#108–#153** |
+| Branch `main` | PR Alpha **#108–#159** (mailbox #159) |
 | Alpha live | https://alfred-im.github.io/XmppTest/ — ultimo `deploy-alpha` riuscito |
 | Multi-account | Manifest tutti gli account; **una** GoTrue in RAM (focus) |
+| Messaggistica | Modello **caselle** (`MAILBOX-*`): archivio per `owner_id`, outbox sempre, spunte `delivered_at`/`read_at` |
 | Chat media | Testo, GIF, voice (WebM), location (OSM) |
 
 ---
@@ -34,6 +35,7 @@ Documento per AI — **leggere prima di task multi-account o messaggistica**.
 3. `docs/fixes/multi-account-single-active-gotrue-pr152.md` — fix web switch inbox
 4. `docs/implementation/multi-account-persistence-redesign.md` — persistenza (implementato)
 5. `docs/architecture/alpha-pr-registry.md` — registro PR → doc
+6. `docs/architecture/mailbox-inbox-outbox-spec.md` + `docs/specs/capabilities/MAILBOX-*.spec.md` — messaggistica caselle (PR #159)
 
 ---
 

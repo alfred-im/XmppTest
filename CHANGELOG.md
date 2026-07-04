@@ -23,6 +23,15 @@ Modifiche rilevanti al progetto per tracciare evoluzione tecnica e decisioni imp
 
 ## [Unreleased]
 
+### Aggiunto (2026-07-04 — modello caselle mailbox, PR #159)
+
+- **Migrazione** `20260704120000_mailbox_per_owner_archive.sql`: drop/recreate `messages` con archivio per `owner_id`, `author_id`, `peer_profile_id`, `logical_message_id`, `delivered_at`/`read_at`; rimozione `message_read_receipts` e enum `delivery_status`
+- **RPC**: `send_message_to_profile` (outbox sempre + copie mittente/destinatario in transazione), `list_inbox`, `list_peer_messages`, `mark_peer_read` riscritti per mailbox
+- **Spec SDD**: `MAILBOX-CORE`, `MAILBOX-SEND`, `MAILBOX-INBOX`, `MAILBOX-READ` → `implemented`; `MSG-INBOX`/`MSG-SEND`/`MSG-READ` → `superseded`
+- **Client**: modelli e servizi allineati (`owner_id` realtime, spunte da date); integrazione multi-account estesa (delivered/read pipeline)
+- **Test SQL**: `mailbox_schema_smoke.sql`, `mailbox_send_smoke.sql`; aggiornato `schema_smoke.sql`
+- **Doc**: `PROJECT_MAP`, `alpha-full-stack`, `alpha-pr-registry`, `mailbox-inbox-outbox-spec`, `contracts/schema.md` / `rpc.md`
+
 ### Documentazione (2026-07-03 — REQ-ID MSG-INBOX + MSG-READ)
 
 - Tabella REQ-ID + tracciabilità in `MSG-INBOX.spec.md`, `MSG-READ.spec.md`

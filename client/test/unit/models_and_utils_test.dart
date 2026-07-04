@@ -17,6 +17,30 @@ void main() {
       expect(messageStatusFromDelivery('pending'), MessageStatus.pending);
       expect(messageStatusFromDelivery(null), MessageStatus.sent);
     });
+
+    test('maps mailbox timestamps for outgoing', () {
+      final now = DateTime.now().toUtc();
+      expect(
+        messageStatusFromMailbox(isMine: true, deliveredAt: null, readAt: null),
+        MessageStatus.sent,
+      );
+      expect(
+        messageStatusFromMailbox(isMine: true, deliveredAt: now, readAt: null),
+        MessageStatus.delivered,
+      );
+      expect(
+        messageStatusFromMailbox(
+          isMine: true,
+          deliveredAt: now,
+          readAt: now,
+        ),
+        MessageStatus.read,
+      );
+      expect(
+        messageStatusFromMailbox(isMine: false, deliveredAt: now, readAt: now),
+        MessageStatus.sent,
+      );
+    });
   });
 
   group('MessageContentType', () {
@@ -125,31 +149,43 @@ void main() {
   });
 
   group('ChatMessage.fromJson', () {
-    test('detects mine vs theirs', () {
+    test('detects mine vs theirs from author_id', () {
       final message = ChatMessage.fromJson(
         json: {
           'id': '1',
           'body': 'ciao',
           'created_at': DateTime.now().toUtc().toIso8601String(),
-          'sender_id': 'user-a',
-          'delivery_status': 'sent',
+          'author_id': 'user-a',
+          'delivered_at': null,
+          'read_at': null,
         },
         currentUserId: 'user-a',
       );
       expect(message.isMine, isTrue);
+      expect(message.status, MessageStatus.sent);
 
       final incoming = ChatMessage.fromJson(
         json: {
           'id': '2',
           'body': 'risposta',
           'created_at': DateTime.now().toUtc().toIso8601String(),
-          'sender_id': 'user-b',
-          'delivery_status': 'read',
+          'author_id': 'user-b',
         },
         currentUserId: 'user-a',
       );
       expect(incoming.isMine, isFalse);
-      expect(incoming.status, MessageStatus.read);
+
+      final delivered = ChatMessage.fromJson(
+        json: {
+          'id': '3',
+          'body': 'out',
+          'created_at': DateTime.now().toUtc().toIso8601String(),
+          'author_id': 'user-a',
+          'delivered_at': DateTime.now().toUtc().toIso8601String(),
+        },
+        currentUserId: 'user-a',
+      );
+      expect(delivered.status, MessageStatus.delivered);
     });
 
     test('parses gif messages', () {
@@ -160,8 +196,7 @@ void main() {
           'content_type': 'gif',
           'media_url': 'https://example.com/fun.gif',
           'created_at': DateTime.now().toUtc().toIso8601String(),
-          'sender_id': 'user-b',
-          'delivery_status': 'sent',
+          'author_id': 'user-b',
         },
         currentUserId: 'user-a',
       );
@@ -180,8 +215,7 @@ void main() {
           'media_mime': 'audio/webm',
           'media_size_bytes': 12000,
           'created_at': DateTime.now().toUtc().toIso8601String(),
-          'sender_id': 'user-b',
-          'delivery_status': 'sent',
+          'author_id': 'user-b',
         },
         currentUserId: 'user-a',
       );

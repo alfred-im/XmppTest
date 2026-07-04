@@ -15,9 +15,13 @@ Indice documenti tecnici per navigazione rapida. Documento per AI, non per utent
 
 | Spec | Stato | Contenuto |
 |------|-------|-----------|
-| [MSG-INBOX](./specs/capabilities/MSG-INBOX.spec.md) | `implemented` | Inbox on-read, `ChatPeer`, realtime |
-| [MSG-SEND](./specs/capabilities/MSG-SEND.spec.md) | `implemented` | Invio testo/GIF/voice/location, coda retry |
-| [MSG-READ](./specs/capabilities/MSG-READ.spec.md) | `implemented` | Spunte delivered/read, `mark_peer_read` |
+| [MAILBOX-CORE](./specs/capabilities/MAILBOX-CORE.spec.md) | `implemented` | Archivio per owner, outbox sempre, `logical_message_id` |
+| [MAILBOX-INBOX](./specs/capabilities/MAILBOX-INBOX.spec.md) | `implemented` | Inbox on-read sul mio archivio, `ChatPeer`, realtime |
+| [MAILBOX-SEND](./specs/capabilities/MAILBOX-SEND.spec.md) | `implemented` | Invio testo/GIF/voice/location, pipeline outbox |
+| [MAILBOX-READ](./specs/capabilities/MAILBOX-READ.spec.md) | `implemented` | Spunte `delivered_at`/`read_at`, `mark_peer_read` |
+| [MSG-INBOX](./specs/capabilities/MSG-INBOX.spec.md) | `superseded` | → MAILBOX-INBOX |
+| [MSG-SEND](./specs/capabilities/MSG-SEND.spec.md) | `superseded` | → MAILBOX-SEND |
+| [MSG-READ](./specs/capabilities/MSG-READ.spec.md) | `superseded` | → MAILBOX-READ |
 | [INBOX-SEARCH](./specs/capabilities/INBOX-SEARCH.spec.md) | `implemented` | Ricerca conversazioni on-demand |
 | [PROFILE](./specs/capabilities/PROFILE.spec.md) | `implemented` | Profilo, avatar, pronomi, `ProfileSummary` |
 | [CONTACTS](./specs/capabilities/CONTACTS.spec.md) | `implemented` | Rubrica personale (isolata da chat) |
@@ -25,7 +29,7 @@ Indice documenti tecnici per navigazione rapida. Documento per AI, non per utent
 | [contracts/rpc.md](./specs/contracts/rpc.md) | `implemented` | Firme RPC messaggistica |
 | [contracts/schema.md](./specs/contracts/schema.md) | `implemented` | Schema DB, enum, RLS, storage |
 
-Target futuro caselle: [architecture/mailbox-inbox-outbox-spec.md](./architecture/mailbox-inbox-outbox-spec.md) (non ancora spec capability).
+ADR e panoramica: [architecture/mailbox-inbox-outbox-spec.md](./architecture/mailbox-inbox-outbox-spec.md) (PR #159).
 
 ---
 
@@ -98,4 +102,4 @@ Target futuro caselle: [architecture/mailbox-inbox-outbox-spec.md](./architectur
 
 ---
 
-**Ultimo aggiornamento**: 2026-07-03 — CONTACTS spec; catalogo SDD completo (message-centric)
+**Ultimo aggiornamento**: 2026-07-04 — MAILBOX-* implemented; MSG-* superseded

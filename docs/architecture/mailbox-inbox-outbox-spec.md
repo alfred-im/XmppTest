@@ -1,10 +1,10 @@
 # Proposta — modello caselle (direzione)
 
-**Ultima revisione**: 2026-06-29  
-**Status**: 🟡 **Direzione confermata** — da implementare su dev; **non** ancora su `main`  
+**Ultima revisione**: 2026-07-04  
+**Status**: ✅ **Implementato su `main`** (PR #159) — spec SDD `MAILBOX-*` `implemented`  
 **Audience**: AI / implementazione
 
-**Su `main` oggi** vale ancora [address-based-messaging.md](../decisions/address-based-messaging.md). Questo file descrive il **target** concordato; all’implementazione **sostituisce** quell’ADR.
+**Su `main`** vale il modello caselle descritto qui e nelle spec `MAILBOX-*`. L’ADR storico [address-based-messaging.md](../decisions/address-based-messaging.md) resta riferimento per indirizzamento e rubrica isolata; le spec `MSG-*` sono `superseded`.
 
 ---
 
@@ -193,6 +193,7 @@ Quando si implementa: **migra e basta** — DB solo dev, niente produzione da pr
 - 2026-06-27: su `main` implementato message-centric (PR #130) — percorso diverso, temporaneo.
 - 2026-06-28: direzione caselle confermata; Q&A identità, outbox sempre, media condivisi/GC, **spunte = segnali** (modello XMPP/Matrix) confermato.
 - 2026-06-29: identificatori a livelli distinti (`id` / `client_message_id` / λ / `external_id`), idempotenza per operazione, consegna parziale = stato normale pipeline.
+- 2026-07-04: discovery chiuso; spec SDD `MAILBOX-CORE/SEND/INBOX/READ` approved; spunte v1 = `delivered_at`/`read_at` (no enum status); federato UI blocked v1.
 
 ---
 
