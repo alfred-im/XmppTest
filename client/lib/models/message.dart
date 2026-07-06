@@ -98,7 +98,10 @@ class ChatMessage {
   final DateTime? readAt;
   final DateTime? failedAt;
 
-  /// Profilo da mostrare come autore del contenuto.
+  /// Chi ha scritto il contenuto — campo canonico (sempre valorizzato nei flussi gruppo).
+  String? get contentAuthorId => originalAuthorId;
+
+  /// Etichetta autore in UI; fallback `author_id` solo per chat private legacy.
   String? get displayAuthorId => originalAuthorId ?? authorId;
 
   /// Back-compat for code that still reads [senderId].

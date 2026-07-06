@@ -108,7 +108,7 @@ class GroupMessagesController extends ChangeNotifier {
 
   Future<List<ChatMessage>> _enrichMessages(List<ChatMessage> source) async {
     final authorIds = source
-        .map((m) => m.displayAuthorId)
+        .map((m) => m.contentAuthorId ?? m.authorId)
         .whereType<String>()
         .where((id) => id != userId)
         .toSet()
@@ -133,7 +133,7 @@ class GroupMessagesController extends ChangeNotifier {
   }
 
   String? _labelFor(ChatMessage message, Map<String, ProfileSummary> byId) {
-    final id = message.displayAuthorId;
+    final id = message.contentAuthorId ?? message.authorId;
     if (id == null) return null;
     if (id == userId) return 'Tu';
     final profile = byId[id];

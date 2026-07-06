@@ -63,11 +63,17 @@ Se `p_recipient_profile_id` ha `profile_kind = group`:
 
 1. Stessi passi 1–2 (copia mittente umano, outbox, λ)
 2. Gate allow list bidirezionale mittente ↔ gruppo
-3. Se **sì**: INSERT storico gruppo (`owner_id = gruppo`, `author_id = mittente`, `peer_profile_id = mittente`); `delivered_at` su copia mittente
+3. Se **sì**: INSERT storico gruppo (`owner_id = gruppo`, `author_id = mittente`, **`original_author_id = mittente`**, `peer_profile_id = mittente`); `delivered_at` su copia mittente
 4. **Erogazione automatica** (stessa transazione): per ogni persona in `reception_allowlist(owner_id = gruppo)` con gate gruppo ↔ persona → INSERT riga erogata (`author_id = gruppo`, `original_author_id = mittente`, `peer_profile_id = gruppo`, stesso λ)
 5. Erogazione fallita per singolo partecipante: skip silenzioso; **non** altera `delivered_at` mittente oltre passo 3
 
-Invio con `auth.uid()` = gruppo verso persona: `author_id = gruppo`, `original_author_id = NULL`; gate e recapito come chat private.
+Invio con `auth.uid()` = gruppo verso persona: `author_id = gruppo`, **`original_author_id = gruppo`**; gate e recapito come chat private.
+
+### `broadcast_message_to_allowlist` (GROUP-DELIVERY)
+
+Solo account `profile_kind = group`. **Una** riga archivio gruppo (`original_author_id = gruppo`, `peer_profile_id = NULL`, un λ) + distribuzione proxy verso allow list (`erogate_group_message` con `original_author = gruppo`).
+
+**Migrazioni**: `20260706120000`, `20260706140000`.
 
 ---
 

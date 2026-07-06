@@ -5,8 +5,8 @@ import 'package:alfred_client/models/profile_summary.dart';
 
 // spec: GROUP-DELIVERY-REQ-009
 void main() {
-  group('ChatMessage displayAuthorId', () {
-    test('prefers original_author_id over author_id', () {
+  group('ChatMessage contentAuthorId', () {
+    test('content author is original_author_id', () {
       const message = ChatMessage(
         id: '1',
         body: 'ciao gruppo',
@@ -16,19 +16,35 @@ void main() {
         originalAuthorId: 'human-1',
       );
 
+      expect(message.contentAuthorId, 'human-1');
       expect(message.displayAuthorId, 'human-1');
     });
 
-    test('falls back to author_id when original is null', () {
+    test('group broadcast uses group as content author', () {
       const message = ChatMessage(
         id: '2',
         body: 'broadcast',
         timeLabel: '12:00',
-        isMine: false,
+        isMine: true,
         authorId: 'group-1',
+        originalAuthorId: 'group-1',
       );
 
+      expect(message.contentAuthorId, 'group-1');
       expect(message.displayAuthorId, 'group-1');
+    });
+
+    test('displayAuthorId falls back to author_id for legacy private chat', () {
+      const message = ChatMessage(
+        id: '3',
+        body: 'privato',
+        timeLabel: '12:00',
+        isMine: true,
+        authorId: 'user-a',
+      );
+
+      expect(message.contentAuthorId, isNull);
+      expect(message.displayAuthorId, 'user-a');
     });
   });
 
@@ -46,7 +62,7 @@ void main() {
       );
 
       expect(message.isMine, isTrue);
-      expect(message.displayAuthorId, 'user-a');
+      expect(message.contentAuthorId, 'user-a');
     });
 
     test('incoming erogated message is not mine', () {
@@ -62,7 +78,23 @@ void main() {
       );
 
       expect(message.isMine, isFalse);
-      expect(message.displayAuthorId, 'user-b');
+      expect(message.contentAuthorId, 'user-b');
+    });
+
+    test('group broadcast row is mine for group account', () {
+      final message = ChatMessage.fromJson(
+        json: {
+          'id': '5',
+          'body': 'annuncio',
+          'created_at': DateTime.now().toUtc().toIso8601String(),
+          'author_id': 'group-1',
+          'original_author_id': 'group-1',
+        },
+        currentUserId: 'group-1',
+      );
+
+      expect(message.isMine, isTrue);
+      expect(message.contentAuthorId, 'group-1');
     });
   });
 

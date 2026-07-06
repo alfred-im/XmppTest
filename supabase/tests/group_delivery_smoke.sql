@@ -77,6 +77,15 @@ BEGIN
     RAISE EXCEPTION 'erogated original_author must be human sender';
   END IF;
 
+  IF NOT EXISTS (
+    SELECT 1 FROM public.messages m
+    WHERE m.owner_id = v_group
+      AND m.logical_message_id = v_sender.logical_message_id
+      AND m.original_author_id = v_agent1
+  ) THEN
+    RAISE EXCEPTION 'group archive must set original_author to human sender';
+  END IF;
+
   IF v_erogated.peer_profile_id <> v_group THEN
     RAISE EXCEPTION 'erogated peer must be group';
   END IF;
