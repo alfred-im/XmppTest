@@ -67,6 +67,7 @@ class ProfileSummary {
       username: other.username ?? username,
       avatarUrl: other.avatarUrl ?? avatarUrl,
       pronouns: other.pronouns ?? pronouns,
+      profileKind: other.profileKind,
     );
   }
 
@@ -87,6 +88,9 @@ class ProfileSummary {
       displayName: json['display_name'] as String,
       avatarUrl: json['peer_avatar_url'] as String?,
       pronouns: json['peer_pronouns'] as String?,
+      profileKind: ProfileKind.fromString(
+        json['peer_profile_kind'] as String?,
+      ),
     );
   }
 

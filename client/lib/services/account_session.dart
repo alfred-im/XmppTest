@@ -381,6 +381,9 @@ class AccountSession {
         id: userId,
         username: username,
         displayName: user?.userMetadata?['display_name'] as String? ?? username,
+        profileKind: ProfileKind.fromString(
+          user?.userMetadata?['profile_kind'] as String?,
+        ),
       );
     }
   }

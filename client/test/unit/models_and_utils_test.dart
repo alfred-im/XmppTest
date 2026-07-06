@@ -134,6 +134,7 @@ void main() {
         'peer_profile_id': 'peer-1',
         'peer_avatar_url': 'https://example.com/a.jpg',
         'peer_pronouns': 'lei/ella',
+        'peer_profile_kind': 'group',
       });
 
       expect(peer.profileId, 'peer-1');
@@ -145,6 +146,7 @@ void main() {
       expect(peer.lastMessageAt, at);
       expect(peer.profile.avatarUrl, 'https://example.com/a.jpg');
       expect(peer.profile.pronouns, 'lei/ella');
+      expect(peer.isGroup, isTrue);
     });
   });
 

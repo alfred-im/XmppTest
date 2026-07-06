@@ -1,7 +1,7 @@
 # Contratto RPC — messaggistica Alpha
 
 **Ultima revisione**: 2026-07-06  
-**Status**: `implemented` su `main` (migrazioni fino a `20260706120000`, incl. GROUP-DELIVERY)  
+**Status**: `implemented` su `main` (migrazioni fino a `20260706130000`, incl. GROUP-DELIVERY)  
 **Spec**: [MAILBOX-SEND](../capabilities/MAILBOX-SEND.spec.md), [MAILBOX-INBOX](../capabilities/MAILBOX-INBOX.spec.md), [MAILBOX-READ](../capabilities/MAILBOX-READ.spec.md), [CONTACTS](../capabilities/CONTACTS.spec.md), [PROFILE](../capabilities/PROFILE.spec.md), [RECEPTION-ALLOWLIST](../capabilities/RECEPTION-ALLOWLIST.spec.md), [GROUP-DELIVERY](../capabilities/GROUP-DELIVERY.spec.md)
 
 Fonte di verità: `supabase/migrations/`. PostgREST espone solo overload **espliciti** — niente ambiguità di firma.
@@ -57,7 +57,7 @@ Idempotenza: stesso `p_client_message_id` → stessa riga mittente (no duplicati
 
 **Migrazioni**: `20260627210000`, `20260627220000` (drop overload 5-arg), `20260627120100` (voice), `20260702120100` (location), `20260704120000` (mailbox), `20260704130000` (reception allowlist gate).
 
-### Destinatario gruppo (target GROUP-DELIVERY)
+### Destinatario gruppo (GROUP-DELIVERY)
 
 Se `p_recipient_profile_id` ha `profile_kind = group`:
 
@@ -82,13 +82,13 @@ list_inbox() → setof record
 Aggregazione su `messages` WHERE `owner_id = auth.uid()` GROUP BY `peer_profile_id`:
 
 - `display_name`, `last_message_preview`, `last_message_at`, `unread_count`, `protocol`
-- Campi profilo peer (#134): avatar, username, pronouns dove presenti
+- Campi profilo peer (#134): avatar, pronouns; `peer_profile_kind` per routing client (GROUP-CORE)
 - `unread_count` = righe in entrata con `read_at IS NULL`
 - Ordine: `last_message_at` DESC
 
 Preview per tipo: testo troncato, `[GIF]`, `format_voice_preview`, `format_location_preview`.
 
-**Migrazioni**: `20260627230000`, `20260628100000`, aggiornamenti voice/location, `20260704120000`.
+**Migrazioni**: `20260627230000`, `20260628100000`, aggiornamenti voice/location, `20260704120000`, `20260706130000`.
 
 ---
 
@@ -127,7 +127,7 @@ Effetti:
 ```sql
 find_profile_by_username(p_username text) → table (
   id uuid, username text, display_name text, avatar_url text, pronouns text,
-  profile_kind profile_kind  -- target GROUP-CORE
+  profile_kind profile_kind
 )
 ```
 

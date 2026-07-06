@@ -1,7 +1,7 @@
 # Contratto schema — dominio Alpha (mailbox)
 
 **Ultima revisione**: 2026-07-06  
-**Status**: `implemented` su `main` (migrazioni fino a `20260706120000`, incl. GROUP-CORE)  
+**Status**: `implemented` su `main` (migrazioni fino a `20260706130000`, incl. GROUP-CORE)  
 **Fonte di verità**: `supabase/migrations/`
 
 Contratto **tabelle ed enum** usati dalle capability spec. Per RPC: [rpc.md](./rpc.md). Per capability: [index.md](../index.md).
@@ -34,7 +34,7 @@ storage: chat-media, avatars
 | `message_content_type` | `text`, `gif`, `voice`, `location` | Tipo contenuto messaggio |
 | `message_delivery_status` | `pending`, `sent`, `delivered`, `read`, `failed` | Stati `outbox` / `bridge_jobs` (non più su `messages`) |
 | `queue_status` | `queued`, … `failed` | `outbox`, `bridge_jobs` |
-| `profile_kind` | `user`, `group` | Tipo account — [GROUP-CORE](../capabilities/GROUP-CORE.spec.md) (target) |
+| `profile_kind` | `user`, `group` | Tipo account — [GROUP-CORE](../capabilities/GROUP-CORE.spec.md) |
 
 ---
 
@@ -43,7 +43,7 @@ storage: chat-media, avatars
 | Colonna | Tipo | Note |
 |---------|------|------|
 | `id` | uuid PK | = `auth.users.id` |
-| `profile_kind` | profile_kind | default `user` — target GROUP-CORE |
+| `profile_kind` | profile_kind | default `user` |
 | `username` | text | `^[a-z0-9_]{3,32}$`, unique lower (namespace condiviso user+group) |
 | `display_name` | text | Obbligatorio |
 | `bio` | text | Opzionale |
@@ -103,7 +103,7 @@ storage: chat-media, avatars
 | `id` | uuid PK | Per owner |
 | `owner_id` | uuid FK → profiles | Archivio (`auth.uid()` in RLS) |
 | `author_id` | uuid FK → profiles | Mittente tecnico di recapito (gruppo se erogazione) |
-| `original_author_id` | uuid FK nullable → profiles | Autore contenuto se `author_id` è gruppo — target GROUP-DELIVERY |
+| `original_author_id` | uuid FK nullable → profiles | Autore contenuto se `author_id` è gruppo — [GROUP-DELIVERY](../capabilities/GROUP-DELIVERY.spec.md) |
 | `peer_profile_id` | uuid FK nullable | Controparte internal |
 | `peer_external_address` | text nullable | Federato futuro |
 | `logical_message_id` | uuid NOT NULL | λ — correlazione copie |
@@ -128,7 +128,7 @@ storage: chat-media, avatars
 
 ---
 
-## Partecipazione gruppo (target GROUP-CORE)
+## Partecipazione gruppo (GROUP-CORE)
 
 Nessuna tabella aggiuntiva. Partecipazione = allow list bidirezionale:
 
