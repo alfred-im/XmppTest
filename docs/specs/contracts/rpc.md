@@ -1,8 +1,8 @@
 # Contratto RPC — messaggistica Alpha
 
-**Ultima revisione**: 2026-07-04  
-**Status**: `implemented` (allineato a `main`, migrazioni fino a `20260704130000`)  
-**Spec**: [MAILBOX-SEND](../capabilities/MAILBOX-SEND.spec.md), [MAILBOX-INBOX](../capabilities/MAILBOX-INBOX.spec.md), [MAILBOX-READ](../capabilities/MAILBOX-READ.spec.md), [CONTACTS](../capabilities/CONTACTS.spec.md), [PROFILE](../capabilities/PROFILE.spec.md), [RECEPTION-ALLOWLIST](../capabilities/RECEPTION-ALLOWLIST.spec.md)
+**Ultima revisione**: 2026-07-06  
+**Status**: `implemented` su `main` (migrazioni fino a `20260704130000`); § gruppi = target [GROUP-DELIVERY](../capabilities/GROUP-DELIVERY.spec.md) `approved`  
+**Spec**: [MAILBOX-SEND](../capabilities/MAILBOX-SEND.spec.md), [MAILBOX-INBOX](../capabilities/MAILBOX-INBOX.spec.md), [MAILBOX-READ](../capabilities/MAILBOX-READ.spec.md), [CONTACTS](../capabilities/CONTACTS.spec.md), [PROFILE](../capabilities/PROFILE.spec.md), [RECEPTION-ALLOWLIST](../capabilities/RECEPTION-ALLOWLIST.spec.md), [GROUP-DELIVERY](../capabilities/GROUP-DELIVERY.spec.md)
 
 Fonte di verità: `supabase/migrations/`. PostgREST espone solo overload **espliciti** — niente ambiguità di firma.
 
@@ -57,9 +57,23 @@ Idempotenza: stesso `p_client_message_id` → stessa riga mittente (no duplicati
 
 **Migrazioni**: `20260627210000`, `20260627220000` (drop overload 5-arg), `20260627120100` (voice), `20260702120100` (location), `20260704120000` (mailbox), `20260704130000` (reception allowlist gate).
 
+### Destinatario gruppo (target GROUP-DELIVERY)
+
+Se `p_recipient_profile_id` ha `profile_kind = group`:
+
+1. Stessi passi 1–2 (copia mittente umano, outbox, λ)
+2. Gate allow list bidirezionale mittente ↔ gruppo
+3. Se **sì**: INSERT storico gruppo (`owner_id = gruppo`, `author_id = mittente`, `peer_profile_id = mittente`); `delivered_at` su copia mittente
+4. **Erogazione automatica** (stessa transazione): per ogni persona in `reception_allowlist(owner_id = gruppo)` con gate gruppo ↔ persona → INSERT riga erogata (`author_id = gruppo`, `original_author_id = mittente`, `peer_profile_id = gruppo`, stesso λ)
+5. Erogazione fallita per singolo partecipante: skip silenzioso; **non** altera `delivered_at` mittente oltre passo 3
+
+Invio con `auth.uid()` = gruppo verso persona: `author_id = gruppo`, `original_author_id = NULL`; gate e recapito come chat private.
+
 ---
 
 ## `list_inbox`
+
+Non usato quando `auth.uid()` è account `group` — vedi [GROUP-CORE](../capabilities/GROUP-CORE.spec.md).
 
 ```sql
 list_inbox() → setof record
@@ -112,11 +126,12 @@ Effetti:
 
 ```sql
 find_profile_by_username(p_username text) → table (
-  id uuid, username text, display_name text, avatar_url text, pronouns text
+  id uuid, username text, display_name text, avatar_url text, pronouns text,
+  profile_kind profile_kind  -- target GROUP-CORE
 )
 ```
 
-Risoluzione indirizzo Alfred interno → profilo pubblico (#134: avatar e pronomi).
+Risoluzione indirizzo Alfred interno → profilo pubblico (#134: avatar e pronomi; `profile_kind` per routing shell).
 
 **Spec**: [PROFILE.spec.md](../capabilities/PROFILE.spec.md).
 

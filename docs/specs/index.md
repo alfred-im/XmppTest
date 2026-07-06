@@ -1,7 +1,7 @@
 # Catalogo spec — Alfred (prototipo)
 
-**Ultima revisione**: 2026-07-04  
-**REQ-ID**: tutte le capability Alpha elencate sotto sono `implemented` su `main`.
+**Ultima revisione**: 2026-07-06  
+**REQ-ID**: capability Alpha su `main` sono `implemented`; gruppi `approved` (da implementare).
 
 Indice capability con stato e tracciabilità PR. Contratti: [rpc.md](./contracts/rpc.md), [schema.md](./contracts/schema.md).
 
@@ -45,6 +45,16 @@ Indice capability con stato e tracciabilità PR. Contratti: [rpc.md](./contracts
 | `PROJECT_MAP.md` § profilo | PROFILE |
 | `architecture/mailbox-inbox-outbox-spec.md` | MAILBOX-CORE, MAILBOX-SEND, MAILBOX-INBOX, MAILBOX-READ |
 | Ricezione filtrata / blocco silenzioso | RECEPTION-ALLOWLIST |
+| Gruppi (account + erogazione) | GROUP-CORE, GROUP-DELIVERY |
+
+---
+
+## Capability gruppi (approved — da implementare)
+
+| Spec ID | Titolo | Status | File |
+|---------|--------|--------|------|
+| **GROUP-CORE** | Account gruppo, shell, partecipazione allow list | `approved` | [GROUP-CORE.spec.md](./capabilities/GROUP-CORE.spec.md) |
+| **GROUP-DELIVERY** | Invio, erogazione automatica, autori, spunte | `approved` | [GROUP-DELIVERY.spec.md](./capabilities/GROUP-DELIVERY.spec.md) |
 
 ---
 
