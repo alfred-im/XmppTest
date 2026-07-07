@@ -36,6 +36,7 @@ class GroupConversationScreen extends StatelessWidget {
       create: (_) => GroupMessagesController(
         userId: session.userId,
         messageService: session.messageService,
+        messageMediaService: session.messageMediaService,
         profileService: session.profileService,
         onMessagesChanged: onMessagesChanged,
       ),
@@ -87,6 +88,15 @@ class GroupConversationScreen extends StatelessWidget {
                 enabled: !controller.isSending,
                 hintText: 'Messaggio al gruppo (allow list)…',
                 onSend: controller.send,
+                onSendGif: controller.sendGif,
+                onSendVoice: (bytes, durationMs) => controller.sendVoice(
+                  bytes: bytes,
+                  durationMs: durationMs,
+                ),
+                onSendLocation: (latitude, longitude) => controller.sendLocation(
+                  latitude: latitude,
+                  longitude: longitude,
+                ),
               ),
             ),
           ],

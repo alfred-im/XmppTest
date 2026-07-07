@@ -33,15 +33,86 @@ class MessageService {
     required String body,
     required String currentUserId,
     required String clientMessageId,
-  }) async {
-    final row = await _client.rpc(
-      'broadcast_message_to_allowlist',
-      params: {
-        'p_body': body,
-        'p_client_message_id': clientMessageId,
-        'p_content_type': 'text',
-      },
+  }) {
+    return _broadcastToAllowlist(
+      currentUserId: currentUserId,
+      clientMessageId: clientMessageId,
+      contentType: 'text',
+      body: body,
     );
+  }
+
+  Future<ChatMessage> broadcastGifToAllowlist({
+    required String mediaUrl,
+    required String currentUserId,
+    required String clientMessageId,
+  }) {
+    return _broadcastToAllowlist(
+      currentUserId: currentUserId,
+      clientMessageId: clientMessageId,
+      contentType: 'gif',
+      mediaUrl: mediaUrl,
+    );
+  }
+
+  Future<ChatMessage> broadcastVoiceToAllowlist({
+    required String mediaUrl,
+    required int durationSeconds,
+    required int mediaSizeBytes,
+    required String currentUserId,
+    required String clientMessageId,
+  }) {
+    return _broadcastToAllowlist(
+      currentUserId: currentUserId,
+      clientMessageId: clientMessageId,
+      contentType: 'voice',
+      mediaUrl: mediaUrl,
+      durationSeconds: durationSeconds,
+      mediaMime: VoiceConfig.canonicalMime,
+      mediaSizeBytes: mediaSizeBytes,
+    );
+  }
+
+  Future<ChatMessage> broadcastLocationToAllowlist({
+    required double latitude,
+    required double longitude,
+    required String currentUserId,
+    required String clientMessageId,
+  }) {
+    return _broadcastToAllowlist(
+      currentUserId: currentUserId,
+      clientMessageId: clientMessageId,
+      contentType: 'location',
+      latitude: latitude,
+      longitude: longitude,
+    );
+  }
+
+  Future<ChatMessage> _broadcastToAllowlist({
+    required String currentUserId,
+    required String clientMessageId,
+    required String contentType,
+    String body = '',
+    String? mediaUrl,
+    int? durationSeconds,
+    String? mediaMime,
+    int? mediaSizeBytes,
+    double? latitude,
+    double? longitude,
+  }) async {
+    final params = <String, dynamic>{
+      'p_body': body,
+      'p_client_message_id': clientMessageId,
+      'p_content_type': contentType,
+      'p_media_url': ?mediaUrl,
+      'p_duration_seconds': ?durationSeconds,
+      'p_media_mime': ?mediaMime,
+      'p_media_size_bytes': ?mediaSizeBytes,
+      'p_latitude': ?latitude,
+      'p_longitude': ?longitude,
+    };
+
+    final row = await _client.rpc('broadcast_message_to_allowlist', params: params);
     return ChatMessage.fromJson(
       json: row as Map<String, dynamic>,
       currentUserId: currentUserId,

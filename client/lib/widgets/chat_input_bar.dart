@@ -80,6 +80,10 @@ class _ChatInputBarState extends State<ChatInputBar> {
 
   bool get _hasText => _controller.text.trim().isNotEmpty;
 
+  bool get _showGif => widget.onSendGif != null;
+  bool get _showLocation => widget.onSendLocation != null;
+  bool get _showVoice => widget.onSendVoice != null;
+
   Future<void> _submit() async {
     final text = _controller.text.trim();
     if (text.isEmpty || widget.onSend == null) return;
@@ -622,6 +626,10 @@ class _ChatInputBarState extends State<ChatInputBar> {
       );
     }
 
+    if (!_showVoice) {
+      return const SizedBox(width: 44, height: 44);
+    }
+
     return Listener(
       onPointerDown: widget.enabled && widget.onSendVoice != null
           ? (event) {
@@ -667,28 +675,30 @@ class _ChatInputBarState extends State<ChatInputBar> {
                 padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
                 child: Row(
                 children: [
-                  IconButton(
-                    onPressed: widget.enabled ? _pickGif : null,
-                    tooltip: 'Invia GIF',
-                    icon: Icon(
-                      Icons.gif_box_outlined,
-                      color: widget.enabled
-                          ? AlfredColors.textPrimary
-                          : AlfredColors.textSecondary,
+                  if (_showGif)
+                    IconButton(
+                      onPressed: widget.enabled ? _pickGif : null,
+                      tooltip: 'Invia GIF',
+                      icon: Icon(
+                        Icons.gif_box_outlined,
+                        color: widget.enabled
+                            ? AlfredColors.textPrimary
+                            : AlfredColors.textSecondary,
+                      ),
                     ),
-                  ),
-                  IconButton(
-                    onPressed: widget.enabled && !_isComposerLocked
-                        ? () => unawaited(_beginLocationShare())
-                        : null,
-                    tooltip: 'Condividi posizione',
-                    icon: Icon(
-                      Icons.location_on_outlined,
-                      color: widget.enabled
-                          ? AlfredColors.textPrimary
-                          : AlfredColors.textSecondary,
+                  if (_showLocation)
+                    IconButton(
+                      onPressed: widget.enabled && !_isComposerLocked
+                          ? () => unawaited(_beginLocationShare())
+                          : null,
+                      tooltip: 'Condividi posizione',
+                      icon: Icon(
+                        Icons.location_on_outlined,
+                        color: widget.enabled
+                            ? AlfredColors.textPrimary
+                            : AlfredColors.textSecondary,
+                      ),
                     ),
-                  ),
                   Expanded(
                     child: TextField(
                       controller: _controller,

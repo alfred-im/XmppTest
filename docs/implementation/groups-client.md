@@ -67,7 +67,8 @@ Etichetta: `display_name` se presente, altrimenti username **senza** `@`. Messag
 | RPC / metodo | Uso |
 |--------------|-----|
 | `list_owner_messages` | Storico account gruppo |
-| `broadcast_message_to_allowlist` | Invio broadcast dal gruppo |
+| `broadcast_message_to_allowlist` | Invio broadcast dal gruppo (testo, GIF, voice, location) |
+| `MessageMediaService` | Upload media prima del broadcast |
 | `send_message_to_profile` | Umano→gruppo o gruppo→persona (invariato lato client) |
 | `ProfileService.fetchSummariesByIds` | Hydrate profili autori per etichette |
 

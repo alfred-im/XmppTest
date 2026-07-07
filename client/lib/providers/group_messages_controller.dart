@@ -4,8 +4,11 @@ import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
+import '../config/location_config.dart';
+import '../config/voice_config.dart';
 import '../models/message.dart';
 import '../models/profile_summary.dart';
+import '../services/message_media_service.dart';
 import '../services/message_service.dart';
 import '../services/profile_service.dart';
 import '../utils/author_display.dart' show enrichMessageAuthor;
@@ -16,6 +19,7 @@ class GroupMessagesController extends ChangeNotifier {
   GroupMessagesController({
     required this.userId,
     required this.messageService,
+    required this.messageMediaService,
     required this.profileService,
     this.onMessagesChanged,
   }) {
@@ -24,6 +28,7 @@ class GroupMessagesController extends ChangeNotifier {
 
   final String userId;
   final MessageService messageService;
+  final MessageMediaService messageMediaService;
   final ProfileService profileService;
   final Future<void> Function()? onMessagesChanged;
 
@@ -88,17 +93,85 @@ class GroupMessagesController extends ChangeNotifier {
     final trimmed = body.trim();
     if (trimmed.isEmpty || isSending) return;
 
+    await _broadcast(
+      (clientId) => messageService.broadcastToAllowlist(
+        body: trimmed,
+        currentUserId: userId,
+        clientMessageId: clientId,
+      ),
+    );
+  }
+
+  Future<void> sendGif(Uint8List bytes) async {
+    if (bytes.isEmpty || isSending) return;
+
+    await _broadcast((clientId) async {
+      final mediaUrl = await messageMediaService.uploadGif(
+        bytes: bytes,
+        userId: userId,
+      );
+      return messageService.broadcastGifToAllowlist(
+        mediaUrl: mediaUrl,
+        currentUserId: userId,
+        clientMessageId: clientId,
+      );
+    });
+  }
+
+  Future<void> sendVoice({
+    required Uint8List bytes,
+    required int durationMs,
+  }) async {
+    if (bytes.isEmpty || isSending) return;
+
+    final durationSeconds =
+        (durationMs / 1000).ceil().clamp(1, VoiceConfig.maxDurationSeconds);
+
+    await _broadcast((clientId) async {
+      final mediaUrl = await messageMediaService.uploadVoice(
+        bytes: bytes,
+        userId: userId,
+      );
+      return messageService.broadcastVoiceToAllowlist(
+        mediaUrl: mediaUrl,
+        durationSeconds: durationSeconds,
+        mediaSizeBytes: bytes.length,
+        currentUserId: userId,
+        clientMessageId: clientId,
+      );
+    });
+  }
+
+  Future<void> sendLocation({
+    required double latitude,
+    required double longitude,
+  }) async {
+    if (isSending) return;
+
+    final lat = LocationConfig.roundCoordinate(latitude);
+    final lng = LocationConfig.roundCoordinate(longitude);
+
+    await _broadcast(
+      (clientId) => messageService.broadcastLocationToAllowlist(
+        latitude: lat,
+        longitude: lng,
+        currentUserId: userId,
+        clientMessageId: clientId,
+      ),
+    );
+  }
+
+  Future<void> _broadcast(
+    Future<ChatMessage> Function(String clientId) send,
+  ) async {
     isSending = true;
     notifyListeners();
 
     try {
-      await messageService.broadcastToAllowlist(
-        body: trimmed,
-        currentUserId: userId,
-        clientMessageId: _uuid.v4(),
-      );
+      await send(_uuid.v4());
       await load();
       await onMessagesChanged?.call();
+      error = null;
     } catch (e) {
       error = e.toString();
     } finally {
