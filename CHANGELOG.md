@@ -19,7 +19,7 @@ Modifiche rilevanti al progetto per tracciare evoluzione tecnica e decisioni imp
 
 ## [Unreleased]
 
-### Aggiunto (2026-07-07 — review design-first batch 6)
+### Aggiunto (2026-07-07 — review design-first batch 6, PR #169)
 
 - **Test**: `auth_controller_test.dart` — gate overlay AUTH-MULTI (REQ-011/012/014/021), validazione sign-in/sign-up
 - **Test**: `account_sidebar_test.dart` — badge «Gruppo» nel manifest (GROUP-CORE-REQ-016)

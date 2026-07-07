@@ -1,6 +1,6 @@
 # Registro PR Alpha Flutter (main)
 
-**Ultimo aggiornamento**: 2026-07-07 (PEER-PROFILE #163; GROUP-CORE/DELIVERY #162; RECEPTION-ALLOWLIST #161)  
+**Ultimo aggiornamento**: 2026-07-07 (review design-first #164–#169; PEER-PROFILE #163; GROUP-CORE/DELIVERY #162; RECEPTION-ALLOWLIST #161)  
 **Scope**: PR mergiate su `main` dopo migrazione Flutter — riferimento per allineamento documentazione.
 
 Documento per AI. Ogni PR deve riflettersi in: `PROJECT_MAP.md`, `CHANGELOG.md`, `docs/architecture/alpha-full-stack.md` (e fix dedicato se applicabile).
@@ -58,6 +58,12 @@ Documento per AI. Ogni PR deve riflettersi in: `PROJECT_MAP.md`, `CHANGELOG.md`,
 | **#161** | RECEPTION-ALLOWLIST | Allow list ricezione; gate `send_message_to_profile`; UI «Persone consentite»; rifiuto silenzioso | RECEPTION-ALLOWLIST | `RECEPTION-ALLOWLIST.spec.md`, `contracts/schema.md`, `contracts/rpc.md`, migrazione `20260704130000` |
 | **#162** | GROUP-CORE + GROUP-DELIVERY | Account `profile_kind = group`; shell senza inbox; erogazione automatica; broadcast singola riga; `original_author_id`; UI autore avatar+nome | GROUP-CORE, GROUP-DELIVERY | `GROUP-*.spec.md`, `groups-client.md`, `contracts/rpc.md`, `contracts/schema.md`, migrazioni `20260706120000`–`20260706140000` |
 | **#163** | PEER-PROFILE | Scheda profilo peer fullscreen al tap avatar; switch Allow + rubrica (senza conferma); inbox/chat/gruppo/allow list/rubrica | PEER-PROFILE | `PEER-PROFILE.spec.md`, `peer-profile-overlay.md`, `peer_profile_overlay.dart` |
+| **#164** | Review P0 client | Dedupe realtime `client_message_id`; retry media web; skip `list_inbox` account gruppo; rollback `setFocus` | MAILBOX-SEND, GROUP-CORE, AUTH-MULTI | `messages_controller.dart`, `outbound_message_queue.dart`, `inbox_controller.dart`, `account_manager.dart` |
+| **#165** | Review P1 doc+test | Sync `rpc.md`; drift mailbox spec; traceability GROUP-CORE; widget `GroupConversationScreen` | GROUP-CORE, MAILBOX-INBOX | `contracts/rpc.md`, `group_conversation_screen_test.dart` |
+| **#166** | Security helper RPC | REVOKE `EXECUTE` helper gruppo da `authenticated`; smoke `rpc_helper_security_smoke.sql` | GROUP-CORE, RECEPTION-ALLOWLIST, GROUP-DELIVERY | migrazione `20260707190000`, amend SDD REQ-024/028/027 |
+| **#167** | Review widget+ADR | ADR drift; widget allow-list/home; `fromJson` mailbox-first; `focusTestSession()` | GROUP-CORE, RECEPTION-ALLOWLIST, MAILBOX-READ | `allowed_people_screen_test.dart`, `home_screen_group_test.dart`, `message.dart` |
+| **#168** | InboxPanel widget tests | 4 test inbox search/header; `AccountSidebar` Material fix | INBOX-SEARCH, RECEPTION-ALLOWLIST | `inbox_panel_test.dart`, `account_sidebar.dart` |
+| **#169** | AuthController + badge gruppo | Test overlay AUTH-MULTI; badge «Gruppo» manifest sidebar | AUTH-MULTI, GROUP-CORE | `auth_controller_test.dart`, `account_sidebar_test.dart` |
 
 ---
 
@@ -108,6 +114,7 @@ Dopo ogni merge su `main`:
 | `20260706120000_group_accounts.sql` | #162 | `profile_kind`, `original_author_id`, RPC gruppo, erogazione |
 | `20260706130000_list_inbox_peer_profile_kind.sql` | #162 | `peer_profile_kind` in `list_inbox` |
 | `20260706140000_group_broadcast_and_content_author.sql` | #162 | Broadcast singola riga; `original_author_id` sempre valorizzato |
+| `20260707190000_revoke_helper_rpc_from_authenticated.sql` | #166 | REVOKE helper RPC gruppo da ruolo `authenticated` |
 
 ---
 
