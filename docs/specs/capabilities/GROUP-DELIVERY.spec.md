@@ -4,7 +4,7 @@
 |-------|--------|
 | **Spec ID** | `GROUP-DELIVERY` |
 | **Layer** | capability |
-| **Status** | `implemented` |
+| **Status** | `implemented` (amend sicurezza 2026-07-07: REQ-027) |
 | **Ultima revisione** | 2026-07-06 |
 | **ADR** | [mailbox-inbox-outbox-spec.md](../../architecture/mailbox-inbox-outbox-spec.md), [server-as-reception.md](../../decisions/server-as-reception.md) |
 | **PR** | #162 |
@@ -65,6 +65,7 @@ Messaggi erogati: mittente tecnico = **gruppo**; autore contenuto = **`original_
 | **GROUP-DELIVERY-REQ-024** | `author_id = umano` su righe erogate verso partecipanti (mittente tecnico deve essere gruppo) |
 | **GROUP-DELIVERY-REQ-025** | Esporre al mittente umano quali partecipanti hanno ricevuto l'erogazione |
 | **GROUP-DELIVERY-REQ-026** | Retro-recapito erogazione dopo aggiunta tardiva ad allow list |
+| **GROUP-DELIVERY-REQ-027** | `GRANT EXECUTE` su `erogate_group_message` al ruolo `authenticated` — helper solo per RPC `SECURITY DEFINER` interne |
 
 ---
 
@@ -159,6 +160,7 @@ send_message_to_profile(destinatario = P) con auth.uid() = G
 | GROUP-DELIVERY-REQ-014 | gate in `send_message_to_profile` (stesso smoke) |
 | GROUP-DELIVERY-REQ-015 | `supabase/tests/group_schema_smoke.sql` |
 | GROUP-DELIVERY-REQ-009 | `client/test/unit/group_message_display_test.dart`, `client/test/widget/message_bubble_test.dart` |
+| GROUP-DELIVERY-REQ-027 | `supabase/tests/rpc_helper_security_smoke.sql` |
 
 Gate implementazione: `check-spec-sync.sh` + `verify.sh` + smoke SQL + `integration` esteso.
 

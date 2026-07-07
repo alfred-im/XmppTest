@@ -1,12 +1,14 @@
 # Contratto RPC — messaggistica Alpha
 
-**Ultima revisione**: 2026-07-06  
-**Status**: `implemented` su `main` (migrazioni fino a `20260706140000`, incl. GROUP-DELIVERY)  
+**Ultima revisione**: 2026-07-07  
+**Status**: `implemented` su `main` (migrazioni fino a `20260707190000`, incl. revoke helper RPC)  
 **Spec**: [MAILBOX-SEND](../capabilities/MAILBOX-SEND.spec.md), [MAILBOX-INBOX](../capabilities/MAILBOX-INBOX.spec.md), [MAILBOX-READ](../capabilities/MAILBOX-READ.spec.md), [CONTACTS](../capabilities/CONTACTS.spec.md), [PROFILE](../capabilities/PROFILE.spec.md), [RECEPTION-ALLOWLIST](../capabilities/RECEPTION-ALLOWLIST.spec.md), [GROUP-DELIVERY](../capabilities/GROUP-DELIVERY.spec.md)
 
 Fonte di verità: `supabase/migrations/`. PostgREST espone solo overload **espliciti** — niente ambiguità di firma.
 
-Tutte le RPC sotto: `SECURITY DEFINER`, `authenticated` only (revoke da `anon`).
+**RPC pubbliche** (client): `SECURITY DEFINER`, `GRANT EXECUTE` solo a `authenticated` (revoke da `anon` e `PUBLIC`).
+
+**Helper interni** (`SECURITY DEFINER`): usati solo da altre funzioni SQL — **MUST NOT** `GRANT EXECUTE` a `authenticated` (vedi [Helper interni](#helper-interni-non-api-client)).
 
 ---
 
@@ -53,7 +55,7 @@ Idempotenza: stesso `p_client_message_id` → stessa riga mittente (no duplicati
 
 **MUST NOT**: promozione `delivered` senza copia destinatario materializzata; errore RPC verso mittente su rifiuto allow list; trigger `on_message_inserted` legacy.
 
-**Helper**: `is_sender_allowed_for_reception(owner_id, sender_profile_id) → boolean` — migrazione `20260704130000`.
+**Helper**: `is_sender_allowed_for_reception(owner_id, sender_profile_id) → boolean` — migrazione `20260704130000`; **helper interno** (non chiamabile da client).
 
 **Migrazioni**: `20260627210000`, `20260627220000` (drop overload 5-arg), `20260627120100` (voice), `20260702120100` (location), `20260704120000` (mailbox), `20260704130000` (reception allowlist gate).
 
@@ -200,6 +202,23 @@ Ricerca utenti Alfred per aggiunta contatto internal (min 2 caratteri client). E
 
 ---
 
+## Helper interni (non API client)
+
+Funzioni `SECURITY DEFINER` invocate **solo** da altre RPC SQL. **MUST NOT** avere `GRANT EXECUTE` per `authenticated` — evita enumerazione allow list e bypass gate via PostgREST.
+
+| Funzione | Uso interno | Migrazione |
+|----------|-------------|------------|
+| `is_sender_allowed_for_reception(uuid, uuid)` | Gate allow list in `send_message_to_profile` | `20260704130000` |
+| `is_bidirectional_allowed(uuid, uuid, uuid)` | Gate bidirezionale gruppo | `20260706120000` |
+| `profile_kind_of(uuid)` | Routing `profile_kind` in RPC | `20260706120000` |
+| `erogate_group_message(...)` | Fan-out proxy gruppo | `20260706120000` |
+
+Revoca `authenticated`: migrazione `20260707190000`. Smoke: `supabase/tests/rpc_helper_security_smoke.sql`.
+
+Spec: RECEPTION-ALLOWLIST-REQ-028, GROUP-CORE-REQ-024, GROUP-DELIVERY-REQ-027.
+
+---
+
 ## Enum `message_content_type`
 
 Valori su `main`: `text`, `gif`, `voice`, `location`.
@@ -222,6 +241,8 @@ Aggiunta enum in migrazioni separate (commit enum prima dell’uso in RPC).
 | `supabase/tests/mailbox_send_media_smoke.sql` | Validazione `gif`/`location` |
 | `supabase/tests/send_message_to_profile_smoke.sql` | Invio a profilo non in rubrica |
 | `supabase/tests/reception_allowlist_schema_smoke.sql` | Tabella + helper gate |
+| `supabase/tests/reception_allowlist_gate_smoke.sql` | Rifiuto silenzioso vs recapito allowed |
+| `supabase/tests/rpc_helper_security_smoke.sql` | Helper interni non eseguibili da `authenticated` |
 | `supabase/tests/group_schema_smoke.sql` | `list_owner_messages`, `profile_kind`, `broadcast_message_to_allowlist` |
 
 Gate client: `verify.sh` + `bash scripts/test.sh integration` + `bash scripts/test.sh e2e-multi`
