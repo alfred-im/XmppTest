@@ -93,6 +93,9 @@ class AccountManager {
   }
 
   @visibleForTesting
+  Future<void> syncManifestFromStorageForTest() => _refreshManifestCache();
+
+  @visibleForTesting
   void injectTestSession(AccountSession session) {
     _sessions[session.userId] = session;
     session.wireStorage(_storage);

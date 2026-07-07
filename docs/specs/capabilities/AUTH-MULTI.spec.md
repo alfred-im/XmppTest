@@ -133,8 +133,8 @@ Layout: `Stack` — `HomeScreen` sotto, `AuthOverlay` (45% nero) + `AuthScreen` 
 | AUTH-MULTI-REQ-005 | `account_manager_persistence_test.dart` — `persistOpenAccount` + `alfred_auth_*` via `AccountSession` |
 | AUTH-MULTI-REQ-006 | `account_manager_persistence_test.dart` — adopt A then B, single active session |
 | AUTH-MULTI-REQ-010 | `account_manager_view_state_test.dart` — `setFocus` preserva `activePeer` per account |
-| AUTH-MULTI-REQ-011, REQ-012, REQ-021 | `auth_overlay_shell.md`; `auth_controller.dart` — gate overlay |
-| AUTH-MULTI-REQ-014 | `account_manager_persistence_test.dart` — `removeAccount drops only the closed entry` |
+| AUTH-MULTI-REQ-011, REQ-012, REQ-021 | `auth_overlay_shell.md`; `client/test/unit/auth_controller_test.dart` — gate overlay |
+| AUTH-MULTI-REQ-014 | `account_manager_persistence_test.dart` — `removeAccount drops only the closed entry`; `client/test/unit/auth_controller_test.dart` — overlay dopo ultimo account |
 | AUTH-MULTI-REQ-009, REQ-019 | `inbox_provider_lifecycle_test.dart` — inbox non disposed al focus switch |
 | AUTH-MULTI-REQ-010, REQ-016 | `multi_account_chat_scenario_test.dart` — storico chat per account al cambio focus |
 | AUTH-MULTI-REQ-015 | `auth_service_multi_account_test.dart` — upsert refresh token in manifest |

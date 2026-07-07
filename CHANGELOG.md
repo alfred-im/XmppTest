@@ -19,6 +19,14 @@ Modifiche rilevanti al progetto per tracciare evoluzione tecnica e decisioni imp
 
 ## [Unreleased]
 
+### Aggiunto (2026-07-07 — review design-first batch 6)
+
+- **Test**: `auth_controller_test.dart` — gate overlay AUTH-MULTI (REQ-011/012/014/021), validazione sign-in/sign-up
+- **Test**: `account_sidebar_test.dart` — badge «Gruppo» nel manifest (GROUP-CORE-REQ-016)
+- **Helper test**: `AccountManager.syncManifestFromStorageForTest()`
+- **Tracciabilità SDD**: `AUTH-MULTI`, `GROUP-CORE` aggiornate
+- **Gate**: **130** test
+
 ### Aggiunto (2026-07-07 — PEER-PROFILE, PR #163)
 
 - **Client**: overlay fullscreen al tap avatar peer (`showPeerProfileOverlay`, `PeerProfileOverlay`) — identità pubblica, switch Allow (`reception_allowlist`), pulsante rubrica add/remove (`contacts`); azioni **immediate** senza dialog di conferma
