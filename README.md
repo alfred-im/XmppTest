@@ -14,9 +14,9 @@ Traccia lo stato del progetto per continuità del lavoro. Non è documentazione 
 | **`supabase/`** | Schema dominio (profiles, contacts, messages per-owner, outbox, …) |
 | **`bridge-xmpp/`** · **`bridge-matrix/`** | Stub health Fly.io |
 
-### URL live
+### URL live (Alpha — **non produzione**)
 
-**https://alfred-im.github.io/XmppTest/** — ambiente Alpha/sviluppo. Ogni build CI da PR o `main` aggiorna lo stesso URL (`deploy-alpha`).
+**https://alfred-im.github.io/XmppTest/** è l’ambiente **Alpha/sviluppo** su GitHub Pages: demo e test, **non** produzione. Ogni build CI da PR o `main` aggiorna lo stesso URL (`deploy-alpha`). Un ambiente di produzione Alfred **non esiste ancora** (o avrà URL e deploy dedicati, distinti da questo).
 
 ## Stack
 

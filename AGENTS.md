@@ -75,7 +75,9 @@ backend out of the box.
 - **Non riavviare `flutter run` se la porta 8080 è già in uso** — crea istanze orfane e tmux in errore. Verificare con `diagnose-test-env.sh`; kill mirato del PID su 8080 solo se necessario.
 
 ### Deploy Alpha (GitHub Pages)
-- **Non** assumere che https://alfred-im.github.io/XmppTest/ rifletta il branch `main`: `deploy-alpha` pubblica da **PR su `main`** e da **push su `main`** (ultimo deploy riuscito vince). Vedi `docs/architecture/alpha-full-stack.md` §6.
+
+- **Non è produzione**: https://alfred-im.github.io/XmppTest/ è solo l’ambiente **Alpha/sviluppo** (demo, test CI). Non chiamarlo «produzione» né «prod»; un deploy di produzione Alfred non esiste ancora o avrà URL e pipeline dedicati.
+- **Non** assumere che https://alfred-im.github.io/XmppTest/ rifletta il branch `main`: `deploy-alpha` pubblica da **PR su `main`** e da **push su `main`** (ultimo deploy riuscito vince). Vedi `docs/architecture/alpha-full-stack.md` §7.
 
 ### Auth / messaging gotchas (non-obvious, hit during setup)
 - Registration: GoTrue rejects unrealistic email domains (e.g. `@example.com` → "Email address is invalid"). Use a realistic domain like `gmail.com`.

@@ -147,6 +147,8 @@ Tracciabilità requisiti → test: sezione **Tracciabilità** in ogni spec (pilo
 | Web Alpha | GitHub Pages `/XmppTest/` — job `deploy-alpha` |
 | Supabase | Migrazioni in repo → MCP/dashboard |
 
+**Non è produzione**: l’URL https://alfred-im.github.io/XmppTest/ è **solo** l’istanza Alpha su GitHub Pages (demo, test, integrazione). Non è — e non va trattato come — un ambiente di produzione Alfred.
+
 **Non deducibile**: URL Alpha = ultimo `deploy-alpha` riuscito (PR o push su `main`), non sempre = tip di `main`.
 
 **Web**: `passkeys` `bundle.js` obbligatorio in `client/web/index.html` (PR #110).

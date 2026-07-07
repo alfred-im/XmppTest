@@ -23,8 +23,10 @@
 | Elemento | Dettaglio |
 |----------|-----------|
 | **Client** | `client/` — Flutter, collegato a Supabase |
-| **URL live** | https://alfred-im.github.io/XmppTest/ |
+| **URL live** | https://alfred-im.github.io/XmppTest/ — **Alpha/sviluppo, non produzione** |
 | **Deploy** | `.github/workflows/deploy-pages.yml` — `verify.sh` + build; job `deploy-alpha` (**PR su `main` e push su `main`**, path `client/**`) |
+
+**Non è produzione**: https://alfred-im.github.io/XmppTest/ è solo l’istanza **Alpha** su GitHub Pages (demo, test, CI). Non confonderla con un futuro ambiente di produzione Alfred, che avrà URL e pipeline dedicati.
 
 **Non deducibile — URL Alpha ≠ branch `main`**: https://alfred-im.github.io/XmppTest/ pubblica l’**ultimo** `deploy-alpha` riuscito (PR o push). **Non** è vero che «il sito live builda sempre da `main`». Per sapere quale codice è live, controllare quale workflow/PR ha deployato per ultimo (`concurrency: pages-alpha` → ultimo vince).
 | **Piattaforma** | Supabase `tvwpoxxcqwphryvuyqzu` — schema dominio + RLS + RPC |
@@ -94,7 +96,7 @@
 
 ```
 /workspace/
-├── client/                 # Client Flutter (produzione Alpha)
+├── client/                 # Client Flutter (fase Alpha — deploy demo su GitHub Pages)
 ├── supabase/               # Migrazioni e config piattaforma
 ├── bridge-xmpp/            # Demone bridge XMPP (stub)
 ├── bridge-matrix/          # Demone bridge Matrix (stub)
@@ -142,7 +144,7 @@
 
 - Config: `supabase/config.toml`, `supabase/migrations/`, `deploy/supabase.json`
 - MCP agente: `execute_sql`, `apply_migration`, `list_migrations`
-- **Non deducibile — redirect auth email**: `signUp` / `resetPasswordForEmail` passano `emailRedirectTo`/`redirectTo` da `AuthRedirectUrl.resolve()` (`client/lib/utils/auth_redirect_url.dart`) — su web = origine corrente; default produzione `https://alfred-im.github.io/XmppTest/`. Dashboard Supabase → Auth → URL Configuration: `site_url` e `uri_allow_list` devono includere lo stesso URL (vedi `supabase/config.toml`).
+- **Non deducibile — redirect auth email**: `signUp` / `resetPasswordForEmail` passano `emailRedirectTo`/`redirectTo` da `AuthRedirectUrl.resolve()` (`client/lib/utils/auth_redirect_url.dart`) — su web = origine corrente; default = URL Alpha GitHub Pages (`https://alfred-im.github.io/XmppTest/`, **non produzione**). Dashboard Supabase → Auth → URL Configuration: `site_url` e `uri_allow_list` devono includere lo stesso URL (vedi `supabase/config.toml`).
 
 ### Fly.io (`xmpptest`, `fra`)
 
