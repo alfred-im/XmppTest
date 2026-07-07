@@ -66,4 +66,16 @@ class ReceptionAllowlistController extends ChangeNotifier {
     await allowlistService.removeAllowedPerson(person.entryId);
     await load();
   }
+
+  Future<void> removeByProfileId(String profileId) async {
+    AllowedPerson? person;
+    for (final entry in allowedPeople) {
+      if (entry.profile.id == profileId) {
+        person = entry;
+        break;
+      }
+    }
+    if (person == null) return;
+    await remove(person);
+  }
 }

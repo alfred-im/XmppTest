@@ -74,4 +74,14 @@ void main() {
     expect(controller.filteredAllowedPeople, hasLength(1));
     expect(controller.filteredAllowedPeople.single.profile.id, alice.id);
   });
+
+  test('removeByProfileId removes matching entry', () async {
+    service.people = [AllowedPerson(entryId: 'e1', profile: alice)];
+    await controller.load();
+
+    await controller.removeByProfileId(alice.id);
+
+    expect(controller.allowedPeople, isEmpty);
+    expect(service.people, isEmpty);
+  });
 }

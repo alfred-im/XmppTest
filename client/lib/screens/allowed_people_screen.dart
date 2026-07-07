@@ -5,6 +5,7 @@ import '../models/allowed_person.dart';
 import '../models/profile_summary.dart';
 import '../providers/reception_allowlist_controller.dart';
 import '../theme/alfred_colors.dart';
+import '../widgets/peer_profile_overlay.dart';
 import '../widgets/profile_identity.dart';
 
 class AllowedPeopleScreen extends StatefulWidget {
@@ -124,7 +125,13 @@ class _AllowedPeopleScreenState extends State<AllowedPeopleScreen> {
                         itemBuilder: (context, index) {
                           final person = allowlist.filteredAllowedPeople[index];
                           return ListTile(
-                            leading: ProfileAvatar(profile: person.profile),
+                            leading: ProfileAvatar(
+                              profile: person.profile,
+                              onTap: () => showPeerProfileOverlay(
+                                context,
+                                person.profile,
+                              ),
+                            ),
                             title: Text(person.displayName),
                             subtitle: person.profile.hasUsername
                                 ? Text(
