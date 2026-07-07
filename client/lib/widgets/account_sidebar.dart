@@ -31,7 +31,7 @@ class AccountSidebar extends StatelessWidget {
         .where((a) => a.userId != activeUserId)
         .toList();
 
-    return ColoredBox(
+    return Material(
       color: AlfredColors.panel,
       child: SafeArea(
         child: ListView(

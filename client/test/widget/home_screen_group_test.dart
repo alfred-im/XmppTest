@@ -65,8 +65,6 @@ void main() {
       if (find.byType(CircularProgressIndicator).evaluate().isEmpty) break;
     }
     await tester.pump();
-    // GroupConversationScreen ListTile inside ColoredBox triggers a debug-only framework note.
-    tester.takeException();
 
     expect(find.text('Account gruppo'), findsOneWidget);
     expect(find.byType(InboxPanel), findsNothing);
