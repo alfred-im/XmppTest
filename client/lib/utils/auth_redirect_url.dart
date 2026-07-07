@@ -4,15 +4,19 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 class AuthRedirectUrl {
   const AuthRedirectUrl._();
 
-  static const production =
-      'https://alfred-im.github.io/XmppTest/';
+  /// URL deploy Alpha su GitHub Pages — ambiente sviluppo/demo, **non** produzione.
+  static const alphaDefault = 'https://alfred-im.github.io/XmppTest/';
+
+  /// Alias storico; preferire [alphaDefault].
+  @Deprecated('GitHub Pages è Alpha, non produzione — usare alphaDefault')
+  static const production = alphaDefault;
 
   static const _envOverride = String.fromEnvironment('AUTH_REDIRECT_URL');
 
   /// Risolve l'URL da passare a [emailRedirectTo] / [redirectTo].
   ///
-  /// Su web usa l'origine corrente (GitHub Pages o dev locale); altrove
-  /// [AUTH_REDIRECT_URL] o il default di produzione.
+  /// Su web usa l'origine corrente (GitHub Pages Alpha o dev locale); altrove
+  /// [AUTH_REDIRECT_URL] o il default [alphaDefault].
   static String resolve() {
     if (kIsWeb) {
       final base = Uri.base;
@@ -26,7 +30,7 @@ class AuthRedirectUrl {
       return _withTrailingSlash(_envOverride);
     }
 
-    return production;
+    return alphaDefault;
   }
 
   static String _withTrailingSlash(String url) =>
