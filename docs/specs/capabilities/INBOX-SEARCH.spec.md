@@ -92,7 +92,7 @@ Switch account → nuovo InboxPanel → ricerca chiusa
 
 | REQ-ID | Verifica |
 |--------|----------|
-| INBOX-SEARCH-REQ-001, REQ-002, REQ-004, REQ-005 | `inbox_panel.dart` — `_searchVisible`, `_toggleSearch`, `_dismissSearch`, `TapRegion` |
+| INBOX-SEARCH-REQ-001, REQ-002, REQ-004, REQ-005, REQ-009, REQ-010 | `client/test/widget/inbox_panel_test.dart`; `inbox_panel.dart` — `_searchVisible`, `_toggleSearch`, `_dismissSearch`, `TapRegion` |
 | INBOX-SEARCH-REQ-003 | `list_filter_test.dart` — `filterByQueryFields`; `inbox_controller.dart` `filteredPeers`; `MAILBOX-INBOX.spec.md` REQ-011 |
 | INBOX-SEARCH-REQ-006 | `home_screen.dart` — `key: ValueKey(accountUserId)` su `_inboxPanel` |
 | INBOX-SEARCH-REQ-007, REQ-008 | `inbox_panel.dart` — layout `showTopBar`; `design/inbox-search-toggle.md` |
