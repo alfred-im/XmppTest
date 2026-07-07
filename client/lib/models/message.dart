@@ -62,6 +62,10 @@ class ChatMessage {
     this.createdAt,
     String? authorId,
     String? senderId,
+    this.originalAuthorId,
+    this.authorDisplayName,
+    this.authorAvatarUrl,
+    this.authorProfileId,
     this.contentType = MessageContentType.text,
     this.mediaUrl,
     this.durationSeconds,
@@ -82,6 +86,10 @@ class ChatMessage {
   final MessageStatus status;
   final DateTime? createdAt;
   final String? authorId;
+  final String? originalAuthorId;
+  final String? authorDisplayName;
+  final String? authorAvatarUrl;
+  final String? authorProfileId;
   final MessageContentType contentType;
   final String? mediaUrl;
   final int? durationSeconds;
@@ -93,6 +101,12 @@ class ChatMessage {
   final DateTime? deliveredAt;
   final DateTime? readAt;
   final DateTime? failedAt;
+
+  /// Chi ha scritto il contenuto — campo canonico (sempre valorizzato nei flussi gruppo).
+  String? get contentAuthorId => originalAuthorId;
+
+  /// Etichetta autore in UI; fallback `author_id` solo per chat private legacy.
+  String? get displayAuthorId => originalAuthorId ?? authorId;
 
   /// Back-compat for code that still reads [senderId].
   String? get senderId => authorId;
@@ -126,7 +140,9 @@ class ChatMessage {
     final createdAt = DateTime.parse(json['created_at'] as String);
     final authorId =
         json['author_id'] as String? ?? json['sender_id'] as String?;
-    final isMine = authorId == currentUserId;
+    final originalAuthorId = json['original_author_id'] as String?;
+    final isMine =
+        authorId == currentUserId || originalAuthorId == currentUserId;
     final deliveredAt = _parseOptionalTimestamp(json['delivered_at']);
     final readAt = _parseOptionalTimestamp(json['read_at']);
     final failedAt = _parseOptionalTimestamp(json['failed_at']);
@@ -148,6 +164,7 @@ class ChatMessage {
       status: status,
       createdAt: createdAt,
       authorId: authorId,
+      originalAuthorId: originalAuthorId,
       contentType: messageContentTypeFromString(json['content_type'] as String?),
       mediaUrl: json['media_url'] as String?,
       durationSeconds: json['duration_seconds'] as int?,
@@ -169,6 +186,11 @@ class ChatMessage {
     MessageStatus? status,
     DateTime? createdAt,
     String? authorId,
+    String? originalAuthorId,
+    String? authorDisplayName,
+    String? authorAvatarUrl,
+    String? authorProfileId,
+    bool clearAuthorAvatarUrl = false,
     MessageContentType? contentType,
     String? mediaUrl,
     int? durationSeconds,
@@ -189,6 +211,11 @@ class ChatMessage {
       status: status ?? this.status,
       createdAt: createdAt ?? this.createdAt,
       authorId: authorId ?? this.authorId,
+      originalAuthorId: originalAuthorId ?? this.originalAuthorId,
+      authorDisplayName: authorDisplayName ?? this.authorDisplayName,
+      authorAvatarUrl:
+          clearAuthorAvatarUrl ? null : authorAvatarUrl ?? this.authorAvatarUrl,
+      authorProfileId: authorProfileId ?? this.authorProfileId,
       contentType: contentType ?? this.contentType,
       mediaUrl: mediaUrl ?? this.mediaUrl,
       durationSeconds: durationSeconds ?? this.durationSeconds,

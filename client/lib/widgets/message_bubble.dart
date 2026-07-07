@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/message.dart';
 import '../theme/alfred_colors.dart';
 import 'location_message_content.dart';
+import 'message_author_header.dart';
 import 'voice_message_content.dart';
 
 const double _gifMaxWidth = 240;
@@ -26,18 +27,23 @@ class MessageBubble extends StatelessWidget {
   const MessageBubble({
     super.key,
     required this.message,
+    this.showAuthorLabel = false,
     this.onRetry,
   });
 
   final ChatMessage message;
+  final bool showAuthorLabel;
   final VoidCallback? onRetry;
 
   @override
   Widget build(BuildContext context) {
     final isMine = message.isMine;
-    final bubble = Align(
-      alignment: isMine ? Alignment.centerRight : Alignment.centerLeft,
-      child: Container(
+    final showHeader = showAuthorLabel &&
+        !isMine &&
+        message.authorDisplayName != null &&
+        message.authorDisplayName!.isNotEmpty;
+
+    final bubble = Container(
         margin: const EdgeInsets.only(bottom: 6),
         padding: message.isMedia
             ? const EdgeInsets.all(4)
@@ -112,10 +118,19 @@ class MessageBubble extends StatelessWidget {
             ],
           ],
         ),
+      );
+
+    return Align(
+      alignment: isMine ? Alignment.centerRight : Alignment.centerLeft,
+      child: Column(
+        crossAxisAlignment:
+            isMine ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+        children: [
+          if (showHeader) MessageAuthorHeader(message: message),
+          bubble,
+        ],
       ),
     );
-
-    return bubble;
   }
 }
 

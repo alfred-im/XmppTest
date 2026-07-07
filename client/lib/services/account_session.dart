@@ -254,6 +254,7 @@ class AccountSession {
     required String password,
     required String username,
     required String displayName,
+    ProfileKind profileKind = ProfileKind.user,
   }) async {
     final bootstrap = createBootstrapClient();
     final normalizedEmail = AuthIdentity.normalizeEmail(email);
@@ -273,6 +274,7 @@ class AccountSession {
       data: {
         'username': normalized,
         'display_name': displayName,
+        'profile_kind': profileKind.wireValue,
       },
     );
     final session = response.session;
@@ -287,6 +289,7 @@ class AccountSession {
         id: session.user.id,
         username: normalized,
         displayName: displayName,
+        profileKind: profileKind,
       ),
     );
   }
@@ -362,7 +365,7 @@ class AccountSession {
 
     final row = await client
         .from('profiles')
-        .select('id, display_name, username, avatar_url, pronouns')
+        .select('id, display_name, username, avatar_url, pronouns, profile_kind')
         .eq('id', userId)
         .maybeSingle();
 
@@ -378,6 +381,9 @@ class AccountSession {
         id: userId,
         username: username,
         displayName: user?.userMetadata?['display_name'] as String? ?? username,
+        profileKind: ProfileKind.fromString(
+          user?.userMetadata?['profile_kind'] as String?,
+        ),
       );
     }
   }

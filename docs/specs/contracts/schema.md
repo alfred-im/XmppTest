@@ -1,7 +1,7 @@
 # Contratto schema — dominio Alpha (mailbox)
 
-**Ultima revisione**: 2026-07-04  
-**Status**: `implemented` (allineato a `main`, migrazioni fino a `20260704130000`)  
+**Ultima revisione**: 2026-07-06  
+**Status**: `implemented` su `main` (migrazioni fino a `20260706140000`, incl. GROUP-CORE/DELIVERY)  
 **Fonte di verità**: `supabase/migrations/`
 
 Contratto **tabelle ed enum** usati dalle capability spec. Per RPC: [rpc.md](./rpc.md). Per capability: [index.md](../index.md).
@@ -34,6 +34,7 @@ storage: chat-media, avatars
 | `message_content_type` | `text`, `gif`, `voice`, `location` | Tipo contenuto messaggio |
 | `message_delivery_status` | `pending`, `sent`, `delivered`, `read`, `failed` | Stati `outbox` / `bridge_jobs` (non più su `messages`) |
 | `queue_status` | `queued`, … `failed` | `outbox`, `bridge_jobs` |
+| `profile_kind` | `user`, `group` | Tipo account — [GROUP-CORE](../capabilities/GROUP-CORE.spec.md) |
 
 ---
 
@@ -42,7 +43,8 @@ storage: chat-media, avatars
 | Colonna | Tipo | Note |
 |---------|------|------|
 | `id` | uuid PK | = `auth.users.id` |
-| `username` | text | `^[a-z0-9_]{3,32}$`, unique lower |
+| `profile_kind` | profile_kind | default `user` |
+| `username` | text | `^[a-z0-9_]{3,32}$`, unique lower (namespace condiviso user+group) |
 | `display_name` | text | Obbligatorio |
 | `bio` | text | Opzionale |
 | `avatar_url` | text | URL bucket `avatars` |
@@ -100,7 +102,8 @@ storage: chat-media, avatars
 |---------|------|------|
 | `id` | uuid PK | Per owner |
 | `owner_id` | uuid FK → profiles | Archivio (`auth.uid()` in RLS) |
-| `author_id` | uuid FK → profiles | Autore originale |
+| `author_id` | uuid FK → profiles | Mittente tecnico di recapito (gruppo se erogazione) |
+| `original_author_id` | uuid FK nullable → profiles | Autore contenuto se `author_id` è gruppo — [GROUP-DELIVERY](../capabilities/GROUP-DELIVERY.spec.md) |
 | `peer_profile_id` | uuid FK nullable | Controparte internal |
 | `peer_external_address` | text nullable | Federato futuro |
 | `logical_message_id` | uuid NOT NULL | λ — correlazione copie |
@@ -121,7 +124,16 @@ storage: chat-media, avatars
 
 **RLS**: `owner_id = auth.uid()` per SELECT/INSERT/UPDATE.
 
-**Spec**: [MAILBOX-CORE](../capabilities/MAILBOX-CORE.spec.md), [MAILBOX-SEND](../capabilities/MAILBOX-SEND.spec.md), [MAILBOX-INBOX](../capabilities/MAILBOX-INBOX.spec.md), [MAILBOX-READ](../capabilities/MAILBOX-READ.spec.md).
+**Spec**: [MAILBOX-CORE](../capabilities/MAILBOX-CORE.spec.md), [MAILBOX-SEND](../capabilities/MAILBOX-SEND.spec.md), [MAILBOX-INBOX](../capabilities/MAILBOX-INBOX.spec.md), [MAILBOX-READ](../capabilities/MAILBOX-READ.spec.md), [GROUP-DELIVERY](../capabilities/GROUP-DELIVERY.spec.md).
+
+---
+
+## Partecipazione gruppo (GROUP-CORE)
+
+Nessuna tabella aggiuntiva. Partecipazione = allow list bidirezionale:
+
+- `reception_allowlist(owner_id = gruppo, allowed_profile_id = persona)`
+- `reception_allowlist(owner_id = persona, allowed_profile_id = gruppo)`
 
 ---
 

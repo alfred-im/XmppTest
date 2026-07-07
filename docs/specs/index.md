@@ -1,7 +1,7 @@
 # Catalogo spec — Alfred (prototipo)
 
-**Ultima revisione**: 2026-07-04  
-**REQ-ID**: tutte le capability Alpha elencate sotto sono `implemented` su `main`.
+**Ultima revisione**: 2026-07-06  
+**REQ-ID**: capability Alpha su `main` sono `implemented` (inclusi `GROUP-CORE` e `GROUP-DELIVERY`, PR #162).
 
 Indice capability con stato e tracciabilità PR. Contratti: [rpc.md](./contracts/rpc.md), [schema.md](./contracts/schema.md).
 
@@ -41,10 +41,21 @@ Indice capability con stato e tracciabilità PR. Contratti: [rpc.md](./contracts
 | `decisions/server-as-reception.md` | MAILBOX-READ (ADR) |
 | `decisions/multi-account-parallel-sessions.md` | AUTH-MULTI (ADR) |
 | `implementation/multi-account-client.md`, `design/auth-overlay-shell.md` | AUTH-MULTI |
+| `implementation/groups-client.md` | GROUP-CORE, GROUP-DELIVERY |
 | `design/inbox-search-toggle.md` | INBOX-SEARCH |
 | `PROJECT_MAP.md` § profilo | PROFILE |
 | `architecture/mailbox-inbox-outbox-spec.md` | MAILBOX-CORE, MAILBOX-SEND, MAILBOX-INBOX, MAILBOX-READ |
 | Ricezione filtrata / blocco silenzioso | RECEPTION-ALLOWLIST |
+| Gruppi (account + erogazione) | GROUP-CORE, GROUP-DELIVERY |
+
+---
+
+## Capability gruppi (implemented)
+
+| Spec ID | Titolo | Status | PR | File |
+|---------|--------|--------|-----|------|
+| **GROUP-CORE** | Account gruppo, shell, partecipazione allow list | `implemented` | #162 | [GROUP-CORE.spec.md](./capabilities/GROUP-CORE.spec.md) |
+| **GROUP-DELIVERY** | Invio, erogazione automatica, autori, spunte | `implemented` | #162 | [GROUP-DELIVERY.spec.md](./capabilities/GROUP-DELIVERY.spec.md) |
 
 ---
 

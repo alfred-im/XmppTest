@@ -15,6 +15,7 @@ import '../widgets/inbox_panel.dart';
 import 'allowed_people_screen.dart';
 import 'contacts_screen.dart';
 import 'profile_screen.dart';
+import 'group_conversation_screen.dart';
 
 /// Layout principale stile WhatsApp Web: sidebar (profilo + inbox) + chat.
 class HomeScreen extends StatefulWidget {
@@ -162,6 +163,47 @@ class _HomeScreenState extends State<HomeScreen> {
     final session = auth.focusedSession;
     final inbox = session?.inboxController;
     final accountUserId = session?.userId;
+    final isGroupAccount = session?.profile.isGroup ?? false;
+
+    if (isGroupAccount && session != null) {
+      final width = MediaQuery.sizeOf(context).width;
+      final isWide = width >= _breakpoint;
+      final sidebarWidth = width >= 1100 ? 320.0 : 280.0;
+
+      final groupConversation = GroupConversationScreen(
+        session: session,
+        profile: session.profile,
+        onAllowedPeopleTap: _openAllowedPeople,
+        onProfileTap: _openProfile,
+        onDrawerTap: isWide ? null : _openDrawer,
+      );
+
+      if (isWide) {
+        return Scaffold(
+          body: Row(
+            children: [
+              SizedBox(
+                width: sidebarWidth,
+                child: ColoredBox(
+                  color: AlfredColors.panel,
+                  child: _accountSidebar(context, compact: true),
+                ),
+              ),
+              const VerticalDivider(width: 1, color: AlfredColors.border),
+              Expanded(child: groupConversation),
+            ],
+          ),
+        );
+      }
+
+      return Scaffold(
+        key: _scaffoldKey,
+        drawer: Drawer(
+          child: _accountSidebar(context),
+        ),
+        body: groupConversation,
+      );
+    }
 
     final width = MediaQuery.sizeOf(context).width;
     final isWide = width >= _breakpoint;
@@ -267,6 +309,8 @@ class _ChatWithMessages extends StatelessWidget {
         messageService: session.messageService,
         messageMediaService: session.messageMediaService,
         inboxService: session.inboxService,
+        profileService: session.profileService,
+        peerIsGroup: peer.isGroup,
         onMessagesChanged: onMessagesChanged,
         hasValidSession: session.hasValidJwt,
       ),
@@ -274,6 +318,7 @@ class _ChatWithMessages extends StatelessWidget {
         peer: peer,
         showBackButton: showBackButton,
         onBack: onBack,
+        showAuthorLabels: peer.isGroup,
       ),
     );
   }

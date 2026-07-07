@@ -25,6 +25,7 @@ class ChatInputBar extends StatefulWidget {
   const ChatInputBar({
     super.key,
     this.enabled = true,
+    this.hintText = 'Scrivi un messaggio',
     this.onSend,
     this.onSendGif,
     this.onSendVoice,
@@ -32,6 +33,7 @@ class ChatInputBar extends StatefulWidget {
   });
 
   final bool enabled;
+  final String hintText;
   final Future<void> Function(String body)? onSend;
   final Future<void> Function(Uint8List bytes)? onSendGif;
   final VoiceSendCallback? onSendVoice;
@@ -77,6 +79,10 @@ class _ChatInputBarState extends State<ChatInputBar> {
   }
 
   bool get _hasText => _controller.text.trim().isNotEmpty;
+
+  bool get _showGif => widget.onSendGif != null;
+  bool get _showLocation => widget.onSendLocation != null;
+  bool get _showVoice => widget.onSendVoice != null;
 
   Future<void> _submit() async {
     final text = _controller.text.trim();
@@ -620,6 +626,10 @@ class _ChatInputBarState extends State<ChatInputBar> {
       );
     }
 
+    if (!_showVoice) {
+      return const SizedBox(width: 44, height: 44);
+    }
+
     return Listener(
       onPointerDown: widget.enabled && widget.onSendVoice != null
           ? (event) {
@@ -665,37 +675,39 @@ class _ChatInputBarState extends State<ChatInputBar> {
                 padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
                 child: Row(
                 children: [
-                  IconButton(
-                    onPressed: widget.enabled ? _pickGif : null,
-                    tooltip: 'Invia GIF',
-                    icon: Icon(
-                      Icons.gif_box_outlined,
-                      color: widget.enabled
-                          ? AlfredColors.textPrimary
-                          : AlfredColors.textSecondary,
+                  if (_showGif)
+                    IconButton(
+                      onPressed: widget.enabled ? _pickGif : null,
+                      tooltip: 'Invia GIF',
+                      icon: Icon(
+                        Icons.gif_box_outlined,
+                        color: widget.enabled
+                            ? AlfredColors.textPrimary
+                            : AlfredColors.textSecondary,
+                      ),
                     ),
-                  ),
-                  IconButton(
-                    onPressed: widget.enabled && !_isComposerLocked
-                        ? () => unawaited(_beginLocationShare())
-                        : null,
-                    tooltip: 'Condividi posizione',
-                    icon: Icon(
-                      Icons.location_on_outlined,
-                      color: widget.enabled
-                          ? AlfredColors.textPrimary
-                          : AlfredColors.textSecondary,
+                  if (_showLocation)
+                    IconButton(
+                      onPressed: widget.enabled && !_isComposerLocked
+                          ? () => unawaited(_beginLocationShare())
+                          : null,
+                      tooltip: 'Condividi posizione',
+                      icon: Icon(
+                        Icons.location_on_outlined,
+                        color: widget.enabled
+                            ? AlfredColors.textPrimary
+                            : AlfredColors.textSecondary,
+                      ),
                     ),
-                  ),
                   Expanded(
                     child: TextField(
                       controller: _controller,
                       enabled: widget.enabled && !_isComposerLocked,
                       onChanged: (_) => setState(() {}),
-                      decoration: const InputDecoration(
-                        hintText: 'Scrivi un messaggio',
+                      decoration: InputDecoration(
+                        hintText: widget.hintText,
                         contentPadding:
-                            EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                            const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                       ),
                       textInputAction: TextInputAction.send,
                       onSubmitted: widget.enabled ? (_) => _submit() : null,
