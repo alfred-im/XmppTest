@@ -29,7 +29,7 @@ Documento per AI — implementazione client per [GROUP-CORE](../specs/capabiliti
 |------|--------|
 | `lib/screens/home_screen.dart` | Branch: se focus `profileKind == group` → layout gruppo (no `InboxPanel`) |
 | `lib/screens/group_conversation_screen.dart` | Storico unico + compose broadcast; header profilo + allow list |
-| `lib/providers/group_messages_controller.dart` | `fetchOwnerMessages`, `broadcastToAllowlist`, realtime su `owner_id` |
+| `lib/providers/group_messages_controller.dart` | `fetchOwnerMessages`, broadcast testo/media (`send`, `sendGif`, `sendVoice`, `sendLocation`), realtime su `owner_id` |
 
 Layout mobile: sotto 720px la conversazione è full-width (drawer per sidebar account).
 

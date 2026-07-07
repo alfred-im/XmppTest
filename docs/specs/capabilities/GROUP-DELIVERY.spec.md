@@ -146,7 +146,7 @@ send_message_to_profile(destinatario = P) con auth.uid() = G
 | `author_display.dart` | `enrichMessageAuthor` — nome leggibile + avatar da `ProfileSummary` |
 | `MessageAuthorHeader` | Widget avatar + nome sopra la bolla (messaggi in arrivo) |
 | `GroupConversationScreen` | Lista messaggi archivio gruppo; compose broadcast |
-| `GroupMessagesController` / `MessagesController` | Arricchimento autori via `enrichMessageAuthor` quando `peerIsGroup` |
+| `GroupMessagesController` / `MessagesController` | Arricchimento autori via `enrichMessageAuthor` quando `peerIsGroup`; gruppo: `send` + `sendGif` / `sendVoice` / `sendLocation` (broadcast) |
 
 ---
 

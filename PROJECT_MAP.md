@@ -29,7 +29,7 @@
 **Non deducibile — URL Alpha ≠ branch `main`**: https://alfred-im.github.io/XmppTest/ pubblica l’**ultimo** `deploy-alpha` riuscito (PR o push). **Non** è vero che «il sito live builda sempre da `main`». Per sapere quale codice è live, controllare quale workflow/PR ha deployato per ultimo (`concurrency: pages-alpha` → ultimo vince).
 | **Piattaforma** | Supabase `tvwpoxxcqwphryvuyqzu` — schema dominio + RLS + RPC |
 | **Bridge** | `bridge-xmpp/` · `bridge-matrix/` — stub health Fly.io (federazione non implementata) |
-| **PR Alpha** | **#108–#162** su `main` — registro `docs/architecture/alpha-pr-registry.md` |
+| **PR Alpha** | **#108–#162** su `main` — registro `docs/architecture/alpha-pr-registry.md` (#162 gruppi) |
 | **Spec (SDD)** | Contratti capability: `docs/specs/index.md` — `MAILBOX-*`, `GROUP-*` e correlate `implemented` |
 
 **Stack su `main`**: `client/` · `supabase/` · `bridge-xmpp/` · `bridge-matrix/`
