@@ -4,7 +4,7 @@
 |-------|--------|
 | **Spec ID** | `RECEPTION-ALLOWLIST` |
 | **Layer** | capability |
-| **Status** | `implemented` |
+| **Status** | `implemented` (amend sicurezza 2026-07-07: REQ-028 — helper non API client) |
 | **Ultima revisione** | 2026-07-04 |
 | **ADR** | [server-as-reception.md](../../decisions/server-as-reception.md), [mailbox-inbox-outbox-spec.md](../../architecture/mailbox-inbox-outbox-spec.md), [bridge-stateless.md](../../decisions/bridge-stateless.md) |
 | **PR** | #161 |
@@ -72,6 +72,7 @@ La rubrica (`contacts`) resta **isolata**: essere in rubrica non implica essere 
 | **RECEPTION-ALLOWLIST-REQ-025** | Eliminare dall’archivio messaggi già ricevuti quando si rimuove qualcuno dalla lista |
 | **RECEPTION-ALLOWLIST-REQ-026** | Toggle globale on/off della funzionalità allow list |
 | **RECEPTION-ALLOWLIST-REQ-027** | Mostrare al mittente che il destinatario usa un filtro di ricezione |
+| **RECEPTION-ALLOWLIST-REQ-028** | `GRANT EXECUTE` su `is_sender_allowed_for_reception` al ruolo `authenticated` — helper solo per RPC `SECURITY DEFINER` interne |
 
 ---
 
@@ -113,7 +114,7 @@ send_message_to_profile
   → RETURN copia mittente
 ```
 
-Funzione helper consigliata (implementazione): `is_sender_allowed_for_reception(p_owner_id, p_sender_profile_id) boolean` — `SECURITY DEFINER`, usata da RPC invio e futuro bridge.
+Funzione helper interna (implementazione): `is_sender_allowed_for_reception(p_owner_id, p_sender_profile_id) boolean` — `SECURITY DEFINER`, usata **solo** da RPC invio e futuro bridge; **MUST NOT** `GRANT EXECUTE` a `authenticated` (REQ-028).
 
 Modifica [MAILBOX-SEND-REQ-004](./MAILBOX-SEND.spec.md): consegna internal **condizionata** al gate.
 
@@ -153,6 +154,7 @@ Stesso gate nel consumer bridge **prima** di INSERT copia ingresso su archivio A
 | RECEPTION-ALLOWLIST-REQ-015–017 | `client/test/unit/reception_allowlist_controller_test.dart` |
 | RECEPTION-ALLOWLIST-REQ-005–009 | `bash scripts/test.sh integration` |
 | MAILBOX-SEND-REQ-004 (aggiornato) | `mailbox_delivery_smoke.sql` + gate smoke |
+| RECEPTION-ALLOWLIST-REQ-028 | `supabase/tests/rpc_helper_security_smoke.sql` |
 
 Gate implementazione: `check-spec-sync.sh` + `verify.sh` + smoke SQL + `integration`.
 

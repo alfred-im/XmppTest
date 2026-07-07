@@ -4,7 +4,7 @@
 |-------|--------|
 | **Spec ID** | `GROUP-CORE` |
 | **Layer** | capability |
-| **Status** | `implemented` |
+| **Status** | `implemented` (amend sicurezza 2026-07-07: REQ-024) |
 | **Ultima revisione** | 2026-07-06 |
 | **ADR** | [address-based-messaging.md](../../decisions/address-based-messaging.md), [mailbox-inbox-outbox-spec.md](../../architecture/mailbox-inbox-outbox-spec.md) |
 | **PR** | #162 |
@@ -63,6 +63,7 @@ L'account gruppo ha shell dedicata: profilo standard, allow list standard (in al
 | **GROUP-CORE-REQ-021** | Tabella membership o cache partecipanti oltre `reception_allowlist` |
 | **GROUP-CORE-REQ-022** | Flusso «richiedi di entrare nel gruppo» o conferma invito |
 | **GROUP-CORE-REQ-023** | Rubrica (`contacts`) come prerequisito per partecipare o scrivere al gruppo |
+| **GROUP-CORE-REQ-024** | `GRANT EXECUTE` su helper interni gruppo (`is_bidirectional_allowed`, `profile_kind_of`) al ruolo `authenticated` |
 
 ---
 
@@ -136,6 +137,7 @@ Rimozione da una delle due liste → recapito bloccato verso la direzione corris
 | GROUP-CORE-REQ-008–009 | `supabase/tests/group_delivery_smoke.sql` (gate bidirezionale) |
 | GROUP-CORE-REQ-014 | `group_schema_smoke.sql` + `find_profile_by_username` client |
 | GROUP-CORE-REQ-005 | `account_manager_persistence_test.dart` (`profileKind` manifest) |
+| GROUP-CORE-REQ-024 | `supabase/tests/rpc_helper_security_smoke.sql` |
 
 Gate implementazione: `check-spec-sync.sh` + `verify.sh` + smoke SQL gruppo.
 
