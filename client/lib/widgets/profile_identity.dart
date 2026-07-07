@@ -10,15 +10,17 @@ class ProfileAvatar extends StatelessWidget {
     required this.profile,
     this.radius = 26,
     this.fontSize = 18,
+    this.onTap,
   });
 
   final ProfileSummary profile;
   final double radius;
   final double fontSize;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return CircleAvatar(
+    final avatar = CircleAvatar(
       radius: radius,
       backgroundColor: avatarColorForId(profile.id),
       backgroundImage:
@@ -33,6 +35,17 @@ class ProfileAvatar extends StatelessWidget {
               ),
             )
           : null,
+    );
+
+    if (onTap == null) return avatar;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        customBorder: CircleBorder(),
+        child: avatar,
+      ),
     );
   }
 }

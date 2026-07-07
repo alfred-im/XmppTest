@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../models/chat_peer.dart';
 import '../providers/messages_controller.dart';
 import '../theme/alfred_colors.dart';
+import 'peer_profile_overlay.dart';
 import 'profile_identity.dart';
 import 'anchored_message_list.dart';
 import 'chat_input_bar.dart';
@@ -108,6 +109,7 @@ class _ChatHeader extends StatelessWidget {
                 profile: peer.profile,
                 radius: 20,
                 fontSize: 16,
+                onTap: () => showPeerProfileOverlay(context, peer.profile),
               ),
               const SizedBox(width: 12),
               Expanded(

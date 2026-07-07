@@ -8,6 +8,8 @@ import '../providers/contacts_controller.dart';
 import '../services/compose_service.dart';
 import '../theme/alfred_colors.dart';
 import '../utils/avatar_color.dart';
+import '../widgets/peer_profile_overlay.dart';
+import '../widgets/profile_identity.dart';
 
 class ContactsScreen extends StatefulWidget {
   const ContactsScreen({super.key});
@@ -86,10 +88,27 @@ class _ContactsScreenState extends State<ContactsScreen> {
                     separatorBuilder: (_, _) => const Divider(height: 1),
                     itemBuilder: (context, index) {
                       final contact = contacts.filteredContacts[index];
+                      final internalProfile = contact.protocol ==
+                                  ContactProtocol.internal &&
+                              contact.linkedProfileId != null
+                          ? ProfileSummary(
+                              id: contact.linkedProfileId!,
+                              displayName: contact.displayName,
+                              avatarUrl: contact.avatarUrl,
+                            )
+                          : null;
                       return ListTile(
-                        leading: CircleAvatar(
-                          child: Text(avatarInitial(contact.displayName)),
-                        ),
+                        leading: internalProfile != null
+                            ? ProfileAvatar(
+                                profile: internalProfile,
+                                onTap: () => showPeerProfileOverlay(
+                                  context,
+                                  internalProfile,
+                                ),
+                              )
+                            : CircleAvatar(
+                                child: Text(avatarInitial(contact.displayName)),
+                              ),
                         title: Text(contact.displayName),
                         subtitle: Text(
                           contact.protocol == ContactProtocol.internal

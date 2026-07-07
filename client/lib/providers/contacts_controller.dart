@@ -27,6 +27,16 @@ class ContactsController extends ChangeNotifier {
         (contact) => contact.displayName,
       );
 
+  Contact? contactForProfileId(String profileId) {
+    for (final contact in contacts) {
+      if (contact.protocol == ContactProtocol.internal &&
+          contact.linkedProfileId == profileId) {
+        return contact;
+      }
+    }
+    return null;
+  }
+
   void setSearchQuery(String value) {
     _searchQuery = value;
     notifyListeners();
@@ -55,6 +65,13 @@ class ContactsController extends ChangeNotifier {
     );
     await load();
     return contact;
+  }
+
+  Future<void> removeInternalByProfileId(String profileId) async {
+    final contact = contactForProfileId(profileId);
+    if (contact == null) return;
+    await contactService.deleteContact(contact.id);
+    await load();
   }
 
   Future<Contact> addExternal({

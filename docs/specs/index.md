@@ -29,6 +29,7 @@ Indice capability con stato e tracciabilità PR. Contratti: [rpc.md](./contracts
 | **CONTACTS** | Rubrica personale | `implemented` | #109 | [CONTACTS.spec.md](./capabilities/CONTACTS.spec.md) |
 | **AUTH-MULTI** | Multi-account client | `implemented` | #140, #147, #152 | [AUTH-MULTI.spec.md](./capabilities/AUTH-MULTI.spec.md) |
 | **RECEPTION-ALLOWLIST** | Filtro ricezione personale (allow list) | `implemented` | #161 | [RECEPTION-ALLOWLIST.spec.md](./capabilities/RECEPTION-ALLOWLIST.spec.md) |
+| **PEER-PROFILE** | Scheda profilo peer in overlay (avatar tap) | `approved` | — | [PEER-PROFILE.spec.md](./capabilities/PEER-PROFILE.spec.md) |
 
 ---
 
