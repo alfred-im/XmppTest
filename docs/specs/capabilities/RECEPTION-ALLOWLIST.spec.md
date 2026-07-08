@@ -51,6 +51,7 @@ La rubrica (`contacts`) resta **isolata**: essere in rubrica non implica essere 
 | **RECEPTION-ALLOWLIST-REQ-014** | Filtro sempre attivo — **nessun** flag globale enable/disable a livello utente o piattaforma |
 | **RECEPTION-ALLOWLIST-REQ-015** | UI: schermata «Persone consentite» raggiungibile dall’icona accanto a «Contatti» in header inbox (`InboxPanel`) |
 | **RECEPTION-ALLOWLIST-REQ-016** | UI: aggiunta manuale persona (ricerca `search_profiles`, stesso minimo 2 caratteri di rubrica) e rimozione dalla lista |
+| **RECEPTION-ALLOWLIST-REQ-016b** | Filtro lista locale: logica `filteredAllowedPeople`; UX: [PROM-LIST-FILTER](../promises/product/PROM-LIST-FILTER.md) + [SURF-ALLOWLIST](../surfaces/SURF-ALLOWLIST.md) |
 | **RECEPTION-ALLOWLIST-REQ-017** | `ReceptionAllowlistController` legato all’account in **focus** — [AUTH-MULTI](./AUTH-MULTI.spec.md) |
 | **RECEPTION-ALLOWLIST-REQ-018** | Stesso gate documentato per recapito **federato** (bridge XMPP/Matrix fase B): prima di materializzare copia ingresso su Alfred, verificare allow list del destinatario; stesso silenzio verso mittente esterno (nessun ack consegna / XEP-0184) |
 
@@ -152,6 +153,7 @@ Stesso gate nel consumer bridge **prima** di INSERT copia ingresso su archivio A
 | RECEPTION-ALLOWLIST-REQ-007 | `reception_allowlist_gate_smoke.sql` — lista vuota |
 | RECEPTION-ALLOWLIST-REQ-011–012 | `reception_allowlist_gate_smoke.sql` |
 | RECEPTION-ALLOWLIST-REQ-015–017 | `client/test/widget/allowed_people_screen_test.dart`, `client/test/widget/inbox_panel_test.dart`, `client/test/unit/reception_allowlist_controller_test.dart` |
+| RECEPTION-ALLOWLIST-REQ-016b | `reception_allowlist_controller_test.dart`; UX: [SURF-ALLOWLIST](../surfaces/SURF-ALLOWLIST.md) |
 | RECEPTION-ALLOWLIST-REQ-005–009 | `bash scripts/test.sh integration` |
 | MAILBOX-SEND-REQ-004 (aggiornato) | `mailbox_delivery_smoke.sql` + gate smoke |
 | RECEPTION-ALLOWLIST-REQ-028 | `supabase/tests/rpc_helper_security_smoke.sql` |

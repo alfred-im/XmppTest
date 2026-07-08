@@ -4,6 +4,19 @@ Modifiche rilevanti al progetto per tracciare evoluzione tecnica e decisioni imp
 
 ---
 
+## [Unreleased] - 2026-07-08
+
+### Documentazione — SDD v2 (post-Alpha)
+
+- **Riscrittura metodo SDD**: da capability-centric a **registro promesse** (SYSTEM / PRODUCT / SURFACE) — `docs/specs/README.md`
+- **Registro**: `docs/specs/registry.md`
+- **Pilota promesse**: `PROM-LIST-FILTER` + `SURF-INBOX` / `SURF-CONTACTS` / `SURF-ALLOWLIST`
+- **Backend invariato**: `docs/specs/contracts/schema.md`, `rpc.md` restano canonici SYSTEM
+- **Aggiornati**: `.cursor-rules.md`, `AGENTS.md`, `check-spec-sync.sh`, PR template, `INDICE.md`, `PROJECT_MAP.md`
+- **INBOX-SEARCH.spec.md**: `superseded` (UX migrate a v2)
+
+---
+
 ## [3.0.0-alpha] - 2026-06-24
 
 ### Aggiunto

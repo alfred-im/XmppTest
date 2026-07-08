@@ -38,7 +38,7 @@ L’utente può salvare contatti (utenti Alfred interni o indirizzi federati fut
 | **CONTACTS-REQ-010** | Aggiunta esterna: form manuale (protocollo, nome, JID/ID Matrix) → `insert` |
 | **CONTACTS-REQ-011** | «Scrivi» da rubrica (icona chat): **Internal** → `ComposeService.peerFromContact` → `ChatPeer`; **Esterno** → errore «Indirizzo esterno non ancora supportato» (Alpha) |
 | **CONTACTS-REQ-012** | `ContactsController` legato all’account in **focus** (`ChangeNotifierProxyProvider` + `ownerId`) — [AUTH-MULTI](./AUTH-MULTI.spec.md) |
-| **CONTACTS-REQ-013** | Filtro lista: client-side su `display_name` (`filteredContacts`) |
+| **CONTACTS-REQ-013** | Filtro lista: client-side su `display_name` (`filteredContacts`) — logica; UX lista: [PROM-LIST-FILTER](../promises/product/PROM-LIST-FILTER.md) + [SURF-CONTACTS](../surfaces/SURF-CONTACTS.md) |
 
 ### SHOULD
 
@@ -118,7 +118,7 @@ Migrazione base: `20260624200000_alfred_domain_schema.sql`.
 | CONTACTS-REQ-010 | `contacts_screen.dart` — tab Esterno + `addExternal` |
 | CONTACTS-REQ-011 | `compose_service_test.dart` — `peerFromContact` internal/external |
 | CONTACTS-REQ-012 | `main.dart` — `ChangeNotifierProxyProvider<AuthController, ContactsController?>` |
-| CONTACTS-REQ-013 | `list_filter_test.dart` — `filterByQuery`; `contacts_controller.dart` `filteredContacts` |
+| CONTACTS-REQ-013 | `list_filter_test.dart` — `filterByQuery`; `contacts_controller.dart` `filteredContacts`; UX lista: [SURF-CONTACTS](../surfaces/SURF-CONTACTS.md) |
 | CONTACTS-REQ-015 | `contacts_controller.dart` — `addInternal` / `addExternal` → `load()` |
 | CONTACTS-REQ-016, REQ-019 | `send_message_to_profile_smoke.sql` — invio senza contatto in rubrica; `MAILBOX-INBOX-REQ-018` |
 | CONTACTS-REQ-020 | `compose_service.dart` — `peerFromContact` errore esterno Alpha |

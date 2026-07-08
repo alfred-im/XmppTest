@@ -1,6 +1,6 @@
 # Ricerca on-demand nella lista conversazioni
 
-> **Superseded by spec**: [INBOX-SEARCH.spec.md](../specs/capabilities/INBOX-SEARCH.spec.md) — design UX PR #132; per contratto usare la spec.
+> **Superseded by spec**: [PROM-LIST-FILTER.md](../specs/promises/product/PROM-LIST-FILTER.md) + [SURF-INBOX.md](../specs/surfaces/SURF-INBOX.md) — design UX PR #132; per contratto usare le promesse v2.
 
 **Data**: 2026-06-28  
 **Status**: ✅ Specifica vincolante — implementata in client Flutter (PR #132)  

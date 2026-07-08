@@ -7,7 +7,7 @@ In questa repository, **completare un task** (issue, PR, richiesta Cloud Agent) 
 | Fase | Consentito senza ok per le modifiche | Richiede conferma |
 |------|--------------------------------------|-------------------|
 | Discussione, analisi, diagnosi | Leggere codice/docs, grep, test diagnostici se richiesti | — |
-| Spec SDD (capability nuova / cambio contratto) | Bozza `draft`, analisi, proposta REQ-ID | Stato **`approved`** sul contratto |
+| Spec SDD (promessa nuova / modificata) | Bozza `draft`, analisi, proposta PROM/SURF/SYS-ID | Stato **`approved`** sulla promessa |
 | Scrittura (codice, migrazioni, commit) | — | «Vuoi che proceda con le modifiche?» |
 
 Prima di **qualsiasi modifica persistente** al codice o alle migrazioni, chiedere **sempre**: **«Vuoi che proceda con le modifiche?»**. La conferma esiste solo come risposta affermativa a quella domanda — se non l'hai chiesta, nulla autorizza la scrittura.
@@ -23,18 +23,18 @@ Le istruzioni Cloud Agent (branch, commit, push, PR, «completa la richiesta») 
 | «Completa il task» / «Implementa» | Rispetta SDD + regola 0; se manca spec `approved`, **non** implementare |
 | «Crea branch e PR» | Solo **dopo** spec `approved` (se SDD applica) **e** conferma scrittura |
 | Requisiti di prodotto dettagliati («Definito: …») | Materiale per la **spec**, non sostituto di `approved` |
-| Issue o user query che chiede implementazione | Classificare: SDD obbligatoria? → spec prima del codice |
+| Issue o user query che chiede implementazione | Classificare: quale promessa? → registro prima del codice |
 
-**Non esiste un percorso che bypassa la SDD** per capability nuove o cambi contratto.
+**Non esiste un percorso che bypassa la SDD** per promesse nuove o modificate.
 
-### Spec-Driven Development (SDD v1) — gate obbligatorio
+### Spec-Driven Development (SDD v2) — registro promesse
 
-Per capability **nuove** o **cambio contratto** (schema, RPC, semantica pubblica):
+Per **ogni promessa** nuova o modificata (SYSTEM, PRODUCT, SURFACE):
 
-1. Spec in `docs/specs/capabilities/` con **REQ-ID** (`{SPEC}-REQ-NNN`) — template: `docs/specs/_template.md`.
-2. Stato **`approved`** **prima** di qualsiasi implementazione (codice, migrazioni SQL, client); **`implemented`** dopo merge.
-3. Tabella **tracciabilità** REQ → test nella spec (pilota: `MAILBOX-SEND.spec.md`).
-4. Contratti: `docs/specs/contracts/rpc.md`, `schema.md`.
+1. Domanda obbligatoria: **quale promessa creo, estendo o rompo?** — se l'utente osserva comportamento diverso, è una promessa (non «solo UX»).
+2. File promessa in `docs/specs/promises/product/`, `docs/specs/surfaces/` o `docs/specs/contracts/` — template: `_template-promise-product.md`, `_template-surface.md`.
+3. Stato **`approved`** **prima** di qualsiasi implementazione; **`implemented`** dopo merge. Aggiornare [registry.md](docs/specs/registry.md).
+4. Capability legacy `docs/specs/capabilities/` — ancora valide per backend (`MAILBOX-*`, `GROUP-*`); REQ-ID storici.
 5. Gate: `bash scripts/check-spec-sync.sh` + `cd client && bash scripts/verify.sh`.
 6. PR template: `.github/PULL_REQUEST_TEMPLATE.md`.
 
@@ -42,10 +42,10 @@ Per capability **nuove** o **cambio contratto** (schema, RPC, semantica pubblica
 
 | Regola | Cosa governa |
 |--------|--------------|
-| **SDD** | Intero processo (spec → implementazione) |
+| **SDD v2** | Intero processo (promessa → implementazione) |
 | **Regola 0** (`.cursor-rules.md`) | Solo **modifica fisica** di file nel repo |
 
-Catalogo: [docs/specs/index.md](docs/specs/index.md). Metodo: [docs/specs/README.md](docs/specs/README.md).
+Registro: [docs/specs/registry.md](docs/specs/registry.md). Metodo: [docs/specs/README.md](docs/specs/README.md). Catalogo legacy: [docs/specs/index.md](docs/specs/index.md).
 
 ---
 

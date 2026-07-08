@@ -4,11 +4,14 @@
 |-------|--------|
 | **Spec ID** | `INBOX-SEARCH` |
 | **Layer** | capability |
-| **Status** | `implemented` |
-| **Ultima revisione** | 2026-07-03 |
+| **Status** | `superseded` (promesse UX → SDD v2) |
+| **Ultima revisione** | 2026-07-08 |
 | **ADR** | — (UX client; dipende da [MAILBOX-INBOX](./MAILBOX-INBOX.spec.md)) |
 | **PR** | #132 |
+| **Superseded by** | [PROM-LIST-FILTER](../promises/product/PROM-LIST-FILTER.md), [SURF-INBOX](../surfaces/SURF-INBOX.md) |
 | **Supersedes** | `design/inbox-search-toggle.md` (evidenza UX) |
+
+> **SDD v2**: le promesse UX vivono in PROM-LIST-FILTER + SURF-INBOX. Questo file resta per tracciabilità REQ-ID storici e riferimenti PR #132 fino a deprecazione completa.
 
 Documento per AI — contratto ricerca nella lista conversazioni: UI on-demand, filtro client-side, chiusura unificata.
 

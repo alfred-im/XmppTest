@@ -1,9 +1,11 @@
 # {TITLE}
 
+> **SDD v2**: per promesse UX riusabili usare [\_template-promise-product.md](./_template-promise-product.md) + [\_template-surface.md](./_template-surface.md). Questo template resta per **capability legacy** (bundle backend + client) e migrazione graduale. Metodo: [README.md](./README.md).
+
 | Campo | Valore |
 |-------|--------|
 | **Spec ID** | `{ID}` |
-| **Layer** | capability |
+| **Layer** | capability (legacy v1) |
 | **Status** | `draft` \| `approved` \| `implemented` \| `deprecated` \| `superseded` |
 | **Ultima revisione** | YYYY-MM-DD |
 | **ADR** | [link](../decisions/…) |

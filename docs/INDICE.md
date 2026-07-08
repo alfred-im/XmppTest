@@ -9,9 +9,20 @@ Indice documenti tecnici per navigazione rapida. Documento per AI, non per utent
 
 ---
 
-## Spec (SDD) — contratti capability
+## Spec (SDD v2) — registro promesse
 
-**Metodo**: [specs/README.md](./specs/README.md) · **Catalogo**: [specs/index.md](./specs/index.md)
+**Metodo**: [specs/README.md](./specs/README.md) · **Registro**: [specs/registry.md](./specs/registry.md) · **Capability legacy**: [specs/index.md](./specs/index.md)
+
+### Promesse PRODUCT / SURFACE (v2)
+
+| ID | Stato | Contenuto |
+|----|-------|-----------|
+| [PROM-LIST-FILTER](./specs/promises/product/PROM-LIST-FILTER.md) | `implemented` | Filtro locale + ricerca on-demand (lente) |
+| [SURF-INBOX](./specs/surfaces/SURF-INBOX.md) | `implemented` | Lista conversazioni |
+| [SURF-CONTACTS](./specs/surfaces/SURF-CONTACTS.md) | `approved` | Rubrica — filtro lista (da implementare) |
+| [SURF-ALLOWLIST](./specs/surfaces/SURF-ALLOWLIST.md) | `approved` | Persone consentite — filtro lista (da implementare) |
+
+### SYSTEM + capability legacy
 
 | Spec | Stato | Contenuto |
 |------|-------|-----------|
@@ -19,7 +30,7 @@ Indice documenti tecnici per navigazione rapida. Documento per AI, non per utent
 | [MAILBOX-INBOX](./specs/capabilities/MAILBOX-INBOX.spec.md) | `implemented` | Inbox on-read sul mio archivio, `ChatPeer`, realtime |
 | [MAILBOX-SEND](./specs/capabilities/MAILBOX-SEND.spec.md) | `implemented` | Invio testo/GIF/voice/location, pipeline outbox |
 | [MAILBOX-READ](./specs/capabilities/MAILBOX-READ.spec.md) | `implemented` | Spunte `delivered_at`/`read_at`, `mark_peer_read` |
-| [INBOX-SEARCH](./specs/capabilities/INBOX-SEARCH.spec.md) | `implemented` | Ricerca conversazioni on-demand |
+| [INBOX-SEARCH](./specs/capabilities/INBOX-SEARCH.spec.md) | `superseded` | UX → PROM-LIST-FILTER + SURF-INBOX |
 | [PROFILE](./specs/capabilities/PROFILE.spec.md) | `implemented` | Profilo, avatar, pronomi, `ProfileSummary` |
 | [CONTACTS](./specs/capabilities/CONTACTS.spec.md) | `implemented` | Rubrica personale (isolata da chat) |
 | [AUTH-MULTI](./specs/capabilities/AUTH-MULTI.spec.md) | `implemented` | Multi-account, focus, overlay shell |

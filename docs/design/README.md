@@ -5,7 +5,7 @@ Principi UI per il client Flutter Alpha. Documento per AI.
 | File | Contenuto |
 |------|-----------|
 | [conversation-bottom-anchor.md](./conversation-bottom-anchor.md) | Scroll ancorato in chat |
-| [inbox-search-toggle.md](./inbox-search-toggle.md) | Ricerca inbox on-demand |
+| [inbox-search-toggle.md](./inbox-search-toggle.md) | Ricerca lista on-demand → [PROM-LIST-FILTER](../specs/promises/product/PROM-LIST-FILTER.md) |
 | [auth-overlay-shell.md](./auth-overlay-shell.md) | Shell sempre visibile + overlay credenziali (PR #140) |
 
 **Brand**: colore `#2D2926` — `client/lib/theme/alfred_colors.dart`  

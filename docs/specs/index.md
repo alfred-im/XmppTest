@@ -1,11 +1,10 @@
-# Catalogo spec — Alfred (prototipo)
+# Catalogo spec — Alfred
 
-**Ultima revisione**: 2026-07-07  
-**REQ-ID**: capability Alpha su `main` sono `implemented` (inclusi `PEER-PROFILE` PR #163).
+**Ultima revisione**: 2026-07-08  
+**Metodo**: [README.md](./README.md) (**SDD v2** — registro promesse)  
+**Registro v2**: [registry.md](./registry.md)
 
-Indice capability con stato e tracciabilità PR. Contratti: [rpc.md](./contracts/rpc.md), [schema.md](./contracts/schema.md).
-
-**SDD v1**: REQ-ID + tracciabilità su tutte le capability Alpha. Metodo: [README.md](./README.md).
+Capability legacy (SDD v1) con REQ-ID e tracciabilità PR. Contratti SYSTEM: [rpc.md](./contracts/rpc.md), [schema.md](./contracts/schema.md).
 
 ---
 
@@ -24,7 +23,7 @@ Indice capability con stato e tracciabilità PR. Contratti: [rpc.md](./contracts
 
 | Spec ID | Titolo | Status | PR | File |
 |---------|--------|--------|-----|------|
-| **INBOX-SEARCH** | Ricerca on-demand inbox | `implemented` | #132 | [INBOX-SEARCH.spec.md](./capabilities/INBOX-SEARCH.spec.md) |
+| **INBOX-SEARCH** | Ricerca on-demand inbox | `superseded` (UX → v2) | #132 | [INBOX-SEARCH.spec.md](./capabilities/INBOX-SEARCH.spec.md) → [PROM-LIST-FILTER](./promises/product/PROM-LIST-FILTER.md) + [SURF-INBOX](./surfaces/SURF-INBOX.md) |
 | **PROFILE** | Profilo utente (avatar, pronomi) | `implemented` | #118, #134 | [PROFILE.spec.md](./capabilities/PROFILE.spec.md) |
 | **CONTACTS** | Rubrica personale | `implemented` | #109 | [CONTACTS.spec.md](./capabilities/CONTACTS.spec.md) |
 | **AUTH-MULTI** | Multi-account client | `implemented` | #140, #147, #152 | [AUTH-MULTI.spec.md](./capabilities/AUTH-MULTI.spec.md) |
@@ -43,7 +42,7 @@ Indice capability con stato e tracciabilità PR. Contratti: [rpc.md](./contracts
 | `decisions/multi-account-parallel-sessions.md` | AUTH-MULTI (ADR) |
 | `implementation/multi-account-client.md`, `design/auth-overlay-shell.md` | AUTH-MULTI |
 | `implementation/groups-client.md` | GROUP-CORE, GROUP-DELIVERY |
-| `design/inbox-search-toggle.md` | INBOX-SEARCH |
+| `design/inbox-search-toggle.md` | PROM-LIST-FILTER, SURF-INBOX |
 | `PROJECT_MAP.md` § profilo | PROFILE |
 | `architecture/mailbox-inbox-outbox-spec.md` | MAILBOX-CORE, MAILBOX-SEND, MAILBOX-INBOX, MAILBOX-READ |
 | Ricezione filtrata / blocco silenzioso | RECEPTION-ALLOWLIST |
@@ -59,6 +58,12 @@ Indice capability con stato e tracciabilità PR. Contratti: [rpc.md](./contracts
 |---------|--------|--------|-----|------|
 | **GROUP-CORE** | Account gruppo, shell, partecipazione allow list | `implemented` | #162 | [GROUP-CORE.spec.md](./capabilities/GROUP-CORE.spec.md) |
 | **GROUP-DELIVERY** | Invio, erogazione automatica, autori, spunte | `implemented` | #162 | [GROUP-DELIVERY.spec.md](./capabilities/GROUP-DELIVERY.spec.md) |
+
+---
+
+## Promesse SDD v2
+
+Vedi [registry.md](./registry.md). Pilota: **PROM-LIST-FILTER** + superfici inbox / contatti / allow list.
 
 ---
 

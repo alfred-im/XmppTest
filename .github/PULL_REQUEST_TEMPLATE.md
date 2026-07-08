@@ -2,13 +2,17 @@
 
 <!-- Cosa cambia e perché -->
 
-## Spec-Driven Development
+## Spec-Driven Development (SDD v2)
 
-- [ ] **Nessun cambio di contratto** (bug fix / refactor interno)
-- [ ] **Contratto aggiornato**: spec in `docs/specs/capabilities/` o `docs/specs/contracts/`
-  - Spec ID: <!-- es. MAILBOX-SEND -->
-  - Stato spec: `draft` | `approved` | `implemented`
-  - REQ-ID toccati: <!-- es. MAILBOX-SEND-REQ-003, oppure N/A -->
+- [ ] **Solo cosmetica theme** (colori, spacing, font — nessuna promessa toccata)
+- [ ] **Promesse aggiornate** — registro: `docs/specs/registry.md`
+
+| Classe | ID promessa | Stato | File |
+|--------|-------------|-------|------|
+| SYSTEM / PRODUCT / SURFACE | <!-- es. PROM-LIST-FILTER, SURF-CONTACTS --> | `draft` \| `approved` \| `implemented` | <!-- path --> |
+
+- ID toccati: <!-- es. PROM-LIST-FILTER-010, SURF-CONTACTS-001, MAILBOX-SEND-REQ-003, oppure N/A -->
+- Capability legacy aggiornata (se backend): <!-- es. MAILBOX-SEND.spec.md, oppure N/A -->
 
 ## Verifica
 
@@ -17,4 +21,5 @@
 
 ## Registro
 
+- [ ] `docs/specs/registry.md` aggiornato se nuove promesse o cambio stato
 - [ ] `CHANGELOG.md` / `alpha-pr-registry.md` aggiornati se merge su `main`
