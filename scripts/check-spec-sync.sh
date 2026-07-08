@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# SDD v2 — controlli allineamento promesse ↔ repository.
+# SDD — controlli allineamento promesse ↔ repository.
 # Exit 0 = OK; exit 1 = problemi da correggere prima del merge.
 set -euo pipefail
 
@@ -13,7 +13,7 @@ INDEX="docs/specs/index.md"
 REGISTRY="docs/specs/registry.md"
 ERR=0
 
-echo "==> SDD v2: registry e contratti SYSTEM"
+echo "==> SDD: registry e contratti SYSTEM"
 if [[ ! -f "$REGISTRY" ]]; then
   echo "ERROR: manca $REGISTRY" >&2
   ERR=1
@@ -25,7 +25,7 @@ for contract in docs/specs/contracts/rpc.md docs/specs/contracts/schema.md; do
   fi
 done
 
-echo "==> SDD v2: promesse SYSTEM in registry"
+echo "==> SDD: promesse SYSTEM in registry"
 for sys in "$SYSTEM_DIR"/SYS-*.md; do
   [[ -f "$sys" ]] || continue
   base="$(basename "$sys" .md)"
@@ -45,7 +45,7 @@ for sys in "$SYSTEM_DIR"/SYS-*.md; do
   fi
 done
 
-echo "==> SDD v2: promesse PRODUCT in registry"
+echo "==> SDD: promesse PRODUCT in registry"
 for prom in "$PRODUCT_DIR"/PROM-*.md; do
   [[ -f "$prom" ]] || continue
   base="$(basename "$prom" .md)"
@@ -65,7 +65,7 @@ for prom in "$PRODUCT_DIR"/PROM-*.md; do
   fi
 done
 
-echo "==> SDD v2: superfici in registry"
+echo "==> SDD: superfici in registry"
 for surf in "$SURFACES_DIR"/SURF-*.md; do
   [[ -f "$surf" ]] || continue
   base="$(basename "$surf" .md)"
@@ -79,7 +79,7 @@ for surf in "$SURFACES_DIR"/SURF-*.md; do
   fi
 done
 
-echo "==> SDD v2: index.md allineato a registry"
+echo "==> SDD: index.md allineato a registry"
 for sys in "$SYSTEM_DIR"/SYS-*.md; do
   [[ -f "$sys" ]] || continue
   base="$(basename "$sys" .md)"
@@ -105,9 +105,9 @@ for surf in "$SURFACES_DIR"/SURF-*.md; do
   fi
 done
 
-echo "==> SDD v2: nessun residuo capability v1"
+echo "==> SDD: nessun residuo cartella capabilities"
 if [[ -d docs/specs/capabilities ]]; then
-  echo "ERROR: docs/specs/capabilities/ ancora presente — epurare v1" >&2
+  echo "ERROR: docs/specs/capabilities/ ancora presente — rimuovere" >&2
   ERR=1
 fi
 if grep -rq 'capabilities/' docs/specs/promises docs/specs/surfaces docs/specs/registry.md docs/specs/index.md docs/specs/README.md 2>/dev/null; then

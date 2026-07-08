@@ -6,7 +6,6 @@
 | **Classe** | SYSTEM |
 | **Status** | `implemented` |
 | **Ultima revisione** | 2026-07-08 |
-| **Supersedes** | RECEPTION-ALLOWLIST backend REQ-001–014, 018–028 (SDD v1 epurato) |
 | **Contratti** | [schema.md](../../contracts/schema.md) · [rpc.md](../../contracts/rpc.md) |
 | **PR** | #161 |
 
@@ -83,46 +82,13 @@ send_message_to_profile
 
 Helper interno: `is_sender_allowed_for_reception(p_owner_id, p_sender_profile_id) boolean` — `SECURITY DEFINER`, usata **solo** da RPC invio e futuro bridge.
 
-Vedi [contracts/schema.md](../../contracts/schema.md) · [SYS-MAILBOX](./SYS-MAILBOX.md) REQ-004.
-
----
-
-## 4. Mappa legacy REQ → SYS
-
-| RECEPTION-ALLOWLIST-REQ | SYS-ID |
-|-------------------------|--------|
-| REQ-001 | SYS-RECEPTION-001 |
-| REQ-002 | SYS-RECEPTION-002 |
-| REQ-003 | SYS-RECEPTION-003 |
-| REQ-004 | SYS-RECEPTION-004 |
-| REQ-005 | SYS-RECEPTION-005 |
-| REQ-006 | SYS-RECEPTION-006 |
-| REQ-007 | SYS-RECEPTION-007 |
-| REQ-008 | SYS-RECEPTION-008 |
-| REQ-009 | SYS-RECEPTION-009 |
-| REQ-010 | SYS-RECEPTION-010 |
-| REQ-011 | SYS-RECEPTION-011 |
-| REQ-012 | SYS-RECEPTION-012 |
-| REQ-013 | SYS-RECEPTION-013 |
-| REQ-014 | SYS-RECEPTION-014 |
-| REQ-018 | SYS-RECEPTION-018 |
-| REQ-019 | SYS-RECEPTION-019 |
-| REQ-021 | SYS-RECEPTION-021 |
-| REQ-022 | SYS-RECEPTION-022 |
-| REQ-023 | SYS-RECEPTION-023 |
-| REQ-024 | SYS-RECEPTION-024 |
-| REQ-025 | SYS-RECEPTION-025 |
-| REQ-026 | SYS-RECEPTION-026 |
-| REQ-027 | SYS-RECEPTION-027 |
-| REQ-028 | SYS-RECEPTION-028 |
-
-REQ UI (015–017, 016b, 020): [SURF-ALLOWLIST.md](../../surfaces/SURF-ALLOWLIST.md), [SURF-INBOX.md](../../surfaces/SURF-INBOX.md).
+Vedi [contracts/schema.md](../../contracts/schema.md) · [SYS-MAILBOX](./SYS-MAILBOX.md) SYS-MAILBOX-020.
 
 ---
 
 ## 5. Tracciabilità
 
-| SYS-ID / RECEPTION-REQ | Verifica |
+| SYS-ID | Verifica |
 |------------------------|----------|
 | SYS-RECEPTION-001–004 | `supabase/tests/reception_allowlist_schema_smoke.sql` |
 | SYS-RECEPTION-005–010 | `supabase/tests/reception_allowlist_gate_smoke.sql` |
@@ -130,7 +96,6 @@ REQ UI (015–017, 016b, 020): [SURF-ALLOWLIST.md](../../surfaces/SURF-ALLOWLIST
 | SYS-RECEPTION-011–012 | `reception_allowlist_gate_smoke.sql` |
 | SYS-RECEPTION-005–009 | `bash scripts/test.sh integration` |
 | SYS-RECEPTION-028 | `supabase/tests/rpc_helper_security_smoke.sql` |
-| MAILBOX-SEND-REQ-004 | `mailbox_delivery_smoke.sql` + gate smoke |
 
 Gate: `bash scripts/check-spec-sync.sh` · `cd client && bash scripts/verify.sh`
 

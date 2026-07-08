@@ -88,7 +88,7 @@ Smoke SQL: `supabase/tests/group_schema_smoke.sql`, `group_delivery_smoke.sql`, 
 
 ## Fuori scope v1 (documentato in spec)
 
-- Preview inbox con prefisso autore umano (`GROUP-DELIVERY-REQ-020` SHOULD)
+- Preview inbox con prefisso autore umano (`SYS-GROUP-033` SHOULD)
 - Membership / inviti / ruoli admin
 - Federazione gruppi
 

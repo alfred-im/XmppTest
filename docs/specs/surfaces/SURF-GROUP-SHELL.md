@@ -6,7 +6,6 @@
 | **Status** | `implemented` |
 | **Ultima revisione** | 2026-07-08 |
 | **Promesse** | [SYS-RECEPTION](../promises/system/SYS-RECEPTION.md) |
-| **Supersedes** | GROUP-CORE shell REQ-004, 006–007, 016–017, 020 (SDD v1 epurato) |
 | **PR** | #162 |
 
 Binding UX shell dedicata quando focus su account `profile_kind = group`: niente inbox a lista, conversazione unica + entry profilo e allow list.
@@ -52,31 +51,14 @@ Binding UX shell dedicata quando focus su account `profile_kind = group`: niente
 
 ---
 
-## 3. Mappa legacy REQ → SURF
-
-| GROUP-CORE-REQ | SURF-ID |
-|----------------|---------|
-| REQ-004 | SURF-GROUP-SHELL-006 |
-| REQ-005 | SURF-GROUP-SHELL-001 |
-| REQ-006 | SURF-GROUP-SHELL-002 |
-| REQ-007 | SURF-GROUP-SHELL-003 |
-| REQ-013, REQ-015 | SURF-GROUP-SHELL-005, SURF-GROUP-SHELL-004 |
-| REQ-016 | SURF-GROUP-SHELL-007 |
-| REQ-017 | SURF-GROUP-SHELL-008 |
-| REQ-020 | SURF-GROUP-SHELL-010 |
-
-Backend `profile_kind`, partecipazione: [SYS-GROUP](../promises/system/SYS-GROUP.md). UI conversazione: [SURF-GROUP-CONVERSATION.md](./SURF-GROUP-CONVERSATION.md).
-
----
-
 ## 4. Tracciabilità
 
-| SURF-ID / GROUP-REQ | Verifica |
+| SURF-ID | Verifica |
 |---------------------|----------|
-| SURF-GROUP-SHELL-002, REQ-006–007, REQ-020 | `group_conversation_screen_test.dart`, `home_screen_group_test.dart`, `inbox_controller_group_test.dart` |
-| SURF-GROUP-SHELL-006, REQ-004 | `AuthScreen` — toggle tipo account |
-| SURF-GROUP-SHELL-007, REQ-016 | `account_sidebar_test.dart` |
-| SURF-GROUP-SHELL-001, REQ-005 | `account_manager_persistence_test.dart` (`profileKind` manifest) |
+| SURF-GROUP-SHELL-002 | `group_conversation_screen_test.dart`, `home_screen_group_test.dart`, `inbox_controller_group_test.dart` |
+| SURF-GROUP-SHELL-006 | `AuthScreen` — toggle tipo account |
+| SURF-GROUP-SHELL-007 | `account_sidebar_test.dart` |
+| SURF-GROUP-SHELL-001 | `account_manager_persistence_test.dart` (`profileKind` manifest) |
 
 Gate: `check-spec-sync.sh` + `verify.sh` + smoke SQL gruppo
 

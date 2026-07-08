@@ -59,7 +59,7 @@ Idempotenza: stesso `p_client_message_id` → stessa riga mittente (no duplicati
 
 **Migrazioni**: `20260627210000`, `20260627220000` (drop overload 5-arg), `20260627120100` (voice), `20260702120100` (location), `20260704120000` (mailbox), `20260704130000` (reception allowlist gate).
 
-### Destinatario gruppo (GROUP-DELIVERY)
+### Destinatario gruppo (SYS-GROUP)
 
 Se `p_recipient_profile_id` ha `profile_kind = group`:
 
@@ -71,7 +71,7 @@ Se `p_recipient_profile_id` ha `profile_kind = group`:
 
 Invio con `auth.uid()` = gruppo verso persona: `author_id = gruppo`, **`original_author_id = gruppo`**; gate e recapito come chat private.
 
-### `broadcast_message_to_allowlist` (GROUP-DELIVERY)
+### `broadcast_message_to_allowlist` (SYS-GROUP)
 
 Solo account `profile_kind = group`. **Una** riga archivio gruppo (`original_author_id = gruppo`, `peer_profile_id = NULL`, un λ) + distribuzione proxy verso allow list (`erogate_group_message` con `original_author = gruppo`).
 
@@ -133,7 +133,7 @@ list_inbox() → setof record
 Aggregazione su `messages` WHERE `owner_id = auth.uid()` GROUP BY `peer_profile_id`:
 
 - `display_name`, `last_message_preview`, `last_message_at`, `unread_count`, `protocol`
-- Campi profilo peer (#134): avatar, pronouns; `peer_profile_kind` per routing client (GROUP-CORE)
+- Campi profilo peer (#134): avatar, pronouns; `peer_profile_kind` per routing client (SYS-GROUP)
 - `unread_count` = righe in entrata con `read_at IS NULL`
 - Ordine: `last_message_at` DESC
 
@@ -215,7 +215,7 @@ Funzioni `SECURITY DEFINER` invocate **solo** da altre RPC SQL. **MUST NOT** ave
 
 Revoca `authenticated`: migrazione `20260707190000`. Smoke: `supabase/tests/rpc_helper_security_smoke.sql`.
 
-Spec: RECEPTION-ALLOWLIST-REQ-028, GROUP-CORE-REQ-024, GROUP-DELIVERY-REQ-027.
+Spec: SYS-RECEPTION-028, SYS-GROUP-028, SYS-GROUP-027.
 
 ---
 

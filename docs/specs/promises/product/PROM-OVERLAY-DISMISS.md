@@ -6,7 +6,6 @@
 | **Classe** | PRODUCT |
 | **Status** | `implemented` |
 | **Ultima revisione** | 2026-07-08 |
-| **Supersedes** | PEER-PROFILE REQ-013 (SDD v1 epurato) |
 | **PR origine** | #163 |
 
 Promessa di prodotto riusabile: chiudere overlay fullscreen (modale) con pulsante ✕ e tap sul barrier — pattern unificato, non callback sparse nel parent.
@@ -52,14 +51,6 @@ Prima implementazione: [PROM-PEER-PROFILE](./PROM-PEER-PROFILE.md). Estendibile 
 
 ---
 
-## 3. Mappa legacy REQ
-
-| Legacy REQ | PROM-ID |
-|------------|---------|
-| PEER-PROFILE-REQ-013 | PROM-OVERLAY-DISMISS-001, 002, 003 |
-
----
-
 ## 4. Contratto implementativo
 
 | Elemento | Responsabilità |
@@ -89,7 +80,8 @@ Pattern analogo a [PROM-LIST-FILTER](./PROM-LIST-FILTER.md) `dismissSearch()` �
 |---------|----------|
 | PROM-OVERLAY-DISMISS-001–003 | `peer_profile_overlay_test.dart` — widget smoke; barrier + close button |
 | PROM-OVERLAY-DISMISS-020–021 | `peer_profile_overlay.dart` — dismiss centralizzato; nessun callback parent |
-| PEER-PROFILE-REQ-013 (legacy) | `peer_profile_overlay_test.dart` |
+| PROM-OVERLAY-DISMISS-001–003 | `peer_profile_overlay_test.dart` |
+
 
 Gate: `bash scripts/check-spec-sync.sh` + `cd client && bash scripts/verify.sh`
 

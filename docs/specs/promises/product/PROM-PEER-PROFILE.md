@@ -6,7 +6,6 @@
 | **Classe** | PRODUCT |
 | **Status** | `implemented` |
 | **Ultima revisione** | 2026-07-08 |
-| **Supersedes** | PEER-PROFILE (SDD v1 epurato; chiusura overlay → [PROM-OVERLAY-DISMISS](./PROM-OVERLAY-DISMISS.md)) |
 | **PR origine** | #163 |
 
 Promessa di prodotto: tap avatar peer Alfred → overlay fullscreen con identità pubblica, toggle allow list e azione rubrica — **indipendenti** e **immediati**.
@@ -17,7 +16,7 @@ Promessa di prodotto: tap avatar peer Alfred → overlay fullscreen con identit�
 
 In diversi punti della piattaforma l'utente vede l'avatar di un altro account Alfred. Al tap sull'avatar si apre una modale con identità pubblica e due azioni distinte: consentire ricezione messaggi ([PROM-RECEPTION-FILTER](./PROM-RECEPTION-FILTER.md)) e aggiungere/rimuovere dalla rubrica ([PROM-PERSONAL-CONTACTS](./PROM-PERSONAL-CONTACTS.md)).
 
-Nessun nuovo schema/RPC — composizione di capability esistenti.
+Nessun nuovo schema/RPC — composizione di promesse [SYS-RECEPTION](../system/SYS-RECEPTION.md), [SYS-CONTACTS](../system/SYS-CONTACTS.md) e PRODUCT correlate.
 
 ---
 
@@ -59,32 +58,6 @@ Nessun nuovo schema/RPC — composizione di capability esistenti.
 | **PROM-PEER-PROFILE-022** | Esporre email del peer |
 | **PROM-PEER-PROFILE-023** | Overlay per contatti rubrica **esterni** (senza `linked_profile_id`) |
 | **PROM-PEER-PROFILE-024** | Nuove RPC o tabelle — solo PostgREST esistente |
-
----
-
-## 3. Mappa legacy REQ
-
-| Legacy REQ | PROM-ID |
-|------------|---------|
-| PEER-PROFILE-REQ-001 | PROM-PEER-PROFILE-001 |
-| PEER-PROFILE-REQ-002 | PROM-PEER-PROFILE-002 |
-| PEER-PROFILE-REQ-003 | PROM-PEER-PROFILE-005 |
-| PEER-PROFILE-REQ-004 | PROM-PEER-PROFILE-006 |
-| PEER-PROFILE-REQ-005 | PROM-PEER-PROFILE-007 |
-| PEER-PROFILE-REQ-006 | PROM-PEER-PROFILE-008 |
-| PEER-PROFILE-REQ-007 | PROM-PEER-PROFILE-003 |
-| PEER-PROFILE-REQ-008 | PROM-PEER-PROFILE-004 |
-| PEER-PROFILE-REQ-009 | PROM-PEER-PROFILE-006 (rimozione rubrica) |
-| PEER-PROFILE-REQ-010 | PROM-PEER-PROFILE-005 (toggle Allow off) |
-| PEER-PROFILE-REQ-011 | PROM-PEER-PROFILE-009 |
-| PEER-PROFILE-REQ-012 | PROM-PEER-PROFILE-010 |
-| PEER-PROFILE-REQ-013 | PROM-PEER-PROFILE-011 → [PROM-OVERLAY-DISMISS](./PROM-OVERLAY-DISMISS.md) |
-| PEER-PROFILE-REQ-014 | PROM-PEER-PROFILE-012 |
-| PEER-PROFILE-REQ-015 | PROM-PEER-PROFILE-020 |
-| PEER-PROFILE-REQ-016 | PROM-PEER-PROFILE-021 |
-| PEER-PROFILE-REQ-017 | PROM-PEER-PROFILE-022 |
-| PEER-PROFILE-REQ-018 | PROM-PEER-PROFILE-024 |
-| PEER-PROFILE-REQ-019 | PROM-PEER-PROFILE-023 |
 
 ---
 
@@ -133,6 +106,7 @@ Nessun nuovo schema/RPC — composizione di capability esistenti.
 | PROM-PEER-PROFILE-002, 008, 012 | `peer_profile_overlay_test.dart` — widget smoke |
 | PROM-PEER-PROFILE-009 | `main.dart` — proxy provider focus |
 | PROM-PEER-PROFILE-011 | [PROM-OVERLAY-DISMISS](./PROM-OVERLAY-DISMISS.md) |
+
 
 Gate: `bash scripts/check-spec-sync.sh` + `cd client && bash scripts/verify.sh`
 

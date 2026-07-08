@@ -9,7 +9,7 @@ Indice documenti tecnici per navigazione rapida. Documento per AI, non per utent
 
 ---
 
-## Spec (SDD v2) — registro promesse
+## Spec (SDD) — registro promesse
 
 **Metodo**: [specs/README.md](./specs/README.md) · **Registro**: [specs/registry.md](./specs/registry.md) · **Indice**: [specs/index.md](./specs/index.md)
 
@@ -91,7 +91,7 @@ ADR e panoramica: [architecture/mailbox-inbox-outbox-spec.md](./architecture/mai
 ## Architettura
 
 - [architecture/alpha-full-stack.md](./architecture/alpha-full-stack.md) — **🟢 Alpha** — client + Supabase
-- [architecture/alpha-pr-registry.md](./architecture/alpha-pr-registry.md) — Registro PR **#108–#163**
+- [architecture/alpha-pr-registry.md](./architecture/alpha-pr-registry.md) — Registro PR **#108–#172**
 - [architecture/mailbox-inbox-outbox-spec.md](./architecture/mailbox-inbox-outbox-spec.md) — **🟢 Implementato** — modello caselle (PR #159)
 - [architecture/README.md](./architecture/README.md) — Indice architettura
 
@@ -123,9 +123,9 @@ ADR e panoramica: [architecture/mailbox-inbox-outbox-spec.md](./architecture/mai
 
 - [design/conversation-bottom-anchor.md](./design/conversation-bottom-anchor.md) — Aggancio al fondo chat (PR #125); backlog PROM
 - [design/inbox-search-toggle.md](./design/inbox-search-toggle.md) — → PROM-LIST-FILTER (PR #132, #171)
-- [design/auth-overlay-shell.md](./design/auth-overlay-shell.md) — → AUTH-MULTI (PR #140)
+- [design/auth-overlay-shell.md](./design/auth-overlay-shell.md) — → SURF-AUTH (PR #140)
 - [design/README.md](./design/README.md) — Indice design
 
 ---
 
-**Ultimo aggiornamento**: 2026-07-08 — SDD v2 epurazione v1 completa; 5 SYS + 13 PROM + 10 SURF
+**Ultimo aggiornamento**: 2026-07-08 — SDD registro promesse; 5 SYS + 13 PROM + 10 SURF

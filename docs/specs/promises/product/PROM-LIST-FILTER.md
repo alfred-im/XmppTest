@@ -6,7 +6,6 @@
 | **Classe** | PRODUCT |
 | **Status** | `implemented` |
 | **Ultima revisione** | 2026-07-08 |
-| **Supersedes** | INBOX-SEARCH UX (SDD v1 epurato); [inbox-search-toggle.md](../../../design/inbox-search-toggle.md) |
 | **PR origine** | #132 (inbox); estensione contatti/allow list — backlog |
 
 Promessa di prodotto riusabile: filtrare una lista già caricata in memoria, con barra di ricerca **on-demand** (icona lente).
@@ -99,6 +98,7 @@ Le superfici ([SURF-*](../../registry.md)) dichiarano campi filtrabili, hint e c
 | PROM-LIST-FILTER-031–033 | `inbox-search-toggle.md`; dismiss centralizzato |
 | SURF-CONTACTS (estensione) | `contacts_screen.dart` + `contacts_screen_test.dart` |
 | SURF-ALLOWLIST (estensione) | `allowed_people_screen.dart` + `allowed_people_screen_test.dart` |
+
 
 Gate: `bash scripts/check-spec-sync.sh` + `cd client && bash scripts/verify.sh`
 

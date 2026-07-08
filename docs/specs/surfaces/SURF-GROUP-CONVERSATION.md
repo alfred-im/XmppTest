@@ -6,7 +6,6 @@
 | **Status** | `implemented` |
 | **Ultima revisione** | 2026-07-08 |
 | **Promesse** | — |
-| **Supersedes** | GROUP-DELIVERY UI REQ-009, 017–020 (SDD v1 epurato) |
 | **PR** | #162 |
 
 Binding UX messaggistica gruppo: attribuzione autore contenuto, header avatar+nome, storico gruppo, preview inbox erogati.
@@ -54,31 +53,15 @@ Binding UX messaggistica gruppo: attribuzione autore contenuto, header avatar+no
 
 ---
 
-## 3. Mappa legacy REQ → SURF
-
-| GROUP-DELIVERY-REQ | SURF-ID |
-|------------------|---------|
-| REQ-009 | SURF-GROUP-CONVERSATION-001, 002, 003 |
-| REQ-017 | SURF-GROUP-CONVERSATION-005 |
-| REQ-018 | SURF-GROUP-CONVERSATION-004 |
-| REQ-019 | SURF-GROUP-CONVERSATION-007 |
-| REQ-020 | SURF-GROUP-CONVERSATION-008 |
-| REQ-025 | SURF-GROUP-CONVERSATION-010 |
-| REQ-024 | SURF-GROUP-CONVERSATION-011 |
-
-Backend erogazione/spunte: [SYS-GROUP](../promises/system/SYS-GROUP.md). Shell: [SURF-GROUP-SHELL.md](./SURF-GROUP-SHELL.md).
-
----
-
 ## 4. Tracciabilità
 
-| SURF-ID / GROUP-REQ | Verifica |
+| SURF-ID | Verifica |
 |---------------------|----------|
-| SURF-GROUP-CONVERSATION-001–003, REQ-009 | `group_message_display_test.dart`, `message_bubble_test.dart` |
-| SURF-GROUP-CONVERSATION-004, REQ-018 | `group_conversation_screen_test.dart` |
-| SURF-GROUP-CONVERSATION-005, REQ-017 | `mailbox_inbox_smoke.sql`; integration |
+| SURF-GROUP-CONVERSATION-001–003 | `group_message_display_test.dart`, `message_bubble_test.dart` |
+| SURF-GROUP-CONVERSATION-004 | `group_conversation_screen_test.dart` |
+| SURF-GROUP-CONVERSATION-005 | `mailbox_inbox_smoke.sql`; integration |
 | SURF-GROUP-CONVERSATION-006 | `group_conversation_screen.dart` — compose broadcast |
-| SURF-GROUP-CONVERSATION-007, REQ-019 | realtime subscribe `messages` owner filter |
+| SURF-GROUP-CONVERSATION-007 | realtime subscribe `messages` owner filter |
 
 Gate: `check-spec-sync.sh` + `verify.sh` + smoke SQL + `integration`
 

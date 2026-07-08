@@ -5,8 +5,7 @@
 **Stato**: PR Alpha **#108–#162** su `main`  
 **Registro PR**: [alpha-pr-registry.md](./alpha-pr-registry.md)
 
-> **Contratti (SDD v2)**: [docs/specs/registry.md](../specs/registry.md) — registro promesse SYSTEM / PRODUCT / SURFACE.  
-> **Capability legacy (backend bundle)**: [docs/specs/index.md](../specs/index.md) — `MAILBOX-*`, `GROUP-*`, … fino a distillazione.  
+> **Contratti (SDD)**: [docs/specs/registry.md](../specs/registry.md) — registro promesse SYSTEM / PRODUCT / SURFACE.  
 > **Contratti piattaforma (SYSTEM)**: [contracts/schema.md](../specs/contracts/schema.md), [contracts/rpc.md](../specs/contracts/rpc.md).  
 > Questo file è **panoramica architetturale** — non duplicare i requisiti delle promesse.
 
@@ -73,7 +72,7 @@ client/lib/
 
 ---
 
-## 3. Capability → spec (contratti su `main`)
+## 3. Promesse → area
 
 | Area | Spec | Note |
 |------|------|------|
@@ -91,7 +90,7 @@ client/lib/
 
 ### UI cross-cutting
 
-| Area | Contratto v2 / evidenza |
+| Area | Contratto / evidenza |
 |------|-------------------------|
 | Ricerca lista on-demand | [PROM-LIST-FILTER](../specs/promises/product/PROM-LIST-FILTER.md) + [SURF-*](../specs/registry.md) — [inbox-search-toggle.md](../design/inbox-search-toggle.md) (PR #132, #171) |
 | Scroll ancorato chat | [conversation-bottom-anchor.md](../design/conversation-bottom-anchor.md) (PR #125) — *backlog promessa PRODUCT* |
@@ -138,7 +137,7 @@ Vedi [SYS-RECEPTION](../specs/promises/system/SYS-RECEPTION.md), [PROM-RECEPTION
 | E2E | `client/e2e/` |
 | SQL smoke | `supabase/tests/` |
 
-Tracciabilità requisiti → test: tabella **Tracciabilità** in ogni promessa (`registry.md`) o capability legacy.
+Tracciabilità requisiti → test: tabella **Tracciabilità** in ogni promessa (`registry.md`).
 
 ---
 

@@ -6,7 +6,6 @@
 | **Classe** | PRODUCT |
 | **Status** | `implemented` |
 | **Ultima revisione** | 2026-07-08 |
-| **Supersedes** | MAILBOX-CORE REQ-007; MAILBOX-INBOX REQ-005, REQ-016 (SDD v1 epurato) |
 | **PR origine** | #159 |
 
 Promessa di prodotto: una chat è identificata da `(io, peer_profile_id)` — nessun `thread_id` esposto; stessa UI con storico vuoto o pieno.
@@ -38,19 +37,6 @@ L'utente apre e naviga conversazioni per **indirizzo peer** (username interno / 
 | **PROM-CHAT-PEER-KEY-010** | `thread_id` esposto al client |
 | **PROM-CHAT-PEER-KEY-011** | Record inbox/conversazione prima del primo messaggio materializzato |
 | **PROM-CHAT-PEER-KEY-012** | Tabella/cache/vista materializzata inbox lato client |
-
----
-
-## 3. Mappa legacy REQ
-
-| Legacy REQ | PROM-ID |
-|------------|---------|
-| MAILBOX-CORE-REQ-007 | PROM-CHAT-PEER-KEY-001 |
-| MAILBOX-INBOX-REQ-005 | PROM-CHAT-PEER-KEY-002, 003 |
-| MAILBOX-INBOX-REQ-006 | PROM-CHAT-PEER-KEY-004 |
-| MAILBOX-INBOX-REQ-016 | PROM-CHAT-PEER-KEY-010 |
-| MAILBOX-INBOX-REQ-017 | PROM-CHAT-PEER-KEY-011 |
-| MAILBOX-INBOX-REQ-014 | PROM-CHAT-PEER-KEY-012 |
 
 ---
 
@@ -89,6 +75,7 @@ L'inbox è **organizzazione UI** della chat: messaggi inviati e ricevuti convivo
 | PROM-CHAT-PEER-KEY-004 | `mailbox_inbox_smoke.sql` — invio senza rubrica |
 | PROM-CHAT-PEER-KEY-005 | `home_screen.dart` — `ValueKey(peer.profileId)` |
 | PROM-CHAT-PEER-KEY-012 | `mailbox_schema_smoke.sql` — nessuna cache inbox |
+
 
 Gate: `bash scripts/check-spec-sync.sh` + `cd client && bash scripts/verify.sh` · `integration` + `e2e-multi`
 

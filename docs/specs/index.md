@@ -1,4 +1,4 @@
-# Indice promesse SDD v2
+# Indice promesse SDD
 
 **Ultima revisione**: 2026-07-08  
 **Registro canonico**: [registry.md](./registry.md) · **Metodo**: [README.md](./README.md)

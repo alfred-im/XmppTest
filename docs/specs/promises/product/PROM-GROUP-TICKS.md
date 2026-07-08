@@ -6,7 +6,6 @@
 | **Classe** | PRODUCT |
 | **Status** | `implemented` |
 | **Ultima revisione** | 2026-07-08 |
-| **Supersedes** | GROUP-DELIVERY REQ-012, REQ-013, REQ-025 (SDD v1 epurato) |
 | **PR origine** | #162 |
 
 Promessa di prodotto: spunte del messaggio umano→gruppo riflettono solo recapito al **gruppo**; erogazione verso terzi non modifica le spunte originali; nessuna visibilità al mittente su chi ha ricevuto l'erogazione.
@@ -48,18 +47,6 @@ Quando un utente invia a un gruppo, le spunte sulla **propria** copia indicano s
 
 ---
 
-## 3. Mappa legacy REQ
-
-| Legacy REQ | PROM-ID |
-|------------|---------|
-| GROUP-DELIVERY-REQ-012 | PROM-GROUP-TICKS-001, 002 |
-| GROUP-DELIVERY-REQ-013 | PROM-GROUP-TICKS-004, 005 |
-| GROUP-DELIVERY-REQ-011 | PROM-GROUP-TICKS-003 |
-| GROUP-DELIVERY-REQ-021 | PROM-GROUP-TICKS-010 |
-| GROUP-DELIVERY-REQ-025 | PROM-GROUP-TICKS-011, 012 |
-
----
-
 ## 4. Contratto implementativo
 
 | Elemento | Responsabilità |
@@ -97,7 +84,7 @@ Quando un utente invia a un gruppo, le spunte sulla **propria** copia indicano s
 | PROM-GROUP-TICKS-002, 010 | `group_delivery_smoke.sql` — delivered_at invariato su erogazione terzi |
 | PROM-GROUP-TICKS-004, 005 | `mailbox_read_smoke.sql`; `message_bubble_test.dart` |
 | PROM-GROUP-TICKS-011 | Nessuna API/UI «read by members» per mittente originale |
-| GROUP-DELIVERY-REQ-012–013 (legacy) | `group_delivery_smoke.sql` |
+
 
 Gate: `bash scripts/check-spec-sync.sh` + `verify.sh` + smoke SQL + `integration`
 

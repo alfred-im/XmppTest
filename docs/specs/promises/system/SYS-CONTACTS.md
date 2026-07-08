@@ -6,7 +6,6 @@
 | **Classe** | SYSTEM |
 | **Status** | `implemented` |
 | **Ultima revisione** | 2026-07-08 |
-| **Supersedes** | CONTACTS backend REQ-001–008, 016–019 (SDD v1 epurato) |
 | **Contratti** | [schema.md](../../contracts/schema.md) · [rpc.md](../../contracts/rpc.md) |
 | **PR** | #109, #134 |
 
@@ -58,35 +57,16 @@ Migrazione base: `20260624200000_alfred_domain_schema.sql`.
 
 ---
 
-## 4. Mappa legacy REQ → SYS
-
-| CONTACTS-REQ | SYS-ID |
-|--------------|--------|
-| REQ-001 | SYS-CONTACTS-001 |
-| REQ-002 | SYS-CONTACTS-002 |
-| REQ-003 | SYS-CONTACTS-003 |
-| REQ-004 | SYS-CONTACTS-004 |
-| REQ-005 | SYS-CONTACTS-005 |
-| REQ-006 | SYS-CONTACTS-006 |
-| REQ-007 | SYS-CONTACTS-007 |
-| REQ-008 | SYS-CONTACTS-008 |
-| REQ-016 | SYS-CONTACTS-016 |
-| REQ-017 | SYS-CONTACTS-017 |
-| REQ-018 | SYS-CONTACTS-018 |
-| REQ-019 | SYS-CONTACTS-019 |
-
----
-
 ## 5. Tracciabilità
 
-| SYS-ID / CONTACTS-REQ | Verifica |
+| SYS-ID | Verifica |
 |-----------------------|----------|
-| SYS-CONTACTS-001, REQ-005 | `schema_smoke.sql` — tabella `contacts`; `20260624200000_alfred_domain_schema.sql` |
+| SYS-CONTACTS-001 | `schema_smoke.sql` — tabella `contacts`; `20260624200000_alfred_domain_schema.sql` |
 | SYS-CONTACTS-002 | `models_and_utils_test.dart` — `ContactProtocol` parsing |
-| SYS-CONTACTS-006, REQ-007 | `contact_service.dart` — PostgREST fetch/insert/delete |
+| SYS-CONTACTS-006 | `contact_service.dart` — PostgREST fetch/insert/delete |
 | SYS-CONTACTS-008 | `contact_service.dart` — `search_profiles`; `contacts_screen.dart` — min 2 caratteri |
-| SYS-CONTACTS-016, REQ-019 | `send_message_to_profile_smoke.sql` — invio senza contatto in rubrica |
-| SYS-CONTACTS-018 | `MAILBOX-INBOX-REQ-018` |
+| SYS-CONTACTS-016 | `send_message_to_profile_smoke.sql` — invio senza contatto in rubrica |
+| SYS-CONTACTS-018 | `SYS-MAILBOX-045` |
 
 Gate: `bash scripts/check-spec-sync.sh` · `cd client && bash scripts/verify.sh`
 

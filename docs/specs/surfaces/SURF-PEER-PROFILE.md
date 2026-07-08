@@ -6,7 +6,6 @@
 | **Status** | `implemented` |
 | **Ultima revisione** | 2026-07-08 |
 | **Promesse** | [SYS-CONTACTS](../promises/system/SYS-CONTACTS.md), [SYS-RECEPTION](../promises/system/SYS-RECEPTION.md) |
-| **Supersedes** | PEER-PROFILE (SDD v1 epurato) |
 | **PR** | #163 |
 
 Binding UX overlay fullscreen al tap avatar di un account Alfred altrui: identità pubblica, toggle allow list, azione rubrica.
@@ -61,41 +60,15 @@ Binding UX overlay fullscreen al tap avatar di un account Alfred altrui: identit
 
 ---
 
-## 3. Mappa legacy REQ → SURF
-
-| PEER-PROFILE-REQ | SURF-ID |
-|------------------|---------|
-| REQ-001 | SURF-PEER-PROFILE-001 |
-| REQ-002 | SURF-PEER-PROFILE-002 |
-| REQ-003 | SURF-PEER-PROFILE-003 |
-| REQ-004 | SURF-PEER-PROFILE-004 |
-| REQ-005 | SURF-PEER-PROFILE-005 |
-| REQ-006 | SURF-PEER-PROFILE-006 |
-| REQ-007 | SURF-PEER-PROFILE-007 |
-| REQ-008 | SURF-PEER-PROFILE-008 |
-| REQ-009 | SURF-PEER-PROFILE-009 |
-| REQ-010 | SURF-PEER-PROFILE-010 |
-| REQ-011 | SURF-PEER-PROFILE-011 |
-| REQ-012 | SURF-PEER-PROFILE-012 |
-| REQ-013 | SURF-PEER-PROFILE-013 |
-| REQ-014 | SURF-PEER-PROFILE-014 |
-| REQ-015 | SURF-PEER-PROFILE-015 |
-| REQ-016 | SURF-PEER-PROFILE-016 |
-| REQ-017 | SURF-PEER-PROFILE-017 |
-| REQ-018 | SURF-PEER-PROFILE-018 |
-| REQ-019 | SURF-PEER-PROFILE-019 |
-
----
-
 ## 4. Tracciabilità
 
-| SURF-ID / PEER-REQ | Verifica |
+| SURF-ID | Verifica |
 |--------------------|----------|
-| SURF-PEER-PROFILE-003, REQ-010 | `reception_allowlist_controller_test.dart` — `removeByProfileId` |
-| SURF-PEER-PROFILE-004, REQ-009 | `contacts_controller_test.dart` — `contactForProfileId`, `removeInternalByProfileId` |
-| SURF-PEER-PROFILE-007, REQ-007 | `peer_profile_overlay_test.dart` — skip self |
-| SURF-PEER-PROFILE-002, REQ-006, REQ-014 | `peer_profile_overlay_test.dart` — widget smoke |
-| SURF-PEER-PROFILE-011, REQ-011 | `main.dart` — proxy provider focus |
+| SURF-PEER-PROFILE-003 | `reception_allowlist_controller_test.dart` — `removeByProfileId` |
+| SURF-PEER-PROFILE-004 | `contacts_controller_test.dart` — `contactForProfileId`, `removeInternalByProfileId` |
+| SURF-PEER-PROFILE-007 | `peer_profile_overlay_test.dart` — skip self |
+| SURF-PEER-PROFILE-002 | `peer_profile_overlay_test.dart` — widget smoke |
+| SURF-PEER-PROFILE-011 | `main.dart` — proxy provider focus |
 
 Gate: `bash scripts/check-spec-sync.sh` + `cd client && bash scripts/verify.sh`
 

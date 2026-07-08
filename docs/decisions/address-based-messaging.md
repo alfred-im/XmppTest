@@ -3,7 +3,7 @@
 > **Contratto promessa**: [SYS-MAILBOX.md](../specs/promises/system/SYS-MAILBOX.md) — [SYS-CONTACTS.md](../specs/promises/system/SYS-CONTACTS.md), [PROM-PERSONAL-CONTACTS.md](../specs/promises/product/PROM-PERSONAL-CONTACTS.md), [SURF-CONTACTS.md](../specs/surfaces/SURF-CONTACTS.md). Questo ADR resta vincolante per **indirizzamento** e **isolamento rubrica**; l’archivio messaggi è per-owner (vedi [mailbox-inbox-outbox-spec.md](../architecture/mailbox-inbox-outbox-spec.md)).
 
 **Data**: 2026-06-27  
-**Status**: ✅ Accettata — **regola vincolante** (indirizzo + rubrica); schema messaggi → MAILBOX-*  
+**Status**: ✅ Accettata — **regola vincolante** (indirizzo + rubrica); schema messaggi → [SYS-MAILBOX](../specs/promises/system/SYS-MAILBOX.md)  
 **Categoria**: Chat, inbox, rubrica, client, piattaforma  
 **Correlata**: [no-internal-external-chat-distinction.md](./no-internal-external-chat-distinction.md), [server-as-reception.md](./server-as-reception.md)
 

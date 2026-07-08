@@ -2,7 +2,7 @@
 
 **Ultima revisione**: 2026-07-08
 
-In SDD v2 le promesse **SYSTEM** sono il contratto tra client, piattaforma Supabase e bridge. Il dettaglio backend **non è stato ridotto**: resta nei documenti canonici sotto.
+Le promesse **SYSTEM** sono il contratto tra client, piattaforma Supabase e bridge. Il dettaglio backend resta nei documenti canonici sotto.
 
 ---
 

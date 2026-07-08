@@ -2,23 +2,9 @@
 
 **Audience**: AI / implementazione  
 **Ultima revisione**: 2026-07-08  
-**Versione metodo**: **SDD v2** — registro delle **promesse**
+**Versione metodo**: SDD — unico metodo di specifica
 
-Alfred esce dalla fase Alpha: il metodo non governa solo schema e RPC, ma **tutto ciò che il prodotto promette** all'utente e ai componenti.
-
----
-
-## SDD v2 — cambio di paradigma
-
-| SDD v1 | SDD v2 |
-|--------|--------|
-| Oggetto: capability tecnica | Oggetto: **promessa** osservabile |
-| Gate: «capability nuova / cambio contratto?» | Gate: **«quale promessa creo, estendo o rompo?»** |
-| UX opzionale nelle spec | UX = stesso tipo di promessa del filtro o della RPC |
-| `INBOX-SEARCH` capability monolitica | `PROM-LIST-FILTER` (prodotto) + `SURF-*` (superficie) |
-| `contracts/` separati dal metodo | `contracts/` = **promesse SYSTEM** (integri, invariati nel dettaglio) |
-
-Per lavoro nuovo, **SDD v2 è canonico**.
+Alfred esce dalla fase Alpha: il metodo governa **tutto ciò che il prodotto promette** all'utente e ai componenti — schema, RPC, comportamento riusabile e binding per superficie.
 
 ---
 
@@ -79,7 +65,7 @@ Esempio: [SURF-CONTACTS](./surfaces/SURF-CONTACTS.md) — quali campi filtra la 
 | `PROM-*` | `promises/product/PROM-*.md` | `PROM-LIST-FILTER-002` |
 | `SURF-*` | `surfaces/SURF-*.md` | `SURF-CONTACTS-001` |
 
-Nuovo lavoro: usare `SYS-*` / `PROM-*` / `SURF-*`. Gli ID legacy `{CAP}-REQ-*` restano citabili in tracciabilità storica (testo piano, senza link).
+Nuovo lavoro: usare esclusivamente `SYS-*` / `PROM-*` / `SURF-*`.
 
 ---
 
@@ -102,9 +88,9 @@ draft → approved → implemented → deprecated | superseded
 
 ```
 docs/specs/
-├── README.md                 # Questo file (SDD v2)
+├── README.md                 # Questo file (SDD)
 ├── registry.md               # Indice unico promesse + stato
-├── index.md                  # Catalogo promesse v2
+├── index.md                  # Catalogo promesse
 ├── _template-promise-product.md
 ├── _template-surface.md
 ├── promises/
@@ -152,8 +138,8 @@ Solo token theme: colori, padding, font, animazioni non legate a semantica. Refa
 
 ### Distinzione da regola 0
 
-| | SDD v2 | Regola 0 |
-|--|--------|----------|
+| | SDD | Regola 0 |
+|--|-----|----------|
 | **Ambito** | Processo end-to-end | Solo scrittura fisica nel repo |
 | **Gate** | Promessa `approved` + tracciabilità | «Vuoi che proceda con le modifiche?» |
 | **Prima di implementare** | Promessa in `approved` | Conferma esplicita alla domanda di scrittura |

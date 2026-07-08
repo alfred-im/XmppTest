@@ -10,30 +10,12 @@ Modifiche rilevanti al progetto per tracciare evoluzione tecnica e decisioni imp
 
 - **#171** — Ricerca on-demand su rubrica e persone consentite (`CollapsibleListSearch`); widget condiviso con inbox
 
-### Documentazione — epurazione capability v1 (SDD v2, #171)
+### Documentazione — SDD registro promesse (#171, #172)
 
-- **Rimossa** cartella legacy capability v1 (`docs/specs/` — epurazione SDD v2) — contratti migrati a promesse v2 (`docs/specs/promises/`, `docs/specs/surfaces/`, `docs/specs/registry.md`)
-- **Aggiornati** cross-ref in `PROJECT_MAP.md`, `alpha-full-stack.md`, `alpha-pr-registry.md`, `implementation/*`, `design/*`, `decisions/*`, `mailbox-inbox-outbox-spec.md`, `WISHLIST.md`, `.cursor-rules.md`, `AGENTS.md`
-- **Mappa legacy → v2**: `MAILBOX-*` → `SYS-MAILBOX`; `GROUP-*` → `SYS-GROUP`; `PROFILE` → `SYS-PROFILE` + `PROM-PROFILE-IDENTITY` + `SURF-PROFILE`; `CONTACTS` → `SYS-CONTACTS` + `PROM-PERSONAL-CONTACTS` + `SURF-CONTACTS`; `RECEPTION-ALLOWLIST` → `SYS-RECEPTION` + `PROM-RECEPTION-FILTER` + `SURF-ALLOWLIST`; `AUTH-MULTI` → `PROM-MULTI-ACCOUNT` + `SURF-AUTH`; `PEER-PROFILE` → `PROM-PEER-PROFILE` + `SURF-PEER-PROFILE`; `INBOX-SEARCH` → `PROM-LIST-FILTER` + `SURF-INBOX`
-
-### Documentazione — SDD v2 (post-Alpha, #171)
-
-- **Riscrittura metodo SDD**: da capability-centric a **registro promesse** (SYSTEM / PRODUCT / SURFACE) — `docs/specs/README.md`
-- **Registro**: `docs/specs/registry.md`
-- **Pilota promesse**: `PROM-LIST-FILTER` + `SURF-INBOX` / `SURF-CONTACTS` / `SURF-ALLOWLIST`
-- **Backend invariato**: `docs/specs/contracts/schema.md`, `rpc.md` restano canonici SYSTEM
-- **Aggiornati**: `.cursor-rules.md`, `AGENTS.md`, `check-spec-sync.sh`, PR template, `INDICE.md`, `PROJECT_MAP.md`
-- **INBOX-SEARCH.spec.md**: `superseded` (UX migrate a v2)
-
-### Documentazione — allineamento SDD v2 (post-#171)
-
-- **Voce unica SDD v2**: `.cursor-rules.md`, `AGENTS.md`, `.cursor/rules/main.mdc` — registro `registry.md` come ingresso contratti
-- **Cross-ref**: `INDICE.md`, `index.md` (catalogo legacy), `alpha-full-stack.md`, `alpha-pr-registry.md`, `PROJECT_MAP.md`, `SESSION_HANDOFF.md`
-- **Superseded stub**: `INBOX-SEARCH.spec.md` → mappa REQ storica → `PROM-LIST-FILTER` + `SURF-INBOX`
-- **MAILBOX-INBOX REQ-011**: tracciabilità → promesse v2
-- **Design layer**: `design/README.md`, `inbox-search-toggle.md` (→ `CollapsibleListSearch`), `conversation-bottom-anchor.md` (backlog promessa)
-- **Test comments**: `inbox_panel_test.dart`, `list_filter_test.dart` — PROM/SURF ID
-- **check-spec-sync.sh**: skip REQ-ID su capability `superseded`
+- **Registro promesse**: `docs/specs/registry.md` — SYSTEM / PRODUCT / SURFACE come ingresso contratti
+- **Metodo**: `docs/specs/README.md`; allineamento `.cursor-rules.md`, `AGENTS.md`, `check-spec-sync.sh`, PR template
+- **Cross-ref**: `PROJECT_MAP.md`, `alpha-full-stack.md`, `alpha-pr-registry.md`, `INDICE.md`, `SESSION_HANDOFF.md`, `implementation/*`, `design/*`, `decisions/*`
+- **#172**: documentazione uniformata a ID SYS/PROM/SURF; rimossi residui metodo precedente
 
 ---
 
@@ -54,10 +36,10 @@ Modifiche rilevanti al progetto per tracciare evoluzione tecnica e decisioni imp
 
 ### Aggiunto (2026-07-07 — review design-first batch 6, PR #169)
 
-- **Test**: `auth_controller_test.dart` — gate overlay AUTH-MULTI (REQ-011/012/014/021), validazione sign-in/sign-up
-- **Test**: `account_sidebar_test.dart` — badge «Gruppo» nel manifest (GROUP-CORE-REQ-016)
+- **Test**: `auth_controller_test.dart` — gate overlay `SURF-AUTH` / `PROM-MULTI-ACCOUNT`, validazione sign-in/sign-up
+- **Test**: `account_sidebar_test.dart` — badge «Gruppo» nel manifest (`SURF-ACCOUNT-SIDEBAR`)
 - **Helper test**: `AccountManager.syncManifestFromStorageForTest()`
-- **Tracciabilità SDD**: `AUTH-MULTI`, `GROUP-CORE` aggiornate
+- **Tracciabilità SDD**: `PROM-MULTI-ACCOUNT`, `SYS-GROUP` aggiornate
 - **Gate**: **130** test
 
 ### Aggiunto (2026-07-07 — PEER-PROFILE, PR #163)

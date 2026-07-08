@@ -6,7 +6,7 @@ Architecture Decision Records. Documento per AI.
 
 | ADR | Summary |
 |-----|---------|
-| [address-based-messaging.md](./address-based-messaging.md) | Messaggistica per indirizzo; inbox on-read; archivio per-owner (MAILBOX-*) |
+| [address-based-messaging.md](./address-based-messaging.md) | Messaggistica per indirizzo; inbox on-read; archivio per-owner ([SYS-MAILBOX](../specs/promises/system/SYS-MAILBOX.md)) |
 | [no-internal-external-chat-distinction.md](./no-internal-external-chat-distinction.md) | Nessuna distinzione chat interna/esterna a tutti i livelli |
 | [bridge-stateless.md](./bridge-stateless.md) | Bridge senza stato di business; verità su Supabase |
 | [server-as-reception.md](./server-as-reception.md) | Ricezione = ricezione sul server (spunte cloud); gate allow list → [SYS-RECEPTION](../specs/promises/system/SYS-RECEPTION.md), [PROM-RECEPTION-FILTER](../specs/promises/product/PROM-RECEPTION-FILTER.md), [SURF-ALLOWLIST](../specs/surfaces/SURF-ALLOWLIST.md) |

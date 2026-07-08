@@ -6,7 +6,6 @@
 | **Classe** | PRODUCT |
 | **Status** | `implemented` |
 | **Ultima revisione** | 2026-07-08 |
-| **Supersedes** | MAILBOX-SEND REQ-008 (SDD v1 epurato) |
 | **PR origine** | #159 |
 
 Promessa di prodotto: messaggi in uscita accodati client-side con UI optimistic fino ad ACK server; merge per `client_message_id`.
@@ -40,14 +39,6 @@ L'utente vede il proprio messaggio subito in chat (stato pending) mentre il clie
 |----|----------|
 | **PROM-OUTBOUND-SEND-010** | Duplicare bolle optimistic e server per lo stesso `client_message_id` |
 | **PROM-OUTBOUND-SEND-011** | Coda globale condivisa tra account senza scope `userId` |
-
----
-
-## 3. Mappa legacy REQ
-
-| Legacy REQ | PROM-ID |
-|------------|---------|
-| MAILBOX-SEND-REQ-008 | PROM-OUTBOUND-SEND-001, 002, 003, 004 |
 
 ---
 
@@ -86,7 +77,8 @@ L'utente vede il proprio messaggio subito in chat (stato pending) mentre il clie
 | PROM-OUTBOUND-SEND-001–004 | `messages_controller_multi_account_test.dart`, `multi_account_scope_test.dart` |
 | PROM-OUTBOUND-SEND-003 | `mailbox_idempotency_smoke.sql` — dedup `(owner_id, client_message_id)` |
 | PROM-OUTBOUND-SEND-006 | `multi_account_scope_test.dart` |
-| MAILBOX-SEND-REQ-008 (legacy) | `bash scripts/test.sh integration` |
+| PROM-OUTBOUND-SEND | `bash scripts/test.sh integration` |
+
 
 Gate: `bash scripts/check-spec-sync.sh` + `cd client && bash scripts/verify.sh`
 

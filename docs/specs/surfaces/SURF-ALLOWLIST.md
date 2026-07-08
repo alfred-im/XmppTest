@@ -6,7 +6,6 @@
 | **Status** | `implemented` |
 | **Ultima revisione** | 2026-07-08 |
 | **Promesse** | [PROM-LIST-FILTER](../promises/product/PROM-LIST-FILTER.md), [SYS-RECEPTION](../promises/system/SYS-RECEPTION.md) |
-| **Supersedes** | RECEPTION-ALLOWLIST UI REQ-015–017, 016b, 019–020 (SDD v1 epurato) |
 | **PR** | #161 |
 
 Binding completo schermata «Persone consentite»: filtro lista, aggiunta/rimozione manuale, controller per account in focus.
@@ -64,32 +63,15 @@ Binding completo schermata «Persone consentite»: filtro lista, aggiunta/rimozi
 
 ---
 
-## 3. Mappa legacy REQ → SURF
-
-| RECEPTION-ALLOWLIST-REQ | SURF-ID |
-|-------------------------|---------|
-| REQ-015 | SURF-INBOX-007 (entry icona); SURF-ALLOWLIST (schermata) |
-| REQ-016 | SURF-ALLOWLIST-006, SURF-ALLOWLIST-007 |
-| REQ-016b | SURF-ALLOWLIST-001–004 |
-| REQ-017 | SURF-ALLOWLIST-005 |
-| REQ-019 | SURF-ALLOWLIST-010 |
-| REQ-020 | SURF-ALLOWLIST-011 |
-| REQ-026 | SURF-ALLOWLIST-022 |
-| REQ-022 | SURF-ALLOWLIST-023 |
-
-Gate recapito server: [SYS-RECEPTION.md](../promises/system/SYS-RECEPTION.md).
-
----
-
 ## 4. Tracciabilità
 
-| SURF-ID / RECEPTION-REQ | Verifica |
+| SURF-ID | Verifica |
 |-------------------------|----------|
 | SURF-ALLOWLIST-002 | `reception_allowlist_controller_test.dart` — `filteredAllowedPeople` |
-| SURF-ALLOWLIST-001–004, REQ-016b | `allowed_people_screen.dart`; `allowed_people_screen_test.dart` |
-| SURF-ALLOWLIST-005–007, REQ-016–017 | `reception_allowlist_controller_test.dart`; `allowed_people_screen_test.dart` |
+| SURF-ALLOWLIST-001–004 | `allowed_people_screen.dart`; `allowed_people_screen_test.dart` |
+| SURF-ALLOWLIST-005–007 | `reception_allowlist_controller_test.dart`; `allowed_people_screen_test.dart` |
 | SURF-ALLOWLIST-009 | `allowed_people_screen.dart` — empty state |
-| SURF-ALLOWLIST-011, REQ-020 | `reception_allowlist_controller.dart` — reload dopo add/remove |
+| SURF-ALLOWLIST-011 | `reception_allowlist_controller.dart` — reload dopo add/remove |
 
 Gate: `cd client && bash scripts/verify.sh`
 

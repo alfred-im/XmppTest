@@ -6,12 +6,11 @@
 | **Classe** | PRODUCT |
 | **Status** | `implemented` |
 | **Ultima revisione** | 2026-07-08 |
-| **Supersedes** | RECEPTION-ALLOWLIST semantica osservabile utente (SDD v1 epurato) |
 | **PR origine** | #161 |
 
 Promessa di prodotto: il destinatario controlla chi può **consegnargli** messaggi; filtro **sempre attivo**; rifiuto **silenzioso** verso il mittente (stile blocco XMPP).
 
-Gate server e schema `reception_allowlist` restano in capability legacy e `contracts/schema.md`.
+Gate server e schema `reception_allowlist` restano in [SYS-RECEPTION](../promises/system/SYS-RECEPTION.md) e [contracts/schema.md](../../contracts/schema.md).
 
 ---
 
@@ -63,28 +62,6 @@ Su rifiuto allow list: il mittente resta al livello **1** per sempre — come bl
 
 ---
 
-## 3. Mappa legacy REQ
-
-| Legacy REQ | PROM-ID |
-|------------|---------|
-| RECEPTION-ALLOWLIST-REQ-006 | PROM-RECEPTION-FILTER-004 |
-| RECEPTION-ALLOWLIST-REQ-007 | PROM-RECEPTION-FILTER-002 |
-| RECEPTION-ALLOWLIST-REQ-008 | PROM-RECEPTION-FILTER-005 |
-| RECEPTION-ALLOWLIST-REQ-009 | PROM-RECEPTION-FILTER-006 |
-| RECEPTION-ALLOWLIST-REQ-011 | PROM-RECEPTION-FILTER-008 |
-| RECEPTION-ALLOWLIST-REQ-012 | PROM-RECEPTION-FILTER-009 |
-| RECEPTION-ALLOWLIST-REQ-013 | PROM-RECEPTION-FILTER-003 |
-| RECEPTION-ALLOWLIST-REQ-014 | PROM-RECEPTION-FILTER-001 |
-| RECEPTION-ALLOWLIST-REQ-021 | PROM-RECEPTION-FILTER-020 |
-| RECEPTION-ALLOWLIST-REQ-022 | PROM-RECEPTION-FILTER-023 |
-| RECEPTION-ALLOWLIST-REQ-024 | PROM-RECEPTION-FILTER-025 |
-| RECEPTION-ALLOWLIST-REQ-025 | PROM-RECEPTION-FILTER-024 |
-| RECEPTION-ALLOWLIST-REQ-026 | PROM-RECEPTION-FILTER-022 |
-| RECEPTION-ALLOWLIST-REQ-027 | PROM-RECEPTION-FILTER-021 |
-| (§1 semantica spunte) | PROM-RECEPTION-FILTER-005, 006, 007 |
-
----
-
 ## 4. Contratto implementativo
 
 | Elemento | Responsabilità |
@@ -122,6 +99,7 @@ Su rifiuto allow list: il mittente resta al livello **1** per sempre — come bl
 | PROM-RECEPTION-FILTER-006 | `bash scripts/test.sh integration` |
 | PROM-RECEPTION-FILTER-005, 007 | [SYS-MAILBOX](../system/SYS-MAILBOX.md) — `delivered_at` null = ✓ singola |
 | PROM-RECEPTION-FILTER-020, 021 | `reception_allowlist_gate_smoke.sql`; nessun campo client `reception_rejected` |
+
 
 Gate: `bash scripts/check-spec-sync.sh` + `verify.sh` + smoke SQL + `integration`
 

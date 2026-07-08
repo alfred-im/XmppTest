@@ -2,7 +2,7 @@
 
 Principi UI per il client Flutter. Documento per AI.
 
-> **SDD v2**: i contratti vivono in [specs/registry.md](../specs/registry.md) (PROM/SURF). I file qui sono **evidenza storica** o backlog promesse non ancora distillate.
+> **SDD**: i contratti vivono in [specs/registry.md](../specs/registry.md) (PROM/SURF). I file qui sono **evidenza storica** o backlog promesse non ancora distillate.
 
 | File | Contenuto | Contratto v2 |
 |------|-----------|----------------|

@@ -6,7 +6,6 @@
 | **Classe** | SYSTEM |
 | **Status** | `implemented` |
 | **Ultima revisione** | 2026-07-08 |
-| **Supersedes** | MAILBOX-CORE, MAILBOX-SEND, MAILBOX-INBOX, MAILBOX-READ (SDD v1 epurato) |
 | **ADR** | [mailbox-inbox-outbox-spec.md](../../../architecture/mailbox-inbox-outbox-spec.md), [server-as-reception.md](../../../decisions/server-as-reception.md), [no-internal-external-chat-distinction.md](../../../decisions/no-internal-external-chat-distinction.md), [bridge-stateless.md](../../../decisions/bridge-stateless.md) |
 | **PR origine** | #159 |
 
@@ -47,7 +46,7 @@ Requisiti **client/UI** (coda outbound, realtime subscribe, checkmark rendering,
 | ID | Promessa |
 |----|----------|
 | **SYS-MAILBOX-010** | Indici `(owner_id, peer_profile_id, created_at DESC)` e `(owner_id, logical_message_id)` |
-| **SYS-MAILBOX-011** | `peer_external_address` nullable per federazione futura (non usata in v1 UI) |
+| **SYS-MAILBOX-011** | `peer_external_address` nullable per federazione futura (non usata in Alpha UI) |
 
 #### MUST NOT
 
@@ -103,7 +102,7 @@ Requisiti **client/UI** (coda outbound, realtime subscribe, checkmark rendering,
 | ID | Promessa |
 |----|----------|
 | **SYS-MAILBOX-033** | `list_inbox()` aggrega **solo** `messages` WHERE `owner_id = auth.uid()` |
-| **SYS-MAILBOX-034** | GROUP BY `peer_profile_id` (internal v1) |
+| **SYS-MAILBOX-034** | GROUP BY `peer_profile_id` (internal Alpha) |
 | **SYS-MAILBOX-035** | Payload riga: `peer_profile_id`, `display_name`, `last_message_preview`, `last_message_at`, `unread_count`, campi profilo peer |
 | **SYS-MAILBOX-036** | `list_peer_messages(peer)` = righe WHERE `owner_id = auth.uid()` AND `peer_profile_id = peer` ORDER BY `created_at` |
 | **SYS-MAILBOX-037** | Prima riga inbox solo dopo primo messaggio nel mio archivio con quel peer |
@@ -134,7 +133,7 @@ Requisiti **client/UI** (coda outbound, realtime subscribe, checkmark rendering,
 
 | ID | Promessa |
 |----|----------|
-| **SYS-MAILBOX-046** | `delivered_at` valorizzato solo dopo materializzazione copia destinatario (MAILBOX-SEND) — non da Realtime client destinatario |
+| **SYS-MAILBOX-046** | `delivered_at` valorizzato solo dopo materializzazione copia destinatario ([SYS-MAILBOX](./SYS-MAILBOX.md) invio) — non da Realtime client destinatario |
 | **SYS-MAILBOX-047** | `mark_peer_read(peer)`: UPDATE righe in entrata nel mio archivio (`owner_id = io`, `author_id = peer`, `read_at IS NULL`) SET `read_at = now()` |
 | **SYS-MAILBOX-048** | Per ogni λ delle righe lette: UPDATE copia mittente SET `read_at = now()` WHERE `owner_id = peer` (mittente) AND `logical_message_id = λ` AND `read_at IS NULL` — SECURITY DEFINER |
 | **SYS-MAILBOX-049** | Lettura include body non vuoto OPPURE `content_type` ∈ gif, voice, location |
@@ -167,68 +166,6 @@ Requisiti **client/UI** (coda outbound, realtime subscribe, checkmark rendering,
 | Destinatario (entrata) | `read_at` | Lettura locale; alimenta `mark_peer_read` |
 
 Regola: se `read_at` valorizzata su copia mittente, `delivered_at` tardivo non la azzera.
-
----
-
-## 4. Mappa legacy → SYS-MAILBOX
-
-| Legacy REQ-ID | SYS-MAILBOX-ID |
-|---------------|----------------|
-| MAILBOX-CORE-REQ-001 | SYS-MAILBOX-001 |
-| MAILBOX-CORE-REQ-002 | SYS-MAILBOX-002 |
-| MAILBOX-CORE-REQ-003 | SYS-MAILBOX-003 |
-| MAILBOX-CORE-REQ-004 | SYS-MAILBOX-004 |
-| MAILBOX-CORE-REQ-005 | SYS-MAILBOX-005 |
-| MAILBOX-CORE-REQ-006 | SYS-MAILBOX-006 |
-| MAILBOX-CORE-REQ-008 | SYS-MAILBOX-007 |
-| MAILBOX-CORE-REQ-009 | SYS-MAILBOX-008 |
-| MAILBOX-CORE-REQ-010 | SYS-MAILBOX-009 |
-| MAILBOX-CORE-REQ-011 | SYS-MAILBOX-010 |
-| MAILBOX-CORE-REQ-012 | SYS-MAILBOX-011 |
-| MAILBOX-CORE-REQ-013 | SYS-MAILBOX-012 |
-| MAILBOX-CORE-REQ-014 | SYS-MAILBOX-013 |
-| MAILBOX-CORE-REQ-015 | SYS-MAILBOX-014 |
-| MAILBOX-CORE-REQ-016 | SYS-MAILBOX-015 |
-| MAILBOX-CORE-REQ-017 | SYS-MAILBOX-016 |
-| MAILBOX-SEND-REQ-001 | SYS-MAILBOX-017 |
-| MAILBOX-SEND-REQ-002 | SYS-MAILBOX-018 |
-| MAILBOX-SEND-REQ-003 | SYS-MAILBOX-019 |
-| MAILBOX-SEND-REQ-004 | SYS-MAILBOX-020 |
-| MAILBOX-SEND-REQ-005 | SYS-MAILBOX-021 |
-| MAILBOX-SEND-REQ-006 | SYS-MAILBOX-022 |
-| MAILBOX-SEND-REQ-007 | SYS-MAILBOX-023 |
-| MAILBOX-SEND-REQ-009 | SYS-MAILBOX-024 |
-| MAILBOX-SEND-REQ-010 | SYS-MAILBOX-025 |
-| MAILBOX-SEND-REQ-011 | SYS-MAILBOX-026 |
-| MAILBOX-SEND-REQ-012 | SYS-MAILBOX-027 |
-| MAILBOX-SEND-REQ-013 | SYS-MAILBOX-028 |
-| MAILBOX-SEND-REQ-014 | SYS-MAILBOX-029 |
-| MAILBOX-SEND-REQ-015 | SYS-MAILBOX-030 |
-| MAILBOX-SEND-REQ-016 | SYS-MAILBOX-031 |
-| MAILBOX-SEND-REQ-017 | SYS-MAILBOX-032 |
-| MAILBOX-INBOX-REQ-001 | SYS-MAILBOX-033 |
-| MAILBOX-INBOX-REQ-002 | SYS-MAILBOX-034 |
-| MAILBOX-INBOX-REQ-003 | SYS-MAILBOX-035 |
-| MAILBOX-INBOX-REQ-004 | SYS-MAILBOX-036 |
-| MAILBOX-INBOX-REQ-006 | SYS-MAILBOX-037 |
-| MAILBOX-INBOX-REQ-009 | SYS-MAILBOX-038 |
-| MAILBOX-INBOX-REQ-012 | SYS-MAILBOX-039 |
-| MAILBOX-INBOX-REQ-013 | SYS-MAILBOX-040 |
-| MAILBOX-INBOX-REQ-014 | SYS-MAILBOX-041 |
-| MAILBOX-INBOX-REQ-015 | SYS-MAILBOX-042 |
-| MAILBOX-INBOX-REQ-016 | SYS-MAILBOX-043 |
-| MAILBOX-INBOX-REQ-017 | SYS-MAILBOX-044 |
-| MAILBOX-INBOX-REQ-018 | SYS-MAILBOX-045 |
-| MAILBOX-READ-REQ-002 | SYS-MAILBOX-046 |
-| MAILBOX-READ-REQ-004 | SYS-MAILBOX-047 |
-| MAILBOX-READ-REQ-005 | SYS-MAILBOX-048 |
-| MAILBOX-READ-REQ-006 | SYS-MAILBOX-049 |
-| MAILBOX-READ-REQ-008 | SYS-MAILBOX-050 |
-| MAILBOX-READ-REQ-012 | SYS-MAILBOX-051 |
-| MAILBOX-READ-REQ-013 | SYS-MAILBOX-052 |
-| MAILBOX-READ-REQ-014 | SYS-MAILBOX-053 |
-| MAILBOX-READ-REQ-015 | SYS-MAILBOX-054 |
-| MAILBOX-READ-REQ-016 | SYS-MAILBOX-055 |
 
 ---
 
@@ -269,28 +206,6 @@ mark_peer_read(p_peer_profile_id uuid) → void
 
 ---
 
-## 6. Requisiti delegati (PRODUCT / SURFACE)
-
-Requisiti legacy **non backend** — non duplicati come SYS-ID; tracciati nelle promesse client.
-
-| Legacy REQ-ID | Delegato a |
-|---------------|------------|
-| MAILBOX-CORE-REQ-007 | SURF chat — `(io, indirizzo peer)`; nessun `thread_id` |
-| MAILBOX-SEND-REQ-008 | Client — `OutboundMessageQueue` + merge optimistic |
-| MAILBOX-INBOX-REQ-005 | SURF chat — `ChatPeer.profileId` |
-| MAILBOX-INBOX-REQ-007 | SURF-INBOX / client — Realtime subscribe `owner_id` |
-| MAILBOX-INBOX-REQ-008 | SURF chat — Realtime filtro peer |
-| MAILBOX-INBOX-REQ-010 | [PROM-MULTI-ACCOUNT](../product/PROM-MULTI-ACCOUNT.md) — focus multi-account |
-| MAILBOX-INBOX-REQ-011 | [PROM-LIST-FILTER](../product/PROM-LIST-FILTER.md) + [SURF-INBOX](../../surfaces/SURF-INBOX.md) |
-| MAILBOX-READ-REQ-001 | SURF chat — checkmark UI da date |
-| MAILBOX-READ-REQ-003 | SURF chat — `mark_peer_read` in `MessagesController._init` |
-| MAILBOX-READ-REQ-007 | SURF chat — Realtime UPDATE su righe mittente |
-| MAILBOX-READ-REQ-009 | Client — stati `pending`/`failed` pre-ACK |
-| MAILBOX-READ-REQ-010 | SURF chat — `mark_peer_read` solo apertura chat |
-| MAILBOX-READ-REQ-011 | SURF chat — checkmarks solo bolle `isMine` |
-
----
-
 ## 7. Tracciabilità
 
 | SYS-ID | Verifica |
@@ -309,14 +224,14 @@ Requisiti legacy **non backend** — non duplicati come SYS-ID; tracciati nelle 
 | SYS-MAILBOX-046 | `mailbox_delivery_smoke.sql` |
 | SYS-MAILBOX-047–049 | `supabase/tests/mailbox_read_smoke.sql` |
 | SYS-MAILBOX-054 | `client/test/unit/models_and_utils_test.dart` |
-| SYS-MAILBOX-017–025 (integrazione) | `bash scripts/test.sh integration` |
-| MAILBOX-SEND-REQ-008 (delegato) | `messages_controller_multi_account_test.dart`, `multi_account_scope_test.dart` |
-| MAILBOX-INBOX-REQ-007 (delegato) | `inbox_provider_listen_test.dart`, `inbox_realtime_owner_filter_test.dart` |
-| MAILBOX-INBOX-REQ-010 (delegato) | `multi_account_chat_scenario_test.dart` |
-| MAILBOX-INBOX-REQ-011 (delegato) | `PROM-LIST-FILTER`, `SURF-INBOX`; `inbox_controller.dart` `filteredPeers` |
-| MAILBOX-READ-REQ-001 (delegato) | `message_bubble_test.dart`, `models_and_utils_test.dart` |
-| MAILBOX-READ-REQ-007 (delegato) | `messages_controller_multi_account_test.dart` |
-| SYS-MAILBOX-017–050 (E2E) | `bash scripts/test.sh e2e-multi` |
+| SYS-MAILBOX-017–025 | `bash scripts/test.sh integration` |
+| PROM-OUTBOUND-SEND | `messages_controller_multi_account_test.dart`, `multi_account_scope_test.dart` |
+| PROM-REALTIME-OWNER-001 | `inbox_provider_listen_test.dart`, `inbox_realtime_owner_filter_test.dart` |
+| PROM-REALTIME-OWNER-007 | `multi_account_chat_scenario_test.dart` |
+| PROM-LIST-FILTER, SURF-INBOX | `inbox_controller.dart` `filteredPeers` |
+| PROM-MESSAGE-STATUS | `message_bubble_test.dart`, `models_and_utils_test.dart` |
+| PROM-REALTIME-OWNER-005 | `messages_controller_multi_account_test.dart` |
+| SYS-MAILBOX-017–050 | `bash scripts/test.sh e2e-multi` |
 
 **Gate**: `bash scripts/check-spec-sync.sh` + `cd client && bash scripts/verify.sh` + `integration` + `e2e-multi`
 

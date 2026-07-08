@@ -6,7 +6,6 @@
 | **Classe** | SYSTEM |
 | **Status** | `implemented` |
 | **Ultima revisione** | 2026-07-08 |
-| **Supersedes** | GROUP-CORE, GROUP-DELIVERY (SDD v1 epurato) |
 | **ADR** | [address-based-messaging.md](../../../decisions/address-based-messaging.md), [mailbox-inbox-outbox-spec.md](../../../architecture/mailbox-inbox-outbox-spec.md), [server-as-reception.md](../../../decisions/server-as-reception.md) |
 | **PR origine** | #162 |
 | **Correlata** | [SYS-MAILBOX](./SYS-MAILBOX.md), [SYS-RECEPTION](./SYS-RECEPTION.md), [SYS-PROFILE](./SYS-PROFILE.md) |
@@ -163,53 +162,6 @@ broadcast_message_to_allowlist()
 
 ---
 
-## 4. Mappa legacy → SYS-GROUP
-
-| Legacy REQ-ID | SYS-GROUP-ID |
-|---------------|--------------|
-| GROUP-CORE-REQ-001 | SYS-GROUP-001 |
-| GROUP-CORE-REQ-002 | SYS-GROUP-002 |
-| GROUP-CORE-REQ-003 | SYS-GROUP-003 |
-| GROUP-CORE-REQ-009 | SYS-GROUP-004 |
-| GROUP-CORE-REQ-014 | SYS-GROUP-005 |
-| GROUP-CORE-REQ-012 | SYS-GROUP-006 |
-| GROUP-CORE-REQ-017 | SYS-GROUP-007 |
-| GROUP-CORE-REQ-018 | SYS-GROUP-008 |
-| GROUP-CORE-REQ-021 | SYS-GROUP-009 |
-| GROUP-CORE-REQ-024 | SYS-GROUP-010 |
-| GROUP-CORE-REQ-008 | SYS-GROUP-011 |
-| GROUP-CORE-REQ-010 | SYS-GROUP-012 |
-| GROUP-CORE-REQ-022 | SYS-GROUP-013 |
-| GROUP-CORE-REQ-023 | SYS-GROUP-014 |
-| GROUP-DELIVERY-REQ-001 | SYS-GROUP-015 |
-| GROUP-DELIVERY-REQ-002 | SYS-GROUP-016 |
-| GROUP-DELIVERY-REQ-003 | SYS-GROUP-017 |
-| GROUP-DELIVERY-REQ-004 | SYS-GROUP-018 |
-| GROUP-DELIVERY-REQ-005 | SYS-GROUP-019 |
-| GROUP-DELIVERY-REQ-006 | SYS-GROUP-020 |
-| GROUP-DELIVERY-REQ-007 | SYS-GROUP-021 |
-| GROUP-DELIVERY-REQ-008 | SYS-GROUP-022 |
-| GROUP-DELIVERY-REQ-010 | SYS-GROUP-023 |
-| GROUP-DELIVERY-REQ-010b | SYS-GROUP-024 |
-| GROUP-DELIVERY-REQ-011 | SYS-GROUP-025 |
-| GROUP-DELIVERY-REQ-012 | SYS-GROUP-026 |
-| GROUP-DELIVERY-REQ-013 | SYS-GROUP-032 |
-| GROUP-DELIVERY-REQ-014 | SYS-GROUP-027 |
-| GROUP-DELIVERY-REQ-015 | SYS-GROUP-028 |
-| GROUP-DELIVERY-REQ-016 | SYS-GROUP-029 |
-| GROUP-DELIVERY-REQ-017 | SYS-GROUP-030 |
-| GROUP-DELIVERY-REQ-018 | SYS-GROUP-031 |
-| GROUP-DELIVERY-REQ-020 | SYS-GROUP-033 |
-| GROUP-DELIVERY-REQ-021 | SYS-GROUP-034 |
-| GROUP-DELIVERY-REQ-022 | SYS-GROUP-035 |
-| GROUP-DELIVERY-REQ-023 | SYS-GROUP-036 |
-| GROUP-DELIVERY-REQ-024 | SYS-GROUP-037 |
-| GROUP-DELIVERY-REQ-025 | SYS-GROUP-038 |
-| GROUP-DELIVERY-REQ-026 | SYS-GROUP-039 |
-| GROUP-DELIVERY-REQ-027 | SYS-GROUP-040 |
-
----
-
 ## 5. Implementazione contratto
 
 | Elemento | Documento / codice |
@@ -219,25 +171,6 @@ broadcast_message_to_allowlist()
 | Gate bidirezionale | `is_bidirectional_allowed` (SECURITY DEFINER, no GRANT authenticated) |
 | Migrazioni gruppo | `supabase/migrations/*group*` |
 | Smoke SQL | `supabase/tests/group_schema_smoke.sql`, `group_delivery_smoke.sql`, `group_broadcast_smoke.sql`, `rpc_helper_security_smoke.sql` |
-
----
-
-## 6. Requisiti delegati (PRODUCT / SURFACE)
-
-| Legacy REQ-ID | Delegato a |
-|---------------|------------|
-| GROUP-CORE-REQ-004 | SURF-AUTH (backlog) — toggle tipo account in registrazione |
-| GROUP-CORE-REQ-005 | [PROM-MULTI-ACCOUNT](../product/PROM-MULTI-ACCOUNT.md) — manifest multi-account |
-| GROUP-CORE-REQ-006 | SURF gruppo — shell senza `list_inbox()` |
-| GROUP-CORE-REQ-007 | SURF gruppo — layout allow list sopra conversazione |
-| GROUP-CORE-REQ-011 | PRODUCT — account personale opzionale per creatore |
-| GROUP-CORE-REQ-013 | [SYS-PROFILE](./SYS-PROFILE.md) + [SURF-PROFILE](../../surfaces/SURF-PROFILE.md) |
-| GROUP-CORE-REQ-015 | SURF inbox user — peer gruppo come `peer_profile_id` |
-| GROUP-CORE-REQ-016 | SURF manifest — badge «Gruppo» |
-| GROUP-CORE-REQ-019 | PRODUCT — nessun obbligo account personale |
-| GROUP-CORE-REQ-020 | SURF gruppo — no inbox a lista conversazioni |
-| GROUP-DELIVERY-REQ-009 | SURF chat gruppo — `original_author_id`, `MessageAuthorHeader`, `author_display.dart` |
-| GROUP-DELIVERY-REQ-019 | SURF/client — Realtime subscribe `owner_id = io` |
 
 ---
 
@@ -252,10 +185,10 @@ broadcast_message_to_allowlist()
 | SYS-GROUP-015–022, 025–027, 034 | `supabase/tests/group_delivery_smoke.sql` |
 | SYS-GROUP-023, 024 | `supabase/tests/group_broadcast_smoke.sql` |
 | SYS-GROUP-032 | [SYS-MAILBOX](./SYS-MAILBOX.md) — `mailbox_read_smoke.sql` |
-| GROUP-DELIVERY-REQ-009 (delegato) | `client/test/unit/group_message_display_test.dart`, `client/test/widget/message_bubble_test.dart` |
-| GROUP-CORE-REQ-006–007, 016 (delegato) | `group_conversation_screen_test.dart`, `home_screen_group_test.dart`, `account_sidebar_test.dart`, `inbox_controller_group_test.dart` |
-| GROUP-CORE-REQ-004 (delegato) | `AuthScreen` — verifica manuale / e2e |
-| GROUP-CORE-REQ-005 (delegato) | `account_manager_persistence_test.dart` (`profileKind` manifest) |
+| PROM-GROUP-AUTHOR-DISPLAY, SURF-GROUP-CONVERSATION-001 | `client/test/unit/group_message_display_test.dart`, `client/test/widget/message_bubble_test.dart` |
+| SURF-GROUP-SHELL-002, SURF-GROUP-SHELL-003, SURF-GROUP-SHELL-007 | `group_conversation_screen_test.dart`, `home_screen_group_test.dart`, `account_sidebar_test.dart`, `inbox_controller_group_test.dart` |
+| SURF-AUTH-006 | `AuthScreen` — verifica manuale / e2e |
+| PROM-MULTI-ACCOUNT-031 | `account_manager_persistence_test.dart` (`profileKind` manifest) |
 
 **Gate**: `bash scripts/check-spec-sync.sh` + `cd client && bash scripts/verify.sh` + smoke SQL gruppo + `integration` esteso
 

@@ -6,7 +6,6 @@
 | **Classe** | PRODUCT |
 | **Status** | `implemented` |
 | **Ultima revisione** | 2026-07-08 |
-| **Supersedes** | MAILBOX-INBOX REQ-007, REQ-008; MAILBOX-READ REQ-007 (SDD v1 epurato) |
 | **PR origine** | #159 |
 
 Promessa di prodotto: subscribe Realtime Postgres su `messages` filtrato per `owner_id = io` — inbox, chat per peer e aggiornamento spunte mittente.
@@ -59,19 +58,6 @@ Multi-account: realtime solo sull'account in focus — [PROM-MULTI-ACCOUNT](./PR
 
 ---
 
-## 3. Mappa legacy REQ
-
-| Legacy REQ | PROM-ID |
-|------------|---------|
-| MAILBOX-INBOX-REQ-007 | PROM-REALTIME-OWNER-001 |
-| MAILBOX-INBOX-REQ-008 | PROM-REALTIME-OWNER-003, 004 |
-| MAILBOX-INBOX-REQ-010 | PROM-REALTIME-OWNER-007 |
-| MAILBOX-INBOX-REQ-015 | PROM-REALTIME-OWNER-002, 011 |
-| MAILBOX-READ-REQ-007 | PROM-REALTIME-OWNER-005 |
-| MAILBOX-READ-REQ-002 | PROM-REALTIME-OWNER-006 |
-
----
-
 ## 4. Contratto implementativo
 
 | Elemento | Responsabilità |
@@ -99,7 +85,7 @@ Destinatario apre chat → mark_peer_read(peer)
 |------------|-------|------|
 | SURF-INBOX | `implemented` | [SURF-INBOX.md](../../surfaces/SURF-INBOX.md) |
 | Chat 1:1 | `implemented` | `inbox_service.dart`, `message_service.dart` |
-| Chat gruppo | `implemented` | [PROM-GROUP-AUTHOR-DISPLAY](./PROM-GROUP-AUTHOR-DISPLAY.md) REQ-019 |
+| Chat gruppo | `implemented` | [PROM-GROUP-AUTHOR-DISPLAY](./PROM-GROUP-AUTHOR-DISPLAY.md) |
 
 ---
 
@@ -111,7 +97,8 @@ Destinatario apre chat → mark_peer_read(peer)
 | PROM-REALTIME-OWNER-003, 004 | `inbox_realtime_owner_filter_test.dart` |
 | PROM-REALTIME-OWNER-005 | `messages_controller_multi_account_test.dart` |
 | PROM-REALTIME-OWNER-007 | `inbox_provider_lifecycle_test.dart`; `multi_account_chat_scenario_test.dart` |
-| MAILBOX-INBOX-REQ-007–010 (legacy) | `bash scripts/test.sh integration` + `e2e-multi` |
+| PROM-REALTIME-OWNER-001–007 | `bash scripts/test.sh integration` + `e2e-multi` |
+
 
 Gate: `bash scripts/check-spec-sync.sh` + `cd client && bash scripts/verify.sh`
 

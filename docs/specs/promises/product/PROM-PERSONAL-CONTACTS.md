@@ -6,7 +6,6 @@
 | **Classe** | PRODUCT |
 | **Status** | `implemented` |
 | **Ultima revisione** | 2026-07-08 |
-| **Supersedes** | CONTACTS semantica prodotto (SDD v1 epurato) |
 | **PR origine** | #109 (schema + CRUD), #134 (profili in ricerca) |
 
 Promessa di prodotto: rubrica personale come scorciatoie opzionali — **non** prerequisito per inviare/ricevere, **non** allow list di ricezione, **non** fonte inbox.
@@ -58,24 +57,6 @@ Schema CRUD (`contacts`, `search_profiles`): [SYS-CONTACTS](../system/SYS-CONTAC
 
 ---
 
-## 3. Mappa legacy REQ
-
-| Legacy REQ | PROM-ID |
-|------------|---------|
-| CONTACTS-REQ-011 | PROM-PERSONAL-CONTACTS-006 |
-| CONTACTS-REQ-012 | PROM-PERSONAL-CONTACTS-007 |
-| CONTACTS-REQ-013 | PROM-PERSONAL-CONTACTS-008 |
-| CONTACTS-REQ-014 | PROM-PERSONAL-CONTACTS-010 |
-| CONTACTS-REQ-015 | PROM-PERSONAL-CONTACTS-011 |
-| CONTACTS-REQ-016 | PROM-PERSONAL-CONTACTS-004 |
-| CONTACTS-REQ-017 | PROM-PERSONAL-CONTACTS-005 |
-| CONTACTS-REQ-018 | PROM-PERSONAL-CONTACTS-020 |
-| CONTACTS-REQ-019 | PROM-PERSONAL-CONTACTS-003 |
-| CONTACTS-REQ-020 | PROM-PERSONAL-CONTACTS-021 |
-| (obiettivo §1) | PROM-PERSONAL-CONTACTS-001, 002 |
-
----
-
 ## 4. Contratto implementativo
 
 | Elemento | Responsabilità |
@@ -111,9 +92,10 @@ Schema CRUD (`contacts`, `search_profiles`): [SYS-CONTACTS](../system/SYS-CONTAC
 | PROM-PERSONAL-CONTACTS-006 | `compose_service_test.dart` — `peerFromContact` internal/external |
 | PROM-PERSONAL-CONTACTS-007 | `main.dart` — `ChangeNotifierProxyProvider<AuthController, ContactsController?>` |
 | PROM-PERSONAL-CONTACTS-008 | `list_filter_test.dart`; `contacts_screen_test.dart` |
-| PROM-PERSONAL-CONTACTS-004, 003 | `send_message_to_profile_smoke.sql`; `MAILBOX-INBOX-REQ-018` |
+| PROM-PERSONAL-CONTACTS-003, PROM-PERSONAL-CONTACTS-004 | `send_message_to_profile_smoke.sql`; `SYS-MAILBOX-045` |
 | PROM-PERSONAL-CONTACTS-021 | `compose_service.dart` — errore esterno Alpha |
 | PROM-PERSONAL-CONTACTS-011 | `contacts_controller.dart` — `addInternal` / `addExternal` → `load()` |
+
 
 Gate: `bash scripts/check-spec-sync.sh` + `cd client && bash scripts/verify.sh`
 

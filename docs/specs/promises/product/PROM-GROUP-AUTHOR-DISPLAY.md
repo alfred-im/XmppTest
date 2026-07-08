@@ -6,7 +6,6 @@
 | **Classe** | PRODUCT |
 | **Status** | `implemented` |
 | **Ultima revisione** | 2026-07-08 |
-| **Supersedes** | GROUP-DELIVERY REQ-009, REQ-019, REQ-020 (SDD v1 epurato) |
 | **PR origine** | #162 |
 
 Promessa di prodotto: in contesto gruppo il testo è attribuito a `original_author_id` con intestazione avatar + nome; preview inbox indica l'autore umano quando presente.
@@ -45,16 +44,6 @@ In una chat con gruppo come peer, l'utente distingue **chi ha scritto** il conte
 |----|----------|
 | **PROM-GROUP-AUTHOR-DISPLAY-020** | Mostrare `author_id` (mittente tecnico gruppo) come nome autore contenuto su messaggi erogati |
 | **PROM-GROUP-AUTHOR-DISPLAY-021** | Nascondere intestazione autore su messaggi in arrivo in chat gruppo |
-
----
-
-## 3. Mappa legacy REQ
-
-| Legacy REQ | PROM-ID |
-|------------|---------|
-| GROUP-DELIVERY-REQ-009 | PROM-GROUP-AUTHOR-DISPLAY-001, 002, 003, 004 |
-| GROUP-DELIVERY-REQ-019 | PROM-GROUP-AUTHOR-DISPLAY-011 |
-| GROUP-DELIVERY-REQ-020 | PROM-GROUP-AUTHOR-DISPLAY-010 |
 
 ---
 
@@ -97,7 +86,7 @@ In una chat con gruppo come peer, l'utente distingue **chi ha scritto** il conte
 | PROM-GROUP-AUTHOR-DISPLAY-001–004 | `group_message_display_test.dart`, `message_bubble_test.dart` |
 | PROM-GROUP-AUTHOR-DISPLAY-010 | `inbox_controller.dart` — preview con autore |
 | PROM-GROUP-AUTHOR-DISPLAY-011 | `group_delivery_smoke.sql`; Realtime owner filter tests |
-| GROUP-DELIVERY-REQ-009 (legacy) | `client/test/unit/group_message_display_test.dart` |
+
 
 Gate: `bash scripts/check-spec-sync.sh` + `cd client && bash scripts/verify.sh`
 

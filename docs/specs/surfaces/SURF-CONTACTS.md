@@ -6,7 +6,6 @@
 | **Status** | `implemented` |
 | **Ultima revisione** | 2026-07-08 |
 | **Promesse** | [PROM-LIST-FILTER](../promises/product/PROM-LIST-FILTER.md), [SYS-CONTACTS](../promises/system/SYS-CONTACTS.md) |
-| **Supersedes** | CONTACTS UI (SDD v1 epurato) |
 | **PR** | #109, #134 |
 
 Binding completo schermata Contatti: filtro lista, aggiunta Alfred/esterno, compose, controller per account in focus.
@@ -64,36 +63,17 @@ Binding completo schermata Contatti: filtro lista, aggiunta Alfred/esterno, comp
 
 ---
 
-## 3. Mappa legacy REQ → SURF
-
-| CONTACTS-REQ | SURF-ID |
-|--------------|---------|
-| REQ-009 | SURF-CONTACTS-006 |
-| REQ-010 | SURF-CONTACTS-007 |
-| REQ-011 | SURF-CONTACTS-008 |
-| REQ-012 | SURF-CONTACTS-005 |
-| REQ-013 | SURF-CONTACTS-001–004 |
-| REQ-014 | SURF-CONTACTS-010 |
-| REQ-015 | SURF-CONTACTS-011 |
-| REQ-018 | SURF-CONTACTS-022 |
-| REQ-020 | SURF-CONTACTS-023 |
-| REQ-008 (attivazione peer) | SURF-CONTACTS-009 |
-
-Backend schema/CRUD: [SYS-CONTACTS.md](../promises/system/SYS-CONTACTS.md).
-
----
-
 ## 4. Tracciabilità
 
-| SURF-ID / CONTACTS-REQ | Verifica |
+| SURF-ID | Verifica |
 |------------------------|----------|
-| SURF-CONTACTS-001–004, REQ-013 | `contacts_screen.dart`; `contacts_screen_test.dart`; `list_filter_test.dart` |
-| SURF-CONTACTS-005, REQ-012 | `main.dart` — `ChangeNotifierProxyProvider` |
-| SURF-CONTACTS-006, REQ-008–009 | `contact_service.dart` — `search_profiles`; `contacts_screen.dart` |
-| SURF-CONTACTS-007, REQ-010 | `contacts_screen.dart` — tab Esterno + `addExternal` |
-| SURF-CONTACTS-008, REQ-011 | `compose_service_test.dart` — `peerFromContact` |
-| SURF-CONTACTS-011, REQ-015 | `contacts_controller.dart` — `addInternal` / `addExternal` → `load()` |
-| SURF-CONTACTS-023, REQ-020 | `compose_service.dart` — errore esterno Alpha |
+| SURF-CONTACTS-001–004 | `contacts_screen.dart`; `contacts_screen_test.dart`; `list_filter_test.dart` |
+| SURF-CONTACTS-005 | `main.dart` — `ChangeNotifierProxyProvider` |
+| SURF-CONTACTS-006 | `contact_service.dart` — `search_profiles`; `contacts_screen.dart` |
+| SURF-CONTACTS-007 | `contacts_screen.dart` — tab Esterno + `addExternal` |
+| SURF-CONTACTS-008 | `compose_service_test.dart` — `peerFromContact` |
+| SURF-CONTACTS-011 | `contacts_controller.dart` — `addInternal` / `addExternal` → `load()` |
+| SURF-CONTACTS-023 | `compose_service.dart` — errore esterno Alpha |
 
 Gate: `cd client && bash scripts/verify.sh`
 

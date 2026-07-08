@@ -6,7 +6,6 @@
 | **Status** | `implemented` |
 | **Ultima revisione** | 2026-07-08 |
 | **Promesse** | [SYS-RECEPTION](../promises/system/SYS-RECEPTION.md) (semantica spunte) |
-| **Supersedes** | MAILBOX-INBOX, MAILBOX-READ, MAILBOX-SEND UI chat (SDD v1 epurato) |
 | **PR** | #159 |
 
 Binding UX conversazione peer-to-peer: stessa schermata con storico vuoto o pieno, spunte, invio optimistic, preview inbox.
@@ -55,25 +54,6 @@ Binding UX conversazione peer-to-peer: stessa schermata con storico vuoto o pien
 
 ---
 
-## 3. Mappa legacy REQ → SURF
-
-| Capability REQ | SURF-ID |
-|----------------|---------|
-| MAILBOX-INBOX-REQ-005 | SURF-CHAT-001 |
-| MAILBOX-INBOX-REQ-006 | SURF-CHAT-002 |
-| MAILBOX-INBOX-REQ-012 | SURF-CHAT-008 |
-| MAILBOX-READ-REQ-001 | SURF-CHAT-003 |
-| MAILBOX-READ-REQ-003, REQ-010 | SURF-CHAT-004 |
-| MAILBOX-READ-REQ-011 | SURF-CHAT-005 |
-| MAILBOX-READ-REQ-009 | SURF-CHAT-007 |
-| MAILBOX-READ-REQ-015 | SURF-CHAT-011 |
-| MAILBOX-READ-REQ-016 | SURF-CHAT-010 |
-| MAILBOX-SEND-REQ-008 | SURF-CHAT-006 |
-
-Backend RPC/realtime: capability `MAILBOX-*`. Filtro lista inbox: [SURF-INBOX.md](./SURF-INBOX.md).
-
----
-
 ## 4. Tracciabilità
 
 | SURF-ID | Verifica |
@@ -93,6 +73,7 @@ Gate: `verify.sh` + `integration` + `e2e-multi`
 
 ## 5. Riferimenti
 
-- [SURF-INBOX.md](./SURF-INBOX.md)
+- [SYS-MAILBOX.md](../promises/system/SYS-MAILBOX.md) — backend RPC/realtime (invio, inbox, lettura)
+- [SURF-INBOX.md](./SURF-INBOX.md) — filtro lista inbox
 - [SYS-RECEPTION.md](../promises/system/SYS-RECEPTION.md) — `delivered_at` null permanente su blocco allow list
 - [registry.md](../registry.md)

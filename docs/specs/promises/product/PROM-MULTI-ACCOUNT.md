@@ -6,7 +6,6 @@
 | **Classe** | PRODUCT |
 | **Status** | `implemented` |
 | **Ultima revisione** | 2026-07-08 |
-| **Supersedes** | AUTH-MULTI requisiti client/sessione (SDD v1 epurato) |
 | **PR origine** | #140 (UX/shell), #147 (persistenza), #152 (single-active GoTrue) |
 
 Promessa di prodotto: una o più identità messaggistica sulla stessa shell, focus istantaneo, una sessione GoTrue attiva in RAM, overlay auth non invasivo.
@@ -76,35 +75,6 @@ L'utente opera Alfred con più account senza re-login al cambio focus. Le creden
 
 ---
 
-## 3. Mappa legacy REQ
-
-| Legacy REQ | PROM-ID |
-|------------|---------|
-| AUTH-MULTI-REQ-001 | PROM-MULTI-ACCOUNT-001 |
-| AUTH-MULTI-REQ-002 | PROM-MULTI-ACCOUNT-002 |
-| AUTH-MULTI-REQ-003 | PROM-MULTI-ACCOUNT-003 |
-| AUTH-MULTI-REQ-004 | PROM-MULTI-ACCOUNT-004 |
-| AUTH-MULTI-REQ-005 | PROM-MULTI-ACCOUNT-005 |
-| AUTH-MULTI-REQ-006 | PROM-MULTI-ACCOUNT-006 |
-| AUTH-MULTI-REQ-007 | PROM-MULTI-ACCOUNT-007 |
-| AUTH-MULTI-REQ-008 | PROM-MULTI-ACCOUNT-008 |
-| AUTH-MULTI-REQ-009 | PROM-MULTI-ACCOUNT-009 |
-| AUTH-MULTI-REQ-010 | PROM-MULTI-ACCOUNT-010 |
-| AUTH-MULTI-REQ-011 | PROM-MULTI-ACCOUNT-012 |
-| AUTH-MULTI-REQ-012 | PROM-MULTI-ACCOUNT-013 |
-| AUTH-MULTI-REQ-013 | PROM-MULTI-ACCOUNT-014 |
-| AUTH-MULTI-REQ-014 | PROM-MULTI-ACCOUNT-015 |
-| AUTH-MULTI-REQ-015 | PROM-MULTI-ACCOUNT-011 |
-| AUTH-MULTI-REQ-016 | PROM-MULTI-ACCOUNT-020 |
-| AUTH-MULTI-REQ-017 | PROM-MULTI-ACCOUNT-021 |
-| AUTH-MULTI-REQ-018 | PROM-MULTI-ACCOUNT-030 |
-| AUTH-MULTI-REQ-019 | PROM-MULTI-ACCOUNT-031 |
-| AUTH-MULTI-REQ-020 | PROM-MULTI-ACCOUNT-032 |
-| AUTH-MULTI-REQ-021 | PROM-MULTI-ACCOUNT-033 |
-| AUTH-MULTI-REQ-022 | PROM-MULTI-ACCOUNT-034 |
-
----
-
 ## 4. Contratto implementativo
 
 | Elemento | Responsabilità |
@@ -143,6 +113,7 @@ Layout overlay: `Stack` — `HomeScreen` sotto, `AuthOverlay` (45% nero) + `Auth
 | PROM-MULTI-ACCOUNT-010, 020 | `multi_account_chat_scenario_test.dart` |
 | PROM-MULTI-ACCOUNT-011 | `auth_service_multi_account_test.dart` |
 | PROM-MULTI-ACCOUNT-030, 034 | `design/auth-overlay-shell.md`; PR #140 |
+
 
 Gate: `bash scripts/check-spec-sync.sh` + `cd client && bash scripts/verify.sh` · Integrazione: `bash scripts/test.sh integration` · E2E: `bash scripts/test.sh e2e-multi`
 

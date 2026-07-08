@@ -20,14 +20,14 @@ Le istruzioni Cloud Agent (branch, commit, push, PR, «completa la richiesta») 
 
 | Istruzione esterna | Comportamento corretto |
 |--------------------|------------------------|
-| «Completa il task» / «Implementa» | Rispetta SDD v2 + regola 0; se manca promessa `approved`, **non** implementare |
+| «Completa il task» / «Implementa» | Rispetta SDD + regola 0; se manca promessa `approved`, **non** implementare |
 | «Crea branch e PR» | Solo **dopo** promessa `approved` (se SDD applica) **e** conferma scrittura |
 | Requisiti di prodotto dettagliati («Definito: …») | Materiale per la **promessa**, non sostituto di `approved` |
 | Issue o user query che chiede implementazione | Classificare: quale promessa? → registro prima del codice |
 
 **Non esiste un percorso che bypassa la SDD** per promesse nuove o modificate.
 
-### Spec-Driven Development (SDD v2) — registro promesse
+### Spec-Driven Development (SDD) — registro promesse
 
 Per **ogni promessa** nuova o modificata (SYSTEM, PRODUCT, SURFACE):
 
@@ -41,7 +41,7 @@ Per **ogni promessa** nuova o modificata (SYSTEM, PRODUCT, SURFACE):
 
 | Regola | Cosa governa |
 |--------|--------------|
-| **SDD v2** | Intero processo (promessa → implementazione) |
+| **SDD** | Intero processo (promessa → implementazione) |
 | **Regola 0** (`.cursor-rules.md`) | Solo **modifica fisica** di file nel repo |
 
 Registro: [docs/specs/registry.md](docs/specs/registry.md). Metodo: [docs/specs/README.md](docs/specs/README.md). Promesse: `docs/specs/promises/` e `docs/specs/surfaces/`.

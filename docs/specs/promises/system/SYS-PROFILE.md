@@ -6,7 +6,6 @@
 | **Classe** | SYSTEM |
 | **Status** | `implemented` |
 | **Ultima revisione** | 2026-07-08 |
-| **Supersedes** | PROFILE backend REQ-001–006, 010–011, 015, 017 (SDD v1 epurato) |
 | **Contratti** | [schema.md](../../contracts/schema.md) · [rpc.md](../../contracts/rpc.md) |
 | **PR** | #118, #134 |
 
@@ -65,32 +64,15 @@ Nessuna RPC dedicata `update_profile` — client usa PostgREST `.from('profiles'
 
 ---
 
-## 4. Mappa legacy REQ → SYS
-
-| PROFILE-REQ | SYS-ID |
-|-------------|--------|
-| REQ-001 | SYS-PROFILE-001 |
-| REQ-002 | SYS-PROFILE-002 |
-| REQ-004 | SYS-PROFILE-003 |
-| REQ-005 | SYS-PROFILE-004 |
-| REQ-006 | SYS-PROFILE-005 |
-| REQ-010 | SYS-PROFILE-006 |
-| REQ-011 | SYS-PROFILE-007 |
-| REQ-012 | SYS-PROFILE-008 |
-| REQ-015 | SYS-PROFILE-015 |
-| REQ-017 | SYS-PROFILE-017 |
-
----
-
 ## 5. Tracciabilità
 
-| SYS-ID / PROFILE-REQ | Verifica |
+| SYS-ID | Verifica |
 |----------------------|----------|
 | SYS-PROFILE-001 | `schema_smoke.sql` — tabella `profiles`; `20260624200000_alfred_domain_schema.sql` |
 | SYS-PROFILE-002 | `profile_screen.dart` — username read-only; registrazione `auth_screen.dart` |
-| SYS-PROFILE-003, REQ-004 | `profile_service.dart` — `.from('profiles').update()`; RLS migrazioni domain |
-| SYS-PROFILE-005, REQ-017 | `20260628000000_profile_pronouns_avatars.sql`; `profile_avatar_service.dart` |
-| SYS-PROFILE-006 | `20260628100000_inbox_peer_profile_fields.sql`; [SYS-MAILBOX](./SYS-MAILBOX.md) REQ-003 |
+| SYS-PROFILE-003 | `profile_service.dart` — `.from('profiles').update()`; RLS migrazioni domain |
+| SYS-PROFILE-005 | `20260628000000_profile_pronouns_avatars.sql`; `profile_avatar_service.dart` |
+| SYS-PROFILE-006 | `20260628100000_inbox_peer_profile_fields.sql`; [SYS-MAILBOX](./SYS-MAILBOX.md) SYS-MAILBOX-003 |
 | SYS-PROFILE-007 | `schema_smoke.sql` — `find_profile_by_username` |
 | SYS-PROFILE-008 | `models_and_utils_test.dart` — `UserProfile.fromJson` |
 | SYS-PROFILE-015 | [SYS-CONTACTS](./SYS-CONTACTS.md); RPC `search_profiles` / `list_inbox` — nessun campo email |

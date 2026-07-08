@@ -8,9 +8,9 @@ Documento per AI — **leggere prima di task multi-account, messaggistica, profi
 
 | Item | Valore |
 |------|--------|
-| Branch `main` | PR Alpha **#108–#171** |
+| Branch `main` | PR Alpha **#108–#172** |
 | Alpha live | https://alfred-im.github.io/XmppTest/ — ultimo `deploy-alpha` riuscito |
-| **SDD** | **v2** — registro `docs/specs/registry.md`: 5 SYS, 13 PROM, 10 SURF (v1 `capabilities/` epurato) |
+| **SDD** | Registro `docs/specs/registry.md`: 5 SYS, 13 PROM, 10 SURF |
 | Multi-account | **`PROM-MULTI-ACCOUNT`** + **`SURF-AUTH`**: manifest; **una** GoTrue in RAM (focus) |
 | Messaggistica | **`SYS-MAILBOX`**: archivio per `owner_id`, outbox sempre, spunte `delivered_at`/`read_at` |
 | **Ricerca liste** | **`PROM-LIST-FILTER`** + **`SURF-*`**: lente on-demand (`CollapsibleListSearch`) |
@@ -54,7 +54,7 @@ Contratto: `PROM-LIST-FILTER`, `SURF-INBOX`, `SURF-CONTACTS`, `SURF-ALLOWLIST`.
 | Rubrica | Pulsante aggiungi/rimuovi → `contacts` (subito) |
 | Self | Profilo proprio: nessun overlay peer |
 
-Doc: `docs/implementation/peer-profile-overlay.md`, spec `PEER-PROFILE.spec.md`.
+Doc: `docs/implementation/peer-profile-overlay.md`, promesse `PROM-PEER-PROFILE`, `SURF-PEER-PROFILE`.
 
 ---
 
@@ -70,7 +70,7 @@ Doc: `docs/implementation/peer-profile-overlay.md`, spec `PEER-PROFILE.spec.md`.
 | Autore UI | `original_author_id` = chi ha scritto; header con avatar + `display_name` (tap → scheda profilo peer) |
 | Spunte umano→gruppo | ✓✓ = recapito al **gruppo**; erogazione verso terzi non tocca spunte originali |
 
-Doc: `docs/implementation/groups-client.md`, spec `GROUP-CORE`, `GROUP-DELIVERY`.
+Doc: `docs/implementation/groups-client.md`, promessa `SYS-GROUP`.
 
 ---
 
@@ -97,8 +97,7 @@ Smoke SQL gruppi: `supabase/tests/group_schema_smoke.sql`, `group_delivery_smoke
 | Multi-tab stesso browser | Last-write-wins (limite noto) |
 | «Disconnetti ovunque» (revoca globale) | Futuro opzionale — logout locale già in `AccountSession.close()` (`single-device-logout-open.md`) |
 | Bridge federazione (consumer outbox) | Stub health only — gate allow list anche su bridge (fase B) |
-| Preview inbox autore gruppo (REQ-020) | SHOULD non implementato — prefisso autore in `list_inbox` preview |
-| Distillazione capability legacy → promesse v2 | Completata — v1 epurato |
+| Preview inbox autore gruppo (SYS-GROUP-033) | SHOULD non implementato — prefisso autore in `list_inbox` preview |
 
 ---
 

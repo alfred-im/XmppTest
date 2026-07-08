@@ -6,7 +6,6 @@
 | **Classe** | PRODUCT |
 | **Status** | `implemented` |
 | **Ultima revisione** | 2026-07-08 |
-| **Supersedes** | PROFILE REQ-007–014 client/UX (SDD v1 epurato) |
 | **PR origine** | #118 (username/email), #134 (avatar, pronomi, `ProfileSummary`) |
 
 Promessa di prodotto: modello e widget condivisi per identità pubblica (`ProfileSummary`) su sidebar, inbox, chat, manifest multi-account e rubrica.
@@ -47,23 +46,6 @@ Schema backend (`profiles`, bucket `avatars`): [SYS-PROFILE](../system/SYS-PROFI
 |----|----------|
 | **PROM-PROFILE-IDENTITY-020** | Esporre email in rubrica, ricerca profili o inbox |
 | **PROM-PROFILE-IDENTITY-021** | Modificare `username` da schermata profilo Alpha |
-
----
-
-## 3. Mappa legacy REQ
-
-| Legacy REQ | PROM-ID |
-|------------|---------|
-| PROFILE-REQ-007 | PROM-PROFILE-IDENTITY-001 |
-| PROFILE-REQ-008 | PROM-PROFILE-IDENTITY-002 |
-| PROFILE-REQ-009 | PROM-PROFILE-IDENTITY-003 |
-| PROFILE-REQ-010 | PROM-PROFILE-IDENTITY-004 |
-| PROFILE-REQ-011 | PROM-PROFILE-IDENTITY-005 |
-| PROFILE-REQ-012 | PROM-PROFILE-IDENTITY-010 |
-| PROFILE-REQ-013 | PROM-PROFILE-IDENTITY-011 |
-| PROFILE-REQ-014 | PROM-PROFILE-IDENTITY-012 |
-| PROFILE-REQ-015 | PROM-PROFILE-IDENTITY-020 |
-| PROFILE-REQ-016 | PROM-PROFILE-IDENTITY-021 |
 
 ---
 
@@ -113,6 +95,7 @@ Schema backend (`profiles`, bucket `avatars`): [SYS-PROFILE](../system/SYS-PROFI
 | PROM-PROFILE-IDENTITY-005 | `schema_smoke.sql` — `find_profile_by_username` |
 | PROM-PROFILE-IDENTITY-010 | `models_and_utils_test.dart` — `UserProfile.fromJson` |
 | PROM-PROFILE-IDENTITY-020 | [SYS-CONTACTS](../system/SYS-CONTACTS.md); RPC senza campo email |
+
 
 Gate: `bash scripts/check-spec-sync.sh` + `cd client && bash scripts/verify.sh`
 
