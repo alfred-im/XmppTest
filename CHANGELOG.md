@@ -10,6 +10,12 @@ Modifiche rilevanti al progetto per tracciare evoluzione tecnica e decisioni imp
 
 - **#171** — Ricerca on-demand su rubrica e persone consentite (`CollapsibleListSearch`); widget condiviso con inbox
 
+### Documentazione — epurazione capability v1 (SDD v2, #171)
+
+- **Rimossa** cartella legacy capability v1 (`docs/specs/` — epurazione SDD v2) — contratti migrati a promesse v2 (`docs/specs/promises/`, `docs/specs/surfaces/`, `docs/specs/registry.md`)
+- **Aggiornati** cross-ref in `PROJECT_MAP.md`, `alpha-full-stack.md`, `alpha-pr-registry.md`, `implementation/*`, `design/*`, `decisions/*`, `mailbox-inbox-outbox-spec.md`, `WISHLIST.md`, `.cursor-rules.md`, `AGENTS.md`
+- **Mappa legacy → v2**: `MAILBOX-*` → `SYS-MAILBOX`; `GROUP-*` → `SYS-GROUP`; `PROFILE` → `SYS-PROFILE` + `PROM-PROFILE-IDENTITY` + `SURF-PROFILE`; `CONTACTS` → `SYS-CONTACTS` + `PROM-PERSONAL-CONTACTS` + `SURF-CONTACTS`; `RECEPTION-ALLOWLIST` → `SYS-RECEPTION` + `PROM-RECEPTION-FILTER` + `SURF-ALLOWLIST`; `AUTH-MULTI` → `PROM-MULTI-ACCOUNT` + `SURF-AUTH`; `PEER-PROFILE` → `PROM-PEER-PROFILE` + `SURF-PEER-PROFILE`; `INBOX-SEARCH` → `PROM-LIST-FILTER` + `SURF-INBOX`
+
 ### Documentazione — SDD v2 (post-Alpha, #171)
 
 - **Riscrittura metodo SDD**: da capability-centric a **registro promesse** (SYSTEM / PRODUCT / SURFACE) — `docs/specs/README.md`

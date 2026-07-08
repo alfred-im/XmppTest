@@ -2,7 +2,7 @@
 
 **Ultima revisione**: 2026-07-07  
 **Status**: `implemented` su `main` (migrazioni fino a `20260707190000`, incl. revoke helper RPC)  
-**Spec**: [MAILBOX-SEND](../capabilities/MAILBOX-SEND.spec.md), [MAILBOX-INBOX](../capabilities/MAILBOX-INBOX.spec.md), [MAILBOX-READ](../capabilities/MAILBOX-READ.spec.md), [CONTACTS](../capabilities/CONTACTS.spec.md), [PROFILE](../capabilities/PROFILE.spec.md), [RECEPTION-ALLOWLIST](../capabilities/RECEPTION-ALLOWLIST.spec.md), [GROUP-DELIVERY](../capabilities/GROUP-DELIVERY.spec.md)
+**Spec**: [SYS-MAILBOX](../promises/system/SYS-MAILBOX.md), [SYS-GROUP](../promises/system/SYS-GROUP.md), [SYS-CONTACTS](../promises/system/SYS-CONTACTS.md), [SYS-PROFILE](../promises/system/SYS-PROFILE.md), [SYS-RECEPTION](../promises/system/SYS-RECEPTION.md)
 
 Fonte di verità: `supabase/migrations/`. PostgREST espone solo overload **espliciti** — niente ambiguità di firma.
 
@@ -44,7 +44,7 @@ Semantica mailbox (transazione unica):
 
 1. INSERT copia mittente (`owner_id = author_id = auth.uid()`), λ nuovo, date null
 2. INSERT `outbox` (`protocol = internal`, payload con λ)
-3. **Gate allow list** [RECEPTION-ALLOWLIST](../capabilities/RECEPTION-ALLOWLIST.spec.md): mittente ∈ `reception_allowlist` del destinatario?
+3. **Gate allow list** [SYS-RECEPTION](../promises/system/SYS-RECEPTION.md): mittente ∈ `reception_allowlist` del destinatario?
 4. Se **sì**: INSERT copia destinatario (stesso λ, stesso contenuto/`media_url`); UPDATE mittente `delivered_at = now()`
 5. Se **no**: skip copia destinatario; `delivered_at` resta null; outbox `completed` (rifiuto silenzioso)
 6. RETURN riga mittente (sempre successo se validazione ok)
@@ -116,7 +116,7 @@ list_owner_messages(
 
 Righe WHERE `owner_id = auth.uid()` AND contenuto renderizzabile (`mailbox_has_renderable_content`) ORDER BY `created_at` ASC.
 
-Usato da account `profile_kind = group` al posto di `list_peer_messages` — vedi [GROUP-CORE](../capabilities/GROUP-CORE.spec.md) REQ-006/017.
+Usato da account `profile_kind = group` al posto di `list_peer_messages` — vedi [SYS-GROUP](../promises/system/SYS-GROUP.md) REQ-006/017.
 
 **Migrazioni**: `20260706120000`.
 
@@ -124,7 +124,7 @@ Usato da account `profile_kind = group` al posto di `list_peer_messages` — ved
 
 ## `list_inbox`
 
-Non usato quando `auth.uid()` è account `group` — vedi [GROUP-CORE](../capabilities/GROUP-CORE.spec.md).
+Non usato quando `auth.uid()` è account `group` — vedi [SYS-GROUP](../promises/system/SYS-GROUP.md).
 
 ```sql
 list_inbox() → setof record
@@ -169,7 +169,7 @@ Effetti:
 1. UPDATE righe in entrata nel mio archivio (`author_id = peer`, `read_at IS NULL`) SET `read_at = now()`
 2. Per ogni λ toccato: UPDATE copia mittente SET `read_at = now()` (SECURITY DEFINER)
 
-**Spec**: [MAILBOX-READ.spec.md](../capabilities/MAILBOX-READ.spec.md).
+**Spec**: [SYS-MAILBOX](../promises/system/SYS-MAILBOX.md).
 
 ---
 
@@ -184,7 +184,7 @@ find_profile_by_username(p_username text) → table (
 
 Risoluzione indirizzo Alfred interno → profilo pubblico (#134: avatar e pronomi; `profile_kind` per routing shell).
 
-**Spec**: [PROFILE.spec.md](../capabilities/PROFILE.spec.md).
+**Spec**: [SYS-PROFILE](../promises/system/SYS-PROFILE.md).
 
 ---
 
@@ -198,7 +198,7 @@ search_profiles(p_query text, p_limit integer default 20) → table (
 
 Ricerca utenti Alfred per aggiunta contatto internal (min 2 caratteri client). Esclude `auth.uid()`.
 
-**Spec**: [CONTACTS.spec.md](../capabilities/CONTACTS.spec.md).
+**Spec**: [SYS-CONTACTS](../promises/system/SYS-CONTACTS.md).
 
 ---
 

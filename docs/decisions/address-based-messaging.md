@@ -1,6 +1,6 @@
 # Messaggistica per indirizzo (username / username@server)
 
-> **Contratto capability**: [MAILBOX-INBOX.spec.md](../specs/capabilities/MAILBOX-INBOX.spec.md), [MAILBOX-SEND.spec.md](../specs/capabilities/MAILBOX-SEND.spec.md) — [CONTACTS.spec.md](../specs/capabilities/CONTACTS.spec.md). Questo ADR resta vincolante per **indirizzamento** e **isolamento rubrica**; l’archivio messaggi è per-owner (vedi [mailbox-inbox-outbox-spec.md](../architecture/mailbox-inbox-outbox-spec.md)).
+> **Contratto promessa**: [SYS-MAILBOX.md](../specs/promises/system/SYS-MAILBOX.md) — [SYS-CONTACTS.md](../specs/promises/system/SYS-CONTACTS.md), [PROM-PERSONAL-CONTACTS.md](../specs/promises/product/PROM-PERSONAL-CONTACTS.md), [SURF-CONTACTS.md](../specs/surfaces/SURF-CONTACTS.md). Questo ADR resta vincolante per **indirizzamento** e **isolamento rubrica**; l’archivio messaggi è per-owner (vedi [mailbox-inbox-outbox-spec.md](../architecture/mailbox-inbox-outbox-spec.md)).
 
 **Data**: 2026-06-27  
 **Status**: ✅ Accettata — **regola vincolante** (indirizzo + rubrica); schema messaggi → MAILBOX-*  

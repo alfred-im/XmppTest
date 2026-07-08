@@ -34,9 +34,8 @@ Per **ogni promessa** nuova o modificata (SYSTEM, PRODUCT, SURFACE):
 1. Domanda obbligatoria: **quale promessa creo, estendo o rompo?** — se l'utente osserva comportamento diverso, è una promessa (non «solo UX»).
 2. File promessa in `docs/specs/promises/product/`, `docs/specs/surfaces/` o `docs/specs/contracts/` — template: `_template-promise-product.md`, `_template-surface.md`.
 3. Stato **`approved`** **prima** di qualsiasi implementazione; **`implemented`** dopo merge. Aggiornare [registry.md](docs/specs/registry.md).
-4. Capability legacy `docs/specs/capabilities/` — ancora valide per backend (`MAILBOX-*`, `GROUP-*`); REQ-ID storici.
-5. Gate: `bash scripts/check-spec-sync.sh` + `cd client && bash scripts/verify.sh`.
-6. PR template: `.github/PULL_REQUEST_TEMPLATE.md`.
+4. Gate: `bash scripts/check-spec-sync.sh` + `cd client && bash scripts/verify.sh`.
+5. PR template: `.github/PULL_REQUEST_TEMPLATE.md`.
 
 **Distinzione regole:**
 
@@ -45,7 +44,7 @@ Per **ogni promessa** nuova o modificata (SYSTEM, PRODUCT, SURFACE):
 | **SDD v2** | Intero processo (promessa → implementazione) |
 | **Regola 0** (`.cursor-rules.md`) | Solo **modifica fisica** di file nel repo |
 
-Registro: [docs/specs/registry.md](docs/specs/registry.md). Metodo: [docs/specs/README.md](docs/specs/README.md). Catalogo legacy: [docs/specs/index.md](docs/specs/index.md).
+Registro: [docs/specs/registry.md](docs/specs/registry.md). Metodo: [docs/specs/README.md](docs/specs/README.md). Promesse: `docs/specs/promises/` e `docs/specs/surfaces/`.
 
 ---
 

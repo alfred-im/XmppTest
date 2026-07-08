@@ -52,7 +52,7 @@ Documento per AI. Ogni PR deve riflettersi in: `PROJECT_MAP.md`, `CHANGELOG.md`,
 | **#153** | Posizione statica | `content_type=location`; mappa OSM in bolla | MAILBOX-SEND | `location-sharing.md` |
 | **#154** | Revisione sync + SDD Phase 0+1 | Allineamento #108–#153; spec SDD, AUTH-MULTI | MAILBOX-*, AUTH-MULTI | `CHANGELOG` [Unreleased], `docs/specs/` |
 | **#155** | MAILBOX-READ spec | Capability spunte delivered/read | MAILBOX-READ | `MAILBOX-READ.spec.md`, `server-as-reception.md` |
-| **#158** | Spec MAILBOX-* (SDD) | Spec capability `MAILBOX-CORE/SEND/INBOX/READ` approved | MAILBOX-* | `docs/specs/capabilities/MAILBOX-*.spec.md` — **incorporata in #159** |
+| **#158** | Spec MAILBOX-* (SDD) | Spec capability `MAILBOX-CORE/SEND/INBOX/READ` approved | MAILBOX-* → SYS-MAILBOX | **incorporata in #159** |
 | **#159** | Modello caselle mailbox | Drop/recreate `messages` per-owner; outbox sempre; `delivered_at`/`read_at`; client + test | MAILBOX-* | `mailbox-inbox-outbox-spec.md`, `contracts/rpc.md`, `contracts/schema.md`, migrazione `20260704120000` |
 | **#160** | Regole consenso esplicito | Conferma verbale prima di scrittura repo; SDD gate unico | — | `.cursor-rules.md`, `AGENTS.md` |
 | **#161** | RECEPTION-ALLOWLIST | Allow list ricezione; gate `send_message_to_profile`; UI «Persone consentite»; rifiuto silenzioso | RECEPTION-ALLOWLIST | `RECEPTION-ALLOWLIST.spec.md`, `contracts/schema.md`, `contracts/rpc.md`, migrazione `20260704130000` |

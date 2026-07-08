@@ -10,13 +10,13 @@ Documento per AI — **leggere prima di task multi-account, messaggistica, profi
 |------|--------|
 | Branch `main` | PR Alpha **#108–#171** |
 | Alpha live | https://alfred-im.github.io/XmppTest/ — ultimo `deploy-alpha` riuscito |
-| **SDD** | **v2** — registro promesse `docs/specs/registry.md` (SYSTEM / PRODUCT / SURFACE); capability legacy `MAILBOX-*`, `GROUP-*` ancora authoritative per backend |
-| Multi-account | Manifest tutti gli account; **una** GoTrue in RAM (focus) |
-| Messaggistica | Modello **caselle** (`MAILBOX-*`): archivio per `owner_id`, outbox sempre, spunte `delivered_at`/`read_at` |
-| **Ricerca liste** | **`PROM-LIST-FILTER`** + **`SURF-*`**: lente on-demand su inbox, rubrica, persone consentite (`CollapsibleListSearch`) |
-| **Ricezione filtrata** | **`RECEPTION-ALLOWLIST`**: allow list sempre attiva; lista vuota = nessun recapito; rifiuto silenzioso (✓ senza ✓✓) |
-| **Scheda profilo peer** | **`PEER-PROFILE`**: tap avatar → overlay fullscreen; switch Allow + rubrica (immediati, senza dialog) |
-| **Gruppi** | **`GROUP-CORE` + `GROUP-DELIVERY`**: account `profile_kind = group`; partecipazione allow list bidirezionale; erogazione automatica; shell senza inbox; `original_author_id` canonico; UI autore avatar+nome |
+| **SDD** | **v2** — registro `docs/specs/registry.md`: 5 SYS, 13 PROM, 10 SURF (v1 `capabilities/` epurato) |
+| Multi-account | **`PROM-MULTI-ACCOUNT`** + **`SURF-AUTH`**: manifest; **una** GoTrue in RAM (focus) |
+| Messaggistica | **`SYS-MAILBOX`**: archivio per `owner_id`, outbox sempre, spunte `delivered_at`/`read_at` |
+| **Ricerca liste** | **`PROM-LIST-FILTER`** + **`SURF-*`**: lente on-demand (`CollapsibleListSearch`) |
+| **Ricezione filtrata** | **`SYS-RECEPTION`** + **`PROM-RECEPTION-FILTER`**: allow list sempre attiva; rifiuto silenzioso |
+| **Scheda profilo peer** | **`PROM-PEER-PROFILE`** + **`SURF-PEER-PROFILE`**: tap avatar → overlay; Allow + rubrica |
+| **Gruppi** | **`SYS-GROUP`** + **`SURF-GROUP-*`**: `profile_kind = group`; erogazione automatica; UI autore |
 | Chat media | Testo, GIF, voice (WebM), location (OSM) |
 | Gate test | **132** test (`verify.sh`) |
 
@@ -98,7 +98,7 @@ Smoke SQL gruppi: `supabase/tests/group_schema_smoke.sql`, `group_delivery_smoke
 | «Disconnetti ovunque» (revoca globale) | Futuro opzionale — logout locale già in `AccountSession.close()` (`single-device-logout-open.md`) |
 | Bridge federazione (consumer outbox) | Stub health only — gate allow list anche su bridge (fase B) |
 | Preview inbox autore gruppo (REQ-020) | SHOULD non implementato — prefisso autore in `list_inbox` preview |
-| Distillazione capability legacy → promesse v2 | Backlog — `MAILBOX-*` / `GROUP-*` restano authoritative per backend |
+| Distillazione capability legacy → promesse v2 | Completata — v1 epurato |
 
 ---
 

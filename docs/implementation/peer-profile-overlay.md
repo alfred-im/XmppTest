@@ -1,6 +1,6 @@
 # Scheda profilo peer in overlay (PEER-PROFILE)
 
-**Spec**: [PEER-PROFILE.spec.md](../specs/capabilities/PEER-PROFILE.spec.md) · **PR**: #163 · **Stato**: `implemented`
+**Promesse**: [PROM-PEER-PROFILE.md](../specs/promises/product/PROM-PEER-PROFILE.md), [SURF-PEER-PROFILE.md](../specs/surfaces/SURF-PEER-PROFILE.md) · **PR**: #163 · **Stato**: `implemented`
 
 Documento per AI — tap avatar di un account Alfred altrui → modale fullscreen con identità pubblica, toggle allow list e azione rubrica.
 

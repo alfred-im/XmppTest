@@ -18,7 +18,7 @@ Alfred esce dalla fase Alpha: il metodo non governa solo schema e RPC, ma **tutt
 | `INBOX-SEARCH` capability monolitica | `PROM-LIST-FILTER` (prodotto) + `SURF-*` (superficie) |
 | `contracts/` separati dal metodo | `contracts/` = **promesse SYSTEM** (integri, invariati nel dettaglio) |
 
-**SDD v1** resta leggibile nelle capability `*.spec.md` già `implemented` finché non sono migrate o `superseded`. Per lavoro nuovo, **v2 è canonico**.
+Per lavoro nuovo, **SDD v2 è canonico**.
 
 ---
 
@@ -51,7 +51,7 @@ Le promesse di piattaforma restano in:
 - [contracts/schema.md](./contracts/schema.md)
 - [contracts/rpc.md](./contracts/rpc.md)
 
-Ogni tabella, RPC, enum, policy RLS e smoke SQL documentati lì **non perdono dettaglio**. Le capability `MAILBOX-*`, `GROUP-*`, ecc. restano riferimento storico e tracciabilità fino a migrazione completa; per modifiche backend si aggiornano **contracts/** + capability correlata o promessa SYSTEM dedicata.
+Ogni tabella, RPC, enum, policy RLS e smoke SQL documentati lì **non perdono dettaglio**. Per modifiche backend si aggiornano **contracts/** + promessa SYSTEM correlata (`SYS-*`).
 
 Vedi anche [promises/system/README.md](./promises/system/README.md).
 
@@ -75,12 +75,11 @@ Esempio: [SURF-CONTACTS](./surfaces/SURF-CONTACTS.md) — quali campi filtra la 
 
 | Prefisso | File tipico | Esempio |
 |----------|-------------|---------|
-| `SYS-*` | `contracts/*.md` | `send_message_to_profile` in rpc.md |
+| `SYS-*` | `promises/system/SYS-*.md`, `contracts/*.md` | `SYS-MAILBOX-020` |
 | `PROM-*` | `promises/product/PROM-*.md` | `PROM-LIST-FILTER-002` |
 | `SURF-*` | `surfaces/SURF-*.md` | `SURF-CONTACTS-001` |
-| `{CAP}-REQ-*` | `capabilities/*.spec.md` (legacy v1) | `MAILBOX-SEND-REQ-003` |
 
-Nuovo lavoro: preferire `PROM-*` / `SURF-*`. I `{CAP}-REQ-*` restano validi per capability non ancora distillate.
+Nuovo lavoro: usare `SYS-*` / `PROM-*` / `SURF-*`. Gli ID legacy `{CAP}-REQ-*` restano citabili in tracciabilità storica (testo piano, senza link).
 
 ---
 
@@ -105,16 +104,14 @@ draft → approved → implemented → deprecated | superseded
 docs/specs/
 ├── README.md                 # Questo file (SDD v2)
 ├── registry.md               # Indice unico promesse + stato
-├── index.md                  # Catalogo capability legacy + link v2
-├── _template.md              # Template capability (legacy / backend bundle)
+├── index.md                  # Catalogo promesse v2
 ├── _template-promise-product.md
 ├── _template-surface.md
 ├── promises/
 │   ├── product/              # PROM-*
-│   └── system/               # Punto di ingresso → contracts/
+│   └── system/               # SYS-* + README
 ├── surfaces/                 # SURF-*
-├── capabilities/             # Legacy v1 — ancora authoritative per MAILBOX, GROUP, …
-└── contracts/                # SYS — schema + RPC (dettaglio backend)
+└── contracts/                # Dettaglio DDL/RPC (canonico backend)
 ```
 
 ---
@@ -125,7 +122,6 @@ docs/specs/
 |-------|------|--------|
 | **ADR** | `docs/decisions/` | Perché architetturale — non cosa promettiamo |
 | **Promesse** | `promises/`, `surfaces/`, `contracts/` | **Contratto** — cosa è garantito |
-| **Capability (legacy)** | `capabilities/*.spec.md` | Bundle v1; in migrazione verso PROM/SURF/SYS |
 | **Panoramica** | `PROJECT_MAP.md`, `alpha-full-stack.md` | Orientamento — **non** duplicare promesse |
 | **Evidenza** | `docs/design/`, `docs/implementation/` | Storico PR; header `superseded by` promessa |
 | **Test** | `client/test/`, `supabase/tests/` | Verifica; citati in tracciabilità |
@@ -201,32 +197,19 @@ Post-merge: implemented + registry + CHANGELOG / alpha-pr-registry
 
 ---
 
-## Migrazione da SDD v1
-
-| Fase | Azione |
-|------|--------|
-| **Ora** | v2 canonico; capability `implemented` restano valide per backend |
-| **Per task** | Estrarre promesse PRODUCT riusabili prima di codificare su nuove superfici |
-| **INBOX-SEARCH** | Promesse UX migrate a `PROM-LIST-FILTER` + `SURF-INBOX`; file capability storico |
-| **Fine migrazione** | Capability `superseded` quando ogni REQ è mappato a PROM/SURF/SYS |
-
-Pilota v2: [PROM-LIST-FILTER](./promises/product/PROM-LIST-FILTER.md) + superfici inbox / contatti / allow list.
-
----
-
 ## Gate automatico
 
 ```bash
 bash scripts/check-spec-sync.sh
 ```
 
-Verifica: registry, promesse PRODUCT/SURFACE, capability legacy, contratti `contracts/`, coerenza migrazioni.
+Verifica: registry, promesse PRODUCT/SURFACE/SYSTEM, contratti `contracts/`, coerenza migrazioni.
 
 ---
 
 ## Riferimenti rapidi
 
 - **Registro**: [registry.md](./registry.md)
-- **Catalogo capability**: [index.md](./index.md)
+- **Catalogo promesse**: [index.md](./index.md)
 - **Regole agente**: [`.cursor-rules.md`](../../.cursor-rules.md) § SDD
 - **PR**: [`.github/PULL_REQUEST_TEMPLATE.md`](../../.github/PULL_REQUEST_TEMPLATE.md)

@@ -6,8 +6,8 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
-SPECS_DIR="docs/specs/capabilities"
 PRODUCT_DIR="docs/specs/promises/product"
+SYSTEM_DIR="docs/specs/promises/system"
 SURFACES_DIR="docs/specs/surfaces"
 INDEX="docs/specs/index.md"
 REGISTRY="docs/specs/registry.md"
@@ -25,6 +25,26 @@ for contract in docs/specs/contracts/rpc.md docs/specs/contracts/schema.md; do
   fi
 done
 
+echo "==> SDD v2: promesse SYSTEM in registry"
+for sys in "$SYSTEM_DIR"/SYS-*.md; do
+  [[ -f "$sys" ]] || continue
+  base="$(basename "$sys" .md)"
+  if ! grep -q "$base" "$REGISTRY"; then
+    echo "ERROR: $base non elencato in $REGISTRY" >&2
+    ERR=1
+  fi
+  if ! grep -q 'Promessa ID' "$sys"; then
+    echo "ERROR: $sys senza campo Promessa ID" >&2
+    ERR=1
+  fi
+  if ! grep -q 'Tracciabilità' "$sys"; then
+    echo "WARN: $sys senza sezione Tracciabilità" >&2
+  fi
+  if ! grep -qE '\*\*SYS-[A-Z0-9-]+-[0-9]+\*\*' "$sys"; then
+    echo "WARN: $sys senza SYS-ID" >&2
+  fi
+done
+
 echo "==> SDD v2: promesse PRODUCT in registry"
 for prom in "$PRODUCT_DIR"/PROM-*.md; do
   [[ -f "$prom" ]] || continue
@@ -38,7 +58,7 @@ for prom in "$PRODUCT_DIR"/PROM-*.md; do
     ERR=1
   fi
   if ! grep -qE '\*\*PROM-[A-Z0-9-]+-[0-9]+\*\*' "$prom"; then
-    echo "WARN: $prom senza PROM-ID (SDD v2)" >&2
+    echo "WARN: $prom senza PROM-ID" >&2
   fi
   if ! grep -q 'Tracciabilità' "$prom"; then
     echo "WARN: $prom senza sezione Tracciabilità" >&2
@@ -59,30 +79,41 @@ for surf in "$SURFACES_DIR"/SURF-*.md; do
   fi
 done
 
-echo "==> SDD: catalogo capability legacy vs index.md"
-for spec in "$SPECS_DIR"/*.spec.md; do
-  [[ -f "$spec" ]] || continue
-  base="$(basename "$spec")"
-  id="${base%.spec.md}"
-  if ! grep -q "$id" "$INDEX"; then
+echo "==> SDD v2: index.md allineato a registry"
+for sys in "$SYSTEM_DIR"/SYS-*.md; do
+  [[ -f "$sys" ]] || continue
+  base="$(basename "$sys" .md)"
+  if ! grep -q "$base" "$INDEX"; then
     echo "ERROR: $base non elencato in $INDEX" >&2
     ERR=1
   fi
-  if ! grep -q 'Spec ID' "$spec"; then
-    echo "ERROR: $base senza campo Spec ID" >&2
+done
+for prom in "$PRODUCT_DIR"/PROM-*.md; do
+  [[ -f "$prom" ]] || continue
+  base="$(basename "$prom" .md)"
+  if ! grep -q "$base" "$INDEX"; then
+    echo "ERROR: $base non elencato in $INDEX" >&2
     ERR=1
   fi
-  if ! grep -q 'Tracciabilità' "$spec"; then
-    echo "WARN: $base senza sezione Tracciabilità" >&2
-  fi
-  if ! grep -qE '\*\*[A-Z0-9-]+-REQ-[0-9]+\*\*' "$spec"; then
-    if grep -q '`superseded`' "$spec" 2>/dev/null; then
-      : # capability storica — mappa REQ → v2, non richiede REQ-ID inline
-    else
-      echo "WARN: $base senza REQ-ID (capability legacy)" >&2
-    fi
+done
+for surf in "$SURFACES_DIR"/SURF-*.md; do
+  [[ -f "$surf" ]] || continue
+  base="$(basename "$surf" .md)"
+  if ! grep -q "$base" "$INDEX"; then
+    echo "ERROR: $base non elencato in $INDEX" >&2
+    ERR=1
   fi
 done
+
+echo "==> SDD v2: nessun residuo capability v1"
+if [[ -d docs/specs/capabilities ]]; then
+  echo "ERROR: docs/specs/capabilities/ ancora presente — epurare v1" >&2
+  ERR=1
+fi
+if grep -rq 'capabilities/' docs/specs/promises docs/specs/surfaces docs/specs/registry.md docs/specs/index.md docs/specs/README.md 2>/dev/null; then
+  echo "ERROR: riferimenti a capabilities/ in docs/specs/" >&2
+  ERR=1
+fi
 
 echo "==> SDD: contratti mailbox (no target stale)"
 for contract in docs/specs/contracts/rpc.md docs/specs/contracts/schema.md; do
@@ -96,45 +127,36 @@ for contract in docs/specs/contracts/rpc.md docs/specs/contracts/schema.md; do
   fi
 done
 
-echo "==> SDD: smoke SQL tracciati MAILBOX-*"
-MAILBOX_SPECS=(docs/specs/capabilities/MAILBOX-*.spec.md)
-for smoke in supabase/tests/mailbox_*.sql; do
-  [[ -f "$smoke" ]] || continue
-  base="$(basename "$smoke")"
-  if ! grep -rq "$base" "${MAILBOX_SPECS[@]}" docs/specs/contracts/rpc.md 2>/dev/null; then
-    echo "WARN: $base non referenziato in spec MAILBOX o rpc.md" >&2
-  fi
-done
-while IFS= read -r spec; do
-  [[ -f "$spec" ]] || continue
+echo "==> SDD: smoke SQL tracciati SYS-MAILBOX"
+SYS_MAILBOX="docs/specs/promises/system/SYS-MAILBOX.md"
+if [[ -f "$SYS_MAILBOX" ]]; then
+  for smoke in supabase/tests/mailbox_*.sql; do
+    [[ -f "$smoke" ]] || continue
+    base="$(basename "$smoke")"
+    if ! grep -rq "$base" "$SYS_MAILBOX" docs/specs/contracts/rpc.md 2>/dev/null; then
+      echo "WARN: $base non referenziato in SYS-MAILBOX o rpc.md" >&2
+    fi
+  done
   while IFS= read -r smoke_path; do
     [[ -n "$smoke_path" ]] || continue
     if [[ ! -f "$smoke_path" ]]; then
-      echo "ERROR: $spec referenzia $smoke_path ma il file non esiste" >&2
+      echo "ERROR: SYS-MAILBOX referenzia $smoke_path ma il file non esiste" >&2
       ERR=1
     fi
-  done < <(grep -oE 'supabase/tests/[a-z0-9_]+\.sql' "$spec" | sort -u)
-done < <(printf '%s\n' "${MAILBOX_SPECS[@]}")
+  done < <(grep -oE 'supabase/tests/[a-z0-9_]+\.sql' "$SYS_MAILBOX" | sort -u)
+fi
 
-echo "==> SDD: smoke SQL tracciati GROUP-*"
-GROUP_SPECS=(docs/specs/capabilities/GROUP-*.spec.md)
-for smoke in supabase/tests/group_*.sql; do
-  [[ -f "$smoke" ]] || continue
-  base="$(basename "$smoke")"
-  if ! grep -rq "$base" "${GROUP_SPECS[@]}" docs/specs/contracts/rpc.md 2>/dev/null; then
-    echo "WARN: $base non referenziato in spec GROUP o rpc.md" >&2
-  fi
-done
-while IFS= read -r spec; do
-  [[ -f "$spec" ]] || continue
-  while IFS= read -r smoke_path; do
-    [[ -n "$smoke_path" ]] || continue
-    if [[ ! -f "$smoke_path" ]]; then
-      echo "ERROR: $spec referenzia $smoke_path ma il file non esiste" >&2
-      ERR=1
+echo "==> SDD: smoke SQL tracciati SYS-GROUP"
+SYS_GROUP="docs/specs/promises/system/SYS-GROUP.md"
+if [[ -f "$SYS_GROUP" ]]; then
+  for smoke in supabase/tests/group_*.sql supabase/tests/rpc_helper_security_smoke.sql; do
+    [[ -f "$smoke" ]] || continue
+    base="$(basename "$smoke")"
+    if ! grep -rq "$base" "$SYS_GROUP" docs/specs/contracts/rpc.md 2>/dev/null; then
+      echo "WARN: $base non referenziato in SYS-GROUP o rpc.md" >&2
     fi
-  done < <(grep -oE 'supabase/tests/[a-z0-9_]+\.sql' "$spec" | sort -u)
-done < <(printf '%s\n' "${GROUP_SPECS[@]}")
+  done
+fi
 
 if git rev-parse --git-dir >/dev/null 2>&1; then
   if git diff --name-only origin/main...HEAD 2>/dev/null | grep -q '^supabase/migrations/.*\.sql$'; then
