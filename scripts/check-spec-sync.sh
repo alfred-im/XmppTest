@@ -76,7 +76,11 @@ for spec in "$SPECS_DIR"/*.spec.md; do
     echo "WARN: $base senza sezione Tracciabilità" >&2
   fi
   if ! grep -qE '\*\*[A-Z0-9-]+-REQ-[0-9]+\*\*' "$spec"; then
-    echo "WARN: $base senza REQ-ID (capability legacy)" >&2
+    if grep -q '`superseded`' "$spec" 2>/dev/null; then
+      : # capability storica — mappa REQ → v2, non richiede REQ-ID inline
+    else
+      echo "WARN: $base senza REQ-ID (capability legacy)" >&2
+    fi
   fi
 done
 

@@ -92,7 +92,8 @@ Le superfici ([SURF-*](../../registry.md)) dichiarano campi filtrabili, hint e c
 | PROM-ID | Verifica |
 |---------|----------|
 | PROM-LIST-FILTER-001–004 | `client/test/unit/list_filter_test.dart` |
-| PROM-LIST-FILTER-010–014 | `client/test/widget/inbox_panel_test.dart`; `inbox_panel.dart` |
+| PROM-LIST-FILTER-010–014 | `collapsible_list_search.dart`; `inbox_panel_test.dart` |
+| PROM-LIST-FILTER-020 | `collapsible_list_search.dart` (widget condiviso) |
 | PROM-LIST-FILTER-020–021 | `home_screen.dart` — `ValueKey(accountUserId)` su `InboxPanel` |
 | PROM-LIST-FILTER-030 | Nessuna RPC ricerca lista; solo memoria |
 | PROM-LIST-FILTER-031–033 | `inbox-search-toggle.md`; dismiss centralizzato |

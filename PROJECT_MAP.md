@@ -1,6 +1,6 @@
 # Alfred - Mappa Completa del Progetto
 
-**Ultimo aggiornamento**: 2026-07-07 (PEER-PROFILE #163)  
+**Ultimo aggiornamento**: 2026-07-08 (SDD v2 #171; PROM-LIST-FILTER + SURF contatti/allow list)  
 **Versione repository**: 3.2.0-alpha (client Flutter + piattaforma Supabase; bridge stub)
 
 ---
@@ -18,7 +18,7 @@
 
 ---
 
-## ⚠️ Stato repository (2026-07-07)
+## ⚠️ Stato repository (2026-07-08)
 
 | Elemento | Dettaglio |
 |----------|-----------|
@@ -31,7 +31,7 @@
 **Non deducibile — URL Alpha ≠ branch `main`**: https://alfred-im.github.io/XmppTest/ pubblica l’**ultimo** `deploy-alpha` riuscito (PR o push). **Non** è vero che «il sito live builda sempre da `main`». Per sapere quale codice è live, controllare quale workflow/PR ha deployato per ultimo (`concurrency: pages-alpha` → ultimo vince).
 | **Piattaforma** | Supabase `tvwpoxxcqwphryvuyqzu` — schema dominio + RLS + RPC |
 | **Bridge** | `bridge-xmpp/` · `bridge-matrix/` — stub health Fly.io (federazione non implementata) |
-| **PR Alpha** | **#108–#163** su `main` — registro `docs/architecture/alpha-pr-registry.md` (#163 scheda profilo peer) |
+| **PR Alpha** | **#108–#171** su `main` — registro `docs/architecture/alpha-pr-registry.md` (#171 SDD v2 + ricerca liste) |
 | **Spec (SDD v2)** | Registro promesse: `docs/specs/registry.md` — `MAILBOX-*`, `GROUP-*`, `PROM-*`, `SURF-*` |
 
 **Stack su `main`**: `client/` · `supabase/` · `bridge-xmpp/` · `bridge-matrix/`
@@ -50,7 +50,7 @@
 - **Ricezione filtrata**: allow list personale `reception_allowlist` — sempre attiva; lista vuota = nessun recapito; rifiuto silenzioso (✓ singola) — spec `RECEPTION-ALLOWLIST`; toggle rapido anche da scheda profilo peer (tap avatar) — spec `PEER-PROFILE`
 - **Gruppi**: account `profile_kind = group` con identità propria; partecipazione **solo** allow list bidirezionale (no membership); shell senza inbox; erogazione automatica verso allow list del gruppo; UI autore (avatar + nome) in chat — spec `GROUP-CORE`, `GROUP-DELIVERY` (PR #162)
 - **Messaggistica per indirizzo**: `username` (Alfred) o `user@server` (esterno, `unsupported` in Alpha); archivio **per owner** in `messages` (`owner_id`, `author_id`, `peer_profile_id`, `original_author_id`); inbox = `list_inbox()` on-read sul mio archivio; chat per `peer_profile_id`
-- **Inbox + chat realtime**: Postgres + Realtime; ricerca conversazioni on-demand (PR #132)
+- **Inbox + chat realtime**: Postgres + Realtime; ricerca liste on-demand — inbox, rubrica, persone consentite (`PROM-LIST-FILTER`, PR #132, #171)
 - **GIF / voice / location**: bucket `chat-media` per media; posizione statica (lat/lng in Postgres); `OutboundMessageQueue` per retry client
 - **Federazione**: outbox `queued` — attende bridge
 - **Spunte**: `delivered_at` / `read_at` nullable su copia archivio · `mark_peer_read` aggiorna lettura locale + segnale su copia mittente — spec `MAILBOX-READ`

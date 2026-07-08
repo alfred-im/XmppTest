@@ -30,7 +30,6 @@ Indice documenti tecnici per navigazione rapida. Documento per AI, non per utent
 | [MAILBOX-INBOX](./specs/capabilities/MAILBOX-INBOX.spec.md) | `implemented` | Inbox on-read sul mio archivio, `ChatPeer`, realtime |
 | [MAILBOX-SEND](./specs/capabilities/MAILBOX-SEND.spec.md) | `implemented` | Invio testo/GIF/voice/location, pipeline outbox |
 | [MAILBOX-READ](./specs/capabilities/MAILBOX-READ.spec.md) | `implemented` | Spunte `delivered_at`/`read_at`, `mark_peer_read` |
-| [INBOX-SEARCH](./specs/capabilities/INBOX-SEARCH.spec.md) | `superseded` | UX → PROM-LIST-FILTER + SURF-INBOX |
 | [PROFILE](./specs/capabilities/PROFILE.spec.md) | `implemented` | Profilo, avatar, pronomi, `ProfileSummary` |
 | [CONTACTS](./specs/capabilities/CONTACTS.spec.md) | `implemented` | Rubrica personale (isolata da chat) |
 | [AUTH-MULTI](./specs/capabilities/AUTH-MULTI.spec.md) | `implemented` | Multi-account, focus, overlay shell |
@@ -38,8 +37,10 @@ Indice documenti tecnici per navigazione rapida. Documento per AI, non per utent
 | [GROUP-CORE](./specs/capabilities/GROUP-CORE.spec.md) | `implemented` | Account gruppo, shell, partecipazione allow list |
 | [GROUP-DELIVERY](./specs/capabilities/GROUP-DELIVERY.spec.md) | `implemented` | Invio, erogazione, autori, broadcast |
 | [PEER-PROFILE](./specs/capabilities/PEER-PROFILE.spec.md) | `implemented` | Scheda profilo peer (tap avatar), Allow + rubrica |
-| [contracts/rpc.md](./specs/contracts/rpc.md) | `implemented` | Firme RPC messaggistica |
-| [contracts/schema.md](./specs/contracts/schema.md) | `implemented` | Schema DB, enum, RLS, storage |
+| [contracts/rpc.md](./specs/contracts/rpc.md) | `implemented` | Firme RPC messaggistica (SYSTEM) |
+| [contracts/schema.md](./specs/contracts/schema.md) | `implemented` | Schema DB, enum, RLS, storage (SYSTEM) |
+
+Capability `superseded`: [INBOX-SEARCH](./specs/capabilities/INBOX-SEARCH.spec.md) → PROM-LIST-FILTER + SURF-INBOX (solo mappa storica).
 
 ADR e panoramica: [architecture/mailbox-inbox-outbox-spec.md](./architecture/mailbox-inbox-outbox-spec.md) (PR #159).
 
@@ -102,11 +103,13 @@ ADR e panoramica: [architecture/mailbox-inbox-outbox-spec.md](./architecture/mai
 
 ## Design
 
-- [design/conversation-bottom-anchor.md](./design/conversation-bottom-anchor.md) — Aggancio al fondo chat (PR #125)
-- [design/inbox-search-toggle.md](./design/inbox-search-toggle.md) — Ricerca inbox on-demand (PR #132)
-- [design/auth-overlay-shell.md](./design/auth-overlay-shell.md) — Overlay credenziali su shell (PR #140)
+> Evidenza UX — contratti in [registry.md](./specs/registry.md).
+
+- [design/conversation-bottom-anchor.md](./design/conversation-bottom-anchor.md) — Aggancio al fondo chat (PR #125); backlog PROM
+- [design/inbox-search-toggle.md](./design/inbox-search-toggle.md) — → PROM-LIST-FILTER (PR #132, #171)
+- [design/auth-overlay-shell.md](./design/auth-overlay-shell.md) — → AUTH-MULTI (PR #140)
 - [design/README.md](./design/README.md) — Indice design
 
 ---
 
-**Ultimo aggiornamento**: 2026-07-06 — GROUP-CORE/DELIVERY (#162); pulizia contenuto obsoleto; solo spec e doc operativi
+**Ultimo aggiornamento**: 2026-07-08 — SDD v2 allineamento doc (#171); registry canonico

@@ -5,9 +5,10 @@
 **Stato**: PR Alpha **#108–#162** su `main`  
 **Registro PR**: [alpha-pr-registry.md](./alpha-pr-registry.md)
 
-> **Contratti capability**: [docs/specs/index.md](../specs/index.md) — fonte canonica per inbox, invio, spunte, profilo, rubrica, multi-account.  
-> **Contratti piattaforma**: [contracts/schema.md](../specs/contracts/schema.md), [contracts/rpc.md](../specs/contracts/rpc.md).  
-> Questo file è **panoramica architetturale** — non duplicare i requisiti delle spec.
+> **Contratti (SDD v2)**: [docs/specs/registry.md](../specs/registry.md) — registro promesse SYSTEM / PRODUCT / SURFACE.  
+> **Capability legacy (backend bundle)**: [docs/specs/index.md](../specs/index.md) — `MAILBOX-*`, `GROUP-*`, … fino a distillazione.  
+> **Contratti piattaforma (SYSTEM)**: [contracts/schema.md](../specs/contracts/schema.md), [contracts/rpc.md](../specs/contracts/rpc.md).  
+> Questo file è **panoramica architetturale** — non duplicare i requisiti delle promesse.
 
 ---
 
@@ -81,19 +82,20 @@ client/lib/
 | Inbox on-read, `ChatPeer` | [MAILBOX-INBOX](../specs/capabilities/MAILBOX-INBOX.spec.md) | PR #159 |
 | Invio testo/GIF/voice/location | [MAILBOX-SEND](../specs/capabilities/MAILBOX-SEND.spec.md) | PR #159 |
 | Spunte delivered/read (`delivered_at`/`read_at`) | [MAILBOX-READ](../specs/capabilities/MAILBOX-READ.spec.md) | PR #159 |
-| Ricerca conversazioni | [INBOX-SEARCH](../specs/capabilities/INBOX-SEARCH.spec.md) | PR #132 |
+| Ricerca liste (conversazioni, contatti, allow list) | [PROM-LIST-FILTER](../specs/promises/product/PROM-LIST-FILTER.md) + [SURF-*](../specs/registry.md) | PR #132, #171 |
 | Profilo, avatar, pronomi | [PROFILE](../specs/capabilities/PROFILE.spec.md) | PR #118, #134 |
 | Rubrica | [CONTACTS](../specs/capabilities/CONTACTS.spec.md) | PR #109 |
 | Allow list ricezione | [RECEPTION-ALLOWLIST](../specs/capabilities/RECEPTION-ALLOWLIST.spec.md) | PR #161 |
 | Scheda profilo peer (tap avatar) | [PEER-PROFILE](../specs/capabilities/PEER-PROFILE.spec.md) | PR #163 |
 | Account gruppo, erogazione | [GROUP-CORE](../specs/capabilities/GROUP-CORE.spec.md), [GROUP-DELIVERY](../specs/capabilities/GROUP-DELIVERY.spec.md) | PR #162 |
 
-### UI cross-cutting (senza spec capability dedicata)
+### UI cross-cutting
 
-| Area | Documento |
-|------|-----------|
-| Scroll ancorato chat | [conversation-bottom-anchor.md](../design/conversation-bottom-anchor.md) (PR #125) |
-| ADR modello caselle | [mailbox-inbox-outbox-spec.md](./mailbox-inbox-outbox-spec.md) (PR #123, #136, #159) |
+| Area | Contratto v2 / evidenza |
+|------|-------------------------|
+| Ricerca lista on-demand | [PROM-LIST-FILTER](../specs/promises/product/PROM-LIST-FILTER.md) + [SURF-*](../specs/registry.md) — [inbox-search-toggle.md](../design/inbox-search-toggle.md) (PR #132, #171) |
+| Scroll ancorato chat | [conversation-bottom-anchor.md](../design/conversation-bottom-anchor.md) (PR #125) — *backlog promessa PRODUCT* |
+| ADR modello caselle | [mailbox-inbox-outbox-spec.md](./mailbox-inbox-outbox-spec.md) → spec `MAILBOX-*` (PR #159) |
 
 ---
 
@@ -136,7 +138,7 @@ Vedi [RECEPTION-ALLOWLIST](../specs/capabilities/RECEPTION-ALLOWLIST.spec.md), [
 | E2E | `client/e2e/` |
 | SQL smoke | `supabase/tests/` |
 
-Tracciabilità requisiti → test: sezione **Tracciabilità** in ogni spec (pilota: MAILBOX-SEND).
+Tracciabilità requisiti → test: tabella **Tracciabilità** in ogni promessa (`registry.md`) o capability legacy.
 
 ---
 
@@ -179,4 +181,4 @@ Dettaglio deploy: `PROJECT_MAP.md` § Build, workflow `.github/workflows/deploy-
 
 ---
 
-**Riferimenti**: `PROJECT_MAP.md`, [alpha-pr-registry.md](./alpha-pr-registry.md), [docs/specs/README.md](../specs/README.md)
+**Riferimenti**: `PROJECT_MAP.md`, [alpha-pr-registry.md](./alpha-pr-registry.md), [docs/specs/registry.md](../specs/registry.md), [docs/specs/README.md](../specs/README.md)

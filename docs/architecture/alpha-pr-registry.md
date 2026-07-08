@@ -32,7 +32,7 @@ Documento per AI. Ogni PR deve riflettersi in: `PROJECT_MAP.md`, `CHANGELOG.md`,
 | **#127** | Gate `flutter analyze` | `client/scripts/verify.sh` | — | `.cursor-rules.md`, `client/scripts/test/README.md` |
 | **#130** | Inbox solo messaggi | Drop `inbox_threads`; `ChatPeer`; RPC peer-based | MAILBOX-INBOX, MAILBOX-READ | `address-based-messaging.md` |
 | **#131** | Sidebar logout | Logout in card profilo | AUTH-MULTI | `PROJECT_MAP` § layout |
-| **#132** | Ricerca on-demand inbox | Barra ricerca toggle + `TapRegion` | INBOX-SEARCH | `inbox-search-toggle.md` |
+| **#132** | Ricerca on-demand inbox | Barra ricerca toggle + `TapRegion` | PROM-LIST-FILTER, SURF-INBOX | `inbox-search-toggle.md` |
 | **#133** | Sync doc post-merge | Allineamento doc dopo #126–#132 | — | `CHANGELOG`, `INDICE` |
 | **#134** | Profilo arricchito | Avatar, pronomi, `ProfileSummary`, inbox peer fields | PROFILE, MAILBOX-INBOX | `PROJECT_MAP` § profilo, migrazioni `202606280*` |
 | **#135** | `AGENTS.md` | Istruzioni Cloud Agent / toolchain | — | `AGENTS.md` |
@@ -62,8 +62,9 @@ Documento per AI. Ogni PR deve riflettersi in: `PROJECT_MAP.md`, `CHANGELOG.md`,
 | **#165** | Review P1 doc+test | Sync `rpc.md`; drift mailbox spec; traceability GROUP-CORE; widget `GroupConversationScreen` | GROUP-CORE, MAILBOX-INBOX | `contracts/rpc.md`, `group_conversation_screen_test.dart` |
 | **#166** | Security helper RPC | REVOKE `EXECUTE` helper gruppo da `authenticated`; smoke `rpc_helper_security_smoke.sql` | GROUP-CORE, RECEPTION-ALLOWLIST, GROUP-DELIVERY | migrazione `20260707190000`, amend SDD REQ-024/028/027 |
 | **#167** | Review widget+ADR | ADR drift; widget allow-list/home; `fromJson` mailbox-first; `focusTestSession()` | GROUP-CORE, RECEPTION-ALLOWLIST, MAILBOX-READ | `allowed_people_screen_test.dart`, `home_screen_group_test.dart`, `message.dart` |
-| **#168** | InboxPanel widget tests | 4 test inbox search/header; `AccountSidebar` Material fix | INBOX-SEARCH, RECEPTION-ALLOWLIST | `inbox_panel_test.dart`, `account_sidebar.dart` |
+| **#168** | InboxPanel widget tests | 4 test inbox search/header; `AccountSidebar` Material fix | PROM-LIST-FILTER, SURF-INBOX, RECEPTION-ALLOWLIST | `inbox_panel_test.dart`, `account_sidebar.dart` |
 | **#169** | AuthController + badge gruppo | Test overlay AUTH-MULTI; badge «Gruppo» manifest sidebar | AUTH-MULTI, GROUP-CORE | `auth_controller_test.dart`, `account_sidebar_test.dart` |
+| **#171** | SDD v2 + ricerca liste | Registro promesse; `CollapsibleListSearch`; lente su Contatti e Persone consentite; refactor `InboxPanel` | PROM-LIST-FILTER, SURF-CONTACTS, SURF-ALLOWLIST, SURF-INBOX | `docs/specs/registry.md`, `collapsible_list_search.dart`, `contacts_screen_test.dart` |
 
 ---
 
@@ -73,7 +74,7 @@ Dopo ogni merge su `main`:
 
 1. **`PROJECT_MAP.md`** — stato corrente, caratteristiche
 2. **`CHANGELOG.md`** — voce in `[Unreleased]` con numero PR
-3. **`docs/specs/`** — spec capability (`approved` → `implemented`); REQ-ID + tracciabilità; `contracts/schema.md` / `rpc.md` se piattaforma
+3. **`docs/specs/`** — promesse in [registry.md](../specs/registry.md) (`approved` → `implemented`); capability legacy se backend; `contracts/schema.md` / `rpc.md` se SYSTEM
 4. **`docs/architecture/alpha-full-stack.md`** — sezione client o piattaforma interessata
 5. **`docs/INDICE.md`** — data ultimo aggiornamento
 6. **`README.md`** / **`client/README.md`** — se cambia stato dev

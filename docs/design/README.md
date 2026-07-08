@@ -1,12 +1,14 @@
 # Design — Riferimenti tecnici
 
-Principi UI per il client Flutter Alpha. Documento per AI.
+Principi UI per il client Flutter. Documento per AI.
 
-| File | Contenuto |
-|------|-----------|
-| [conversation-bottom-anchor.md](./conversation-bottom-anchor.md) | Scroll ancorato in chat |
-| [inbox-search-toggle.md](./inbox-search-toggle.md) | Ricerca lista on-demand → [PROM-LIST-FILTER](../specs/promises/product/PROM-LIST-FILTER.md) |
-| [auth-overlay-shell.md](./auth-overlay-shell.md) | Shell sempre visibile + overlay credenziali (PR #140) |
+> **SDD v2**: i contratti vivono in [specs/registry.md](../specs/registry.md) (PROM/SURF). I file qui sono **evidenza storica** o backlog promesse non ancora distillate.
+
+| File | Contenuto | Contratto v2 |
+|------|-----------|----------------|
+| [conversation-bottom-anchor.md](./conversation-bottom-anchor.md) | Scroll ancorato in chat | backlog `PROM-BOTTOM-ANCHOR` |
+| [inbox-search-toggle.md](./inbox-search-toggle.md) | Ricerca lista on-demand | [PROM-LIST-FILTER](../specs/promises/product/PROM-LIST-FILTER.md) |
+| [auth-overlay-shell.md](./auth-overlay-shell.md) | Shell + overlay credenziali | [AUTH-MULTI](../specs/capabilities/AUTH-MULTI.spec.md) |
 
 **Brand**: colore `#2D2926` — `client/lib/theme/alfred_colors.dart`  
 **Logo**: `client/lib/widgets/alfred_logo.dart`  

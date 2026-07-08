@@ -19,6 +19,16 @@ Modifiche rilevanti al progetto per tracciare evoluzione tecnica e decisioni imp
 - **Aggiornati**: `.cursor-rules.md`, `AGENTS.md`, `check-spec-sync.sh`, PR template, `INDICE.md`, `PROJECT_MAP.md`
 - **INBOX-SEARCH.spec.md**: `superseded` (UX migrate a v2)
 
+### Documentazione — allineamento SDD v2 (post-#171)
+
+- **Voce unica SDD v2**: `.cursor-rules.md`, `AGENTS.md`, `.cursor/rules/main.mdc` — registro `registry.md` come ingresso contratti
+- **Cross-ref**: `INDICE.md`, `index.md` (catalogo legacy), `alpha-full-stack.md`, `alpha-pr-registry.md`, `PROJECT_MAP.md`, `SESSION_HANDOFF.md`
+- **Superseded stub**: `INBOX-SEARCH.spec.md` → mappa REQ storica → `PROM-LIST-FILTER` + `SURF-INBOX`
+- **MAILBOX-INBOX REQ-011**: tracciabilità → promesse v2
+- **Design layer**: `design/README.md`, `inbox-search-toggle.md` (→ `CollapsibleListSearch`), `conversation-bottom-anchor.md` (backlog promessa)
+- **Test comments**: `inbox_panel_test.dart`, `list_filter_test.dart` — PROM/SURF ID
+- **check-spec-sync.sh**: skip REQ-ID su capability `superseded`
+
 ---
 
 ## [3.0.0-alpha] - 2026-06-24

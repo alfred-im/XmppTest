@@ -48,7 +48,7 @@ Binding della promessa PRODUCT filtro lista sulla inbox (`InboxPanel`).
 
 | SURF-ID / PROM-ID | Verifica |
 |-------------------|----------|
-| SURF-INBOX-001, PROM-LIST-FILTER-010–014 | `inbox_panel_test.dart`; `inbox_panel.dart` |
+| SURF-INBOX-001, PROM-LIST-FILTER-010–014 | `inbox_panel_test.dart`; `collapsible_list_search.dart`, `inbox_panel.dart` |
 | SURF-INBOX-002 | `inbox_controller.dart` `filteredPeers`; `list_filter_test.dart` |
 | SURF-INBOX-003 | `inbox_panel.dart` hint + tooltip |
 | SURF-INBOX-004, SURF-INBOX-005 | `inbox_panel.dart` — `showTopBar` |

@@ -4,13 +4,13 @@
 
 Traccia lo stato del progetto per continuità del lavoro. Non è documentazione per utenti esterni.
 
-## Stato attuale (2026-07-07)
+## Stato attuale (2026-07-08)
 
-**Flutter + Supabase + bridge Python**. PR Alpha **#108–#163** su `main` (scheda profilo peer #163).
+**Flutter + Supabase + bridge Python**. PR Alpha **#108–#171** su `main`.
 
 | Componente | Stato |
 |------------|-------|
-| **`client/`** | App Supabase — shell messaggistica, multi-account (manifest + focus), overlay auth, chat testo/GIF/voice/location, modello caselle mailbox, allow list ricezione («Persone consentite»), **scheda profilo peer** (tap avatar), **account gruppo** (shell dedicata, erogazione, UI autore), `verify.sh` (**108** test gate) |
+| **`client/`** | App Supabase — shell messaggistica, multi-account, ricerca liste on-demand (PROM-LIST-FILTER), allow list, scheda profilo peer, account gruppo, `verify.sh` (**132** test gate) |
 | **`supabase/`** | Schema dominio (profiles, contacts, messages per-owner, outbox, …) |
 | **`bridge-xmpp/`** · **`bridge-matrix/`** | Stub health Fly.io |
 
@@ -41,12 +41,15 @@ Deploy: `.github/workflows/deploy-pages.yml`.
 | File | Contenuto |
 |------|-----------|
 | `PROJECT_MAP.md` | Mappa progetto (leggere a ogni sessione) |
+| `docs/specs/registry.md` | **Registro promesse SDD v2** (ingresso contratti) |
 | `docs/INDICE.md` | Indice per area |
 | `docs/SESSION_HANDOFF.md` | Handoff rapido per agenti |
 | `docs/architecture/alpha-full-stack.md` | Architettura Alpha |
 | `docs/architecture/alpha-pr-registry.md` | Registro PR → documentazione |
 
-## Infrastruttura
+---
+
+**Ultimo aggiornamento**: 2026-07-08
 
 - **Supabase**: `tvwpoxxcqwphryvuyqzu` (EU) — `deploy/supabase.json`
 - **Fly.io**: `xmpptest` — `deploy/fly-bridges.json`
@@ -55,6 +58,4 @@ Deploy: `.github/workflows/deploy-pages.yml`.
 
 MIT — `LICENSE`
 
----
-
-**Ultimo aggiornamento**: 2026-07-07
+## Infrastruttura

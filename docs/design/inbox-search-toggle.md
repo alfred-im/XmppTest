@@ -3,7 +3,7 @@
 > **Superseded by spec**: [PROM-LIST-FILTER.md](../specs/promises/product/PROM-LIST-FILTER.md) + [SURF-INBOX.md](../specs/surfaces/SURF-INBOX.md) — design UX PR #132; per contratto usare le promesse v2.
 
 **Data**: 2026-06-28  
-**Status**: ✅ Specifica vincolante — implementata in client Flutter (PR #132)  
+**Status**: Evidenza UX — implementata in client Flutter (PR #132, refactor #171)  
 **Categoria**: Inbox, UX, layout  
 **Correlata**: [alpha-full-stack.md](../architecture/alpha-full-stack.md) §2.12
 
@@ -30,23 +30,23 @@ Apertura: tap lente → barra visibile + `requestFocus` sul campo.
 
 ## Regole di chiusura (vincolanti)
 
-**Un solo metodo**: `InboxPanel._dismissSearch()` — nasconde barra, svuota controller, chiama `onSearchChanged('')`, toglie focus.
+**Un solo widget**: `CollapsibleListSearch` — nasconde barra, svuota controller, chiama `onQueryChanged('')`, toglie focus. Superfici non duplicano stato `_searchVisible` / dismiss.
 
 | Trigger | Meccanismo |
 |---------|------------|
 | Secondo tap sulla lente | Toggle esplicito |
-| Tap fuori da barra + lente | `TapRegion` con `groupId` condiviso — `onTapOutside` → `_dismissSearch()` |
+| Tap fuori da barra + lente | `TapRegion` con `groupId` condiviso — `onTapOutside` → dismiss centralizzato |
 | Smontaggio widget | `dispose` — azzera filtro se ancora attivo |
 | Cambio account | `ValueKey(userId)` su `InboxPanel` in `HomeScreen` — widget nuovo, stato ricerca reset |
 
-**Vietato**: liste di callback sparse in `HomeScreen` o altri parent per chiudere la ricerca (contatti, drawer, selezione peer, ecc.). Il tap-outside copre le interazioni utente senza enumerare le azioni.
+**Vietato**: liste di callback sparse in parent per chiudere la ricerca (contatti, drawer, selezione peer, ecc.). Il tap-outside copre le interazioni utente senza enumerare le azioni.
 
 ### Non coperto in Alpha (follow-up)
 
 - Tasto **Indietro** (Android) / **Escape** (web)
 - Navigazione programmatica senza tap utente
 
-Estensioni future devono chiamare solo `_dismissSearch()` (o equivalente esposto), non duplicare logica.
+Estensioni future devono usare `CollapsibleListSearch` (o API equivalente), non duplicare logica dismiss.
 
 ---
 
@@ -54,11 +54,13 @@ Estensioni future devono chiamare solo `_dismissSearch()` (o equivalente esposto
 
 | Elemento | Percorso |
 |----------|----------|
-| UI + stato ricerca + `dismissSearch` | `client/lib/widgets/inbox_panel.dart` |
-| Filtro lista (invariato) | `client/lib/providers/inbox_controller.dart` |
+| Widget condiviso ricerca | `client/lib/widgets/collapsible_list_search.dart` |
+| Inbox (lente + barra) | `client/lib/widgets/inbox_panel.dart` |
+| Contatti / allow list | `client/lib/screens/contacts_screen.dart`, `allowed_people_screen.dart` |
+| Filtro inbox | `client/lib/providers/inbox_controller.dart` |
 | `Key` account | `client/lib/screens/home_screen.dart` |
 
-**Tecnica**: `TapRegion` — barra e lente nello stesso `groupId`; `onTapOutside` solo mentre `_searchVisible`.
+**Tecnica**: `TapRegion` — barra e lente nello stesso `groupId`; `onTapOutside` solo mentre ricerca visibile.
 
 ---
 

@@ -37,7 +37,7 @@ L’utente vede conversazioni (preview, ordine, unread) senza duplicare metadati
 | **MAILBOX-INBOX-REQ-008** | Realtime chat: stessa tabella; filtro `owner_id = io` AND `peer_profile_id` (canale per peer o filtro client) |
 | **MAILBOX-INBOX-REQ-009** | `unread_count`: righe in entrata (`author_id <> auth.uid()`) con `read_at IS NULL` |
 | **MAILBOX-INBOX-REQ-010** | Multi-account: inbox/realtime solo account in focus — [AUTH-MULTI](./AUTH-MULTI.spec.md) |
-| **MAILBOX-INBOX-REQ-011** | Ricerca: [INBOX-SEARCH](./INBOX-SEARCH.spec.md) su `filteredPeers` invariato |
+| **MAILBOX-INBOX-REQ-011** | Ricerca lista: [PROM-LIST-FILTER](../promises/product/PROM-LIST-FILTER.md) + [SURF-INBOX](../surfaces/SURF-INBOX.md) su `filteredPeers` |
 
 ### SHOULD
 
@@ -101,7 +101,7 @@ L’inbox è **organizzazione UI** della chat: un posto dove convivono messaggi 
 | MAILBOX-INBOX-REQ-007 | `inbox_provider_listen_test.dart`, `inbox_realtime_owner_filter_test.dart` |
 | MAILBOX-INBOX-REQ-009 | smoke unread dopo messaggio in entrata non letto |
 | MAILBOX-INBOX-REQ-010 | `multi_account_chat_scenario_test.dart` |
-| MAILBOX-INBOX-REQ-011 | `INBOX-SEARCH.spec.md` |
+| MAILBOX-INBOX-REQ-011 | `PROM-LIST-FILTER`, `SURF-INBOX`; `inbox_controller.dart` `filteredPeers` |
 | MAILBOX-INBOX-REQ-014 | `mailbox_schema_smoke.sql` |
 
 Gate: `verify.sh` + `integration` + `e2e-multi`

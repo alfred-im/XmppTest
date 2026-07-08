@@ -1,10 +1,11 @@
-# Catalogo spec — Alfred
+# Catalogo capability legacy — Alfred
 
 **Ultima revisione**: 2026-07-08  
-**Metodo**: [README.md](./README.md) (**SDD v2** — registro promesse)  
-**Registro v2**: [registry.md](./registry.md)
 
-Capability legacy (SDD v1) con REQ-ID e tracciabilità PR. Contratti SYSTEM: [rpc.md](./contracts/rpc.md), [schema.md](./contracts/schema.md).
+> **Ingresso canonico SDD v2**: [registry.md](./registry.md) — promesse SYSTEM / PRODUCT / SURFACE.  
+> Questo file elenca solo le **capability bundle v1** (`MAILBOX-*`, `GROUP-*`, …) ancora authoritative per il backend fino a distillazione graduale.
+
+**Metodo**: [README.md](./README.md) · **Contratti SYSTEM**: [rpc.md](./contracts/rpc.md), [schema.md](./contracts/schema.md)
 
 ---
 
@@ -43,6 +44,7 @@ Capability legacy (SDD v1) con REQ-ID e tracciabilità PR. Contratti SYSTEM: [rp
 | `implementation/multi-account-client.md`, `design/auth-overlay-shell.md` | AUTH-MULTI |
 | `implementation/groups-client.md` | GROUP-CORE, GROUP-DELIVERY |
 | `design/inbox-search-toggle.md` | PROM-LIST-FILTER, SURF-INBOX |
+| `design/conversation-bottom-anchor.md` | backlog PROM (scroll chat) |
 | `PROJECT_MAP.md` § profilo | PROFILE |
 | `architecture/mailbox-inbox-outbox-spec.md` | MAILBOX-CORE, MAILBOX-SEND, MAILBOX-INBOX, MAILBOX-READ |
 | Ricezione filtrata / blocco silenzioso | RECEPTION-ALLOWLIST |

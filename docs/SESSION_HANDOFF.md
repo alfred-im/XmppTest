@@ -1,6 +1,6 @@
-# Handoff sessione — 2026-07-07
+# Handoff sessione — 2026-07-08
 
-Documento per AI — **leggere prima di task multi-account, messaggistica, profilo peer o gruppi**.
+Documento per AI — **leggere prima di task multi-account, messaggistica, profilo peer, gruppi o UX liste**.
 
 ---
 
@@ -8,15 +8,17 @@ Documento per AI — **leggere prima di task multi-account, messaggistica, profi
 
 | Item | Valore |
 |------|--------|
-| Branch `main` | PR Alpha **#108–#163** |
+| Branch `main` | PR Alpha **#108–#171** |
 | Alpha live | https://alfred-im.github.io/XmppTest/ — ultimo `deploy-alpha` riuscito |
+| **SDD** | **v2** — registro promesse `docs/specs/registry.md` (SYSTEM / PRODUCT / SURFACE); capability legacy `MAILBOX-*`, `GROUP-*` ancora authoritative per backend |
 | Multi-account | Manifest tutti gli account; **una** GoTrue in RAM (focus) |
 | Messaggistica | Modello **caselle** (`MAILBOX-*`): archivio per `owner_id`, outbox sempre, spunte `delivered_at`/`read_at` |
+| **Ricerca liste** | **`PROM-LIST-FILTER`** + **`SURF-*`**: lente on-demand su inbox, rubrica, persone consentite (`CollapsibleListSearch`) |
 | **Ricezione filtrata** | **`RECEPTION-ALLOWLIST`**: allow list sempre attiva; lista vuota = nessun recapito; rifiuto silenzioso (✓ senza ✓✓) |
 | **Scheda profilo peer** | **`PEER-PROFILE`**: tap avatar → overlay fullscreen; switch Allow + rubrica (immediati, senza dialog) |
 | **Gruppi** | **`GROUP-CORE` + `GROUP-DELIVERY`**: account `profile_kind = group`; partecipazione allow list bidirezionale; erogazione automatica; shell senza inbox; `original_author_id` canonico; UI autore avatar+nome |
 | Chat media | Testo, GIF, voice (WebM), location (OSM) |
-| Gate test | **108** test (`verify.sh`) |
+| Gate test | **132** test (`verify.sh`) |
 
 ---
 
@@ -26,6 +28,19 @@ Documento per AI — **leggere prima di task multi-account, messaggistica, profi
 - Account esistenti: **nessuna** voce pre-popolata; aggiunta manuale obbligatoria per ripristinare recapito.
 - Mittente non in lista: RPC **ok**, copia mittente su server (✓), **mai** `delivered_at` (no ✓✓) — non è errore di invio.
 - Rubrica (`contacts`) **≠** allow list.
+
+---
+
+## Ricerca liste (#132, #171) — sintesi
+
+| Superficie | Widget | Filtro |
+|------------|--------|--------|
+| Inbox | `InboxPanel` + `CollapsibleListSearch` | `InboxController.filteredPeers` |
+| Rubrica | `ContactsScreen` | `filterByQueryFields` su nome/username |
+| Persone consentite | `AllowedPeopleScreen` | idem |
+
+Contratto: `PROM-LIST-FILTER`, `SURF-INBOX`, `SURF-CONTACTS`, `SURF-ALLOWLIST`.  
+**Non** applicare il pattern lente alle bottom sheet «Aggiungi contatto/persona».
 
 ---
 
@@ -63,8 +78,10 @@ Doc: `docs/implementation/groups-client.md`, spec `GROUP-CORE`, `GROUP-DELIVERY`
 
 | Area | Path |
 |------|------|
+| Ricerca liste condivisa | `client/lib/widgets/collapsible_list_search.dart` |
 | Overlay profilo peer | `client/lib/widgets/peer_profile_overlay.dart` |
 | Allow list UI lista | `client/lib/screens/allowed_people_screen.dart` |
+| Rubrica | `client/lib/screens/contacts_screen.dart` |
 | Shell gruppo | `client/lib/screens/group_conversation_screen.dart` |
 | Multi-account | `client/lib/services/account_manager.dart` |
 
@@ -81,9 +98,10 @@ Smoke SQL gruppi: `supabase/tests/group_schema_smoke.sql`, `group_delivery_smoke
 | «Disconnetti ovunque» (revoca globale) | Futuro opzionale — logout locale già in `AccountSession.close()` (`single-device-logout-open.md`) |
 | Bridge federazione (consumer outbox) | Stub health only — gate allow list anche su bridge (fase B) |
 | Preview inbox autore gruppo (REQ-020) | SHOULD non implementato — prefisso autore in `list_inbox` preview |
+| Distillazione capability legacy → promesse v2 | Backlog — `MAILBOX-*` / `GROUP-*` restano authoritative per backend |
 
 ---
 
 ## Indice doc
 
-`docs/INDICE.md`
+`docs/INDICE.md` · registro promesse: `docs/specs/registry.md`

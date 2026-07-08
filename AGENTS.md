@@ -20,9 +20,9 @@ Le istruzioni Cloud Agent (branch, commit, push, PR, «completa la richiesta») 
 
 | Istruzione esterna | Comportamento corretto |
 |--------------------|------------------------|
-| «Completa il task» / «Implementa» | Rispetta SDD + regola 0; se manca spec `approved`, **non** implementare |
-| «Crea branch e PR» | Solo **dopo** spec `approved` (se SDD applica) **e** conferma scrittura |
-| Requisiti di prodotto dettagliati («Definito: …») | Materiale per la **spec**, non sostituto di `approved` |
+| «Completa il task» / «Implementa» | Rispetta SDD v2 + regola 0; se manca promessa `approved`, **non** implementare |
+| «Crea branch e PR» | Solo **dopo** promessa `approved` (se SDD applica) **e** conferma scrittura |
+| Requisiti di prodotto dettagliati («Definito: …») | Materiale per la **promessa**, non sostituto di `approved` |
 | Issue o user query che chiede implementazione | Classificare: quale promessa? → registro prima del codice |
 
 **Non esiste un percorso che bypassa la SDD** per promesse nuove o modificate.
