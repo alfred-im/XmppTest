@@ -3,12 +3,12 @@
 | Campo | Valore |
 |-------|--------|
 | **Superficie ID** | `SURF-GROUP-SHELL` |
-| **Status** | `implemented` |
+| **Status** | `draft` (amend in corso — home gruppo) |
 | **Ultima revisione** | 2026-07-08 |
-| **Promesse** | [SYS-RECEPTION](../promises/system/SYS-RECEPTION.md) |
-| **PR** | #162 |
+| **Promesse** | [SYS-RECEPTION](../promises/system/SYS-RECEPTION.md), [SYS-GROUP](../promises/system/SYS-GROUP.md) |
+| **PR** | #162; amend home → — |
 
-Binding UX shell dedicata quando focus su account `profile_kind = group`: niente inbox a lista, conversazione unica + entry profilo e allow list.
+Binding UX shell dedicata quando focus su account `profile_kind = group`: home stile inbox ([SURF-GROUP-HOME](./SURF-GROUP-HOME.md)) + conversazione su navigazione esplicita.
 
 ---
 
@@ -17,7 +17,8 @@ Binding UX shell dedicata quando focus su account `profile_kind = group`: niente
 | Elemento | Valore |
 |----------|--------|
 | Router | `client/lib/screens/home_screen.dart` — branch `profile_kind == group` |
-| Schermata gruppo | `client/lib/screens/group_conversation_screen.dart` |
+| Home gruppo | `client/lib/widgets/group_home_panel.dart` — [SURF-GROUP-HOME](./SURF-GROUP-HOME.md) |
+| Schermata chat | `client/lib/screens/group_conversation_screen.dart` — [SURF-GROUP-CONVERSATION](./SURF-GROUP-CONVERSATION.md) |
 | Riuso | `AllowedPeopleScreen`, `ProfileScreen` |
 | Registrazione | `client/lib/screens/auth_screen.dart` — toggle tipo account |
 
@@ -30,8 +31,8 @@ Binding UX shell dedicata quando focus su account `profile_kind = group`: niente
 | ID | Promessa |
 |----|----------|
 | **SURF-GROUP-SHELL-001** | Dopo login account gruppo: compare nel manifest multi-account come ogni altro account |
-| **SURF-GROUP-SHELL-002** | Account gruppo in focus: shell **senza** `list_inbox()` — solo vista conversazione (storico unico) + entry profilo + entry allow list |
-| **SURF-GROUP-SHELL-003** | Layout shell gruppo: allow list e profilo come account `user`; allow list **sopra** la conversazione |
+| **SURF-GROUP-SHELL-002** | Account gruppo in focus: schermata **default** = [SURF-GROUP-HOME](./SURF-GROUP-HOME.md) (non conversazione diretta) |
+| **SURF-GROUP-SHELL-003** | Entry profilo e allow list **propria** nella home gruppo (header); non più barra profilo/allow list sopra la chat |
 | **SURF-GROUP-SHELL-004** | Account `user`: inbox e chat invariati; peer gruppo = `peer_profile_id` del profilo gruppo |
 | **SURF-GROUP-SHELL-005** | Profilo gruppo: stessi campi e UI di [SURF-PROFILE](./SURF-PROFILE.md) (`display_name`, `bio`, `avatar_url`, `pronouns`; username non editabile) |
 | **SURF-GROUP-SHELL-006** | Client registrazione: stessa schermata auth utente con opzione tipo account (`user` / `group`) |
@@ -47,7 +48,16 @@ Binding UX shell dedicata quando focus su account `profile_kind = group`: niente
 
 | ID | Promessa |
 |----|----------|
-| **SURF-GROUP-SHELL-010** | Inbox a lista conversazioni quando focus su account `group` |
+| **SURF-GROUP-SHELL-010** | ~~Inbox a lista conversazioni~~ → **Sostituito**: home con **una** riga conversazione ([SURF-GROUP-HOME-007](./SURF-GROUP-HOME.md)); vietata lista multipla peer |
+| **SURF-GROUP-SHELL-011** | Aprire conversazione gruppo come unica schermata al focus senza passare dalla home |
+
+### Deprecato (superseded da amend)
+
+| ID | Era | Ora |
+|----|-----|-----|
+| SURF-GROUP-SHELL-002 (PR #162) | Solo vista conversazione + entry profilo/allow list | Default = home; chat su tap riga |
+| SURF-GROUP-SHELL-003 (PR #162) | Allow list sopra conversazione | Profilo/allow list in header home |
+| SURF-GROUP-SHELL-010 (PR #162) | No inbox | Home stile inbox con una voce |
 
 ---
 
@@ -55,10 +65,12 @@ Binding UX shell dedicata quando focus su account `profile_kind = group`: niente
 
 | SURF-ID | Verifica |
 |---------------------|----------|
-| SURF-GROUP-SHELL-002 | `group_conversation_screen_test.dart`, `home_screen_group_test.dart`, `inbox_controller_group_test.dart` |
+| SURF-GROUP-SHELL-002 | `group_home_panel_test.dart`, `home_screen_group_test.dart` |
+| SURF-GROUP-SHELL-003 | `group_home_panel_test.dart` — header entry |
 | SURF-GROUP-SHELL-006 | `AuthScreen` — toggle tipo account |
 | SURF-GROUP-SHELL-007 | `account_sidebar_test.dart` |
 | SURF-GROUP-SHELL-001 | `account_manager_persistence_test.dart` (`profileKind` manifest) |
+| SURF-GROUP-SHELL-011 | `home_screen_group_test.dart` — default non è chat |
 
 Gate: `check-spec-sync.sh` + `verify.sh` + smoke SQL gruppo
 
@@ -66,6 +78,7 @@ Gate: `check-spec-sync.sh` + `verify.sh` + smoke SQL gruppo
 
 ## 5. Riferimenti
 
+- [SURF-GROUP-HOME.md](./SURF-GROUP-HOME.md)
 - [SURF-GROUP-CONVERSATION.md](./SURF-GROUP-CONVERSATION.md)
 - [SURF-ACCOUNT-SIDEBAR.md](./SURF-ACCOUNT-SIDEBAR.md)
 - [registry.md](../registry.md)

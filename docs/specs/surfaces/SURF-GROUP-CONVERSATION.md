@@ -3,7 +3,7 @@
 | Campo | Valore |
 |-------|--------|
 | **Superficie ID** | `SURF-GROUP-CONVERSATION` |
-| **Status** | `implemented` |
+| **Status** | `draft` (amend header + navigazione da home) |
 | **Ultima revisione** | 2026-07-08 |
 | **Promesse** | — |
 | **PR** | #162 |
@@ -36,6 +36,8 @@ Binding UX messaggistica gruppo: attribuzione autore contenuto, header avatar+no
 | **SURF-GROUP-CONVERSATION-004** | Account `group`: storico via query su `messages` WHERE `owner_id = auth.uid()` ORDER BY `created_at` (non `list_inbox`) |
 | **SURF-GROUP-CONVERSATION-005** | Account `user`: `list_inbox()` e `list_peer_messages(gruppo)` includono messaggi erogati con `peer_profile_id = gruppo` |
 | **SURF-GROUP-CONVERSATION-006** | Gruppo in focus: compose broadcast (`sendGif` / `sendVoice` / `sendLocation`) verso allow list |
+| **SURF-GROUP-CONVERSATION-009** | Apertura da [SURF-GROUP-HOME](./SURF-GROUP-HOME.md): non è schermata default al focus gruppo |
+| **SURF-GROUP-CONVERSATION-012** | Header chat allineato a [SURF-CHAT](./SURF-CHAT.md) `ChatPanel`: back su mobile, avatar + nome gruppo, bordo inferiore — **senza** entry allow list né sottotitolo «Account gruppo» |
 
 ### SHOULD
 
@@ -61,6 +63,7 @@ Binding UX messaggistica gruppo: attribuzione autore contenuto, header avatar+no
 | SURF-GROUP-CONVERSATION-004 | `group_conversation_screen_test.dart` |
 | SURF-GROUP-CONVERSATION-005 | `mailbox_inbox_smoke.sql`; integration |
 | SURF-GROUP-CONVERSATION-006 | `group_conversation_screen.dart` — compose broadcast |
+| SURF-GROUP-CONVERSATION-009, 012 | `group_conversation_screen_test.dart`; `home_screen_group_test.dart` |
 | SURF-GROUP-CONVERSATION-007 | realtime subscribe `messages` owner filter |
 
 Gate: `check-spec-sync.sh` + `verify.sh` + smoke SQL + `integration`
@@ -69,6 +72,7 @@ Gate: `check-spec-sync.sh` + `verify.sh` + smoke SQL + `integration`
 
 ## 5. Riferimenti
 
+- [SURF-GROUP-HOME.md](./SURF-GROUP-HOME.md)
 - [SURF-GROUP-SHELL.md](./SURF-GROUP-SHELL.md)
 - [SYS-GROUP](../promises/system/SYS-GROUP.md)
 - [registry.md](../registry.md)
