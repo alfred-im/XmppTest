@@ -51,6 +51,7 @@
 | SURF-PROFILE | [surfaces/SURF-PROFILE.md](./surfaces/SURF-PROFILE.md) |
 | SURF-PEER-PROFILE | [surfaces/SURF-PEER-PROFILE.md](./surfaces/SURF-PEER-PROFILE.md) |
 | SURF-GROUP-SHELL | [surfaces/SURF-GROUP-SHELL.md](./surfaces/SURF-GROUP-SHELL.md) |
+| SURF-GROUP-HOME | [surfaces/SURF-GROUP-HOME.md](./surfaces/SURF-GROUP-HOME.md) |
 | SURF-GROUP-CONVERSATION | [surfaces/SURF-GROUP-CONVERSATION.md](./surfaces/SURF-GROUP-CONVERSATION.md) |
 
 ---
