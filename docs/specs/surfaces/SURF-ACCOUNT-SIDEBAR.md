@@ -5,7 +5,7 @@
 | **Superficie ID** | `SURF-ACCOUNT-SIDEBAR` |
 | **Status** | `implemented` |
 | **Ultima revisione** | 2026-07-08 |
-| **Promesse** | [SYS-PROFILE](../promises/system/SYS-PROFILE.md) (`ProfileSummary` in manifest) |
+| **Promesse** | [SYS-PROFILE](../promises/system/SYS-PROFILE.md) (`ProfileSummary` in manifest), [PROM-SHAREABLE-LINK](../promises/product/PROM-SHAREABLE-LINK.md) |
 | **PR** | #140, #147, #152, #162 |
 
 Binding UX sidebar account aperti: manifest, focus, switch istantaneo, stato vista per account, badge gruppo.
@@ -48,6 +48,7 @@ Binding UX sidebar account aperti: manifest, focus, switch istantaneo, stato vis
 | **SURF-ACCOUNT-SIDEBAR-011** | Switch focus senza loading auth visibile (restore in background) |
 | **SURF-ACCOUNT-SIDEBAR-012** | `NoAccountPlaceholder` in area inbox quando nessun account/focus |
 | **SURF-ACCOUNT-SIDEBAR-013** | Etichetta UI distinta per account `group` nel manifest (badge «Gruppo») — [SYS-GROUP](../promises/system/SYS-GROUP.md) |
+| **SURF-ACCOUNT-SIDEBAR-014** | Card account in focus: pulsante **Condividi** immediatamente a sinistra di «Chiudi account» — copia `#indirizzo` profilo attivo — [PROM-SHAREABLE-LINK](../promises/product/PROM-SHAREABLE-LINK.md) |
 
 ### MUST NOT
 
@@ -70,6 +71,7 @@ Binding UX sidebar account aperti: manifest, focus, switch istantaneo, stato vis
 | SURF-ACCOUNT-SIDEBAR-006 | `inbox_provider_lifecycle_test.dart` |
 | SURF-ACCOUNT-SIDEBAR-009 | `auth_service_multi_account_test.dart` |
 | SURF-ACCOUNT-SIDEBAR-013 | `account_sidebar_test.dart` |
+| SURF-ACCOUNT-SIDEBAR-014 | `account_sidebar_test.dart` — Condividi account attivo |
 
 Gate: `verify.sh` + `integration` + `e2e-multi`
 

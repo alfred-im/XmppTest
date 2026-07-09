@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -14,7 +15,7 @@ import 'package:alfred_client/widgets/account_sidebar.dart';
 
 import '../support/fake_messaging_services.dart';
 
-// spec: SURF-ACCOUNT-SIDEBAR-013
+// spec: SURF-ACCOUNT-SIDEBAR-013, 014; PROM-SHAREABLE-LINK-023
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -123,5 +124,80 @@ void main() {
     expect(find.text('Altri account'), findsOneWidget);
     expect(find.text('Team'), findsOneWidget);
     expect(find.text('Gruppo'), findsOneWidget);
+  });
+
+  testWidgets('AccountSidebar Condividi copies active account profile link',
+      (tester) async {
+    const userProfile = ProfileSummary(
+      id: 'user-focus-id',
+      displayName: 'Mario',
+      username: 'mario',
+    );
+
+    final client = createTestSupabaseClient();
+    final session = await AccountSession.createForTest(
+      profile: userProfile,
+      client: client,
+    );
+    session.fullProfile = UserProfile(
+      summary: userProfile,
+      createdAt: DateTime.utc(2026, 6, 29),
+      updatedAt: DateTime.utc(2026, 6, 29),
+    );
+
+    final manager = AccountManager();
+    manager.focusTestSession(session);
+
+    final auth = AuthController(accountManager: manager)
+      ..isLoading = false
+      ..sessionReady = true;
+
+    String? clipboardData;
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      SystemChannels.platform,
+      (message) async {
+        if (message.method == 'Clipboard.setData') {
+          clipboardData = (message.arguments as Map<Object?, Object?>)['text']
+              as String?;
+        }
+        return null;
+      },
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AlfredTheme.light,
+        home: Scaffold(
+          body: ChangeNotifierProvider<AuthController>.value(
+            value: auth,
+            child: AccountSidebar(
+              onEditProfile: () {},
+              onAddAccount: () {},
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(find.byTooltip('Condividi'), findsOneWidget);
+    expect(find.byTooltip('Chiudi account'), findsOneWidget);
+
+    final shareButton = find.byTooltip('Condividi');
+    final closeButton = find.byTooltip('Chiudi account');
+    final shareX = tester.getTopLeft(shareButton).dx;
+    final closeX = tester.getTopLeft(closeButton).dx;
+    expect(shareX, lessThan(closeX));
+
+    await tester.tap(shareButton);
+    await tester.pumpAndSettle();
+
+    expect(clipboardData, isNotNull);
+    expect(clipboardData, contains('#mario'));
+    expect(find.text('Link copiato negli appunti'), findsOneWidget);
+
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      SystemChannels.platform,
+      null,
+    );
   });
 }

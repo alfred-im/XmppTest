@@ -5,6 +5,7 @@ import '../models/open_account.dart';
 import '../models/profile_summary.dart';
 import '../providers/auth_controller.dart';
 import '../theme/alfred_colors.dart';
+import '../utils/shareable_link.dart';
 import 'profile_identity.dart';
 
 /// Sezione profilo e account nella sidebar / drawer.
@@ -135,6 +136,12 @@ class _ActiveProfileCard extends StatelessWidget {
                 ),
             ],
           ),
+        ),
+        IconButton(
+          icon: const Icon(Icons.share_outlined, size: 22),
+          color: AlfredColors.textSecondary,
+          tooltip: 'Condividi',
+          onPressed: () => copyShareableProfileLink(context, profile),
         ),
         IconButton(
           icon: const Icon(Icons.logout_outlined, size: 22),

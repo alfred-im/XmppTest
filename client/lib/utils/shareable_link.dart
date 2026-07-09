@@ -1,3 +1,6 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+
 import '../config/app_config.dart';
 import '../models/profile_summary.dart';
 import 'compose_address.dart';
@@ -107,4 +110,24 @@ String buildShareableProfileUrl(String canonicalAddress) {
 extension ProfileSummaryShareable on ProfileSummary {
   String get shareableProfileUrl =>
       buildShareableProfileUrl(canonicalShareableAddress(this));
+}
+
+/// Copia negli appunti il link profilo `#indirizzo` e mostra feedback.
+Future<void> copyShareableProfileLink(
+  BuildContext context,
+  ProfileSummary profile,
+) async {
+  try {
+    final url = profile.shareableProfileUrl;
+    await Clipboard.setData(ClipboardData(text: url));
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Link copiato negli appunti')),
+    );
+  } catch (_) {
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Impossibile condividere questo profilo')),
+    );
+  }
 }

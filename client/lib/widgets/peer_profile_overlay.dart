@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../models/chat_peer.dart';
@@ -125,21 +124,7 @@ class _PeerProfileOverlayState extends State<PeerProfileOverlay> {
     auth.openConversation(peer);
   }
 
-  Future<void> _shareProfile() async {
-    try {
-      final url = widget.profile.shareableProfileUrl;
-      await Clipboard.setData(ClipboardData(text: url));
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Link copiato negli appunti')),
-      );
-    } catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Impossibile condividere questo profilo')),
-      );
-    }
-  }
+  Future<void> _shareProfile() => copyShareableProfileLink(context, widget.profile);
 
   @override
   Widget build(BuildContext context) {

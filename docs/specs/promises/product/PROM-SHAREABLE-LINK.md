@@ -77,7 +77,8 @@ Navigazione personale **senza** link pubblici: rubrica, allow list, profilo prop
 |----|----------|
 | **PROM-SHAREABLE-LINK-020** | Pulsante **Condividi** in alto a destra sulla **scheda profilo peer** (overlay) — utenti e gruppi |
 | **PROM-SHAREABLE-LINK-021** | Tap Condividi → copia negli appunti URL completo con fragment `#indirizzo` (link **profilo**, senza `/chat`) |
-| **PROM-SHAREABLE-LINK-022** | Condividi **solo** sul profilo — **nessun** pulsante Condividi in chat |
+| **PROM-SHAREABLE-LINK-022** | Condividi **solo** su scheda profilo peer e sidebar account attivo — **nessun** pulsante Condividi in chat |
+| **PROM-SHAREABLE-LINK-023** | Sidebar account in focus: pulsante **Condividi** a sinistra di «Chiudi account» — copia link profilo dell'account attivo (`#indirizzo`) |
 
 ### SHOULD
 
@@ -121,6 +122,7 @@ Federazione **in pausa** — vedi [address-based-messaging.md](../../../decision
 | SURF-PEER-PROFILE | `implemented` | [SURF-PEER-PROFILE.md](../../surfaces/SURF-PEER-PROFILE.md) — Condividi |
 | SURF-CHAT | `implemented` | [SURF-CHAT.md](../../surfaces/SURF-CHAT.md) — apertura da `#…/chat` |
 | SURF-AUTH | `implemented` | [SURF-AUTH.md](../../surfaces/SURF-AUTH.md) — pending link con 0 account |
+| SURF-ACCOUNT-SIDEBAR | `implemented` | [SURF-ACCOUNT-SIDEBAR.md](../../surfaces/SURF-ACCOUNT-SIDEBAR.md) — Condividi account attivo |
 
 ---
 
@@ -133,6 +135,7 @@ Federazione **in pausa** — vedi [address-based-messaging.md](../../../decision
 | PROM-SHAREABLE-LINK-004 | Scenario manuale — `#test2/chat` apre chat |
 | PROM-SHAREABLE-LINK-010, 011 | Scenario manuale — 0 account → auth → profilo linkato |
 | PROM-SHAREABLE-LINK-020, 021, 022 | `peer_profile_overlay_test.dart` — Condividi visibile; copia URL profilo |
+| PROM-SHAREABLE-LINK-023 | `account_sidebar_test.dart` — Condividi account attivo |
 | PROM-SHAREABLE-LINK-007, 040–042 | Review spec — assenza id interni e path viewer |
 
 Gate (post-implementazione): `bash scripts/check-spec-sync.sh` + `cd client && bash scripts/verify.sh`
