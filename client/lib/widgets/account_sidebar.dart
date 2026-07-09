@@ -161,9 +161,10 @@ class _ActiveProfileCard extends StatelessWidget {
                   : null;
               shareShareableProfileLink(
                 context,
-                profile,
-                fallbackUsername:
-                    manifestUsername.isNotEmpty ? manifestUsername : null,
+                profileForSharing(
+                  profile,
+                  fallbackUsername: manifestUsername,
+                ),
                 shareTitle: profile.displayName,
                 sharePositionOrigin: origin,
               );
