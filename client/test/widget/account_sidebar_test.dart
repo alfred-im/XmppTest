@@ -190,7 +190,9 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(sharedParams, isNotNull);
-    expect(sharedParams!.text, contains('#mario'));
-    expect(sharedParams!.subject, 'Mario');
+    final params = sharedParams!;
+    final sharedUrl = params.uri?.toString() ?? params.text ?? '';
+    expect(sharedUrl, contains('#mario'));
+    expect(params.subject, 'Mario');
   });
 }

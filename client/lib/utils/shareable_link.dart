@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../config/app_config.dart';
 import '../models/profile_summary.dart';
+import '../theme/alfred_colors.dart';
 import 'compose_address.dart';
 
 /// Destinazione di un link condivisibile (`#indirizzo` o `#indirizzo/chat`).
@@ -127,14 +130,33 @@ ProfileSummary profileForSharing(
 @visibleForTesting
 Future<void> Function(ShareParams params)? shareParamsInvokerForTest;
 
+ShareParams _shareParamsForProfileUrl({
+  required String url,
+  required String title,
+  Rect? sharePositionOrigin,
+}) {
+  return ShareParams(
+    uri: Uri.parse(url),
+    subject: title,
+    sharePositionOrigin: sharePositionOrigin,
+    mailToFallbackEnabled: true,
+  );
+}
+
 /// Apre il foglio Condividi di sistema con il link profilo `#indirizzo`.
 Future<void> shareShareableProfileLink(
   BuildContext context,
   ProfileSummary profile, {
   String? shareTitle,
+  String? fallbackUsername,
   Rect? sharePositionOrigin,
 }) async {
-  if (!profile.hasUsername) {
+  final shareProfile = profileForSharing(
+    profile,
+    fallbackUsername: fallbackUsername,
+  );
+
+  if (!shareProfile.hasUsername) {
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
@@ -144,10 +166,11 @@ Future<void> shareShareableProfileLink(
     return;
   }
 
-  final url = profile.shareableProfileUrl;
-  final params = ShareParams(
-    text: url,
-    subject: shareTitle ?? profile.displayName,
+  final url = shareProfile.shareableProfileUrl;
+  final title = shareTitle ?? shareProfile.displayName;
+  final params = _shareParamsForProfileUrl(
+    url: url,
+    title: title,
     sharePositionOrigin: sharePositionOrigin,
   );
 
@@ -156,11 +179,115 @@ Future<void> shareShareableProfileLink(
       await shareParamsInvokerForTest!(params);
       return;
     }
+
     await SharePlus.instance.share(params);
   } catch (_) {
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Condivisione non disponibile')),
+    await _showShareFallbackSheet(
+      context,
+      url: url,
+      title: title,
+      sharePositionOrigin: sharePositionOrigin,
     );
   }
+}
+
+Future<void> _showShareFallbackSheet(
+  BuildContext context, {
+  required String url,
+  required String title,
+  Rect? sharePositionOrigin,
+}) {
+  return showModalBottomSheet<void>(
+    context: context,
+    showDragHandle: true,
+    builder: (sheetContext) {
+      return SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                'Condividi profilo',
+                style: Theme.of(sheetContext).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+              ),
+              const SizedBox(height: 12),
+              SelectableText(
+                url,
+                style: const TextStyle(
+                  color: AlfredColors.textSecondary,
+                  fontSize: 14,
+                ),
+              ),
+              const SizedBox(height: 16),
+              FilledButton.icon(
+                onPressed: () async {
+                  Navigator.of(sheetContext).pop();
+                  try {
+                    await SharePlus.instance.share(
+                      _shareParamsForProfileUrl(
+                        url: url,
+                        title: title,
+                        sharePositionOrigin: sharePositionOrigin,
+                      ),
+                    );
+                  } catch (_) {
+                    if (!context.mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'Condivisione non disponibile su questo dispositivo',
+                        ),
+                      ),
+                    );
+                  }
+                },
+                icon: const Icon(Icons.ios_share_outlined, size: 20),
+                label: const Text('Condividi…'),
+              ),
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                onPressed: () async {
+                  final mailUri = Uri(
+                    scheme: 'mailto',
+                    queryParameters: {
+                      'subject': title,
+                      'body': url,
+                    },
+                  );
+                  final launched = await launchUrl(mailUri);
+                  if (!launched && sheetContext.mounted) {
+                    ScaffoldMessenger.of(sheetContext).showSnackBar(
+                      const SnackBar(
+                        content: Text('Impossibile aprire il client email'),
+                      ),
+                    );
+                  }
+                },
+                icon: const Icon(Icons.email_outlined, size: 20),
+                label: const Text('Invia via email'),
+              ),
+              const SizedBox(height: 8),
+              TextButton.icon(
+                onPressed: () async {
+                  await Clipboard.setData(ClipboardData(text: url));
+                  if (!sheetContext.mounted) return;
+                  Navigator.of(sheetContext).pop();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Link copiato negli appunti')),
+                  );
+                },
+                icon: const Icon(Icons.content_copy_outlined, size: 20),
+                label: const Text('Copia link'),
+              ),
+            ],
+          ),
+        ),
+      );
+    },
+  );
 }
