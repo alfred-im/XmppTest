@@ -4,7 +4,7 @@
 |-------|--------|
 | **Promessa ID** | `PROM-SHAREABLE-LINK` |
 | **Classe** | PRODUCT |
-| **Status** | `draft` |
+| **Status** | `implemented` |
 | **Ultima revisione** | 2026-07-09 |
 
 Promessa di prodotto: **formato URL condivisibile e stabile** verso profilo pubblico di un peer Alfred (account utente o gruppo) e verso la conversazione con quel peer. Il contratto è il **fragment `#`**; come la app naviga internamente è conseguenza, non oggetto della promessa.
@@ -118,9 +118,9 @@ Federazione **in pausa** — vedi [address-based-messaging.md](../../../decision
 
 | Superficie | Stato | File |
 |------------|-------|------|
-| SURF-PEER-PROFILE | `draft` (amend) | [SURF-PEER-PROFILE.md](../../surfaces/SURF-PEER-PROFILE.md) — Condividi |
-| SURF-CHAT | `draft` (amend) | [SURF-CHAT.md](../../surfaces/SURF-CHAT.md) — apertura da `#…/chat` |
-| SURF-AUTH | `draft` (amend) | [SURF-AUTH.md](../../surfaces/SURF-AUTH.md) — pending link con 0 account |
+| SURF-PEER-PROFILE | `implemented` | [SURF-PEER-PROFILE.md](../../surfaces/SURF-PEER-PROFILE.md) — Condividi |
+| SURF-CHAT | `implemented` | [SURF-CHAT.md](../../surfaces/SURF-CHAT.md) — apertura da `#…/chat` |
+| SURF-AUTH | `implemented` | [SURF-AUTH.md](../../surfaces/SURF-AUTH.md) — pending link con 0 account |
 
 ---
 
@@ -128,7 +128,7 @@ Federazione **in pausa** — vedi [address-based-messaging.md](../../../decision
 
 | PROM-ID | Verifica |
 |---------|----------|
-| PROM-SHAREABLE-LINK-001, 002 | `shareable_link_format_test.dart` — parse fragment, equivalenza formati |
+| PROM-SHAREABLE-LINK-001, 002 | `shareable_link_test.dart` — parse fragment, equivalenza formati |
 | PROM-SHAREABLE-LINK-003, 006 | Scenario manuale / widget — `#test2` apre profilo; indirizzo assente → non trovato |
 | PROM-SHAREABLE-LINK-004 | Scenario manuale — `#test2/chat` apre chat |
 | PROM-SHAREABLE-LINK-010, 011 | Scenario manuale — 0 account → auth → profilo linkato |

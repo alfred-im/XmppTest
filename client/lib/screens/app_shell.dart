@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/auth_controller.dart';
+import '../providers/shareable_link_controller.dart';
+import '../screens/shareable_link_not_found_screen.dart';
+import '../widgets/shareable_link_listener.dart';
 import 'home_screen.dart';
 
 class AppShell extends StatelessWidget {
@@ -10,6 +13,7 @@ class AppShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthController>();
+    final link = context.watch<ShareableLinkController>();
 
     if (!auth.sessionReady) {
       return const Scaffold(
@@ -17,6 +21,14 @@ class AppShell extends StatelessWidget {
       );
     }
 
-    return const HomeScreen();
+    if (link.notFound) {
+      return ShareableLinkNotFoundScreen(
+        onDismiss: () => link.dismissNotFound(),
+      );
+    }
+
+    return const ShareableLinkListener(
+      child: HomeScreen(),
+    );
   }
 }

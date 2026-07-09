@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../models/chat_peer.dart';
@@ -8,6 +9,7 @@ import '../providers/auth_controller.dart';
 import '../providers/contacts_controller.dart';
 import '../providers/reception_allowlist_controller.dart';
 import '../theme/alfred_colors.dart';
+import '../utils/shareable_link.dart';
 import 'profile_identity.dart';
 
 /// Apre la scheda profilo peer se [profile] non è l'account in focus.
@@ -123,6 +125,22 @@ class _PeerProfileOverlayState extends State<PeerProfileOverlay> {
     auth.openConversation(peer);
   }
 
+  Future<void> _shareProfile() async {
+    try {
+      final url = widget.profile.shareableProfileUrl;
+      await Clipboard.setData(ClipboardData(text: url));
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Link copiato negli appunti')),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Impossibile condividere questo profilo')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final profile = widget.profile;
@@ -142,6 +160,7 @@ class _PeerProfileOverlayState extends State<PeerProfileOverlay> {
             _ProfileHero(
               profile: profile,
               onClose: () => Navigator.of(context).pop(),
+              onShare: _shareProfile,
             ),
             Expanded(
               child: SingleChildScrollView(
@@ -252,10 +271,12 @@ class _ProfileHero extends StatelessWidget {
   const _ProfileHero({
     required this.profile,
     required this.onClose,
+    required this.onShare,
   });
 
   final ProfileSummary profile;
   final VoidCallback onClose;
+  final VoidCallback onShare;
 
   @override
   Widget build(BuildContext context) {
@@ -364,6 +385,16 @@ class _ProfileHero extends StatelessWidget {
               icon: const Icon(Icons.close),
               color: AlfredColors.textOnDark,
               tooltip: 'Chiudi',
+            ),
+          ),
+          Positioned(
+            top: 4,
+            right: 4,
+            child: IconButton(
+              onPressed: onShare,
+              icon: const Icon(Icons.share_outlined),
+              color: AlfredColors.textOnDark,
+              tooltip: 'Condividi',
             ),
           ),
         ],
