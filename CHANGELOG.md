@@ -4,7 +4,11 @@ Modifiche rilevanti al progetto per tracciare evoluzione tecnica e decisioni imp
 
 ---
 
-## [Unreleased] - 2026-07-08
+## [Unreleased] - 2026-07-09
+
+### Corretto
+
+- **#174** — Redirect post-conferma email: client passa sempre URL Alpha; `SURF-AUTH-008`/`013`; Site URL Supabase `localhost:3000` resta canarino tecnico
 
 ### Aggiunto
 

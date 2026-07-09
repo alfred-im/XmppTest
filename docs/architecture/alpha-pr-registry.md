@@ -1,6 +1,6 @@
 # Registro PR Alpha Flutter (main)
 
-**Ultimo aggiornamento**: 2026-07-08 (SDD #172; epurazione doc legacy)  
+**Ultimo aggiornamento**: 2026-07-09 (PR #174 redirect email + canarino Site URL)  
 **Scope**: PR mergiate su `main` dopo migrazione Flutter — riferimento per allineamento documentazione.
 
 Documento per AI. Ogni PR deve riflettersi in: `PROJECT_MAP.md`, `CHANGELOG.md`, `docs/architecture/alpha-full-stack.md` (e fix dedicato se applicabile).
@@ -66,6 +66,7 @@ Documento per AI. Ogni PR deve riflettersi in: `PROJECT_MAP.md`, `CHANGELOG.md`,
 | **#169** | AuthController + badge gruppo | Test overlay SURF-AUTH; badge «Gruppo» manifest sidebar | PROM-MULTI-ACCOUNT, SURF-AUTH, SYS-GROUP, SURF-ACCOUNT-SIDEBAR | `auth_controller_test.dart`, `account_sidebar_test.dart` |
 | **#171** | SDD + ricerca liste | Registro promesse; `CollapsibleListSearch`; lente su Contatti e Persone consentite; refactor `InboxPanel` | PROM-LIST-FILTER, SURF-CONTACTS, SURF-ALLOWLIST, SURF-INBOX | `docs/specs/registry.md`, `collapsible_list_search.dart`, `contacts_screen_test.dart` |
 | **#172** | Epurazione doc legacy | Rimozione residui v1 in documentazione; ID uniformati SYS/PROM/SURF; SDD senza suffisso versione | — | `PROJECT_MAP.md`, `INDICE.md`, `alpha-pr-registry.md`, `implementation/*`, `decisions/*`, `design/*` |
+| **#174** | Redirect conferma email | `AuthRedirectUrl` Alpha su web pubblico; SURF-AUTH-008/013; Site URL localhost = canarino tecnico | SURF-AUTH | `SURF-AUTH.md`, `auth_redirect_url.dart`, `PROJECT_MAP` § redirect auth |
 
 ---
 

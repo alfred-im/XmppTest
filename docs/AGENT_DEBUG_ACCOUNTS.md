@@ -32,6 +32,21 @@ WHERE email = 'agadriel.sexpositive+1@gmail.com';
 
 ---
 
+## Incidente 2026-07-09 — signup fake su live (bounce email)
+
+Durante debug redirect conferma email, un agente ha eseguito `signUp` su Supabase **live** con indirizzi inventati (`redirect-probe-*@gmail.com`). Le caselle non esistono → bounce → avviso deliverability Supabase.
+
+**Regola:** ❌ **Mai** `signUp` su live con email inventate (`probe@`, `test@` finti, domini inesistenti).
+
+**Alternativa corretta:**
+- Account agente già confermati (`alfredagent1` / `alfredagent2`) — vedi sopra
+- Test flusso signup: indirizzo **reale** con plus (`agadriel.sexpositive+…@gmail.com`) oppure conferma via SQL senza inviare mail
+- Test redirect API: `GET /auth/v1/verify` con token da DB, **senza** triggerare `mail.send`
+
+Account probe rimossi da Auth il 2026-07-09.
+
+---
+
 ## Account agente (creati 2026-06-29)
 
 Progetto Supabase: `tvwpoxxcqwphryvuyqzu` (stesso dell'app Alpha).
@@ -75,4 +90,4 @@ Presenti nel DB live; **non** usare per esperimenti che cambiano credenziali o d
 
 ---
 
-**Ultimo aggiornamento:** 2026-07-04 (revisione doc post-mailbox; credenziali invariate)
+**Ultimo aggiornamento:** 2026-07-09 (incidente bounce probe; credenziali invariate)
