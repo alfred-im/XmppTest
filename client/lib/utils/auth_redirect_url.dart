@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kIsWeb, visibleForTesting;
 
 /// URL di ritorno dopo conferma email o reset password (Supabase Auth).
 class AuthRedirectUrl {
@@ -15,15 +15,12 @@ class AuthRedirectUrl {
 
   /// Risolve l'URL da passare a [emailRedirectTo] / [redirectTo].
   ///
-  /// Su web usa l'origine corrente (GitHub Pages Alpha o dev locale); altrove
-  /// [AUTH_REDIRECT_URL] o il default [alphaDefault].
+  /// Su web: Alpha pubblico → [alphaDefault]; solo `localhost` / `127.0.0.1`
+  /// usano l'origine corrente (dev agente). Fuori web: [AUTH_REDIRECT_URL] o
+  /// [alphaDefault].
   static String resolve() {
     if (kIsWeb) {
-      final base = Uri.base;
-      if (base.hasScheme && base.host.isNotEmpty) {
-        final path = base.path.endsWith('/') ? base.path : '${base.path}/';
-        return base.replace(path: path, query: '', fragment: '').toString();
-      }
+      return resolveForOrigin(Uri.base);
     }
 
     if (_envOverride.isNotEmpty) {
@@ -32,6 +29,24 @@ class AuthRedirectUrl {
 
     return alphaDefault;
   }
+
+  @visibleForTesting
+  static String resolveForOrigin(Uri base) {
+    if (base.hasScheme && base.host.isNotEmpty && _isLocalDevHost(base.host)) {
+      final path = base.path.endsWith('/') ? base.path : '${base.path}/';
+      return Uri(
+        scheme: base.scheme,
+        host: base.host,
+        port: base.hasPort ? base.port : null,
+        path: path,
+      ).toString();
+    }
+
+    return alphaDefault;
+  }
+
+  static bool _isLocalDevHost(String host) =>
+      host == 'localhost' || host == '127.0.0.1';
 
   static String _withTrailingSlash(String url) =>
       url.endsWith('/') ? url : '$url/';

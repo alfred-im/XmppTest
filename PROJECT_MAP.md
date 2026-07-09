@@ -144,7 +144,7 @@
 
 - Config: `supabase/config.toml`, `supabase/migrations/`, `deploy/supabase.json`
 - MCP agente: `execute_sql`, `apply_migration`, `list_migrations`
-- **Non deducibile — redirect auth email**: `signUp` / `resetPasswordForEmail` passano `emailRedirectTo`/`redirectTo` da `AuthRedirectUrl.resolve()` (`client/lib/utils/auth_redirect_url.dart`) — su web = origine corrente; default = URL Alpha GitHub Pages (`https://alfred-im.github.io/XmppTest/`, **non produzione**). Dashboard Supabase → Auth → URL Configuration: `site_url` e `uri_allow_list` devono includere lo stesso URL (vedi `supabase/config.toml`).
+- **Non deducibile — redirect auth email**: `signUp` / `resetPasswordForEmail` passano `emailRedirectTo`/`redirectTo` da `AuthRedirectUrl.resolve()` (`client/lib/utils/auth_redirect_url.dart`) — su web pubblico = sempre URL Alpha GitHub Pages; solo `localhost`/`127.0.0.1` usano origine corrente (dev agente). Dashboard Supabase → Auth → URL Configuration: **Site URL** e **Redirect URLs** devono includere `https://alfred-im.github.io/XmppTest/` (vedi `supabase/config.toml`, promessa `SURF-AUTH-008`).
 
 ### Fly.io (`xmpptest`, `fra`)
 
