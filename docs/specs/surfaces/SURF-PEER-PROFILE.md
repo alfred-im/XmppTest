@@ -41,7 +41,7 @@ Binding UX overlay fullscreen al tap avatar di un account Alfred altrui: identit
 | **SURF-PEER-PROFILE-011** | Controller legati all'account in **focus** |
 | **SURF-PEER-PROFILE-015** | CTA «Inizia a chattare» fisso in basso al centro — **non** nello scroll con Allow/rubrica |
 | **SURF-PEER-PROFILE-016** | Tap CTA → chiude overlay e apre chat peer sull'account in focus (`ChatPeer.fromProfile`) |
-| **SURF-PEER-PROFILE-025** | Pulsante **Condividi** in alto a destra — copia URL profilo `#indirizzo` — [PROM-SHAREABLE-LINK](../promises/product/PROM-SHAREABLE-LINK.md) |
+| **SURF-PEER-PROFILE-025** | Pulsante **Condividi** in alto a destra — share di sistema URL profilo `#indirizzo` — [PROM-SHAREABLE-LINK](../promises/product/PROM-SHAREABLE-LINK.md) |
 | **SURF-PEER-PROFILE-026** | Condividi su profilo peer **utente e gruppo** — stesso layout |
 
 ### SHOULD

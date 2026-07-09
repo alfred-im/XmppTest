@@ -124,7 +124,14 @@ class _PeerProfileOverlayState extends State<PeerProfileOverlay> {
     auth.openConversation(peer);
   }
 
-  Future<void> _shareProfile() => copyShareableProfileLink(context, widget.profile);
+  Future<void> _shareProfile({Rect? sharePositionOrigin}) {
+    return shareShareableProfileLink(
+      context,
+      widget.profile,
+      shareTitle: widget.profile.displayName,
+      sharePositionOrigin: sharePositionOrigin,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -261,7 +268,7 @@ class _ProfileHero extends StatelessWidget {
 
   final ProfileSummary profile;
   final VoidCallback onClose;
-  final VoidCallback onShare;
+  final void Function({Rect? sharePositionOrigin}) onShare;
 
   @override
   Widget build(BuildContext context) {
@@ -375,11 +382,19 @@ class _ProfileHero extends StatelessWidget {
           Positioned(
             top: 4,
             right: 4,
-            child: IconButton(
-              onPressed: onShare,
-              icon: const Icon(Icons.share_outlined),
-              color: AlfredColors.textOnDark,
-              tooltip: 'Condividi',
+            child: Builder(
+              builder: (buttonContext) => IconButton(
+                onPressed: () {
+                  final box = buttonContext.findRenderObject() as RenderBox?;
+                  final origin = box != null
+                      ? box.localToGlobal(Offset.zero) & box.size
+                      : null;
+                  onShare(sharePositionOrigin: origin);
+                },
+                icon: const Icon(Icons.share_outlined),
+                color: AlfredColors.textOnDark,
+                tooltip: 'Condividi',
+              ),
             ),
           ),
         ],

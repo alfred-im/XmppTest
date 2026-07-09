@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../config/app_config.dart';
 import '../models/profile_summary.dart';
@@ -112,22 +112,55 @@ extension ProfileSummaryShareable on ProfileSummary {
       buildShareableProfileUrl(canonicalShareableAddress(this));
 }
 
-/// Copia negli appunti il link profilo `#indirizzo` e mostra feedback.
-Future<void> copyShareableProfileLink(
+/// Username dal manifest se [profile] non lo espone ancora in UI.
+ProfileSummary profileForSharing(
+  ProfileSummary profile, {
+  String? fallbackUsername,
+}) {
+  if (profile.hasUsername) return profile;
+  final username = fallbackUsername?.trim().toLowerCase();
+  if (username == null || username.isEmpty) return profile;
+  return profile.copyWith(username: username);
+}
+
+/// Invocazione share di sistema sostituibile nei test.
+@visibleForTesting
+Future<void> Function(ShareParams params)? shareParamsInvokerForTest;
+
+/// Apre il foglio Condividi di sistema con il link profilo `#indirizzo`.
+Future<void> shareShareableProfileLink(
   BuildContext context,
-  ProfileSummary profile,
-) async {
-  try {
-    final url = profile.shareableProfileUrl;
-    await Clipboard.setData(ClipboardData(text: url));
+  ProfileSummary profile, {
+  String? shareTitle,
+  Rect? sharePositionOrigin,
+}) async {
+  if (!profile.hasUsername) {
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Link copiato negli appunti')),
+      const SnackBar(
+        content: Text('Questo profilo non ha un indirizzo condivisibile'),
+      ),
     );
+    return;
+  }
+
+  final url = profile.shareableProfileUrl;
+  final params = ShareParams(
+    text: url,
+    subject: shareTitle ?? profile.displayName,
+    sharePositionOrigin: sharePositionOrigin,
+  );
+
+  try {
+    if (shareParamsInvokerForTest != null) {
+      await shareParamsInvokerForTest!(params);
+      return;
+    }
+    await SharePlus.instance.share(params);
   } catch (_) {
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Impossibile condividere questo profilo')),
+      const SnackBar(content: Text('Condivisione non disponibile')),
     );
   }
 }

@@ -81,4 +81,16 @@ void main() {
       expect(url, isNot(contains('/chat')));
     });
   });
+
+  group('profileForSharing', () {
+    test('uses manifest username when profile lacks it', () {
+      const profile = ProfileSummary(
+        id: 'id',
+        displayName: 'Mario',
+      );
+      final enriched = profileForSharing(profile, fallbackUsername: 'mario');
+      expect(enriched.username, 'mario');
+      expect(enriched.shareableProfileUrl, contains('#mario'));
+    });
+  });
 }

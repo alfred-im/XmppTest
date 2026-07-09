@@ -76,9 +76,9 @@ Navigazione personale **senza** link pubblici: rubrica, allow list, profilo prop
 | ID | Promessa |
 |----|----------|
 | **PROM-SHAREABLE-LINK-020** | Pulsante **Condividi** in alto a destra sulla **scheda profilo peer** (overlay) — utenti e gruppi |
-| **PROM-SHAREABLE-LINK-021** | Tap Condividi → copia negli appunti URL completo con fragment `#indirizzo` (link **profilo**, senza `/chat`) |
+| **PROM-SHAREABLE-LINK-021** | Tap Condividi → **condivisione di sistema** (`Share` / Web Share API) con URL completo `#indirizzo` (link **profilo**, senza `/chat`) |
 | **PROM-SHAREABLE-LINK-022** | Condividi **solo** su scheda profilo peer e sidebar account attivo — **nessun** pulsante Condividi in chat |
-| **PROM-SHAREABLE-LINK-023** | Sidebar account in focus: pulsante **Condividi** a sinistra di «Chiudi account» — copia link profilo dell'account attivo (`#indirizzo`) |
+| **PROM-SHAREABLE-LINK-023** | Sidebar account in focus: pulsante **Condividi** a sinistra di «Chiudi account» — share di sistema del link profilo attivo (`#indirizzo`) |
 
 ### SHOULD
 
@@ -108,7 +108,8 @@ Federazione **in pausa** — vedi [address-based-messaging.md](../../../decision
 | Parser fragment | Legge `#indirizzo` e `#indirizzo/chat` all'avvio e su `hashchange` |
 | Risoluzione indirizzo | `ComposeService` / `find_profile_by_username` — allineare `username` e `username@server` locale |
 | Pending link | Conservare fragment fino a manifest con ≥1 account |
-| `PeerProfileOverlay` | Pulsante Condividi alto a destra; costruisce URL da `Uri.base` + fragment |
+| `PeerProfileOverlay` | Pulsante Condividi alto a destra; `SharePlus.instance.share` con URL `Uri.base` + fragment |
+| `AccountSidebar` | Condividi account attivo — `share_plus` |
 | Risorsa assente | Schermata/stato «non trovato» — forma UI libera |
 
 **Non vincolante:** sincronizzazione URL ↔ navigazione interna quando l'utente naviga senza Condividi.
@@ -134,8 +135,8 @@ Federazione **in pausa** — vedi [address-based-messaging.md](../../../decision
 | PROM-SHAREABLE-LINK-003, 006 | Scenario manuale / widget — `#test2` apre profilo; indirizzo assente → non trovato |
 | PROM-SHAREABLE-LINK-004 | Scenario manuale — `#test2/chat` apre chat |
 | PROM-SHAREABLE-LINK-010, 011 | Scenario manuale — 0 account → auth → profilo linkato |
-| PROM-SHAREABLE-LINK-020, 021, 022 | `peer_profile_overlay_test.dart` — Condividi visibile; copia URL profilo |
-| PROM-SHAREABLE-LINK-023 | `account_sidebar_test.dart` — Condividi account attivo |
+| PROM-SHAREABLE-LINK-020, 021, 022 | `peer_profile_overlay_test.dart` — Condividi → `ShareParams` |
+| PROM-SHAREABLE-LINK-023 | `account_sidebar_test.dart` — Condividi account attivo → `ShareParams` |
 | PROM-SHAREABLE-LINK-007, 040–042 | Review spec — assenza id interni e path viewer |
 
 Gate (post-implementazione): `bash scripts/check-spec-sync.sh` + `cd client && bash scripts/verify.sh`

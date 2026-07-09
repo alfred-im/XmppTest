@@ -41,7 +41,17 @@ class AccountSidebar extends StatelessWidget {
           padding: EdgeInsets.fromLTRB(12, compact ? 8 : 16, 12, 16),
           children: [
             if (profile != null && activeUserId != null)
-              _ActiveProfileCard(profile: profile, userId: activeUserId)
+              _ActiveProfileCard(
+                profile: profile,
+                userId: activeUserId,
+                manifestUsername: auth.openAccounts
+                    .where((a) => a.userId == activeUserId)
+                    .map((a) => a.username)
+                    .firstWhere(
+                      (username) => username.isNotEmpty,
+                      orElse: () => '',
+                    ),
+              )
             else
               const ListTile(
                 leading: Icon(Icons.person_outline),
@@ -99,10 +109,12 @@ class _ActiveProfileCard extends StatelessWidget {
   const _ActiveProfileCard({
     required this.profile,
     required this.userId,
+    required this.manifestUsername,
   });
 
   final ProfileSummary profile;
   final String userId;
+  final String manifestUsername;
 
   @override
   Widget build(BuildContext context) {
@@ -137,11 +149,27 @@ class _ActiveProfileCard extends StatelessWidget {
             ],
           ),
         ),
-        IconButton(
-          icon: const Icon(Icons.share_outlined, size: 22),
-          color: AlfredColors.textSecondary,
-          tooltip: 'Condividi',
-          onPressed: () => copyShareableProfileLink(context, profile),
+        Builder(
+          builder: (buttonContext) => IconButton(
+            icon: const Icon(Icons.share_outlined, size: 22),
+            color: AlfredColors.textSecondary,
+            tooltip: 'Condividi',
+            onPressed: () {
+              final box = buttonContext.findRenderObject() as RenderBox?;
+              final origin = box != null
+                  ? box.localToGlobal(Offset.zero) & box.size
+                  : null;
+              shareShareableProfileLink(
+                context,
+                profileForSharing(
+                  profile,
+                  fallbackUsername: manifestUsername,
+                ),
+                shareTitle: profile.displayName,
+                sharePositionOrigin: origin,
+              );
+            },
+          ),
         ),
         IconButton(
           icon: const Icon(Icons.logout_outlined, size: 22),

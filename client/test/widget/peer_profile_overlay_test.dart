@@ -6,11 +6,12 @@ import 'package:alfred_client/providers/reception_allowlist_controller.dart';
 import 'package:alfred_client/services/account_manager.dart';
 import 'package:alfred_client/services/account_session.dart';
 import 'package:alfred_client/widgets/peer_profile_overlay.dart';
+import 'package:alfred_client/utils/shareable_link.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../support/fake_contact_service.dart';
 import '../support/fake_messaging_services.dart';
@@ -22,6 +23,11 @@ void main() {
 
   setUp(() {
     SharedPreferences.setMockInitialValues({});
+    shareParamsInvokerForTest = null;
+  });
+
+  tearDown(() {
+    shareParamsInvokerForTest = null;
   });
 
   final peer = ProfileSummary(
@@ -157,7 +163,7 @@ void main() {
     expect(auth.activePeer?.displayName, 'Mario Rossi');
   });
 
-  testWidgets('Condividi copies profile link to clipboard', (tester) async {
+  testWidgets('Condividi apre share di sistema con link profilo', (tester) async {
     final allowlistService = FakeReceptionAllowlistService();
     final contactService = FakeContactService();
     final allowlist = ReceptionAllowlistController(
@@ -172,17 +178,10 @@ void main() {
     await allowlist.load();
     await contacts.load();
 
-    String? clipboardData;
-    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
-      SystemChannels.platform,
-      (message) async {
-        if (message.method == 'Clipboard.setData') {
-          clipboardData = (message.arguments as Map<Object?, Object?>)['text']
-              as String?;
-        }
-        return null;
-      },
-    );
+    ShareParams? sharedParams;
+    shareParamsInvokerForTest = (params) async {
+      sharedParams = params;
+    };
 
     await tester.pumpWidget(
       MaterialApp(
@@ -207,13 +206,8 @@ void main() {
     await tester.tap(find.byTooltip('Condividi'));
     await tester.pumpAndSettle();
 
-    expect(clipboardData, isNotNull);
-    expect(clipboardData, contains('#mario'));
-    expect(find.text('Link copiato negli appunti'), findsOneWidget);
-
-    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
-      SystemChannels.platform,
-      null,
-    );
+    expect(sharedParams, isNotNull);
+    expect(sharedParams!.text, contains('#mario'));
+    expect(sharedParams!.subject, 'Mario Rossi');
   });
 }

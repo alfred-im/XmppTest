@@ -48,7 +48,7 @@ Binding UX sidebar account aperti: manifest, focus, switch istantaneo, stato vis
 | **SURF-ACCOUNT-SIDEBAR-011** | Switch focus senza loading auth visibile (restore in background) |
 | **SURF-ACCOUNT-SIDEBAR-012** | `NoAccountPlaceholder` in area inbox quando nessun account/focus |
 | **SURF-ACCOUNT-SIDEBAR-013** | Etichetta UI distinta per account `group` nel manifest (badge «Gruppo») — [SYS-GROUP](../promises/system/SYS-GROUP.md) |
-| **SURF-ACCOUNT-SIDEBAR-014** | Card account in focus: pulsante **Condividi** immediatamente a sinistra di «Chiudi account» — copia `#indirizzo` profilo attivo — [PROM-SHAREABLE-LINK](../promises/product/PROM-SHAREABLE-LINK.md) |
+| **SURF-ACCOUNT-SIDEBAR-014** | Card account in focus: pulsante **Condividi** immediatamente a sinistra di «Chiudi account» — share di sistema link `#indirizzo` profilo attivo — [PROM-SHAREABLE-LINK](../promises/product/PROM-SHAREABLE-LINK.md) |
 
 ### MUST NOT
 
