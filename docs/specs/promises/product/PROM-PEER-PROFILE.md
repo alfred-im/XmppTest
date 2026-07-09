@@ -6,9 +6,9 @@
 | **Classe** | PRODUCT |
 | **Status** | `implemented` |
 | **Ultima revisione** | 2026-07-09 |
-| **PR origine** | #163 |
+| **PR origine** | #163, #176 |
 
-Promessa di prodotto: tap avatar peer Alfred → overlay fullscreen con identità pubblica, toggle allow list e azione rubrica — **indipendenti** e **immediati**.
+Promessa di prodotto: tap avatar peer Alfred → overlay fullscreen con identità pubblica, toggle allow list, azione rubrica e CTA «Inizia a chattare» — **indipendenti** e **immediati**.
 
 ---
 
