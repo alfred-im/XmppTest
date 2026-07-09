@@ -40,6 +40,7 @@ Dettaglio implementativo (DDL, firme RPC, RLS): **[contracts/schema.md](./contra
 | **PROM-REALTIME-OWNER** | Realtime filtrato su `owner_id` | `implemented` | [PROM-REALTIME-OWNER.md](./promises/product/PROM-REALTIME-OWNER.md) |
 | **PROM-GROUP-AUTHOR-DISPLAY** | Autore contenuto in chat gruppo | `implemented` | [PROM-GROUP-AUTHOR-DISPLAY.md](./promises/product/PROM-GROUP-AUTHOR-DISPLAY.md) |
 | **PROM-GROUP-TICKS** | Spunte limitate al rapporto con il gruppo | `implemented` | [PROM-GROUP-TICKS.md](./promises/product/PROM-GROUP-TICKS.md) |
+| **PROM-SHAREABLE-LINK** | Link condivisibili stabili (`#indirizzo`, `#indirizzo/chat`) | `draft` | [PROM-SHAREABLE-LINK.md](./promises/product/PROM-SHAREABLE-LINK.md) |
 
 ---
 
