@@ -25,7 +25,7 @@ class _ShareableLinkListenerState extends State<ShareableLinkListener> {
     super.initState();
     _hashSub = watchShareableFragment().listen(_onFragment);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _onFragment(readShareableFragment());
+      _onFragmentIfPresent(readShareableFragment());
     });
   }
 
@@ -39,6 +39,14 @@ class _ShareableLinkListenerState extends State<ShareableLinkListener> {
     if (!mounted) return;
     context.read<ShareableLinkController>().applyFragment(fragment);
     _scheduleHandle();
+  }
+
+  void _onFragmentIfPresent(String? fragment) {
+    if (fragment == null) {
+      _scheduleHandle();
+      return;
+    }
+    _onFragment(fragment);
   }
 
   void _scheduleHandle() {

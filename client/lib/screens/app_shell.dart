@@ -15,20 +15,24 @@ class AppShell extends StatelessWidget {
     final auth = context.watch<AuthController>();
     final link = context.watch<ShareableLinkController>();
 
-    if (!auth.sessionReady) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
-    }
+    return ShareableLinkListener(
+      child: Builder(
+        builder: (context) {
+          if (!auth.sessionReady) {
+            return const Scaffold(
+              body: Center(child: CircularProgressIndicator()),
+            );
+          }
 
-    if (link.notFound) {
-      return ShareableLinkNotFoundScreen(
-        onDismiss: () => link.dismissNotFound(),
-      );
-    }
+          if (link.notFound) {
+            return ShareableLinkNotFoundScreen(
+              onDismiss: () => link.dismissNotFound(),
+            );
+          }
 
-    return const ShareableLinkListener(
-      child: HomeScreen(),
+          return const HomeScreen();
+        },
+      ),
     );
   }
 }

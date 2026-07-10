@@ -9,6 +9,10 @@ import '../widgets/peer_profile_overlay.dart';
 
 /// Gestisce destinazione da fragment `#` e stato risorsa non trovata.
 class ShareableLinkController extends ChangeNotifier {
+  ShareableLinkController() {
+    applyFragment(readShareableFragment());
+  }
+
   ShareableLinkTarget? _target;
   bool notFound = false;
   bool _handling = false;
