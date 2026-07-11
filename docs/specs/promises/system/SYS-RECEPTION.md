@@ -5,11 +5,11 @@
 | **Promessa ID** | `SYS-RECEPTION` |
 | **Classe** | SYSTEM |
 | **Status** | `implemented` |
-| **Ultima revisione** | 2026-07-08 |
+| **Ultima revisione** | 2026-07-11 |
 | **Contratti** | [schema.md](../../contracts/schema.md) · [rpc.md](../../contracts/rpc.md) |
-| **PR** | #161 |
+| **PR** | #161, #179 |
 
-Promesse di piattaforma per `reception_allowlist`, gate recapito in `send_message_to_profile` e semantica rifiuto silenzioso — filtro sempre attivo, isolato da rubrica.
+Promesse di piattaforma per `reception_allowlist`, gate recapito nel worker [SYS-DELIVERY](./SYS-DELIVERY.md) e semantica rifiuto silenzioso — filtro sempre attivo, isolato da rubrica.
 
 ---
 
@@ -29,7 +29,7 @@ L'utente Alfred controlla chi può consegnargli messaggi tramite allow list pers
 | **SYS-RECEPTION-002** | Colonne: `id` uuid PK, `owner_id` FK → profiles, `allowed_profile_id` FK → profiles, `created_at` timestamptz |
 | **SYS-RECEPTION-003** | Unicità `(owner_id, allowed_profile_id)`; `allowed_profile_id ≠ owner_id` |
 | **SYS-RECEPTION-004** | CRUD lista via PostgREST diretto su `reception_allowlist` (nessuna RPC dedicata obbligatoria) |
-| **SYS-RECEPTION-005** | Gate server **prima** della materializzazione copia destinatario in `send_message_to_profile` (driver internal) |
+| **SYS-RECEPTION-005** | Gate server nel worker [SYS-DELIVERY](./SYS-DELIVERY.md) **prima** della materializzazione copia destinatario |
 | **SYS-RECEPTION-006** | Condizione recapito: esiste riga `reception_allowlist` con `owner_id = destinatario` AND `allowed_profile_id = mittente` |
 | **SYS-RECEPTION-007** | Lista vuota → **nessun** mittente soddisfa il gate → tutti i messaggi nuovi rifiutati |
 | **SYS-RECEPTION-008** | Su rifiuto: INSERT copia mittente + outbox come oggi; **nessuna** INSERT copia destinatario; `delivered_at` resta null sulla copia mittente |
@@ -67,16 +67,14 @@ L'utente Alfred controlla chi può consegnargli messaggi tramite allow list pers
 ### Gate recapito (internal)
 
 ```
-send_message_to_profile
-  → INSERT copia mittente (livello ✓)
-  → SE EXISTS reception_allowlist(owner=dest, allowed=mittente):
-       INSERT copia destinatario
-       UPDATE mittente delivered_at = now()  (livello ✓✓)
-       outbox status = completed
-     ALTRIMENTI:
-       skip copia destinatario
-       delivered_at resta null
-       outbox status = completed (payload opz. reception_rejected)
+send_message_to_profile (account mittente)
+  → INSERT copia mittente (livello ✓) + outbox event_kind=deliver
+  → alfred_delivery.process_outbox:
+       SE EXISTS reception_allowlist(owner=dest, allowed=mittente):
+         INSERT copia destinatario
+         UPDATE mittente delivered_at = now()  (livello ✓✓)
+       ALTRIMENTI:
+         skip copia destinatario; delivered_at null; reception_rejected in payload
   → RETURN copia mittente
 ```
 

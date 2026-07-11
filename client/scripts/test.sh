@@ -24,7 +24,8 @@ GATE (CI, sempre):
                     → bash scripts/verify.sh [--build]
 
 MANUALE (rete / browser, non in CI):
-  integration       API Supabase live — agent1↔agent2
+  integration       API Supabase live — agent1↔agent2 + contratto spunte
+  integration-ticks Solo contratto spunte (✓ / ✓✓ grigie / ✓✓ blu + allow list)
   e2e               tutti i Playwright (client/e2e/)
   e2e-multi         Playwright multi-account (persist + messages + DB)
   live              flutter test --tags live
@@ -50,6 +51,10 @@ run_gate() {
 
 run_integration() {
   bash scripts/integration-multi-account.sh "$@"
+}
+
+run_integration_ticks() {
+  INTEGRATION_MODE=ticks bash scripts/integration-multi-account.sh "$@"
 }
 
 run_e2e() {
@@ -96,6 +101,9 @@ case "$CMD" in
     ;;
   integration|integration-multi)
     run_integration "$@"
+    ;;
+  integration-ticks|ticks)
+    run_integration_ticks "$@"
     ;;
   e2e|playwright)
     run_e2e "$@"
