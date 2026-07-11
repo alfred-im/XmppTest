@@ -234,6 +234,7 @@ Aggiunta enum in migrazioni separate (commit enum prima dell’uso in RPC).
 |------|----------|
 | `supabase/tests/schema_smoke.sql` | Assenza `inbox_threads`, `message_read_receipts`; schema mailbox |
 | `supabase/tests/mailbox_schema_smoke.sql` | `owner_id`, assenza `delivery_status` su `messages` |
+| `supabase/tests/delivery_ticks_smoke.sql` | Contratto ✓ / ✓✓ grigie / ✓✓ blu + allow list + outbox `event_kind` |
 | `supabase/tests/mailbox_send_smoke.sql` | Invio + `delivered_at` |
 | `supabase/tests/mailbox_idempotency_smoke.sql` | Idempotenza `client_message_id` |
 | `supabase/tests/mailbox_delivery_smoke.sql` | Copia destinatario + outbox `completed` |

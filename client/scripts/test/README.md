@@ -33,7 +33,8 @@ Richiedono rete (Supabase live) e/o browser. Non bloccano merge.
 
 | Suite | Comando | Cosa verifica |
 |-------|---------|---------------|
-| **integration** | `bash scripts/test.sh integration` | Login agent1/agent2 + RPC `list_inbox` / `list_peer_messages` (API only) |
+| **integration** | `bash scripts/test.sh integration` | Login agent1/agent2 + RPC inbox/peer + **contratto spunte** (✓/✓✓/allow list) |
+| **integration-ticks** | `bash scripts/test.sh integration-ticks` | Solo contratto spunte delivery plane (3 fasi) |
 | **e2e** | `bash scripts/test.sh e2e` | Tutti i Playwright in `client/e2e/` |
 | **e2e-multi** | `bash scripts/test.sh e2e-multi` | Multi-account mobile: persistenza F5 + messaggi (UI + DB) |
 | **live** | `bash scripts/test.sh live` | Dart con tag `@Tags(['live'])` (es. password reset PKCE) |

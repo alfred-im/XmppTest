@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Integrazione live Supabase — multi-account senza browser (no hang computerUse).
-# Hub: bash scripts/test.sh integration
-# Usa SOLO account agente documentati in docs/AGENT_DEBUG_ACCOUNTS.md
+# Integrazione live Supabase — multi-account senza browser.
+# Hub: bash scripts/test.sh integration | integration-ticks
+# Garantisce: ✓ singola (rifiuto allow list), ✓✓ grigie (deliver worker), ✓✓ blu (read_receipt worker).
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -17,6 +17,8 @@ AGENT1_ID="${AGENT1_ID:-efd885fe-b36e-48fc-a796-0e3f153e40d6}"
 AGENT2_EMAIL="${AGENT2_EMAIL:-agadriel.sexpositive+alfredagent2@gmail.com}"
 AGENT2_PASS="${AGENT2_PASS:-AlfredAgentDbg2!}"
 AGENT2_ID="${AGENT2_ID:-0a81f785-173c-4f1c-b5df-3937086a2482}"
+
+MODE="${INTEGRATION_MODE:-full}"
 
 login() {
   local email="$1" password="$2"
@@ -46,12 +48,103 @@ rpc() {
   rm -f "$tmp"
 }
 
-count_inbox_rows() {
-  python3 -c "import json,sys; d=json.load(sys.stdin); print(len(d) if isinstance(d,list) else 0)"
+rest_delete() {
+  local jwt="$1" path="$2"
+  local http
+  http="$(curl -s -m 30 -o /dev/null -w '%{http_code}' -X DELETE "${SUPABASE_URL}/rest/v1/${path}" \
+    -H "apikey: ${ANON_KEY}" \
+    -H "Authorization: Bearer ${jwt}")"
+  if [[ "$http" != "204" && "$http" != "200" ]]; then
+    echo "DELETE ${path} failed HTTP ${http}" >&2
+    return 1
+  fi
 }
 
-count_peer_messages() {
-  python3 -c "import json,sys; d=json.load(sys.stdin); print(len(d) if isinstance(d,list) else 0)"
+rest_insert_allow() {
+  local jwt="$1" owner="$2" allowed="$3"
+  curl -sf -m 30 -X POST "${SUPABASE_URL}/rest/v1/reception_allowlist" \
+    -H "apikey: ${ANON_KEY}" \
+    -H "Authorization: Bearer ${jwt}" \
+    -H "Content-Type: application/json" \
+    -H "Prefer: resolution=ignore-duplicates" \
+    -d "{\"owner_id\":\"${owner}\",\"allowed_profile_id\":\"${allowed}\"}" > /dev/null
+}
+
+peer_body() {
+  python3 -c "import json,sys; print(json.dumps({'p_peer_profile_id': sys.argv[1], 'p_limit': 200}))" "$1"
+}
+
+send_body() {
+  local recipient="$1" body="$2" client_id="$3"
+  python3 -c "import json,sys; print(json.dumps({'p_recipient_profile_id':sys.argv[1],'p_body':sys.argv[2],'p_client_message_id':sys.argv[3],'p_content_type':'text'}))" \
+    "$recipient" "$body" "$client_id"
+}
+
+mark_read_body() {
+  python3 -c "import json,sys; print(json.dumps({'p_peer_profile_id': sys.argv[1]}))" "$1"
+}
+
+assert_ticks_contract() {
+  local a1_jwt="$1" a2_jwt="$2"
+  local stamp reject_id deliver_id read_id
+
+  stamp="$(date +%s)"
+  reject_id="int-ticks-reject-${stamp}-$$"
+  deliver_id="int-ticks-deliver-${stamp}-$$"
+  read_id="int-ticks-read-${stamp}-$$"
+
+  echo "==> ticks contract: fase 1 — rifiuto allow list (solo ✓)"
+  rest_delete "$a2_jwt" "reception_allowlist?owner_id=eq.${AGENT2_ID}&allowed_profile_id=eq.${AGENT1_ID}" || true
+
+  rpc "$a1_jwt" send_message_to_profile "$(send_body "$AGENT2_ID" "integration ticks reject" "$reject_id")" | python3 -c "
+import json,sys
+m=json.load(sys.stdin)
+assert m.get('owner_id') and m.get('logical_message_id'), 'missing sender row'
+assert m.get('delivered_at') is None, 'reject: delivered_at must be null (single tick)'
+assert m.get('read_at') is None, 'reject: read_at must be null'
+print('    reject: single tick ok (delivered_at=null)')
+"
+
+  echo "==> ticks contract: fase 2 — allow list + deliver worker (✓✓ grigie)"
+  rest_insert_allow "$a2_jwt" "$AGENT2_ID" "$AGENT1_ID"
+
+  rpc "$a1_jwt" send_message_to_profile "$(send_body "$AGENT2_ID" "integration ticks deliver" "$deliver_id")" | python3 -c "
+import json,sys
+m=json.load(sys.stdin)
+assert m.get('delivered_at'), 'deliver: delivered_at required (double grey)'
+assert m.get('read_at') is None, 'deliver: read_at must be null before read'
+lam=m['logical_message_id']
+print(f'    deliver: double grey ok lambda={lam[:8]}…')
+"
+
+  echo "==> ticks contract: fase 3 — mark_peer_read + read_receipt worker (✓✓ blu)"
+  SEND_JSON="$(rpc "$a1_jwt" send_message_to_profile "$(send_body "$AGENT2_ID" "integration ticks read" "$read_id")")"
+  export LAMBDA
+  LAMBDA="$(echo "$SEND_JSON" | python3 -c "import json,sys; print(json.load(sys.stdin)['logical_message_id'])")"
+  rpc "$a2_jwt" mark_peer_read "$(mark_read_body "$AGENT1_ID")" > /dev/null
+
+  rpc "$a1_jwt" list_peer_messages "$(peer_body "$AGENT2_ID")" | python3 -c "
+import json,sys,os
+lam=os.environ['LAMBDA']
+agent1=os.environ['AGENT1_ID']
+rows=json.load(sys.stdin)
+mine=[r for r in rows if r.get('logical_message_id')==lam and r.get('author_id')==agent1]
+assert mine, 'no outgoing row for read test'
+row=mine[0]
+assert row.get('delivered_at'), 'read: delivered_at must be set'
+assert row.get('read_at'), 'read: read_at must be set on sender (double blue via delivery)'
+print('    read: double blue ok on sender copy')
+"
+
+  rpc "$a2_jwt" list_peer_messages "$(peer_body "$AGENT1_ID")" | python3 -c "
+import json,sys,os
+lam=os.environ['LAMBDA']
+agent1=os.environ['AGENT1_ID']
+rows=json.load(sys.stdin)
+inc=[r for r in rows if r.get('logical_message_id')==lam and r.get('author_id')==agent1]
+assert inc and inc[0].get('read_at'), 'recipient incoming read_at must be set locally'
+print('    read: recipient local read_at ok')
+"
 }
 
 echo "==> integration multi-account (API only)"
@@ -68,59 +161,34 @@ A2_JWT="$(echo "$A2_JSON" | python3 -c "import json,sys; print(json.load(sys.std
 A2_UID="$(echo "$A2_JSON" | python3 -c "import json,sys; print(json.load(sys.stdin)['user']['id'])")"
 echo "    user_id=$A2_UID"
 
+if [[ "$MODE" == "ticks" ]]; then
+  export AGENT1_ID AGENT2_ID
+  assert_ticks_contract "$A1_JWT" "$A2_JWT"
+  echo "integration_ticks_ok"
+  exit 0
+fi
+
 echo "==> agent1 list_inbox"
-A1_INBOX_COUNT="$(rpc "$A1_JWT" list_inbox | count_inbox_rows)"
+A1_INBOX_COUNT="$(rpc "$A1_JWT" list_inbox | python3 -c "import json,sys; d=json.load(sys.stdin); print(len(d) if isinstance(d,list) else 0)")"
 echo "    rows=$A1_INBOX_COUNT"
 
 echo "==> agent2 list_inbox"
-A2_INBOX_COUNT="$(rpc "$A2_JWT" list_inbox | count_inbox_rows)"
+A2_INBOX_COUNT="$(rpc "$A2_JWT" list_inbox | python3 -c "import json,sys; d=json.load(sys.stdin); print(len(d) if isinstance(d,list) else 0)")"
 echo "    rows=$A2_INBOX_COUNT"
 
-peer_body() {
-  python3 -c "import json,sys; print(json.dumps({'p_peer_profile_id': sys.argv[1], 'p_limit': 100}))" "$1"
-}
-
 echo "==> agent1 list_peer_messages → agent2"
-A1_PEER_COUNT="$(rpc "$A1_JWT" list_peer_messages "$(peer_body "$AGENT2_ID")" | count_peer_messages)"
+A1_PEER_COUNT="$(rpc "$A1_JWT" list_peer_messages "$(peer_body "$AGENT2_ID")" | python3 -c "import json,sys; d=json.load(sys.stdin); print(len(d) if isinstance(d,list) else 0)")"
 echo "    messages=$A1_PEER_COUNT"
 
 echo "==> agent2 list_peer_messages → agent1"
-A2_PEER_COUNT="$(rpc "$A2_JWT" list_peer_messages "$(peer_body "$AGENT1_ID")" | count_peer_messages)"
+A2_PEER_COUNT="$(rpc "$A2_JWT" list_peer_messages "$(peer_body "$AGENT1_ID")" | python3 -c "import json,sys; d=json.load(sys.stdin); print(len(d) if isinstance(d,list) else 0)")"
 echo "    messages=$A2_PEER_COUNT"
 
-if [[ "$A1_PEER_COUNT" -lt 1 || "$A2_PEER_COUNT" -lt 1 ]]; then
-  echo "==> reception_allowlist: agent2 consente agent1"
-  ALLOW_BODY="$(python3 -c "import json; print(json.dumps({'owner_id':'${AGENT2_ID}','allowed_profile_id':'${AGENT1_ID}'}))")"
-  curl -sf -m 30 -X POST "${SUPABASE_URL}/rest/v1/reception_allowlist" \
-    -H "apikey: ${ANON_KEY}" \
-    -H "Authorization: Bearer ${A2_JWT}" \
-    -H "Content-Type: application/json" \
-    -H "Prefer: resolution=ignore-duplicates" \
-    -d "$ALLOW_BODY" > /dev/null || true
-
-  echo "==> mailbox: agent1 send_message_to_profile → agent2"
-  SEND_BODY="$(python3 -c "import json,uuid; print(json.dumps({'p_recipient_profile_id':'${AGENT2_ID}','p_body':'integration mailbox','p_client_message_id':str(uuid.uuid4()),'p_content_type':'text'}))")"
-  SEND_JSON="$(rpc "$A1_JWT" send_message_to_profile "$SEND_BODY")"
-  echo "$SEND_JSON" | python3 -c "import json,sys; m=json.load(sys.stdin); assert m.get('delivered_at'), 'missing delivered_at'; print('    sent id='+m['id'][:8]+'… delivered_at ok')"
-
-  A1_INBOX_COUNT="$(rpc "$A1_JWT" list_inbox | count_inbox_rows)"
-  A2_INBOX_COUNT="$(rpc "$A2_JWT" list_inbox | count_inbox_rows)"
-  echo "    inbox after send: agent1=$A1_INBOX_COUNT agent2=$A2_INBOX_COUNT"
-
-  A1_PEER_COUNT="$(rpc "$A1_JWT" list_peer_messages "$(peer_body "$AGENT2_ID")" | count_peer_messages)"
-  A2_PEER_COUNT="$(rpc "$A2_JWT" list_peer_messages "$(peer_body "$AGENT1_ID")" | count_peer_messages)"
-  echo "    peer messages after send: agent1=$A1_PEER_COUNT agent2=$A2_PEER_COUNT"
-
-  echo "==> mailbox: agent2 mark_peer_read(agent1)"
-  rpc "$A2_JWT" mark_peer_read "$(python3 -c "import json; print(json.dumps({'p_peer_profile_id':'${AGENT1_ID}'}))")" > /dev/null
-  READ_CHECK="$(rpc "$A1_JWT" list_peer_messages "$(peer_body "$AGENT2_ID")" | python3 -c "import json,sys; rows=json.load(sys.stdin); mine=[r for r in rows if r.get('author_id')=='${AGENT1_ID}']; assert mine, 'no outgoing'; assert mine[-1].get('read_at'), 'read_at missing on sender copy'; print('    read_at ok on sender copy')")"
-  echo "$READ_CHECK"
-fi
+export AGENT1_ID AGENT2_ID
+assert_ticks_contract "$A1_JWT" "$A2_JWT"
 
 if [[ "$A1_PEER_COUNT" -lt 1 || "$A2_PEER_COUNT" -lt 1 ]]; then
-  echo "integration_warn: conversazione bidirezionale vuota o monodirezionale sul backend" >&2
-  echo "  (il client può essere OK mentre il DB non ha messaggi tra gli agenti)" >&2
-  exit 1
+  echo "integration_warn: storico peer monodirezionale o vuoto (ticks contract comunque ok)" >&2
 fi
 
 echo "integration_ok"

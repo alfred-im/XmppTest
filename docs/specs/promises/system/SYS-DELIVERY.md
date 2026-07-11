@@ -52,13 +52,17 @@ Gli account accettano invio/lettura solo nel proprio archivio e accodano eventi 
 | **SYS-DELIVERY-016** | Al termine: `outbox.status = completed` (o `failed` con `last_error` su errore transazione) |
 | **SYS-DELIVERY-017** | Idempotenza destinatario: `ON CONFLICT (owner_id, logical_message_id) DO NOTHING` |
 
-#### MUST NOT
+| **SYS-DELIVERY-018** | ✓ singola: copia mittente con `delivered_at` null permanente se gate rifiuta |
+| **SYS-DELIVERY-019** | ✓✓ grigie: worker `deliver` valorizza `delivered_at` su copia mittente; `read_at` null |
+| **SYS-DELIVERY-020** | ✓✓ blu: lettore aggiorna solo archivio locale; worker `read_receipt` propaga `read_at` alla copia mittente |
+
+### MUST NOT
 
 | ID | Promessa |
 |----|----------|
-| **SYS-DELIVERY-020** | RPC account che eseguono INSERT/UPDATE cross-boundary al posto del worker |
-| **SYS-DELIVERY-021** | Errore RPC verso mittente su rifiuto allow list (rifiuto silenzioso invariato) |
-| **SYS-DELIVERY-022** | Worker con `auth.uid()` come identità operativa |
+| **SYS-DELIVERY-023** | RPC account che eseguono INSERT/UPDATE cross-boundary al posto del worker |
+| **SYS-DELIVERY-024** | Errore RPC verso mittente su rifiuto allow list (rifiuto silenzioso invariato) |
+| **SYS-DELIVERY-025** | Worker con `auth.uid()` come identità operativa |
 
 ### Flussi (internal sincrono)
 
@@ -95,9 +99,10 @@ mark_peer_read (account lettore)
 
 | SYS-ID | Verifica |
 |--------|----------|
-| SYS-DELIVERY-001–012 | `mailbox_delivery_smoke.sql` |
-| SYS-DELIVERY-003–014 | `mailbox_read_smoke.sql` |
-| SYS-DELIVERY-012 | `reception_allowlist_gate_smoke.sql` |
+| SYS-DELIVERY-001–012 | `mailbox_delivery_smoke.sql`, `delivery_ticks_smoke.sql` |
+| SYS-DELIVERY-003–014 | `mailbox_read_smoke.sql`, `delivery_ticks_smoke.sql` |
+| SYS-DELIVERY-012 | `reception_allowlist_gate_smoke.sql`, `delivery_ticks_smoke.sql` |
+| SYS-DELIVERY-018–020 | `delivery_ticks_smoke.sql`, `bash scripts/test.sh integration-ticks` |
 | SYS-DELIVERY-013–015 | `group_delivery_smoke.sql`, `group_broadcast_smoke.sql` |
 
 ---
