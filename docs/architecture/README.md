@@ -7,7 +7,6 @@ Documentazione architetturale per AI.
 | File | Contenuto |
 |------|-----------|
 | [full-stack.md](./full-stack.md) | Architettura — client Flutter + Supabase |
-| [pr-registry.md](./pr-registry.md) | PR **#108–#179** → feature → checklist doc |
-| [mailbox-inbox-outbox-spec.md](./mailbox-inbox-outbox-spec.md) | ✅ Modello caselle — implementato su `main` (PR #159) |
+| [mailbox-inbox-outbox-spec.md](./mailbox-inbox-outbox-spec.md) | Modello caselle — archivio per owner, outbox sempre |
 
 Dettaglio operativo: `PROJECT_MAP.md`.

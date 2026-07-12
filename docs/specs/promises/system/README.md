@@ -1,6 +1,6 @@
 # Promesse SYSTEM — piattaforma
 
-**Ultima revisione**: 2026-07-08
+**Ultima revisione**: 2026-07-12
 
 Le promesse **SYSTEM** sono il contratto tra client, piattaforma Supabase e bridge. Il dettaglio backend resta nei documenti canonici sotto.
 
@@ -10,8 +10,8 @@ Le promesse **SYSTEM** sono il contratto tra client, piattaforma Supabase e brid
 
 | Documento | Contenuto |
 |-----------|-----------|
-| [../contracts/schema.md](../contracts/schema.md) | Tabelle, colonne, enum, RLS, bucket storage, vincoli |
-| [../contracts/rpc.md](../contracts/rpc.md) | Firme RPC, parametri, semantica, mapping client |
+| [../../contracts/schema.md](../../contracts/schema.md) | Tabelle, colonne, enum, RLS, bucket storage, vincoli |
+| [../../contracts/rpc.md](../../contracts/rpc.md) | Firme RPC, parametri, semantica, mapping client |
 
 Ogni modifica a schema o RPC **deve** aggiornare questi contratti e la promessa SYSTEM correlata (`SYS-*`).
 
@@ -29,7 +29,7 @@ Ogni modifica a schema o RPC **deve** aggiornare questi contratti e la promessa 
 | SYS-ACCOUNT-BOUNDARY | [SYS-ACCOUNT-BOUNDARY.md](./SYS-ACCOUNT-BOUNDARY.md) | Confine account (legge madre) |
 | SYS-DELIVERY | [SYS-DELIVERY.md](./SYS-DELIVERY.md) | Outbox + worker delivery |
 
-Indice completo: [registry.md](../../registry.md) · [index.md](../../index.md).
+Indice completo: [registry.md](../../registry.md).
 
 ---
 

@@ -70,6 +70,6 @@ Ogni promessa vincolante: `PROM-{NAME}-NNN`.
 
 | Documento | Ruolo |
 |-----------|--------|
-| [registry.md](../../registry.md) | Indice promesse |
+| [registry.md](./registry.md) | Indice promesse |
 
-Aggiornare [registry.md](../../registry.md) quando si crea o cambia stato questa promessa.
+Aggiornare [registry.md](./registry.md) quando si crea o cambia stato questa promessa.

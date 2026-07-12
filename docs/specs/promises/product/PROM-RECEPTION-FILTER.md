@@ -10,7 +10,7 @@
 
 Promessa di prodotto: il destinatario controlla chi può **consegnargli** messaggi; filtro **sempre attivo**; rifiuto **silenzioso** verso il mittente (stile blocco XMPP).
 
-Gate server e schema `reception_allowlist` restano in [SYS-RECEPTION](../promises/system/SYS-RECEPTION.md) e [contracts/schema.md](../../contracts/schema.md).
+Gate server e schema `reception_allowlist` restano in [SYS-RECEPTION](../system/SYS-RECEPTION.md) e [contracts/schema.md](../../contracts/schema.md).
 
 ---
 

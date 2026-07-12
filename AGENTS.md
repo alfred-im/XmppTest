@@ -2,7 +2,7 @@
 
 ## Regola prioritaria — completare il task
 
-In questa repository, **completare un task** (issue, PR, richiesta Cloud Agent) significa **seguire integralmente** [`.cursor-rules.md`](../.cursor-rules.md) — **non** modificare il codice al primo turno e **non** saltare la SDD.
+In questa repository, **completare un task** (issue, PR, richiesta Cloud Agent) significa **seguire integralmente** [`.cursor-rules.md`](.cursor-rules.md) — **non** modificare il codice al primo turno e **non** saltare la SDD.
 
 | Fase | Consentito senza ok per le modifiche | Richiede conferma |
 |------|--------------------------------------|-------------------|

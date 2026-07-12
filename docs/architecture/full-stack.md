@@ -1,13 +1,10 @@
 # Alfred — Architettura (panoramica)
 
-**Data**: 2026-07-11  
+**Data**: 2026-07-12  
 **Scope**: App completa **senza bridge** (XMPP/Matrix restano stub Fly.io)  
-**Stato**: PR **#108–#179** su `main` — prodotto stabile  
-**Registro PR**: [pr-registry.md](./pr-registry.md)
+**Stato**: prodotto stabile su `main`
 
-> **Contratti (SDD)**: [docs/specs/registry.md](../specs/registry.md) — registro promesse SYSTEM / PRODUCT / SURFACE.  
-> **Contratti piattaforma (SYSTEM)**: [contracts/schema.md](../specs/contracts/schema.md), [contracts/rpc.md](../specs/contracts/rpc.md).  
-> Questo file è **panoramica architetturale** — non duplicare i requisiti delle promesse.
+> **Contratti (SDD)**: [docs/specs/registry.md](../specs/registry.md)
 
 ---
 
@@ -16,7 +13,7 @@
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │  Flutter Web (`client/`)                                   │
-│  Auth · Contatti · Persone consentite · Conversazioni · Chat · Profilo · Multi-account · Gruppi │
+│  Auth · Contatti · Persone consentite · Conversazioni · Chat · Profilo · Multi-account · Gruppi · Link `#` │
 └───────────────────────────┬─────────────────────────────────┘
                             │ HTTPS (REST + Realtime + Auth)
                             ▼
@@ -38,7 +35,7 @@
 | D-008 | Flutter parla **solo** con Supabase |
 | D-051 | Stato bridge in piattaforma (`outbox`, `sync_cursors`, `bridge_jobs`) |
 | D-034 | Protocollo **mai** visibile in UI contatti/inbox |
-| D-024 | Multi-account — manifest + focus; **una GoTrue attiva** (PR #152) |
+| D-024 | Multi-account — manifest + focus; una GoTrue attiva |
 | D-031 | Web **online-only** |
 
 ---
@@ -55,47 +52,40 @@ client/lib/
 ├── providers/   # ChangeNotifier (stato UI)
 ├── screens/     # Shell, auth, home, contatti, profilo
 ├── widgets/     # Componenti presentazionali
-└── utils/       # Formattazione, scroll anchor, filtri
+└── utils/       # Formattazione, scroll anchor, filtri, shareable link
 ```
 
 ### 2.2 Provider
 
-- `ChangeNotifierProxyProvider` per contatti, profilo e allow list ricezione al cambio focus (fix PR #114)
-- Inbox: `ListenableBuilder` su `focusedSession?.inboxController` (PR #140 + #152)
-- Dettaglio: [PROM-MULTI-ACCOUNT](../specs/promises/product/PROM-MULTI-ACCOUNT.md), [SURF-AUTH](../specs/surfaces/SURF-AUTH.md)
+- `ChangeNotifierProxyProvider` per contatti, profilo e allow list al cambio focus
+- Inbox: `ListenableBuilder` su `focusedSession?.inboxController`
+- Dettaglio: [guides/multi-account.md](../guides/multi-account.md)
 
 ### 2.3 Bootstrap
 
 1. `bootstrapApp()` — nessuna sessione globale
 2. `AuthController.initialize()` → manifest + restore focus
 3. `AppShell` → sempre `HomeScreen`; overlay se 0 account
+4. `ShareableLinkListener` → fragment `#` in ingresso ([PROM-SHAREABLE-LINK](../specs/promises/product/PROM-SHAREABLE-LINK.md))
+
+### 2.4 Link condivisibili (fragment `#`)
+
+Dettaglio: [guides/shareable-link.md](../guides/shareable-link.md).
 
 ---
 
 ## 3. Promesse → area
 
-| Area | Spec | Note |
-|------|------|------|
-| Multi-account, overlay auth | [PROM-MULTI-ACCOUNT](../specs/promises/product/PROM-MULTI-ACCOUNT.md), [SURF-AUTH](../specs/surfaces/SURF-AUTH.md) | PR #140, #147, #152 |
-| Archivio per owner, outbox sempre | [SYS-MAILBOX](../specs/promises/system/SYS-MAILBOX.md) | PR #159 |
-| Inbox on-read, `ChatPeer` | [SYS-MAILBOX](../specs/promises/system/SYS-MAILBOX.md) | PR #159 |
-| Invio testo/GIF/voice/location | [SYS-MAILBOX](../specs/promises/system/SYS-MAILBOX.md) | PR #159 |
-| Spunte delivered/read (`delivered_at`/`read_at`) | [SYS-MAILBOX](../specs/promises/system/SYS-MAILBOX.md), [SYS-DELIVERY](../specs/promises/system/SYS-DELIVERY.md) | PR #159, #179 |
-| Confine account (nessun cross-boundary RPC) | [SYS-ACCOUNT-BOUNDARY](../specs/promises/system/SYS-ACCOUNT-BOUNDARY.md) | PR #179 |
-| Ricerca liste (conversazioni, contatti, allow list) | [PROM-LIST-FILTER](../specs/promises/product/PROM-LIST-FILTER.md) + [SURF-*](../specs/registry.md) | PR #132, #171 |
-| Profilo, avatar, pronomi | [SYS-PROFILE](../specs/promises/system/SYS-PROFILE.md), [PROM-PROFILE-IDENTITY](../specs/promises/product/PROM-PROFILE-IDENTITY.md), [SURF-PROFILE](../specs/surfaces/SURF-PROFILE.md) | PR #118, #134 |
-| Rubrica | [SYS-CONTACTS](../specs/promises/system/SYS-CONTACTS.md), [PROM-PERSONAL-CONTACTS](../specs/promises/product/PROM-PERSONAL-CONTACTS.md), [SURF-CONTACTS](../specs/surfaces/SURF-CONTACTS.md) | PR #109 |
-| Allow list ricezione | [SYS-RECEPTION](../specs/promises/system/SYS-RECEPTION.md), [PROM-RECEPTION-FILTER](../specs/promises/product/PROM-RECEPTION-FILTER.md), [SURF-ALLOWLIST](../specs/surfaces/SURF-ALLOWLIST.md) | PR #161; gate nel worker #179 |
-| Scheda profilo peer (tap avatar) | [PROM-PEER-PROFILE](../specs/promises/product/PROM-PEER-PROFILE.md), [SURF-PEER-PROFILE](../specs/surfaces/SURF-PEER-PROFILE.md) | PR #163 |
-| Account gruppo, erogazione | [SYS-GROUP](../specs/promises/system/SYS-GROUP.md), [SYS-DELIVERY](../specs/promises/system/SYS-DELIVERY.md) | PR #162, #179 |
-
-### UI cross-cutting
-
-| Area | Contratto / evidenza |
-|------|-------------------------|
-| Ricerca lista on-demand | [PROM-LIST-FILTER](../specs/promises/product/PROM-LIST-FILTER.md) + [SURF-*](../specs/registry.md) — [inbox-search-toggle.md](../design/inbox-search-toggle.md) (PR #132, #171) |
-| Scroll ancorato chat | [conversation-bottom-anchor.md](../design/conversation-bottom-anchor.md) (PR #125) — *backlog promessa PRODUCT* |
-| ADR modello caselle | [mailbox-inbox-outbox-spec.md](./mailbox-inbox-outbox-spec.md) → [SYS-MAILBOX](../specs/promises/system/SYS-MAILBOX.md) (PR #159) |
+| Area | Spec | Guida |
+|------|------|-------|
+| Multi-account, overlay auth | [PROM-MULTI-ACCOUNT](../specs/promises/product/PROM-MULTI-ACCOUNT.md), [SURF-AUTH](../specs/surfaces/SURF-AUTH.md) | [multi-account.md](../guides/multi-account.md) |
+| Archivio, inbox, media, spunte | [SYS-MAILBOX](../specs/promises/system/SYS-MAILBOX.md), [SYS-DELIVERY](../specs/promises/system/SYS-DELIVERY.md) | [media.md](../guides/media.md), [mailbox-inbox-outbox-spec.md](./mailbox-inbox-outbox-spec.md) |
+| Confine account | [SYS-ACCOUNT-BOUNDARY](../specs/promises/system/SYS-ACCOUNT-BOUNDARY.md) | — |
+| Ricerca liste | [PROM-LIST-FILTER](../specs/promises/product/PROM-LIST-FILTER.md) | [inbox.md](../guides/inbox.md) |
+| Profilo, rubrica, allow list | [SYS-PROFILE](../specs/promises/system/SYS-PROFILE.md), [SYS-CONTACTS](../specs/promises/system/SYS-CONTACTS.md), [SYS-RECEPTION](../specs/promises/system/SYS-RECEPTION.md) | [peer-profile.md](../guides/peer-profile.md) |
+| Link condivisibili | [PROM-SHAREABLE-LINK](../specs/promises/product/PROM-SHAREABLE-LINK.md) | [shareable-link.md](../guides/shareable-link.md) |
+| Account gruppo | [SYS-GROUP](../specs/promises/system/SYS-GROUP.md) | [groups.md](../guides/groups.md) |
+| Scroll chat | backlog `PROM-BOTTOM-ANCHOR` | [chat-scroll.md](../guides/chat-scroll.md) |
 
 ---
 
@@ -103,7 +93,7 @@ client/lib/
 
 Schema, enum, RLS, storage: **[contracts/schema.md](../specs/contracts/schema.md)**  
 RPC business logic: **[contracts/rpc.md](../specs/contracts/rpc.md)**  
-Migrazioni: [pr-registry.md](./pr-registry.md) § migrazioni
+Migrazioni: [`supabase/migrations/`](../../../supabase/migrations/)
 
 ### Integrazione bridge (non implementata)
 
@@ -169,6 +159,7 @@ Dettaglio deploy: `PROJECT_MAP.md` § Build, workflow `.github/workflows/deploy-
 | Chat Alfred stessa istanza | ✅ testo, GIF, voice, location (recapito solo se mittente ∈ allow list destinatario) |
 | Chat gruppo Alfred | ✅ account gruppo, erogazione automatica, broadcast, UI autore (PR #162) |
 | Allow list ricezione | ✅ sempre attiva; lista vuota = nessun recapito; UI «Persone consentite» + toggle in scheda profilo peer |
+| Link condivisibili | ✅ `#username` / `#username/chat`; share da profilo peer e sidebar (#178) |
 | Rubrica XMPP/Matrix | ✅ salvataggio |
 | Invio federato | ⏸ outbox `pending` |
 | Ricezione federata | ❌ bridge |
@@ -184,4 +175,4 @@ Dettaglio deploy: `PROJECT_MAP.md` § Build, workflow `.github/workflows/deploy-
 
 ---
 
-**Riferimenti**: `PROJECT_MAP.md`, [pr-registry.md](./pr-registry.md), [docs/specs/registry.md](../specs/registry.md), [docs/specs/README.md](../specs/README.md)
+**Riferimenti**: `PROJECT_MAP.md`, [docs/specs/registry.md](../specs/registry.md), [docs/specs/README.md](../specs/README.md)

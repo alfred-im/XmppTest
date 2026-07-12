@@ -4,67 +4,24 @@ Modifiche rilevanti al progetto per tracciare evoluzione tecnica e decisioni imp
 
 ---
 
-## [Unreleased] - 2026-07-11
+## [Unreleased] - 2026-07-12
 
 ### Aggiunto
 
 - **#179** — `SYS-ACCOUNT-BOUNDARY` + `SYS-DELIVERY`: schema `alfred_delivery`, RPC account solo confine proprio; worker outbox (`deliver`, `read_receipt`, `group_erogate`); migrazione `20260711190000`
 - Test contratto spunte: `delivery_ticks_smoke.sql`, `bash scripts/test.sh integration-ticks`
-
-### Documentazione — allineamento delivery plane (2026-07-11)
-
-- Hub: `PROJECT_MAP.md`, `mailbox-inbox-outbox-spec.md`, `full-stack.md`, `INDICE.md`, `SESSION_HANDOFF.md`, `pr-registry.md`
-- Spec PRODUCT: `PROM-MESSAGE-STATUS`, `PROM-REALTIME-OWNER`, `PROM-RECEPTION-FILTER`, `PROM-GROUP-TICKS`; fix `SYS-DELIVERY` / `SYS-RECEPTION` intro
-
----
-
-## [Unreleased] - 2026-07-09
-
-### Documentazione — prodotto stabile, epurazione Alpha
-
-- Prodotto **stabile** — senza versionamento release (pubspec Flutter default invariato)
-- Demo di sviluppo su GitHub Pages — **non** produzione; nessun deploy produzione previsto
-- Rinominati `alpha-full-stack.md` → `full-stack.md`, `alpha-pr-registry.md` → `pr-registry.md`
-- CI: job `deploy-pages`, concurrency `pages-dev-demo`
-- Codice: `AuthRedirectUrl.devDemoDefault` (ex `alphaDefault`)
-- Spec/decisioni: «(Alpha)» → scope attuale dove era limitazione funzionale
-
-### Corretto
-
-- **#174** — Redirect post-conferma email: client passa sempre URL demo; `SURF-AUTH-008`/`013`; Site URL Supabase `localhost:3000` resta canarino tecnico
-
-### Aggiunto
-
-- **#176** — CTA «Inizia a chattare» nell'overlay profilo peer (sticky in basso); chiude overlay e apre conversazione — `PROM-PEER-PROFILE-013/014`, `SURF-PEER-PROFILE-015/016`
-- **#171** — Ricerca on-demand su rubrica e persone consentite (`CollapsibleListSearch`); widget condiviso con inbox
-
-### Documentazione — audit allineamento 2026-07-09
-
-- Hub: PR **#108–#176**, gate test **144**; fix collisione ID `SURF-PEER-PROFILE`; link morti `full-stack` §2.x; path `app_shell.dart`; `mailbox-inbox-outbox-spec`; ADR logout locale
-
-### Documentazione — SDD registro promesse (#171, #172)
-
-- **Registro promesse**: `docs/specs/registry.md` — SYSTEM / PRODUCT / SURFACE come ingresso contratti
-- **Metodo**: `docs/specs/README.md`; allineamento `.cursor-rules.md`, `AGENTS.md`, `check-spec-sync.sh`, PR template
-- **Cross-ref**: `PROJECT_MAP.md`, `full-stack.md`, `pr-registry.md`, `INDICE.md`, `SESSION_HANDOFF.md`, `implementation/*`, `design/*`, `decisions/*`
-- **#172**: documentazione uniformata a ID SYS/PROM/SURF; rimossi residui metodo precedente
-
----
-
-## [2026-06-24] - 2026-06-24
-
-### Aggiunto
-- **ADR bridge stateless**: bridge senza stato di business; verità su Supabase — `docs/decisions/bridge-stateless.md`
-- **Client Flutter** (`client/`): UI mock chat, tema Alfred, layout responsive
-- **Deploy GitHub Pages**: workflow Flutter, URL https://alfred-im.github.io/XmppTest/
-- **Scaffold multi-piattaforma**: web, Android, iOS, Linux, macOS, Windows
+- **#178** — Link condivisibili stabili (`PROM-SHAREABLE-LINK`): fragment `#indirizzo` / `#indirizzo/chat`; share di sistema da scheda profilo peer e sidebar account; `ShareableLinkController` + test gate
 
 ### Documentazione
-- Aggiornati PROJECT_MAP, README, INDICE, client/README
+
+- Ristrutturazione doc (2026-07-12): catalogo unico `registry.md`; `docs/guides/`; stato in `PROJECT_MAP.md`; cronologia in `CHANGELOG.md`
+- Allineamento delivery plane: hub + spec PRODUCT spunte/ricezione
+- Feature shareable link: `guides/shareable-link.md`, `full-stack`, `peer-profile`
+- Audit doc: link morti; contratti `rpc.md` / `schema.md`; test gate 161
 
 ---
 
-## [Unreleased]
+## Storico dettagliato (2026-07-03 — 2026-07-07)
 
 ### Aggiunto (2026-07-07 — review design-first batch 6, PR #169)
 
@@ -175,7 +132,7 @@ Modifiche rilevanti al progetto per tracciare evoluzione tecnica e decisioni imp
 - **`docs/specs/`**: metodo SDD (`README.md`, `_template.md`, `index.md`)
 - **Capability specs** `implemented`: MSG-INBOX (#130), MSG-SEND (#115/#126/#153), AUTH-MULTI (#140/#147/#152)
 - **Contratto RPC**: `docs/specs/contracts/rpc.md`
-- `INDICE.md`, `AGENTS.md`, `pr-registry.md` (colonna Spec); header verso spec su doc implementation/design
+- `INDICE.md`, `AGENTS.md`, `merge-doc-index.md` (colonna Spec); header verso spec su doc implementation/design
 
 ### Documentazione (2026-07-03 — revisione sync)
 
@@ -305,7 +262,7 @@ Modifiche rilevanti al progetto per tracciare evoluzione tecnica e decisioni imp
 - Test: `conversation_scroll_anchor_test.dart`, `anchored_message_list_test.dart`
 
 ### Documentazione (2026-06-24 — sync PR su main #108–#114)
-- **`docs/architecture/pr-registry.md`**: registro PR → feature → documenti da aggiornare
+- **`docs/architecture/merge-doc-index.md`**: registro PR → feature → documenti da aggiornare
 - **`docs/fixes/flutter-inbox-stability.md`**: fix PR #113/#114 (race auth + ChangeNotifierProxyProvider)
 - Allineati PROJECT_MAP, CHANGELOG, INDICE, README, `full-stack.md`
 

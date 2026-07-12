@@ -1,12 +1,14 @@
 # Contratto RPC — messaggistica
 
-**Ultima revisione**: 2026-07-07  
+**Ultima revisione**: 2026-07-12  
 **Status**: `implemented` su `main` (migrazioni fino a `20260711190000`, incl. account boundary delivery)  
 **Spec**: [SYS-MAILBOX](../promises/system/SYS-MAILBOX.md), [SYS-GROUP](../promises/system/SYS-GROUP.md), [SYS-CONTACTS](../promises/system/SYS-CONTACTS.md), [SYS-PROFILE](../promises/system/SYS-PROFILE.md), [SYS-RECEPTION](../promises/system/SYS-RECEPTION.md), [SYS-ACCOUNT-BOUNDARY](../promises/system/SYS-ACCOUNT-BOUNDARY.md), [SYS-DELIVERY](../promises/system/SYS-DELIVERY.md)
 
 Fonte di verità: `supabase/migrations/`. PostgREST espone solo overload **espliciti** — niente ambiguità di firma.
 
-**RPC pubbliche** (client): `SECURITY DEFINER`, `GRANT EXECUTE` solo a `authenticated` (revoke da `anon` e `PUBLIC`).
+**RPC pubbliche** (client): `SECURITY DEFINER`. **`GRANT EXECUTE` a `authenticated`** per le RPC messaggistica/profilo (revoke da `anon` e `PUBLIC`), salvo eccezione sotto.
+
+**Eccezione registrazione**: `is_username_available` — `GRANT EXECUTE` anche ad **`anon`** (disponibilità username prima del login).
 
 **Helper interni** (`SECURITY DEFINER`): usati solo da altre funzioni SQL — **MUST NOT** `GRANT EXECUTE` a `authenticated` (vedi [Helper interni](#helper-interni-non-api-client)).
 
@@ -65,7 +67,7 @@ Idempotenza: stesso `p_client_message_id` → stessa riga mittente (no duplicati
 Se `p_recipient_profile_id` ha `profile_kind = group` — recapito via worker [SYS-DELIVERY](../promises/system/SYS-DELIVERY.md):
 
 1. Stessi passi 1–2 (solo copia mittente umano + outbox)
-2. Worker: gate allow list bidirezionale mittente ↔ gruppo
+2. Worker: gate allow list **bidirezionale** mittente ↔ gruppo — due chiamate `is_sender_allowed_for_reception` (gruppo←mittente e mittente←gruppo); **non** usa `is_bidirectional_allowed`
 3. Se **sì**: INSERT storico gruppo; `delivered_at` su copia mittente; erogazione automatica verso allow list gruppo
 4. Erogazione fallita per singolo partecipante: skip silenzioso; **non** altera `delivered_at` mittente oltre passo 3
 
@@ -94,9 +96,9 @@ broadcast_message_to_allowlist(
 | `text` | `body` trim non vuoto |
 | `gif` | `media_url` obbligatorio |
 | `voice` | `media_url`, `duration_seconds` > 0, `media_mime` obbligatori |
-| `location` | `latitude` / `longitude` nei range |
+| `location` | `latitude` / `longitude` obbligatori (senza range [-90,90]/[-180,180] come `send_message_to_profile`) |
 
-Errori: `not authenticated`, `only group accounts can broadcast`, validazione contenuto come `send_message_to_profile`.
+Errori: `not authenticated`, `only group accounts can broadcast`, `no allow list recipients`, validazione contenuto come tabella sopra.
 
 Idempotenza: stesso `p_client_message_id` → stessa riga archivio gruppo.
 
@@ -127,14 +129,24 @@ Usato da account `profile_kind = group` al posto di `list_peer_messages` — ved
 Non usato quando `auth.uid()` è account `group` — vedi [SYS-GROUP](../promises/system/SYS-GROUP.md).
 
 ```sql
-list_inbox() → setof record
+list_inbox() → table (
+  protocol contact_protocol,
+  display_name text,
+  peer_profile_id uuid,
+  peer_external_address text,
+  peer_avatar_url text,
+  peer_pronouns text,
+  peer_profile_kind profile_kind,
+  last_message_preview text,
+  last_message_at timestamptz,
+  unread_count integer
+)
 ```
 
-Aggregazione su `messages` WHERE `owner_id = auth.uid()` GROUP BY `peer_profile_id`:
+Aggregazione su `messages` WHERE `owner_id = auth.uid()`:
 
-- `display_name`, `last_message_preview`, `last_message_at`, `unread_count`, `protocol`
-- Campi profilo peer (#134): avatar, pronouns; `peer_profile_kind` per routing client (SYS-GROUP)
-- `unread_count` = righe in entrata con `read_at IS NULL`
+- Solo `protocol = 'internal'`, `peer_profile_id IS NOT NULL`, `mailbox_has_renderable_content(body, content_type)`
+- `unread_count` = righe **in entrata** (`author_id <> owner_id`) con `read_at IS NULL`
 - Ordine: `last_message_at` DESC
 
 Preview per tipo: testo troncato, `[GIF]`, `format_voice_preview`, `format_location_preview`.
@@ -148,11 +160,13 @@ Preview per tipo: testo troncato, `[GIF]`, `format_voice_preview`, `format_locat
 ```sql
 list_peer_messages(
   p_peer_profile_id uuid,
-  p_limit integer default null
+  p_limit integer default 100
 ) → setof messages
 ```
 
-Righe WHERE `owner_id = auth.uid()` AND `peer_profile_id = p_peer_profile_id` ORDER BY `created_at`.
+Righe WHERE `owner_id = auth.uid()` AND `peer_profile_id = p_peer_profile_id` AND `mailbox_has_renderable_content(...)` ORDER BY `created_at` ASC.
+
+`LIMIT greatest(1, least(coalesce(p_limit, 100), 500))`.
 
 ---
 
@@ -166,8 +180,8 @@ Chiamata dal **destinatario** all’apertura chat con un peer.
 
 Effetti (solo confine lettore — [SYS-ACCOUNT-BOUNDARY](../promises/system/SYS-ACCOUNT-BOUNDARY.md)):
 
-1. UPDATE righe in entrata nel mio archivio (`author_id = peer`, `read_at IS NULL`) SET `read_at = now()`
-2. Per ogni λ: outbox `event_kind = read_receipt` → worker aggiorna `read_at` sulla copia mittente
+1. UPDATE righe in entrata nel mio archivio (`author_id = peer`, `read_at IS NULL`, contenuto renderizzabile) SET `read_at = now()`
+2. Per ogni λ: INSERT outbox `event_kind = read_receipt` con **`message_id` = id riga lettore** (copia in entrata) → worker `process_read_receipt` → `read_at` sulla copia mittente
 
 **Spec**: [SYS-MAILBOX](../promises/system/SYS-MAILBOX.md).
 
@@ -182,9 +196,21 @@ find_profile_by_username(p_username text) → table (
 )
 ```
 
-Risoluzione indirizzo Alfred interno → profilo pubblico (#134: avatar e pronomi; `profile_kind` per routing shell).
+Risoluzione indirizzo Alfred interno → profilo pubblico (#134: avatar e pronomi; `profile_kind` per routing shell). Richiede `auth.uid()`; **esclude** il proprio profilo (`p.id <> auth.uid()`).
 
 **Spec**: [SYS-PROFILE](../promises/system/SYS-PROFILE.md).
+
+---
+
+## `is_username_available`
+
+```sql
+is_username_available(p_username text) → boolean
+```
+
+Verifica namespace username (registrazione). **`GRANT EXECUTE` a `anon` e `authenticated`**.
+
+**Migrazioni**: `20260625120000`.
 
 ---
 
@@ -196,7 +222,7 @@ search_profiles(p_query text, p_limit integer default 20) → table (
 )
 ```
 
-Ricerca utenti Alfred per aggiunta contatto internal (min 2 caratteri client). Esclude `auth.uid()`.
+Ricerca utenti Alfred per aggiunta contatto internal (min 2 caratteri client). Esclude `auth.uid()`. `p_limit` default 20, **cap 50** in SQL (`least(p_limit, 50)`).
 
 **Spec**: [SYS-CONTACTS](../promises/system/SYS-CONTACTS.md).
 
@@ -208,11 +234,18 @@ Funzioni `SECURITY DEFINER` invocate **solo** da worker `alfred_delivery` o altr
 
 | Funzione | Uso interno | Migrazione |
 |----------|-------------|------------|
+| `mailbox_has_renderable_content(text, message_content_type)` | Filtro contenuto renderizzabile in inbox/liste | `20260704120000` |
+| `format_voice_preview(integer)` | Preview inbox voice | `20260627120100` |
+| `format_location_preview()` | Preview inbox location | `20260702120100` |
 | `is_sender_allowed_for_reception(uuid, uuid)` | Gate allow list nel worker delivery | `20260704130000` |
-| `is_bidirectional_allowed(uuid, uuid, uuid)` | Gate bidirezionale gruppo | `20260706120000` |
+| `is_bidirectional_allowed(uuid, uuid, uuid)` | Helper gruppo legacy — **non** invocata dal worker #179 | `20260706120000` |
 | `profile_kind_of(uuid)` | Routing `profile_kind` in RPC account | `20260706120000` |
-| `alfred_delivery.erogate_group_message(...)` | Fan-out proxy gruppo | `20260711190000` |
 | `alfred_delivery.process_outbox(uuid)` | Dispatcher outbox | `20260711190000` |
+| `alfred_delivery.deliver_internal(uuid)` | Recapito 1:1 / verso gruppo | `20260711190000` |
+| `alfred_delivery.process_read_receipt(uuid)` | Propaga `read_at` mittente | `20260711190000` |
+| `alfred_delivery.propagate_read_receipt(uuid, uuid)` | UPDATE `read_at` copia mittente per λ | `20260711190000` |
+| `alfred_delivery.group_erogate(uuid)` | Broadcast gruppo → allow list | `20260711190000` |
+| `alfred_delivery.erogate_group_message(...)` | Fan-out proxy gruppo | `20260711190000` |
 
 Revoca `authenticated`: migrazione `20260707190000`. Smoke: `supabase/tests/rpc_helper_security_smoke.sql`.
 
@@ -262,6 +295,7 @@ Gate client: `verify.sh` + `bash scripts/test.sh integration` + `bash scripts/te
 | `list_owner_messages` | `MessageService.fetchOwnerMessages` |
 | `mark_peer_read` | `InboxService.markPeerRead` |
 | `find_profile_by_username` | `ComposeService` / profile lookup |
+| `is_username_available` | Registrazione / validazione username |
 | `search_profiles` | `ContactService.searchProfiles` |
 | `reception_allowlist` (PostgREST) | `ReceptionAllowlistService` |
 
@@ -270,4 +304,4 @@ Gate client: `verify.sh` + `bash scripts/test.sh integration` + `bash scripts/te
 ## Riferimenti
 
 - [full-stack.md](../../architecture/full-stack.md) §3
-- Migrazioni in [pr-registry.md](../../architecture/pr-registry.md) § migrazioni
+- Migrazioni in [`supabase/migrations/`](../../../supabase/migrations/)

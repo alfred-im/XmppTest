@@ -17,10 +17,11 @@ Client — collegato a Supabase (contatti, inbox, chat realtime, profilo, **mult
 | **Media** | Testo, GIF, voice (WebM/Opus), location (mappa OSM) |
 | **Nuovo messaggio** | FAB → username → stessa chat (vuota o con storico) |
 | **Ricezione** | Allow list personale (`reception_allowlist`) — UI «Persone consentite» + toggle in scheda profilo peer (tap avatar) |
-| **Profilo peer** | Overlay fullscreen al tap avatar — Allow + rubrica + CTA «Inizia a chattare» — `PROM-PEER-PROFILE`, `SURF-PEER-PROFILE` |
+| **Profilo peer** | Overlay fullscreen al tap avatar — Allow + rubrica + CTA «Inizia a chattare» + Condividi — `PROM-PEER-PROFILE`, `SURF-PEER-PROFILE` |
+| **Link condivisibili** | Fragment `#username` / `#username/chat`; share di sistema — `PROM-SHAREABLE-LINK` |
 | **Gruppi** | Account `profile_kind = group`; `GroupHomePanel` + chat; partecipazione allow list bidirezionale — `SYS-GROUP` |
 | **Invio** | `send_message_to_profile` |
-| **Gate test** | `verify.sh` — **144** test unit/widget (zero issue analyze) |
+| **Gate test** | `verify.sh` — **161** test unit/widget (zero issue analyze) |
 
 ## Test
 
@@ -49,4 +50,4 @@ lib/
 └── widgets/     # AuthOverlay, InboxPanel, ChatPanel, PeerProfileOverlay, …
 ```
 
-Vedi `docs/decisions/multi-account-parallel-sessions.md`, `docs/implementation/multi-account-client.md`, `docs/implementation/groups-client.md`, `docs/implementation/peer-profile-overlay.md`, `PROJECT_MAP.md`.
+Vedi `docs/guides/multi-account.md`, `docs/guides/groups.md`, `docs/guides/peer-profile.md`, `docs/decisions/multi-account-parallel-sessions.md`, `PROJECT_MAP.md`.
