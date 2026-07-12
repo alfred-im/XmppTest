@@ -69,7 +69,7 @@ ADR e panoramica: [architecture/mailbox-inbox-outbox-spec.md](./architecture/mai
 
 - **[.cursor/rules/main.mdc](../.cursor/rules/main.mdc)** — Vincolo Cursor → `.cursor-rules.md`
 - **[PROJECT_MAP.md](../PROJECT_MAP.md)** — **Leggere all'inizio di ogni sessione**
-- **[README.md](../README.md)** — Stato progetto
+- **[PROJECT_STATUS.md](./PROJECT_STATUS.md)** — Stato progetto (continuità dev)
 - **[CHANGELOG.md](../CHANGELOG.md)** — Storia modifiche
 - **[.cursor-rules.md](../.cursor-rules.md)** — Regole sviluppo AI
 - **[AGENTS.md](../AGENTS.md)** — Toolchain Cloud Agent

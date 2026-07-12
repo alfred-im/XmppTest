@@ -82,7 +82,7 @@ Dopo ogni merge su `main`:
 3. **`docs/specs/`** — promesse in [registry.md](../specs/registry.md) (`approved` → `implemented`); `contracts/schema.md` / `rpc.md` se SYSTEM
 4. **`docs/architecture/full-stack.md`** — sezione client o piattaforma interessata
 5. **`docs/INDICE.md`** — data ultimo aggiornamento
-6. **`README.md`** / **`client/README.md`** — se cambia stato dev
+6. **`docs/PROJECT_STATUS.md`** / **`client/README.md`** — se cambia stato dev
 7. **Fix dedicato** (`docs/fixes/`) — solo per bug/regressioni non ovvie
 8. **Questo registro** — nuova riga in tabella (colonna Spec)
 9. **`scripts/check-spec-sync.sh`** — se toccate spec o migrazioni
