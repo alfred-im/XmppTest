@@ -2,6 +2,13 @@
 
 Documento operativo per sessioni Cursor Cloud / agenti AI. **Non** è documentazione utente.
 
+> ⚠️ **2026-07-12 — account agente ELIMINATI.** Su richiesta dell'utente, `alfredagent1` e
+> `alfredagent2` sono stati rimossi **completamente** dal Supabase live: `auth.users`, `profiles`,
+> tutti i messaggi/conversazioni (incluse le copie recapitate ad altri account) e le voci
+> `reception_allowlist`. **Non esistono più** e i vecchi UUID non vanno riusati. Se servono account
+> di debug, **crearne di nuovi dedicati** (mai usare/toccare `test1`…`test4`, che sono dell'utente).
+> Le credenziali storiche qui sotto sono conservate solo come traccia storica.
+
 ## Regola obbligatoria
 
 | Azione | Consentito |
@@ -47,7 +54,10 @@ Account probe rimossi da Auth il 2026-07-09.
 
 ---
 
-## Account agente (creati 2026-06-29)
+## Account agente (creati 2026-06-29 — ELIMINATI 2026-07-12)
+
+> ❌ **Non più attivi.** Account e dati rimossi dal live il 2026-07-12 (vedi banner in cima).
+> Tabella conservata solo come riferimento storico; le credenziali non sono più valide.
 
 Progetto Supabase: `tvwpoxxcqwphryvuyqzu` (stesso della demo live).
 
