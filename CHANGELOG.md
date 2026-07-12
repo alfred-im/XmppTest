@@ -8,11 +8,17 @@ Modifiche rilevanti al progetto per tracciare evoluzione tecnica e decisioni imp
 
 ### Aggiunto
 
+- CI `docker-bridges.yml` + `scripts/docker-smoke.sh`: build immagine bridge e verifica `/health` (8080/8081)
 - **#184** — Migrazione naming legacy `XmppTest` / `xmpptest` → `alfred-im` (GitHub Pages URL/base-href, Fly.io app, auth redirect, spec SURF-AUTH)
 - **#184** — Ingresso OSS su GitHub: `README.md` (consent-first, web/PWA, feminist-informed), `SECURITY.md`, `CODE_OF_CONDUCT.md` (Contributor Covenant 2.1); badge CI + spec-sync
 - **#179** — `SYS-ACCOUNT-BOUNDARY` + `SYS-DELIVERY`: schema `alfred_delivery`, RPC account solo confine proprio; worker outbox (`deliver`, `read_receipt`, `group_erogate`); migrazione `20260711190000`
 - Test contratto spunte: `delivery_ticks_smoke.sql`, `bash scripts/test.sh integration-ticks`
 - **#178** — Link condivisibili stabili (`PROM-SHAREABLE-LINK`): fragment `#indirizzo` / `#indirizzo/chat`; share di sistema da scheda profilo peer e sidebar account; `ShareableLinkController` + test gate
+
+### Corretto
+
+- Fly deploy: `Dockerfile` usa `/bin/sh /start.sh`; shebang in riga 1 in `start-bridges.sh` (regressione header SPDX `b423637` → `exec format error`)
+- `scripts/add-spdx-headers.py`: header SPDX dopo shebang nei file `.sh`
 
 ### Documentazione
 

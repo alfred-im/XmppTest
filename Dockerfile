@@ -21,4 +21,4 @@ RUN chmod +x /start.sh
 
 EXPOSE 8080 8081
 
-CMD ["/start.sh"]
+CMD ["/bin/sh", "/start.sh"]
