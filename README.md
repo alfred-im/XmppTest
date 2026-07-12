@@ -2,6 +2,7 @@
 
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPL--3.0-blue.svg)](LICENSE)
 [![CI](https://github.com/alfred-im/alfred-im/actions/workflows/deploy-pages.yml/badge.svg)](https://github.com/alfred-im/alfred-im/actions/workflows/deploy-pages.yml)
+[![Spec sync](https://github.com/alfred-im/alfred-im/actions/workflows/spec-sync.yml/badge.svg)](https://github.com/alfred-im/alfred-im/actions/workflows/spec-sync.yml)
 [![Flutter](https://img.shields.io/badge/Flutter-stable-02569B?logo=flutter&logoColor=white)](https://flutter.dev)
 
 **Consent-first open-source messaging.**
@@ -148,9 +149,20 @@ bash scripts/check-spec-sync.sh
 
 ## Contributing
 
-Contributions are welcome via pull requests and [GitHub Issues](https://github.com/alfred-im/alfred-im/issues).
+Feedback and bug reports are welcome via [GitHub Issues](https://github.com/alfred-im/alfred-im/issues). Pull requests are welcome when they align with the project's direction.
 
 Alfred uses **Spec-Driven Development (SDD)** — see [`docs/specs/README.md`](docs/specs/README.md) and the [promise registry](docs/specs/registry.md). Use the [pull request template](.github/PULL_REQUEST_TEMPLATE.md).
+
+Before opening a PR, run:
+
+```bash
+cd client && bash scripts/verify.sh
+bash scripts/check-spec-sync.sh   # when specs or migrations change
+```
+
+This project is actively developed with AI assistance; there is no separate `CONTRIBUTING.md` yet. For agent-oriented workflow notes, see [`AGENTS.md`](AGENTS.md).
+
+Please read our [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ---
 
