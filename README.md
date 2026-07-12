@@ -8,7 +8,7 @@
 
 *No message is delivered until the recipient has explicitly allowed the sender.*
 
-Flutter · Supabase · Python bridges (federation planned)
+Flutter web (PWA) · Supabase · Python bridges (federation planned)
 
 **Try it:** https://alfred-im.github.io/XmppTest/
 
@@ -33,11 +33,13 @@ Flutter · Supabase · Python bridges (federation planned)
 
 ## About
 
-Alfred is open-source messaging software. Users are identified by **username**; conversations are **address-based**.
+Alfred is open-source messaging software delivered as a **Flutter web app** (installable as a **PWA** on desktop and mobile browsers). Users are identified by **username**; conversations are **address-based**.
 
 **Consent comes first:** each account controls who may reach them through a personal allow list. Senders who are not allowed are not delivered to — there is no silent inbox from unknown parties.
 
-The project combines a multi-platform Flutter client with a Supabase platform layer (Postgres, Auth, Realtime, Storage). Consent, agency, and clear boundaries are design goals, not afterthoughts.
+Alfred is **feminist-informed** software: consent, agency, and clear boundaries are architectural choices, not marketing copy. The allow list is how those values are enforced in the product — not an optional privacy mode.
+
+The client talks to a Supabase platform layer (Postgres, Auth, Realtime, Storage). Native mobile or desktop builds are not a project focus today; the web client is the supported surface.
 
 ---
 
@@ -61,7 +63,7 @@ The project combines a multi-platform Flutter client with a Supabase platform la
 
 ```
 ┌─────────────────────────────┐
-│   Flutter client (client/)  │
+│   Flutter web client (PWA)  │
 └──────────────┬──────────────┘
                │ HTTPS
 ┌──────────────▼──────────────┐
@@ -96,8 +98,13 @@ Bridges are **stateless**; platform state lives in Supabase.
 
 ### Prerequisites
 
-- [Flutter](https://docs.flutter.dev/get-started/install) (stable)
-- Git
+- [Flutter](https://docs.flutter.dev/get-started/install) (**stable** channel)
+- **Dart** 3.12+ (see `client/pubspec.yaml`)
+- [Git](https://git-scm.com/)
+
+Optional — isolated local backend:
+
+- [Docker](https://docs.docker.com/) and the [Supabase CLI](https://supabase.com/docs/guides/cli)
 
 ### Run the web client
 
@@ -154,6 +161,7 @@ Alfred uses **Spec-Driven Development (SDD)** — see [`docs/specs/README.md`](d
 | [`PROJECT_MAP.md`](PROJECT_MAP.md) | Full project map |
 | [`docs/INDICE.md`](docs/INDICE.md) | Documentation index |
 | [`docs/architecture/full-stack.md`](docs/architecture/full-stack.md) | Architecture overview |
+| [`docs/decisions/README.md`](docs/decisions/README.md) | Architecture decision records (ADR) |
 | [`client/README.md`](client/README.md) | Client-specific notes |
 
 ---
