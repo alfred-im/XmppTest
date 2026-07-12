@@ -1,8 +1,8 @@
-# Alfred — Piattaforma messaggistica
+# Alfred — Stato progetto
 
 ## Scopo
 
-Traccia lo stato del progetto per continuità del lavoro. Non è documentazione per utenti esterni.
+Traccia lo stato del progetto per continuità del lavoro (`docs/PROJECT_STATUS.md`). Non è documentazione per utenti esterni.
 
 ## Stato attuale (2026-07-09)
 
@@ -41,6 +41,7 @@ Deploy: `.github/workflows/deploy-pages.yml`.
 | File | Contenuto |
 |------|-----------|
 | `PROJECT_MAP.md` | Mappa progetto (leggere a ogni sessione) |
+| `docs/PROJECT_STATUS.md` | Questo file — snapshot stato dev |
 | `docs/specs/registry.md` | **Registro promesse SDD** (ingresso contratti) |
 | `docs/INDICE.md` | Indice per area |
 | `docs/SESSION_HANDOFF.md` | Handoff rapido per agenti |
@@ -56,8 +57,8 @@ Deploy: `.github/workflows/deploy-pages.yml`.
 
 ## License
 
-[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](../LICENSE)
 
-GNU General Public License v3.0 (or later) — vedi [`LICENSE`](LICENSE).
+GNU General Public License v3.0 (or later) — vedi [`LICENSE`](../LICENSE).
 
 ## Infrastruttura
