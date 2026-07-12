@@ -154,7 +154,7 @@
 | XMPP | `https://alfred-im.fly.dev/health` |
 | Matrix | `https://alfred-im.fly.dev:8081/health` |
 
-Avvio container: `scripts/start-bridges.sh`. Deploy: `scripts/fly-deploy-all.sh`.
+Avvio container: `scripts/start-bridges.sh` (`CMD ["/bin/sh", "/start.sh"]`). Deploy: `scripts/fly-deploy-all.sh`. Gate CI: `bash scripts/docker-smoke.sh` (workflow `docker-bridges.yml`).
 
 **Migrazione nome app (una tantum da `xmpptest`)**: `bash scripts/fly-rename-app.sh` poi redeploy.
 
