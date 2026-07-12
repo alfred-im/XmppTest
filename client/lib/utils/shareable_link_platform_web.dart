@@ -1,3 +1,7 @@
+// Copyright (C) 2026 im.alfred
+//
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 // ignore_for_file: avoid_web_libraries_in_flutter, deprecated_member_use
 
 import 'dart:async';

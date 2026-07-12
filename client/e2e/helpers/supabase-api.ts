@@ -1,3 +1,7 @@
+// Copyright (C) 2026 im.alfred
+//
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 import { expect } from '@playwright/test';
 
 import { E2E_TIMEOUT } from './timeouts';

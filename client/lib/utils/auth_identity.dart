@@ -1,3 +1,7 @@
+// Copyright (C) 2026 im.alfred
+//
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 /// Validazione username (identità pubblica IM) ed email (solo auth/recupero).
 class AuthIdentity {
   AuthIdentity._();

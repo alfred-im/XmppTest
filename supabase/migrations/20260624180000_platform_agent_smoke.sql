@@ -1,3 +1,7 @@
+-- Copyright (C) 2026 im.alfred
+--
+-- SPDX-License-Identifier: GPL-3.0-or-later
+
 -- Smoke test: verifica connettività agente → piattaforma (RLS read-only anon)
 CREATE TABLE public.platform_agent_smoke (
   id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,

@@ -1,3 +1,7 @@
+// Copyright (C) 2026 im.alfred
+//
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 import 'package:alfred_client/models/contact.dart';
 import 'package:alfred_client/models/profile_summary.dart';
 import 'package:alfred_client/services/contact_service.dart';

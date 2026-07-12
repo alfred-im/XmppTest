@@ -1,3 +1,7 @@
+-- Copyright (C) 2026 im.alfred
+--
+-- SPDX-License-Identifier: GPL-3.0-or-later
+
 -- RECEPTION-ALLOWLIST schema smoke (REQ-001–004).
 
 DO $$

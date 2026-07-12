@@ -1,3 +1,7 @@
+// Copyright (C) 2026 im.alfred
+//
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 import 'voice_encoding_platform.dart';
 import 'voice_encoding_io.dart' if (dart.library.html) 'voice_encoding_web.dart'
     as voice_encoding_impl;

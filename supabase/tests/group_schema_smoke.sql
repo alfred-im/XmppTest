@@ -1,3 +1,7 @@
+-- Copyright (C) 2026 im.alfred
+--
+-- SPDX-License-Identifier: GPL-3.0-or-later
+
 -- GROUP-CORE schema smoke: profile_kind, original_author_id, RPC grants.
 
 DO $$

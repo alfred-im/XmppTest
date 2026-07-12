@@ -1,3 +1,7 @@
+-- Copyright (C) 2026 im.alfred
+--
+-- SPDX-License-Identifier: GPL-3.0-or-later
+
 -- SYS-ACCOUNT-BOUNDARY + SYS-DELIVERY: delivery plane; account RPC solo confine proprio.
 
 create schema if not exists alfred_delivery;

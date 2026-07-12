@@ -1,3 +1,7 @@
+// Copyright (C) 2026 im.alfred
+//
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 /// Logica pura per l'aggancio al fondo (ListView [reverse: true]).
 abstract final class ConversationScrollAnchor {
   /// Distanza dal fondo entro cui si considera la vista agganciata.

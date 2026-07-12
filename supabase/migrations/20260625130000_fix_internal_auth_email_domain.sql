@@ -1,3 +1,7 @@
+-- Copyright (C) 2026 im.alfred
+--
+-- SPDX-License-Identifier: GPL-3.0-or-later
+
 -- GoTrue rifiuta @users.alfred.internal (email_address_invalid). Dominio interno: @users.alfred.app
 
 create or replace function public.handle_new_user()

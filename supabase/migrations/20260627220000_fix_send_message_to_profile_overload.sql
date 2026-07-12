@@ -1,3 +1,7 @@
+-- Copyright (C) 2026 im.alfred
+--
+-- SPDX-License-Identifier: GPL-3.0-or-later
+
 -- PostgREST restituisce HTTP 300 (Multiple Choices) quando esistono due overload
 -- con la stessa firma visibile al client (uuid, text, text).
 -- Il client invia solo p_recipient_profile_id, p_body, p_client_message_id per il testo.

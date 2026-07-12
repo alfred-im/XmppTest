@@ -1,3 +1,7 @@
+// Copyright (C) 2026 im.alfred
+//
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 import 'dart:typed_data';
 
 import 'package:supabase_flutter/supabase_flutter.dart';

@@ -1,3 +1,7 @@
+-- Copyright (C) 2026 im.alfred
+--
+-- SPDX-License-Identifier: GPL-3.0-or-later
+
 -- Alfred — schema dominio (piattaforma)
 -- Client Flutter parla solo con Supabase; bridge leggono outbox/sync (service_role).
 

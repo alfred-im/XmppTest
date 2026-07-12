@@ -1,3 +1,7 @@
+# Copyright (C) 2026 im.alfred
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 #!/usr/bin/env bash
 # Verifica standard client Flutter — stesso gate della CI (deploy-pages.yml).
 # Exit code != 0 su qualsiasi issue di flutter analyze (inclusi livello info).

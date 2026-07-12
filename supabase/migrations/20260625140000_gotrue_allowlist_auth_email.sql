@@ -1,3 +1,7 @@
+-- Copyright (C) 2026 im.alfred
+--
+-- SPDX-License-Identifier: GPL-3.0-or-later
+
 -- GoTrue allowlist: email sintetica alfred.{username}@gmail.com (mai mostrata in UI).
 
 create or replace function public.handle_new_user()

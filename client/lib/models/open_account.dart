@@ -1,3 +1,7 @@
+// Copyright (C) 2026 im.alfred
+//
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 import 'profile_summary.dart';
 
 /// Account messaggistica Alfred **aperto** nell'app (sessione viva, non bookmark).

@@ -1,3 +1,7 @@
+-- Copyright (C) 2026 im.alfred
+--
+-- SPDX-License-Identifier: GPL-3.0-or-later
+
 -- Test di integrazione schema Alfred (eseguire via MCP execute_sql o supabase db reset)
 -- Verifica: tipi, tabelle dominio, RLS abilitato, funzioni RPC presenti
 

@@ -1,3 +1,7 @@
+-- Copyright (C) 2026 im.alfred
+--
+-- SPDX-License-Identifier: GPL-3.0-or-later
+
 -- Idempotency: same client_message_id returns same sender row (MAILBOX-SEND-REQ-005).
 
 DO $$
