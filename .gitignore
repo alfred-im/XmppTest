@@ -1,3 +1,6 @@
 # Playwright (client/e2e)
 client/node_modules/
 client/test-results/
+
+# Python venv per i bridge (dev locale)
+.venv/
