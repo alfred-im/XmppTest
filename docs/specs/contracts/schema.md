@@ -1,6 +1,6 @@
 # Contratto schema — dominio mailbox (mailbox)
 
-**Ultima revisione**: 2026-07-11  
+**Ultima revisione**: 2026-07-12  
 **Status**: `implemented` su `main` (migrazioni fino a `20260711190000`, incl. account boundary delivery plane)  
 **Fonte di verità**: `supabase/migrations/`
 
@@ -16,8 +16,8 @@ profiles 1──* contacts (owner_id)
 profiles 1──* reception_allowlist (owner_id → allowed_profile_id)
 profiles 1──* messages (owner_id = archivio; author_id = autore contenuto)
 messages *── peer profiles (peer_profile_id denormalizzato)
-messages 0..1 outbox (sempre, anche internal)
-profiles 1──* sync_cursors (peer_profile_id)
+messages 1──* outbox (ogni invio/lettura può accodare eventi)
+profiles 1──* sync_cursors (profile_id, peer_profile_id, protocol, cursor_key)
 bridge_jobs (coda bridge)
 storage: chat-media, avatars
 ```
@@ -32,8 +32,8 @@ storage: chat-media, avatars
 |------|--------|-----|
 | `contact_protocol` | `internal`, `xmpp`, `matrix` | Routing backend; invisibile in UI inbox |
 | `message_content_type` | `text`, `gif`, `voice`, `location` | Tipo contenuto messaggio |
-| `message_delivery_status` | `pending`, `sent`, `delivered`, `read`, `failed` | Stati `outbox` / `bridge_jobs` (non più su `messages`) |
-| `queue_status` | `queued`, … `failed` | `outbox`, `bridge_jobs` |
+| `message_delivery_status` | `pending`, `sent`, `delivered`, `read`, `failed` | Enum legacy (pre-mailbox); **non** usato da `outbox`/`bridge_jobs` su `main` |
+| `queue_status` | `queued`, `processing`, `completed`, `failed` | `outbox`, `bridge_jobs` |
 | `profile_kind` | `user`, `group` | Tipo account — [SYS-GROUP](../promises/system/SYS-GROUP.md) |
 
 ---
@@ -71,7 +71,7 @@ storage: chat-media, avatars
 
 **CHECK**: internal ↔ profile; federato ↔ external_address.
 
-**RLS**: CRUD `owner_id = auth.uid()`.
+**RLS**: SELECT, INSERT, UPDATE, DELETE `owner_id = auth.uid()`.
 
 **Spec**: [SYS-CONTACTS](../promises/system/SYS-CONTACTS.md).
 
@@ -90,7 +90,7 @@ storage: chat-media, avatars
 
 **CHECK**: `allowed_profile_id IS NOT NULL` AND `allowed_profile_id <> owner_id`.
 
-**RLS**: CRUD `owner_id = auth.uid()`.
+**RLS**: SELECT, INSERT, DELETE `owner_id = auth.uid()` (nessuna policy UPDATE).
 
 **Spec**: [SYS-RECEPTION](../promises/system/SYS-RECEPTION.md).
 
@@ -122,7 +122,7 @@ storage: chat-media, avatars
 
 **UNIQUE**: `(owner_id, client_message_id)` WHERE `client_message_id IS NOT NULL`; `(owner_id, logical_message_id)`.
 
-**RLS**: `owner_id = auth.uid()` per SELECT/INSERT/UPDATE.
+**RLS**: SELECT e UPDATE `owner_id = auth.uid()` — **nessuna** policy INSERT (insert solo via RPC `SECURITY DEFINER`).
 
 **Spec**: [SYS-MAILBOX](../promises/system/SYS-MAILBOX.md), [SYS-GROUP](../promises/system/SYS-GROUP.md).
 
@@ -139,7 +139,14 @@ Nessuna tabella aggiuntiva. Partecipazione = allow list bidirezionale:
 
 ## `outbox`
 
-Coda invio — popolata per **ogni** invio (internal + federato). FK `message_id` → copia **mittente**. Payload include `event_kind`: `deliver`, `read_receipt`, `group_erogate`.
+Coda eventi — popolata per **ogni** invio (internal + federato) e per ogni `read_receipt`. Colonna `message_id`:
+
+| `event_kind` | `message_id` punta a |
+|--------------|----------------------|
+| `deliver`, `group_erogate` | Copia **mittente** (o archivio gruppo per broadcast) |
+| `read_receipt` | Copia **lettore** (riga in entrata con `read_at` aggiornato) |
+
+Payload include `event_kind`: `deliver`, `read_receipt`, `group_erogate`. Stato colonna `status`: tipo `queue_status`.
 
 Consumer internal: worker `alfred_delivery.process_outbox` (sincrono in transazione RPC account); federato: fase B bridge (stub).
 
@@ -158,8 +165,9 @@ Worker infrastruttura **non-account** — unico attore autorizzato a attraversar
 | `process_outbox(uuid)` | Dispatcher per `event_kind` |
 | `deliver_internal(uuid)` | Recapito 1:1 / verso gruppo |
 | `process_read_receipt(uuid)` | Propaga `read_at` al mittente |
-| `alfred_delivery.group_erogate(uuid)` | Broadcast gruppo → allow list |
-| `alfred_delivery.erogate_group_message(...)` | Fan-out proxy partecipanti |
+| `propagate_read_receipt(uuid, uuid)` | UPDATE `read_at` su copia mittente per `logical_message_id` |
+| `group_erogate(uuid)` | Broadcast gruppo → allow list |
+| `erogate_group_message(...)` | Fan-out proxy partecipanti |
 
 **GRANT**: nessuno su `authenticated`. Migrazione `20260711190000`.
 
@@ -167,7 +175,7 @@ Worker infrastruttura **non-account** — unico attore autorizzato a attraversar
 
 ## `sync_cursors`, `bridge_jobs`
 
-Stato piattaforma bridge ([bridge-stateless.md](../../decisions/bridge-stateless.md)). `sync_cursors.peer_profile_id` sostituisce `inbox_thread_id` storico.
+Stato piattaforma bridge ([bridge-stateless.md](../../decisions/bridge-stateless.md)). Chiave unica `sync_cursors`: `(profile_id, peer_profile_id, protocol, cursor_key)` — `peer_profile_id` sostituisce `inbox_thread_id` storico.
 
 **RLS**: DENY per `authenticated`.
 
@@ -200,4 +208,4 @@ Verifica: `supabase/tests/schema_smoke.sql`, `mailbox_schema_smoke.sql`.
 
 ## Migrazioni
 
-Elenco completo: [pr-registry.md](../../architecture/pr-registry.md) § migrazioni.
+Elenco completo: [merge-doc-index.md](../../architecture/merge-doc-index.md) § migrazioni.

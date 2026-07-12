@@ -3,7 +3,7 @@
 **Data**: 2026-07-12  
 **Scope**: App completa **senza bridge** (XMPP/Matrix restano stub Fly.io)  
 **Stato**: PR **#108–#179** su `main` — prodotto stabile  
-**Registro PR**: [pr-registry.md](./pr-registry.md)
+**Indice merge**: [merge-doc-index.md](./merge-doc-index.md)
 
 > **Contratti (SDD)**: [docs/specs/registry.md](../specs/registry.md) — registro promesse SYSTEM / PRODUCT / SURFACE.  
 > **Contratti piattaforma (SYSTEM)**: [contracts/schema.md](../specs/contracts/schema.md), [contracts/rpc.md](../specs/contracts/rpc.md).  
@@ -117,7 +117,7 @@ Dettaglio: [shareable-link.md](../implementation/shareable-link.md).
 
 Schema, enum, RLS, storage: **[contracts/schema.md](../specs/contracts/schema.md)**  
 RPC business logic: **[contracts/rpc.md](../specs/contracts/rpc.md)**  
-Migrazioni: [pr-registry.md](./pr-registry.md) § migrazioni
+Migrazioni: [merge-doc-index.md](./merge-doc-index.md) § migrazioni
 
 ### Integrazione bridge (non implementata)
 
@@ -199,4 +199,4 @@ Dettaglio deploy: `PROJECT_MAP.md` § Build, workflow `.github/workflows/deploy-
 
 ---
 
-**Riferimenti**: `PROJECT_MAP.md`, [pr-registry.md](./pr-registry.md), [docs/specs/registry.md](../specs/registry.md), [docs/specs/README.md](../specs/README.md)
+**Riferimenti**: `PROJECT_MAP.md`, [merge-doc-index.md](./merge-doc-index.md), [docs/specs/registry.md](../specs/registry.md), [docs/specs/README.md](../specs/README.md)

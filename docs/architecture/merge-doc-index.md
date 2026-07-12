@@ -1,9 +1,11 @@
-# Registro PR (main)
+# Indice merge → documentazione (`main`)
 
-**Ultimo aggiornamento**: 2026-07-11 (delivery plane #179)  
-**Scope**: PR mergiate su `main` — riferimento per allineamento documentazione.
+**Ultimo aggiornamento**: 2026-07-12 (#178 shareable link, #179 delivery plane)  
+**Scope**: PR mergiate su `main` — *quale merge ha introdotto cosa e dove è documentato*.
 
 Documento per AI. Ogni PR deve riflettersi in: `PROJECT_MAP.md`, `CHANGELOG.md`, `docs/architecture/full-stack.md` (e fix dedicato se applicabile).
+
+> Nome file: `merge-doc-index.md` (ex `pr-registry.md` / `alpha-pr-registry.md`) — non confondere con [registro promesse](../specs/registry.md) (contratto prodotto SDD).
 
 > Alcune PR (#115, #124–#125, #142, #152) sono entrate su `main` via merge branch o commit diretti — il numero PR resta il riferimento canonico in doc/CHANGELOG.
 
@@ -65,9 +67,9 @@ Documento per AI. Ogni PR deve riflettersi in: `PROJECT_MAP.md`, `CHANGELOG.md`,
 | **#168** | InboxPanel widget tests | 4 test inbox search/header; `AccountSidebar` Material fix | PROM-LIST-FILTER, SURF-INBOX, SURF-ALLOWLIST | `inbox_panel_test.dart`, `account_sidebar.dart` |
 | **#169** | AuthController + badge gruppo | Test overlay SURF-AUTH; badge «Gruppo» manifest sidebar | PROM-MULTI-ACCOUNT, SURF-AUTH, SYS-GROUP, SURF-ACCOUNT-SIDEBAR | `auth_controller_test.dart`, `account_sidebar_test.dart` |
 | **#171** | SDD + ricerca liste | Registro promesse; `CollapsibleListSearch`; lente su Contatti e Persone consentite; refactor `InboxPanel` | PROM-LIST-FILTER, SURF-CONTACTS, SURF-ALLOWLIST, SURF-INBOX | `docs/specs/registry.md`, `collapsible_list_search.dart`, `contacts_screen_test.dart` |
-| **#172** | Epurazione doc legacy | Rimozione residui v1 in documentazione; ID uniformati SYS/PROM/SURF; SDD senza suffisso versione | — | `PROJECT_MAP.md`, `INDICE.md`, `pr-registry.md`, `implementation/*`, `decisions/*`, `design/*` |
+| **#172** | Epurazione doc legacy | Rimozione residui v1 in documentazione; ID uniformati SYS/PROM/SURF; SDD senza suffisso versione | — | `PROJECT_MAP.md`, `INDICE.md`, `merge-doc-index.md`, `implementation/*`, `decisions/*`, `design/*` |
 | **#174** | Redirect conferma email | `AuthRedirectUrl` demo su web pubblico; SURF-AUTH-008/013; Site URL localhost = canarino tecnico | SURF-AUTH | `SURF-AUTH.md`, `auth_redirect_url.dart`, `PROJECT_MAP` § redirect auth |
-| **#175** | Prodotto stabile / doc hub | Epurazione terminologia Alpha; rename `full-stack` / `pr-registry`; `devDemoDefault` | — | `PROJECT_MAP.md`, hub docs |
+| **#175** | Prodotto stabile / doc hub | Epurazione terminologia Alpha; rename `full-stack` / `merge-doc-index` (ex `pr-registry`); `devDemoDefault` | — | `PROJECT_MAP.md`, hub docs |
 | **#176** | CTA profilo peer | Pulsante sticky «Inizia a chattare»; chiude overlay e apre chat | PROM-PEER-PROFILE, SURF-PEER-PROFILE | `peer-profile-overlay.md`, `peer_profile_overlay.dart` |
 | **#178** | Link condivisibili | Fragment `#indirizzo` / `#indirizzo/chat`; share di sistema da profilo peer e sidebar; `ShareableLinkController` | PROM-SHAREABLE-LINK, SURF-AUTH, SURF-CHAT, SURF-PEER-PROFILE, SURF-ACCOUNT-SIDEBAR | `shareable_link.dart`, `shareable_link_controller.dart`, `shareable_link_test.dart` |
 | **#179** | Account boundary + delivery plane | `SYS-ACCOUNT-BOUNDARY`, `SYS-DELIVERY`; schema `alfred_delivery`; RPC account solo confine proprio; worker outbox (`deliver`, `read_receipt`, `group_erogate`); test spunte `integration-ticks` | SYS-ACCOUNT-BOUNDARY, SYS-DELIVERY, SYS-MAILBOX, SYS-RECEPTION, SYS-GROUP | `mailbox-inbox-outbox-spec.md`, `contracts/schema.md`, `contracts/rpc.md`, migrazione `20260711190000` |

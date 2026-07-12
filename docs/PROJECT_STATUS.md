@@ -46,7 +46,7 @@ Deploy: `.github/workflows/deploy-pages.yml`.
 | `docs/INDICE.md` | Indice per area |
 | `docs/SESSION_HANDOFF.md` | Handoff rapido per agenti |
 | `docs/architecture/full-stack.md` | Architettura client + Supabase |
-| `docs/architecture/pr-registry.md` | Registro PR → documentazione |
+| `docs/architecture/merge-doc-index.md` | Indice merge PR → documentazione (≠ registro promesse SDD) |
 
 ---
 

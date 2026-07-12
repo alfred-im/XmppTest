@@ -15,6 +15,7 @@ SYSTEM_DIR="docs/specs/promises/system"
 SURFACES_DIR="docs/specs/surfaces"
 INDEX="docs/specs/index.md"
 REGISTRY="docs/specs/registry.md"
+INDICE="docs/INDICE.md"
 ERR=0
 
 echo "==> SDD: registry e contratti SYSTEM"
@@ -105,6 +106,16 @@ for surf in "$SURFACES_DIR"/SURF-*.md; do
   base="$(basename "$surf" .md)"
   if ! grep -q "$base" "$INDEX"; then
     echo "ERROR: $base non elencato in $INDEX" >&2
+    ERR=1
+  fi
+done
+
+echo "==> SDD: INDICE.md allineato a registry (PRODUCT)"
+for prom in "$PRODUCT_DIR"/PROM-*.md; do
+  [[ -f "$prom" ]] || continue
+  base="$(basename "$prom" .md)"
+  if ! grep -q "$base" "$INDICE"; then
+    echo "ERROR: $base non elencato in $INDICE" >&2
     ERR=1
   fi
 done

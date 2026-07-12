@@ -169,7 +169,7 @@ Implementazione + test mappati agli ID promessa
     ↓
 check-spec-sync.sh + verify.sh
     ↓
-Post-merge: implemented + registry + CHANGELOG / pr-registry
+Post-merge: implemented + registry + CHANGELOG / merge-doc-index
 ```
 
 ### Workflow PR

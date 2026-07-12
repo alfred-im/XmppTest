@@ -21,4 +21,4 @@
 ## Registro
 
 - [ ] `docs/specs/registry.md` aggiornato se nuove promesse o cambio stato
-- [ ] `CHANGELOG.md` / `pr-registry.md` aggiornati se merge su `main`
+- [ ] `CHANGELOG.md` / `merge-doc-index.md` aggiornati se merge su `main`

@@ -27,7 +27,7 @@
 | **Deploy** | `.github/workflows/deploy-pages.yml` — `verify.sh` + build; job `deploy-pages` (**PR su `main` e push su `main`**, path `client/**`) |
 | **Piattaforma** | Supabase `tvwpoxxcqwphryvuyqzu` — schema dominio + RLS + RPC |
 | **Bridge** | `bridge-xmpp/` · `bridge-matrix/` — stub health Fly.io (federazione non implementata) |
-| **PR su `main`** | **#108–#179** — registro `docs/architecture/pr-registry.md` (#178 shareable link; #179 delivery plane) |
+| **PR su `main`** | **#108–#179** — registro `docs/architecture/merge-doc-index.md` (#178 shareable link; #179 delivery plane) |
 | **Spec (SDD)** | Registro promesse: `docs/specs/registry.md` — `SYS-*` (incl. `SYS-ACCOUNT-BOUNDARY`, `SYS-DELIVERY`), `PROM-*`, `SURF-*` |
 
 **Non è produzione**: https://alfred-im.github.io/XmppTest/ è la demo di sviluppo su GitHub Pages (test, CI). Alfred è software personale open source: **non esiste** deploy di produzione né è previsto.
@@ -232,4 +232,4 @@ bash scripts/verify.sh --build   # + build web
 - Revisione precedente: sync PR #108–#153; posizione statica (#153); multi-account (#147/#152)
 - Revisione doc 2026-07-04: allineamento post-mailbox (#159), contratti promossi, INDICE/README
 
-**Riferimenti**: `docs/INDICE.md`, `docs/architecture/pr-registry.md`, `CHANGELOG.md`
+**Riferimenti**: `docs/INDICE.md`, `docs/architecture/merge-doc-index.md`, `CHANGELOG.md`
