@@ -44,7 +44,7 @@ Per **ogni promessa** nuova o modificata (SYSTEM, PRODUCT, SURFACE):
 | **SDD** | Intero processo (promessa → implementazione) |
 | **Regola 0** (`.cursor-rules.md`) | Solo **modifica fisica** di file nel repo |
 
-Registro: [docs/specs/registry.md](docs/specs/registry.md). Metodo: [docs/specs/README.md](docs/specs/README.md). Promesse: `docs/specs/promises/` e `docs/specs/surfaces/`.
+Registro: [docs/specs/registry.md](docs/specs/registry.md). Metodo: [docs/specs/README.md](docs/specs/README.md). Promesse: `docs/specs/promises/` e `docs/specs/surfaces/`. Ingresso pubblico: [README.md](README.md).
 
 ---
 
@@ -99,10 +99,11 @@ backend out of the box.
 - Use the `web-server` device (above): `-d chrome` requires `CHROME_EXECUTABLE` + a display and is less reliable here.
 - **Non riavviare `flutter run` se la porta 8080 è già in uso** — crea istanze orfane e tmux in errore. Verificare con `diagnose-test-env.sh`; kill mirato del PID su 8080 solo se necessario.
 
-### Deploy demo di sviluppo (GitHub Pages)
+### Hosted web client (GitHub Pages)
 
-- **Non è produzione**: https://alfred-im.github.io/XmppTest/ è la **demo di sviluppo** (test, CI). Non chiamarlo «produzione» né «prod»; Alfred non ha deploy di produzione né è previsto.
-- **Non** assumere che https://alfred-im.github.io/XmppTest/ rifletta il branch `main`: `deploy-pages` pubblica da **PR su `main`** e da **push su `main`** (ultimo deploy riuscito vince). Vedi `docs/architecture/full-stack.md` §7.
+- **Try it:** https://alfred-im.github.io/XmppTest/ — vedi [README.md](README.md) per la panoramica pubblica.
+- **Non** assumere che l'URL rifletta il branch `main`: `deploy-pages` pubblica da **PR su `main`** e da **push su `main`** (ultimo deploy riuscito vince). Vedi `docs/architecture/full-stack.md` §7.
+- Negli output verso l'utente, non etichettare il deploy come «produzione» / «prod» se non è definito un ambiente con quel ruolo nel progetto.
 
 ### Auth / messaging gotchas (non-obvious, hit during setup)
 - Registration: GoTrue rejects unrealistic email domains (e.g. `@example.com` → "Email address is invalid"). Use a realistic domain like `gmail.com`.

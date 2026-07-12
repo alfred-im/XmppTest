@@ -22,17 +22,16 @@
 
 | Elemento | Dettaglio |
 |----------|-----------|
-| **Client** | `client/` — Flutter, collegato a Supabase |
-| **URL live** | https://alfred-im.github.io/XmppTest/ — **demo di sviluppo, non produzione** |
+| **Ingresso pubblico** | `README.md` · `SECURITY.md` · `CODE_OF_CONDUCT.md` |
+| **Client** | `client/` — Flutter **web (PWA)**, collegato a Supabase |
+| **Web client** | https://alfred-im.github.io/XmppTest/ — GitHub Pages (`deploy-pages`) |
 | **Deploy** | `.github/workflows/deploy-pages.yml` — `verify.sh` + build; job `deploy-pages` (**PR su `main` e push su `main`**, path `client/**`) |
 | **Piattaforma** | Supabase `tvwpoxxcqwphryvuyqzu` — schema dominio + RLS + RPC |
 | **Bridge** | `bridge-xmpp/` · `bridge-matrix/` — stub health Fly.io (federazione non implementata) |
 | **Cronologia merge** | `CHANGELOG.md` |
 | **Spec (SDD)** | Registro promesse: `docs/specs/registry.md` — `SYS-*` (incl. `SYS-ACCOUNT-BOUNDARY`, `SYS-DELIVERY`), `PROM-*`, `SURF-*` |
 
-**Non è produzione**: https://alfred-im.github.io/XmppTest/ è la demo di sviluppo su GitHub Pages (test, CI). Alfred è software personale open source: **non esiste** deploy di produzione né è previsto.
-
-**Non deducibile — URL live ≠ branch `main`**: https://alfred-im.github.io/XmppTest/ pubblica l’**ultimo** `deploy-pages` riuscito (PR o push). **Non** è vero che «il sito live builda sempre da `main`». Per sapere quale codice è live, controllare quale workflow/PR ha deployato per ultimo (`concurrency: pages-dev-demo` → ultimo vince).
+**Non deducibile — URL live ≠ branch `main`**: https://alfred-im.github.io/XmppTest/ pubblica l’**ultimo** `deploy-pages` riuscito (PR o push). **Non** è vero che «il sito live builda sempre da `main`». Per sapere quale codice è live, controllare quale workflow/PR ha deployato per ultimo (`concurrency: pages-dev-demo` → ultimo vince). Panoramica pubblica: `README.md`.
 
 **Stack su `main`**: `client/` · `supabase/` · `bridge-xmpp/` · `bridge-matrix/`
 
@@ -40,7 +39,7 @@
 
 ## 📌 Panoramica Progetto
 
-**Alfred** è una piattaforma di messaggistica: **Supabase + client Flutter + bridge Python** (federazione futura). Non è un «progetto Flutter»: Flutter è solo il client in `client/`.
+**Alfred** è software di messaggistica **consent-first** e **feminist-informed**: **Supabase + client Flutter web (PWA) + bridge Python** (federazione futura). Non è un «progetto Flutter»: Flutter è solo il client in `client/`.
 
 ### Caratteristiche attuali
 
@@ -61,10 +60,10 @@
 
 | Categoria | Tecnologia |
 |-----------|------------|
-| Client | Flutter 3.44.x / Dart 3.12 |
+| Client | Flutter web (PWA) · Dart 3.12 |
 | Piattaforma | Supabase (Postgres, Auth, Realtime, Storage) |
 | Bridge | Python 3.12 + aiohttp (Fly.io) |
-| CI | GitHub Actions — job `deploy-pages` |
+| CI | GitHub Actions — `deploy-pages`, `spec-sync` |
 
 ---
 
@@ -72,7 +71,7 @@
 
 ```
 ┌─────────────────────────────┐
-│   Flutter (client/)         │  ← UI; solo piattaforma
+│   Flutter web (client/)     │  ← UI; solo piattaforma
 └──────────────┬──────────────┘
                │
 ┌──────────────▼──────────────┐
@@ -97,7 +96,10 @@
 
 ```
 /workspace/
-├── client/                 # Client Flutter — deploy demo su GitHub Pages
+├── README.md               # Ingresso pubblico GitHub (consent-first)
+├── SECURITY.md             # Policy vulnerabilità
+├── CODE_OF_CONDUCT.md      # Contributor Covenant
+├── client/                 # Client Flutter web (PWA) — GitHub Pages
 ├── supabase/               # Migrazioni e config piattaforma
 ├── bridge-xmpp/            # Demone bridge XMPP (stub)
 ├── bridge-matrix/          # Demone bridge Matrix (stub)
@@ -254,4 +256,4 @@ Badge / realtime account in background — rinviato (BroadcastChannel web). Mult
 
 Dettaglio merge e revisioni: **`CHANGELOG.md`**.
 
-**Riferimenti**: `docs/INDICE.md`, `docs/specs/registry.md`, `CHANGELOG.md`
+**Riferimenti**: `README.md`, `docs/INDICE.md`, `docs/specs/registry.md`, `CHANGELOG.md`
