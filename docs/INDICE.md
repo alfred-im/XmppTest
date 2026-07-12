@@ -95,7 +95,6 @@ ADR e panoramica: [architecture/mailbox-inbox-outbox-spec.md](./architecture/mai
 ## Architettura
 
 - [architecture/full-stack.md](./architecture/full-stack.md) — **🟢 Attivo** — client + Supabase
-- [architecture/merge-doc-index.md](./architecture/merge-doc-index.md) — Indice merge **#108–#179** → feature → documentazione
 - [architecture/mailbox-inbox-outbox-spec.md](./architecture/mailbox-inbox-outbox-spec.md) — **🟢 Implementato** — modello caselle (PR #159)
 - [architecture/README.md](./architecture/README.md) — Indice architettura
 

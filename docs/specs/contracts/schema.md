@@ -208,4 +208,4 @@ Verifica: `supabase/tests/schema_smoke.sql`, `mailbox_schema_smoke.sql`.
 
 ## Migrazioni
 
-Elenco completo: [merge-doc-index.md](../../architecture/merge-doc-index.md) § migrazioni.
+Elenco completo: directory [`supabase/migrations/`](../../../supabase/migrations/) (file `YYYYMMDD_*`, ordine lessicografico = ordine applicazione).

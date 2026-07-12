@@ -169,7 +169,7 @@ Implementazione + test mappati agli ID promessa
     ↓
 check-spec-sync.sh + verify.sh
     ↓
-Post-merge: implemented + registry + CHANGELOG / merge-doc-index
+Post-merge: implemented + registry + CHANGELOG (+ hub sotto)
 ```
 
 ### Workflow PR
@@ -180,6 +180,17 @@ Post-merge: implemented + registry + CHANGELOG / merge-doc-index
 4. Implementare; test citano ID promessa.
 5. `bash scripts/check-spec-sync.sh` + `cd client && bash scripts/verify.sh`.
 6. PR template: checkbox promesse compilate.
+
+### Checklist allineamento doc (post-merge su `main`)
+
+1. **`PROJECT_MAP.md`** — stato corrente, caratteristiche
+2. **`CHANGELOG.md`** — voce in `[Unreleased]` con numero PR
+3. **`docs/specs/`** — promesse in [registry.md](./registry.md) (`approved` → `implemented`); `contracts/schema.md` / `rpc.md` se SYSTEM
+4. **`docs/architecture/full-stack.md`** — sezione client o piattaforma interessata
+5. **`docs/INDICE.md`** — nuove doc o promesse in hub
+6. **`docs/PROJECT_STATUS.md`** / **`client/README.md`** — se cambia stato dev
+7. **`docs/implementation/`** o **`docs/fixes/`** — feature nuova o bug non ovvio
+8. **`scripts/check-spec-sync.sh`** — se toccate spec o migrazioni
 
 ---
 

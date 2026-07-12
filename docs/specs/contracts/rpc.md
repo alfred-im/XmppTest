@@ -304,4 +304,4 @@ Gate client: `verify.sh` + `bash scripts/test.sh integration` + `bash scripts/te
 ## Riferimenti
 
 - [full-stack.md](../../architecture/full-stack.md) §3
-- Migrazioni in [merge-doc-index.md](../../architecture/merge-doc-index.md) § migrazioni
+- Migrazioni in [`supabase/migrations/`](../../../supabase/migrations/)

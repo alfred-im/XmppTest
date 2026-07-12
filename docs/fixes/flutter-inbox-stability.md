@@ -42,7 +42,7 @@
 
 ---
 
-**Riferimenti**: PR #113, #114; `docs/architecture/full-stack.md` §3; `docs/architecture/merge-doc-index.md`
+**Riferimenti**: PR #113, #114; `docs/architecture/full-stack.md` §3; `CHANGELOG.md`
 
 ---
 
