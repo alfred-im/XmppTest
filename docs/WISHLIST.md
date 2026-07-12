@@ -1,6 +1,6 @@
 # Wishlist Funzionalità
 
-**Ultimo aggiornamento**: 2026-07-04
+**Ultimo aggiornamento**: 2026-07-12
 
 Funzionalità **future** desiderate per Alfred (client Flutter + piattaforma + bridge).
 
@@ -10,7 +10,7 @@ Funzionalità **future** desiderate per Alfred (client Flutter + piattaforma + b
 
 | Area | Stato | Documentazione |
 |------|-------|----------------|
-| Spunte cloud (inviato / consegnato server / lettura) | Parziale su interni | [server-as-reception.md](./decisions/server-as-reception.md), [PROM-MESSAGE-STATUS](../specs/promises/product/PROM-MESSAGE-STATUS.md) |
+| Spunte cloud (inviato / consegnato server / lettura) | ✅ interni via worker `alfred_delivery` (#179) | [server-as-reception.md](./decisions/server-as-reception.md), [PROM-MESSAGE-STATUS](./specs/promises/product/PROM-MESSAGE-STATUS.md), [SYS-DELIVERY](./specs/promises/system/SYS-DELIVERY.md) |
 | Chat testo, GIF, voice, location | ✅ | [voice-notes.md](./implementation/voice-notes.md), [location-sharing.md](./implementation/location-sharing.md) |
 | Inbox mailbox (archivio owner) | ✅ | [SYS-MAILBOX.md](./specs/promises/system/SYS-MAILBOX.md), [SURF-INBOX.md](./specs/surfaces/SURF-INBOX.md), [address-based-messaging.md](./decisions/address-based-messaging.md) |
 | Federazione XMPP/Matrix | ⏸ Outbox only | [bridge-stateless.md](./decisions/bridge-stateless.md) |
@@ -149,17 +149,12 @@ Ogni nuova XEP deve includere test bridge, integrazione piattaforma e documentaz
 
 ---
 
-**Ultimo aggiornamento**: 2026-07-03
-
----
-
 ## Prossimi passi (roadmap)
 
 1. Implementare XEP-0280 (Carbons) per sync multi-device
 2. Aggiungere XEP-0308 (Message Correction) per edit messaggi
 3. Valutare XEP-0363 (File Upload) dopo testing server
 
-### Riferimenti utili
+---
 
-- **XEP Index**: https://xmpp.org/extensions/
-- **Compliance Suites**: https://xmpp.org/extensions/xep-0459.html (2024)
+**Ultimo aggiornamento**: 2026-07-12

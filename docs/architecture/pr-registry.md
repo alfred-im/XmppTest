@@ -69,6 +69,7 @@ Documento per AI. Ogni PR deve riflettersi in: `PROJECT_MAP.md`, `CHANGELOG.md`,
 | **#174** | Redirect conferma email | `AuthRedirectUrl` demo su web pubblico; SURF-AUTH-008/013; Site URL localhost = canarino tecnico | SURF-AUTH | `SURF-AUTH.md`, `auth_redirect_url.dart`, `PROJECT_MAP` § redirect auth |
 | **#175** | Prodotto stabile / doc hub | Epurazione terminologia Alpha; rename `full-stack` / `pr-registry`; `devDemoDefault` | — | `PROJECT_MAP.md`, hub docs |
 | **#176** | CTA profilo peer | Pulsante sticky «Inizia a chattare»; chiude overlay e apre chat | PROM-PEER-PROFILE, SURF-PEER-PROFILE | `peer-profile-overlay.md`, `peer_profile_overlay.dart` |
+| **#178** | Link condivisibili | Fragment `#indirizzo` / `#indirizzo/chat`; share di sistema da profilo peer e sidebar; `ShareableLinkController` | PROM-SHAREABLE-LINK, SURF-AUTH, SURF-CHAT, SURF-PEER-PROFILE, SURF-ACCOUNT-SIDEBAR | `shareable_link.dart`, `shareable_link_controller.dart`, `shareable_link_test.dart` |
 | **#179** | Account boundary + delivery plane | `SYS-ACCOUNT-BOUNDARY`, `SYS-DELIVERY`; schema `alfred_delivery`; RPC account solo confine proprio; worker outbox (`deliver`, `read_receipt`, `group_erogate`); test spunte `integration-ticks` | SYS-ACCOUNT-BOUNDARY, SYS-DELIVERY, SYS-MAILBOX, SYS-RECEPTION, SYS-GROUP | `mailbox-inbox-outbox-spec.md`, `contracts/schema.md`, `contracts/rpc.md`, migrazione `20260711190000` |
 
 ---

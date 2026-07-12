@@ -4,13 +4,13 @@
 
 Traccia lo stato del progetto per continuità del lavoro (`docs/PROJECT_STATUS.md`). Non è documentazione per utenti esterni.
 
-## Stato attuale (2026-07-09)
+## Stato attuale (2026-07-12)
 
 **Piattaforma di messaggistica** — Supabase + client Flutter + bridge Python. Prodotto **stabile** (senza versionamento release). PR **#108–#179** su `main`.
 
 | Componente | Stato |
 |------------|-------|
-| **`client/`** | App Supabase — shell messaggistica, multi-account, ricerca liste on-demand (PROM-LIST-FILTER), allow list, scheda profilo peer (CTA «Inizia a chattare»), account gruppo, `verify.sh` (**144** test gate) |
+| **`client/`** | App Supabase — shell messaggistica, multi-account, ricerca liste on-demand (PROM-LIST-FILTER), allow list, scheda profilo peer (CTA «Inizia a chattare», Condividi), link `#indirizzo`/`#indirizzo/chat`, account gruppo, `verify.sh` (**161** test gate) |
 | **`supabase/`** | Schema dominio (profiles, contacts, messages per-owner, outbox, …) |
 | **`bridge-xmpp/`** · **`bridge-matrix/`** | Stub health Fly.io |
 
@@ -50,7 +50,7 @@ Deploy: `.github/workflows/deploy-pages.yml`.
 
 ---
 
-**Ultimo aggiornamento**: 2026-07-09
+**Ultimo aggiornamento**: 2026-07-12
 
 - **Supabase**: `tvwpoxxcqwphryvuyqzu` (EU) — `deploy/supabase.json`
 - **Fly.io**: `xmpptest` — `deploy/fly-bridges.json`

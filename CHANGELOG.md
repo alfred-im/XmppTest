@@ -10,6 +10,7 @@ Modifiche rilevanti al progetto per tracciare evoluzione tecnica e decisioni imp
 
 - **#179** — `SYS-ACCOUNT-BOUNDARY` + `SYS-DELIVERY`: schema `alfred_delivery`, RPC account solo confine proprio; worker outbox (`deliver`, `read_receipt`, `group_erogate`); migrazione `20260711190000`
 - Test contratto spunte: `delivery_ticks_smoke.sql`, `bash scripts/test.sh integration-ticks`
+- **#178** — Link condivisibili stabili (`PROM-SHAREABLE-LINK`): fragment `#indirizzo` / `#indirizzo/chat`; share di sistema da scheda profilo peer e sidebar account; `ShareableLinkController` + test gate
 
 ### Documentazione — allineamento delivery plane (2026-07-11)
 
@@ -40,7 +41,7 @@ Modifiche rilevanti al progetto per tracciare evoluzione tecnica e decisioni imp
 
 ### Documentazione — audit allineamento 2026-07-09
 
-- Hub: PR **#108–#176**, gate test **144**; fix collisione ID `SURF-PEER-PROFILE`; link morti `full-stack` §2.x; path `app_shell.dart`; `mailbox-inbox-outbox-spec`; ADR logout locale
+- Hub: PR **#108–#179**, gate test **161**; fix collisione ID `SURF-PEER-PROFILE`; link morti `full-stack` §2.x; path `app_shell.dart`; `mailbox-inbox-outbox-spec`; ADR logout locale
 
 ### Documentazione — SDD registro promesse (#171, #172)
 

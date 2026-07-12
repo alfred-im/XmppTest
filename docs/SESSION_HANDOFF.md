@@ -10,7 +10,7 @@ Documento per AI — **leggere prima di task multi-account, messaggistica, profi
 |------|--------|
 | Branch `main` | PR su main **#108–#179** |
 | Demo live | https://alfred-im.github.io/XmppTest/ — ultimo `deploy-pages` riuscito |
-| **SDD** | Registro `docs/specs/registry.md`: **7 SYS**, 13 PROM, 12 SURF |
+| **SDD** | Registro `docs/specs/registry.md`: **7 SYS**, 14 PROM, 12 SURF |
 | Multi-account | **`PROM-MULTI-ACCOUNT`** + **`SURF-AUTH`**: manifest; **una** GoTrue in RAM (focus) |
 | Messaggistica | **`SYS-MAILBOX`**: archivio per `owner_id`, outbox sempre |
 | **Confine account** | **`SYS-ACCOUNT-BOUNDARY`**: RPC account solo `owner_id = auth.uid()` |
@@ -18,6 +18,7 @@ Documento per AI — **leggere prima di task multi-account, messaggistica, profi
 | **Ricerca liste** | **`PROM-LIST-FILTER`** + **`SURF-*`**: lente on-demand (`CollapsibleListSearch`) |
 | **Ricezione filtrata** | **`SYS-RECEPTION`**: gate nel **worker**; rifiuto silenzioso (✓ senza ✓✓) |
 | **Scheda profilo peer** | **`PROM-PEER-PROFILE`** + **`SURF-PEER-PROFILE`**: tap avatar → overlay |
+| **Link condivisibili** | **`PROM-SHAREABLE-LINK`**: `#indirizzo`, `#indirizzo/chat`; share da profilo peer e sidebar |
 | **Gruppi** | **`SYS-GROUP`**: erogazione via worker; UI autore |
 | Chat media | Testo, GIF, voice (WebM), location (OSM) |
 | Gate test | `verify.sh` (Dart) + `integration-ticks` (contratto spunte live) |
@@ -56,13 +57,14 @@ Contratto: `PROM-LIST-FILTER`, `SURF-INBOX`, `SURF-CONTACTS`, `SURF-ALLOWLIST`.
 
 ---
 
-## Scheda profilo peer (#163, #176) — sintesi
+## Scheda profilo peer (#163, #176, #178) — sintesi
 
 | Elemento | Comportamento |
 |----------|---------------|
 | Apertura | Tap avatar peer Alfred |
 | Allow | Switch «Consenti messaggi» → `reception_allowlist` |
 | Chat | CTA «Inizia a chattare» → apre conversazione |
+| Condividi | Pulsante in alto a destra → share di sistema URL `#indirizzo` — [PROM-SHAREABLE-LINK](./specs/promises/product/PROM-SHAREABLE-LINK.md) |
 
 Doc: `docs/implementation/peer-profile-overlay.md`.
 

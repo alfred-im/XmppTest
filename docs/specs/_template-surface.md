@@ -47,6 +47,6 @@ Binding promesse PRODUCT/SYSTEM su una schermata o widget.
 
 ## 4. Riferimenti
 
-- [registry.md](../registry.md)
+- [registry.md](./registry.md)
 
-Aggiornare [registry.md](../registry.md) quando si crea o cambia stato questa superficie.
+Aggiornare [registry.md](./registry.md) quando si crea o cambia stato questa superficie.

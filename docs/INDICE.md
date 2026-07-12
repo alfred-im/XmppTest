@@ -44,6 +44,7 @@ Indice documenti tecnici per navigazione rapida. Documento per AI, non per utent
 | [PROM-REALTIME-OWNER](./specs/promises/product/PROM-REALTIME-OWNER.md) | `implemented` | Realtime su `owner_id` |
 | [PROM-GROUP-AUTHOR-DISPLAY](./specs/promises/product/PROM-GROUP-AUTHOR-DISPLAY.md) | `implemented` | Autore in chat gruppo |
 | [PROM-GROUP-TICKS](./specs/promises/product/PROM-GROUP-TICKS.md) | `implemented` | Spunte gruppo |
+| [PROM-SHAREABLE-LINK](./specs/promises/product/PROM-SHAREABLE-LINK.md) | `implemented` | Link condivisibili `#indirizzo`, `#indirizzo/chat` |
 
 ### SURFACE
 
@@ -94,7 +95,7 @@ ADR e panoramica: [architecture/mailbox-inbox-outbox-spec.md](./architecture/mai
 ## Architettura
 
 - [architecture/full-stack.md](./architecture/full-stack.md) — **🟢 Attivo** — client + Supabase
-- [architecture/pr-registry.md](./architecture/pr-registry.md) — Registro PR **#108–#176**
+- [architecture/pr-registry.md](./architecture/pr-registry.md) — Registro PR **#108–#179**
 - [architecture/mailbox-inbox-outbox-spec.md](./architecture/mailbox-inbox-outbox-spec.md) — **🟢 Implementato** — modello caselle (PR #159)
 - [architecture/README.md](./architecture/README.md) — Indice architettura
 
@@ -106,7 +107,7 @@ ADR e panoramica: [architecture/mailbox-inbox-outbox-spec.md](./architecture/mai
 - [implementation/voice-notes.md](./implementation/voice-notes.md) — Note vocali WebM/Opus (PR #126)
 - [implementation/location-sharing.md](./implementation/location-sharing.md) — Posizione statica in chat (PR #153)
 - [implementation/groups-client.md](./implementation/groups-client.md) — Account gruppo, shell, UI autore (PR #162)
-- [implementation/peer-profile-overlay.md](./implementation/peer-profile-overlay.md) — Scheda profilo peer (PR #163, #176)
+- [implementation/peer-profile-overlay.md](./implementation/peer-profile-overlay.md) — Scheda profilo peer (PR #163, #176, #178)
 - [implementation/README.md](./implementation/README.md) — Indice implementazione
 
 ---
@@ -132,4 +133,4 @@ ADR e panoramica: [architecture/mailbox-inbox-outbox-spec.md](./architecture/mai
 
 ---
 
-**Ultimo aggiornamento**: 2026-07-11 — 7 SYS + 13 PROM + 12 SURF (incluso `SYS-ACCOUNT-BOUNDARY`, `SYS-DELIVERY`)
+**Ultimo aggiornamento**: 2026-07-12 — 7 SYS + 14 PROM + 12 SURF (incluso `PROM-SHAREABLE-LINK`, `SYS-ACCOUNT-BOUNDARY`, `SYS-DELIVERY`)

@@ -18,21 +18,21 @@
 
 ---
 
-## ⚠️ Stato repository (2026-07-09)
+## ⚠️ Stato repository (2026-07-11)
 
 | Elemento | Dettaglio |
 |----------|-----------|
 | **Client** | `client/` — Flutter, collegato a Supabase |
 | **URL live** | https://alfred-im.github.io/XmppTest/ — **demo di sviluppo, non produzione** |
 | **Deploy** | `.github/workflows/deploy-pages.yml` — `verify.sh` + build; job `deploy-pages` (**PR su `main` e push su `main`**, path `client/**`) |
+| **Piattaforma** | Supabase `tvwpoxxcqwphryvuyqzu` — schema dominio + RLS + RPC |
+| **Bridge** | `bridge-xmpp/` · `bridge-matrix/` — stub health Fly.io (federazione non implementata) |
+| **PR su `main`** | **#108–#179** — registro `docs/architecture/pr-registry.md` (#178 shareable link; #179 delivery plane) |
+| **Spec (SDD)** | Registro promesse: `docs/specs/registry.md` — `SYS-*` (incl. `SYS-ACCOUNT-BOUNDARY`, `SYS-DELIVERY`), `PROM-*`, `SURF-*` |
 
 **Non è produzione**: https://alfred-im.github.io/XmppTest/ è la demo di sviluppo su GitHub Pages (test, CI). Alfred è software personale open source: **non esiste** deploy di produzione né è previsto.
 
 **Non deducibile — URL live ≠ branch `main`**: https://alfred-im.github.io/XmppTest/ pubblica l’**ultimo** `deploy-pages` riuscito (PR o push). **Non** è vero che «il sito live builda sempre da `main`». Per sapere quale codice è live, controllare quale workflow/PR ha deployato per ultimo (`concurrency: pages-dev-demo` → ultimo vince).
-| **Piattaforma** | Supabase `tvwpoxxcqwphryvuyqzu` — schema dominio + RLS + RPC |
-| **Bridge** | `bridge-xmpp/` · `bridge-matrix/` — stub health Fly.io (federazione non implementata) |
-| **PR su `main`** | **#108–#179** — registro `docs/architecture/pr-registry.md` (#179 account boundary + delivery plane) |
-| **Spec (SDD)** | Registro promesse: `docs/specs/registry.md` — `SYS-*` (incl. `SYS-ACCOUNT-BOUNDARY`, `SYS-DELIVERY`), `PROM-*`, `SURF-*` |
 
 **Stack su `main`**: `client/` · `supabase/` · `bridge-xmpp/` · `bridge-matrix/`
 
@@ -48,6 +48,7 @@
 - **Multi-account**: manifest con tutti gli account aperti; **una** sessione GoTrue in RAM (focus); switch = focus UI + restore connessione — ADR `docs/decisions/multi-account-parallel-sessions.md` · fix web PR #152
 - **Contatti**: rubrica opzionale (interni + federati), **isolata** dalla messaggistica — promesse `SYS-CONTACTS`, `PROM-PERSONAL-CONTACTS`, `SURF-CONTACTS` · ADR `docs/decisions/address-based-messaging.md`
 - **Ricezione filtrata**: allow list personale `reception_allowlist` — sempre attiva; lista vuota = nessun recapito; rifiuto silenzioso (✓ singola) — promesse `SYS-RECEPTION`, `PROM-RECEPTION-FILTER`, `SURF-ALLOWLIST`; toggle rapido anche da scheda profilo peer (tap avatar) — promesse `PROM-PEER-PROFILE`, `SURF-PEER-PROFILE`
+- **Link condivisibili**: fragment `#indirizzo` / `#indirizzo/chat`; share di sistema da profilo peer e sidebar account — `PROM-SHAREABLE-LINK` (PR #178)
 - **Gruppi**: account `profile_kind = group` con identità propria; partecipazione **solo** allow list bidirezionale (no membership); shell senza inbox; erogazione automatica verso allow list del gruppo; UI autore (avatar + nome) in chat — promessa `SYS-GROUP` (PR #162)
 - **Messaggistica per indirizzo**: `username` (Alfred) o `user@server` (esterno, `unsupported` senza federazione); archivio **per owner** in `messages` (`owner_id`, `author_id`, `peer_profile_id`, `original_author_id`); inbox = `list_inbox()` on-read sul mio archivio; chat per `peer_profile_id`
 - **Inbox + chat realtime**: Postgres + Realtime; ricerca liste on-demand — inbox, rubrica, persone consentite (`PROM-LIST-FILTER`, PR #132, #171)
@@ -196,7 +197,7 @@ bash scripts/verify.sh --build   # + build web
 
 | Area | Stato |
 |------|-------|
-| Auth, profilo, multi-account, scheda profilo peer | ✅ |
+| Auth, profilo, multi-account, scheda profilo peer, link condivisibili | ✅ |
 | Contatti, inbox, chat testo/GIF/voice/location | ✅ |
 | Modello caselle + delivery plane | ✅ |
 | Account gruppo (shell, erogazione, UI autore) | ✅ |
