@@ -89,7 +89,7 @@ backend out of the box.
 ### Lint / test / build
 - **Hub test:** `cd client && bash scripts/test.sh list` — catalogo gate + suite manuali (`scripts/test/README.md`).
 - Standard gate CI: `bash scripts/test.sh gate` (= `verify.sh`: `flutter pub get` → `flutter analyze` → `flutter test`). `flutter analyze` must be zero-issue (even `info`), matching CI.
-- Web build: `bash scripts/verify.sh --build` (or `flutter build web --release --base-href "/XmppTest/"`).
+- Web build: `bash scripts/verify.sh --build` (or `flutter build web --release --base-href "/alfred-im/"`).
 - **Prima di qualsiasi test GUI**: `bash scripts/test.sh diagnose` — se fallisce su CDP: `bash scripts/reset-chrome-cdp.sh` (kill Chrome + profilo pulito `/tmp/chrome-cdp-profile`).
 - **Integrazione multi-account senza browser** (affidabile per agenti): `bash scripts/test.sh integration` — login agent1/agent2 + RPC inbox/messaggi su Supabase live.
 - **E2E multi-account** (browser): `bash scripts/test.sh e2e-multi`
@@ -101,9 +101,14 @@ backend out of the box.
 
 ### Hosted web client (GitHub Pages)
 
-- **Try it:** https://alfred-im.github.io/XmppTest/ — vedi [README.md](README.md) per la panoramica pubblica.
+- **Try it:** https://alfred-im.github.io/alfred-im/ — vedi [README.md](README.md) per la panoramica pubblica.
+- Build web: `bash scripts/verify.sh --build` (base-href `/alfred-im/`).
 - **Non** assumere che l'URL rifletta il branch `main`: `deploy-pages` pubblica da **PR su `main`** e da **push su `main`** (ultimo deploy riuscito vince). Vedi `docs/architecture/full-stack.md` §7.
-- Negli output verso l'utente, non etichettare il deploy come «produzione» / «prod» se non è definito un ambiente con quel ruolo nel progetto.
+
+### Fly.io bridges
+
+- App: `alfred-im` (`https://alfred-im.fly.dev`). Migrazione una tantum da `xmpptest`: `bash scripts/fly-rename-app.sh` (richiede `flyctl auth login`).
+- Deploy: `bash scripts/fly-deploy-all.sh`
 
 ### Auth / messaging gotchas (non-obvious, hit during setup)
 - Registration: GoTrue rejects unrealistic email domains (e.g. `@example.com` → "Email address is invalid"). Use a realistic domain like `gmail.com`.

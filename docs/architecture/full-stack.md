@@ -139,10 +139,10 @@ Tracciabilità requisiti → test: tabella **Tracciabilità** in ogni promessa (
 
 | Target | Meccanismo |
 |--------|------------|
-| Web client (GitHub Pages) | `/XmppTest/` — job `deploy-pages` |
+| Web client (GitHub Pages) | `/alfred-im/` — job `deploy-pages` |
 | Supabase | Migrazioni in repo → MCP/dashboard |
 
-**Try it:** https://alfred-im.github.io/XmppTest/ — panoramica pubblica in [`README.md`](../../README.md).
+**Try it:** https://alfred-im.github.io/alfred-im/ — panoramica pubblica in [`README.md`](../../README.md).
 
 **Non deducibile**: URL live = ultimo `deploy-pages` riuscito (PR o push su `main`), non sempre = tip di `main`.
 

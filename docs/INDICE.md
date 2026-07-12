@@ -27,7 +27,7 @@ Navigazione per AI. **Contratti**: [specs/registry.md](./specs/registry.md) · *
 
 ## Client e toolchain
 
-- **Web client (Try it)**: https://alfred-im.github.io/XmppTest/
+- **Web client (Try it)**: https://alfred-im.github.io/alfred-im/
 - **Codice**: `client/` · `supabase/` · `bridge-xmpp/` · `bridge-matrix/`
 - [client/README.md](../client/README.md) · [.cursor-rules.md](../.cursor-rules.md) · [AGENTS.md](../AGENTS.md)
 - [AGENT_DEBUG_ACCOUNTS.md](./AGENT_DEBUG_ACCOUNTS.md) — account agente; non toccare test1–4
