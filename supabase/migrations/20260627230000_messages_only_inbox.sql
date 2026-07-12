@@ -247,8 +247,8 @@ drop function if exists public.list_thread_messages(uuid, integer);
 drop function if exists public.mark_thread_read(uuid);
 drop function if exists public.upsert_inbox_thread(uuid, uuid, text, text, public.contact_protocol, text, uuid, timestamptz);
 
-revoke all on function public.list_thread_messages(uuid, integer) from authenticated;
-revoke all on function public.mark_thread_read(uuid) from authenticated;
+-- Nota: nessun `revoke` sulle funzioni appena droppate — `drop function` rimuove già
+-- funzione e relativi grant; il revoke fallirebbe su fresh-apply (SQLSTATE 42883).
 
 grant execute on function public.list_inbox() to authenticated;
 grant execute on function public.list_peer_messages(uuid, integer) to authenticated;
