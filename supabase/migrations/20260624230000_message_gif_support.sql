@@ -1,3 +1,7 @@
+-- Copyright (C) 2026 im.alfred
+--
+-- SPDX-License-Identifier: GPL-3.0-or-later
+
 -- GIF / media in chat: content_type + media_url, storage bucket, RPC aggiornata.
 
 create type public.message_content_type as enum ('text', 'gif');

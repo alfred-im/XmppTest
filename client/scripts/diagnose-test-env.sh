@@ -1,3 +1,7 @@
+# Copyright (C) 2026 im.alfred
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 #!/usr/bin/env bash
 # Diagnostica ambiente test Cloud Agent — eseguire PRIMA di computerUse / Playwright.
 # Exit 0 = OK per test API; exit 1 = problemi noti che causano hang o falsi negativi.

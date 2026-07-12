@@ -56,6 +56,8 @@ Deploy: `.github/workflows/deploy-pages.yml`.
 
 ## License
 
-MIT — `LICENSE`
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
+
+GNU General Public License v3.0 (or later) — vedi [`LICENSE`](LICENSE).
 
 ## Infrastruttura

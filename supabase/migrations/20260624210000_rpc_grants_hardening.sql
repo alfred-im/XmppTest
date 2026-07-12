@@ -1,3 +1,7 @@
+-- Copyright (C) 2026 im.alfred
+--
+-- SPDX-License-Identifier: GPL-3.0-or-later
+
 -- Revoca EXECUTE su funzioni interne/trigger da anon; RPC client solo per authenticated.
 
 REVOKE ALL ON FUNCTION public.handle_new_user() FROM PUBLIC, anon, authenticated;

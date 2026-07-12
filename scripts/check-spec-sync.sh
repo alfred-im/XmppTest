@@ -1,3 +1,7 @@
+# Copyright (C) 2026 im.alfred
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 #!/usr/bin/env bash
 # SDD — controlli allineamento promesse ↔ repository.
 # Exit 0 = OK; exit 1 = problemi da correggere prima del merge.

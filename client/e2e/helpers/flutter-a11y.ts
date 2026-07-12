@@ -1,3 +1,7 @@
+// Copyright (C) 2026 im.alfred
+//
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 import type { Page } from '@playwright/test';
 
 /** Abilita l'albero accessibilità Flutter web (necessario per getByRole/getByLabel). */

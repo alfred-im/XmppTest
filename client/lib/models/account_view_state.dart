@@ -1,3 +1,7 @@
+// Copyright (C) 2026 im.alfred
+//
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 import 'chat_peer.dart';
 
 /// Cosa l'utente sta guardando nell'account in focus (inbox vs chat).

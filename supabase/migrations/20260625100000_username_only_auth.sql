@@ -1,3 +1,7 @@
+-- Copyright (C) 2026 im.alfred
+--
+-- SPDX-License-Identifier: GPL-3.0-or-later
+
 -- Alfred: identità account solo username (nessuna email utente)
 -- GoTrue richiede un campo email: usiamo {username}@users.alfred.internal (mai mostrato in UI).
 

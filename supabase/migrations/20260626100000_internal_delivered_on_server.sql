@@ -1,3 +1,7 @@
+-- Copyright (C) 2026 im.alfred
+--
+-- SPDX-License-Identifier: GPL-3.0-or-later
+
 -- Spunte cloud: per chat interna, "consegnato" = ricevuto sul server (fonte di verità).
 -- Vedi docs/decisions/server-as-reception.md
 

@@ -1,3 +1,7 @@
+-- Copyright (C) 2026 im.alfred
+--
+-- SPDX-License-Identifier: GPL-3.0-or-later
+
 -- GROUP-DELIVERY v2: single broadcast row + original_author_id always set in group flows.
 
 -- ---------------------------------------------------------------------------

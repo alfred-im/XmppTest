@@ -1,3 +1,7 @@
+-- Copyright (C) 2026 im.alfred
+--
+-- SPDX-License-Identifier: GPL-3.0-or-later
+
 -- Voice notes (part 2/2): schema, RPC, trigger, storage — requires enum value `voice`.
 
 alter table public.messages

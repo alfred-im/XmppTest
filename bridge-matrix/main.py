@@ -1,3 +1,7 @@
+# Copyright (C) 2026 im.alfred
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """Alfred Matrix bridge — Fly.io service (bootstrap)."""
 
 from __future__ import annotations
