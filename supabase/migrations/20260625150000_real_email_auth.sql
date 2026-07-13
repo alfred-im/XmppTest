@@ -1,7 +1,3 @@
--- Copyright (C) 2026 im.alfred
---
--- SPDX-License-Identifier: GPL-3.0-or-later
-
 -- Auth: email reale in GoTrue; username obbligatorio in user_metadata (identità IM).
 
 create or replace function public.handle_new_user()

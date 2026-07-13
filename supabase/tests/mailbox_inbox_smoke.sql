@@ -1,7 +1,3 @@
--- Copyright (C) 2026 im.alfred
---
--- SPDX-License-Identifier: GPL-3.0-or-later
-
 -- list_inbox: peer row + unread after send (MAILBOX-INBOX-REQ-001/002).
 
 DO $$

@@ -1,7 +1,3 @@
--- Copyright (C) 2026 im.alfred
---
--- SPDX-License-Identifier: GPL-3.0-or-later
-
 -- Profilo: pronomi + bucket storage avatar
 
 alter table public.profiles

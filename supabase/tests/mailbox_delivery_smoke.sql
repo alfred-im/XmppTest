@@ -1,7 +1,3 @@
--- Copyright (C) 2026 im.alfred
---
--- SPDX-License-Identifier: GPL-3.0-or-later
-
 -- Delivery: sender copy + recipient copy + outbox + delivered_at (MAILBOX-SEND-REQ-003/004).
 
 DO $$

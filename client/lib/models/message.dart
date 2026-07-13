@@ -1,7 +1,3 @@
-// Copyright (C) 2026 im.alfred
-//
-// SPDX-License-Identifier: GPL-3.0-or-later
-
 enum MessageStatus { sent, delivered, read, pending, failed }
 
 enum MessageContentType { text, gif, voice, location }

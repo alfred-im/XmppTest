@@ -1,7 +1,3 @@
-// Copyright (C) 2026 im.alfred
-//
-// SPDX-License-Identifier: GPL-3.0-or-later
-
 import 'package:flutter/widgets.dart';
 
 import '../utils/shareable_link_platform.dart';

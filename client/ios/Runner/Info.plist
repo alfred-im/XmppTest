@@ -26,8 +26,6 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
-	<key>NSHumanReadableCopyright</key>
-	<string>Copyright © 2026 im.alfred — Licensed under GPL-3.0-or-later</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Alfred usa il microfono per registrare messaggi vocali nelle chat.</string>
 	<key>UIApplicationSceneManifest</key>

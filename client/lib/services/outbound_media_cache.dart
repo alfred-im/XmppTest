@@ -1,7 +1,3 @@
-// Copyright (C) 2026 im.alfred
-//
-// SPDX-License-Identifier: GPL-3.0-or-later
-
 import 'dart:typed_data';
 
 /// In-memory media bytes for web retry (SharedPreferences cannot hold large blobs).

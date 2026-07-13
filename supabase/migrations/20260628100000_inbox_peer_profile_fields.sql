@@ -1,7 +1,3 @@
--- Copyright (C) 2026 im.alfred
---
--- SPDX-License-Identifier: GPL-3.0-or-later
-
 -- Inbox e risoluzione username: espone avatar e pronomi del peer da profiles
 
 drop function if exists public.list_inbox();

@@ -1,7 +1,3 @@
-// Copyright (C) 2026 im.alfred
-//
-// SPDX-License-Identifier: GPL-3.0-or-later
-
 import 'package:alfred_client/models/allowed_person.dart';
 import 'package:alfred_client/models/profile_summary.dart';
 import 'package:alfred_client/providers/reception_allowlist_controller.dart';

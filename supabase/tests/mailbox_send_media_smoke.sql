@@ -1,7 +1,3 @@
--- Copyright (C) 2026 im.alfred
---
--- SPDX-License-Identifier: GPL-3.0-or-later
-
 -- Media content_type validation on send_message_to_profile (MAILBOX-SEND-REQ-006).
 
 DO $$

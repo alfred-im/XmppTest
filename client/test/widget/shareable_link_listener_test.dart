@@ -1,7 +1,3 @@
-// Copyright (C) 2026 im.alfred
-//
-// SPDX-License-Identifier: GPL-3.0-or-later
-
 import 'package:alfred_client/models/profile_summary.dart';
 import 'package:alfred_client/providers/auth_controller.dart';
 import 'package:alfred_client/providers/shareable_link_controller.dart';

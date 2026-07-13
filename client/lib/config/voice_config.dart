@@ -1,7 +1,3 @@
-// Copyright (C) 2026 im.alfred
-//
-// SPDX-License-Identifier: GPL-3.0-or-later
-
 /// Canonical voice note format (WebM + Opus) — contract for client, storage, bridges.
 abstract final class VoiceConfig {
   static const canonicalMime = 'audio/webm';

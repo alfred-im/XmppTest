@@ -1,7 +1,3 @@
--- Copyright (C) 2026 im.alfred
---
--- SPDX-License-Identifier: GPL-3.0-or-later
-
 -- mark_peer_read: read_at on recipient incoming + sender outgoing copy (MAILBOX-READ-REQ-003–005).
 
 DO $$

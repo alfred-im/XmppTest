@@ -1,7 +1,3 @@
--- Copyright (C) 2026 im.alfred
---
--- SPDX-License-Identifier: GPL-3.0-or-later
-
 -- SYS-DELIVERY: contratto spunte (✓ / ✓✓ grigie / ✓✓ blu) + gate allow list.
 -- ✓ singola = copia mittente, delivered_at null (rifiuto allow list o pre-recapito)
 -- ✓✓ grigie = worker deliver → delivered_at su mittente, read_at null

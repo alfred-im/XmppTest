@@ -1,7 +1,3 @@
--- Copyright (C) 2026 im.alfred
---
--- SPDX-License-Identifier: GPL-3.0-or-later
-
 -- RECEPTION-ALLOWLIST: personal reception allow list + gate in send_message_to_profile.
 
 -- ---------------------------------------------------------------------------

@@ -1,7 +1,3 @@
-// Copyright (C) 2026 im.alfred
-//
-// SPDX-License-Identifier: GPL-3.0-or-later
-
 /// Static location message contract — coordinates + OSM tiles (no API key).
 class LocationConfig {
   LocationConfig._();

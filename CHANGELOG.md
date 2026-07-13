@@ -17,8 +17,12 @@ Modifiche rilevanti al progetto per tracciare evoluzione tecnica e decisioni imp
 
 ### Corretto
 
-- Fly deploy: `Dockerfile` usa `/bin/sh /start.sh`; shebang in riga 1 in `start-bridges.sh` (regressione header SPDX `b423637` → `exec format error`)
-- `scripts/add-spdx-headers.py`: header SPDX dopo shebang nei file `.sh`
+- Fly deploy: `Dockerfile` usa `/bin/sh /start.sh`; shebang in riga 1 in `start-bridges.sh` (#185)
+- Fly `alfred-im` deployato via CLI; health check passing (dashboard GitHub deploy ancora inaffidabile)
+
+### Rimosso
+
+- Revert commit `b423637`: header SPDX massivi su 200+ file + `scripts/add-spdx-headers.py` (non causa deploy Fly; regressione entrypoint già fixata in #185)
 
 ### Documentazione
 

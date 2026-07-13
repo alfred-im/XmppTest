@@ -1,7 +1,3 @@
-// Copyright (C) 2026 im.alfred
-//
-// SPDX-License-Identifier: GPL-3.0-or-later
-
 /// Realtime relevance for mailbox archive rows (owner + peer).
 bool isMailboxPeerMessageRelevant({
   required Map<String, dynamic> record,

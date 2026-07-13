@@ -1,7 +1,3 @@
-// Copyright (C) 2026 im.alfred
-//
-// SPDX-License-Identifier: GPL-3.0-or-later
-
 import 'package:alfred_client/models/profile_summary.dart';
 import 'package:alfred_client/utils/shareable_link.dart';
 import 'package:flutter_test/flutter_test.dart';

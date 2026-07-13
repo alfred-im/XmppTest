@@ -1,7 +1,3 @@
-// Copyright (C) 2026 im.alfred
-//
-// SPDX-License-Identifier: GPL-3.0-or-later
-
 String formatVoiceDuration(int totalSeconds) {
   final seconds = totalSeconds.clamp(0, 5999);
   final minutes = seconds ~/ 60;

@@ -1,7 +1,3 @@
--- Copyright (C) 2026 im.alfred
---
--- SPDX-License-Identifier: GPL-3.0-or-later
-
 -- Controllo disponibilità username prima della registrazione (anon + authenticated).
 
 create or replace function public.is_username_available(p_username text)

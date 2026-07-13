@@ -1,7 +1,3 @@
--- Copyright (C) 2026 im.alfred
---
--- SPDX-License-Identifier: GPL-3.0-or-later
-
 -- Inbox = sola query su messages. Nessuna tabella inbox_threads, nessun thread_id.
 
 -- ---------------------------------------------------------------------------

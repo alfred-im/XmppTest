@@ -1,7 +1,3 @@
--- Copyright (C) 2026 im.alfred
---
--- SPDX-License-Identifier: GPL-3.0-or-later
-
 -- Security: helper SECURITY DEFINER non sono API client — solo RPC pubbliche restano su authenticated.
 -- Amend SDD 2026-07-07: RECEPTION-ALLOWLIST-REQ-028, GROUP-CORE-REQ-024, GROUP-DELIVERY-REQ-027.
 

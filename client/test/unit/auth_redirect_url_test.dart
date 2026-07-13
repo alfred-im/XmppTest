@@ -1,7 +1,3 @@
-// Copyright (C) 2026 im.alfred
-//
-// SPDX-License-Identifier: GPL-3.0-or-later
-
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:alfred_client/utils/auth_redirect_url.dart';

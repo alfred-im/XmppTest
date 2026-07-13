@@ -1,7 +1,3 @@
-// Copyright (C) 2026 im.alfred
-//
-// SPDX-License-Identifier: GPL-3.0-or-later
-
 /**
  * Timeout e2e — tetti bassi: login demo sano ≈ 5–15s.
  * Se un passo supera questi limiti, qualcosa non va (fail fast).

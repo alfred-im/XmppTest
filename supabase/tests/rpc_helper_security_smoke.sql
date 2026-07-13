@@ -1,7 +1,3 @@
--- Copyright (C) 2026 im.alfred
---
--- SPDX-License-Identifier: GPL-3.0-or-later
-
 -- RECEPTION-ALLOWLIST-REQ-028, GROUP-CORE-REQ-024, GROUP-DELIVERY-REQ-027
 -- Helper interni: authenticated non deve poterli invocare via PostgREST.
 

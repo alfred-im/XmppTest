@@ -1,7 +1,3 @@
-# Copyright (C) 2026 im.alfred
-#
-# SPDX-License-Identifier: GPL-3.0-or-later
-
 #!/usr/bin/env bash
 # Integrazione live Supabase — multi-account senza browser.
 # Hub: bash scripts/test.sh integration | integration-ticks

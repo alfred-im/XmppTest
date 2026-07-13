@@ -1,7 +1,3 @@
-// Copyright (C) 2026 im.alfred
-//
-// SPDX-License-Identifier: GPL-3.0-or-later
-
 import 'dart:convert';
 
 enum OutboundContentKind { text, gif, voice, location }

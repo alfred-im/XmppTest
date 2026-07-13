@@ -1,7 +1,3 @@
-// Copyright (C) 2026 im.alfred
-//
-// SPDX-License-Identifier: GPL-3.0-or-later
-
 import '../models/message.dart';
 
 /// Anteprima inbox per tipo messaggio — allineata a SURF-CHAT-008.

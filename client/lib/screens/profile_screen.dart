@@ -1,7 +1,3 @@
-// Copyright (C) 2026 im.alfred
-//
-// SPDX-License-Identifier: GPL-3.0-or-later
-
 import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';

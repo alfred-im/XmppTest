@@ -1,7 +1,3 @@
--- Copyright (C) 2026 im.alfred
---
--- SPDX-License-Identifier: GPL-3.0-or-later
-
 -- Mailbox send smoke: RPC round-trip agent1 → agent2 (MAILBOX-SEND-REQ-001).
 
 DO $$

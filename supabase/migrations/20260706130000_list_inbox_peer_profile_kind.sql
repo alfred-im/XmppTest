@@ -1,7 +1,3 @@
--- Copyright (C) 2026 im.alfred
---
--- SPDX-License-Identifier: GPL-3.0-or-later
-
 -- GROUP-CORE: expose peer profile_kind in list_inbox for client routing/labels.
 
 drop function if exists public.list_inbox();

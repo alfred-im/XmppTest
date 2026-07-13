@@ -1,7 +1,3 @@
-// Copyright (C) 2026 im.alfred
-//
-// SPDX-License-Identifier: GPL-3.0-or-later
-
 import 'package:intl/intl.dart';
 
 const _italianWeekdays = ['lun', 'mar', 'mer', 'gio', 'ven', 'sab', 'dom'];

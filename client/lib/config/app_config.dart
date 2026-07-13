@@ -1,7 +1,3 @@
-// Copyright (C) 2026 im.alfred
-//
-// SPDX-License-Identifier: GPL-3.0-or-later
-
 /// Configurazione runtime Alfred (publishable key — sicura lato client).
 class AppConfig {
   const AppConfig._();

@@ -1,7 +1,3 @@
-// Copyright (C) 2026 im.alfred
-//
-// SPDX-License-Identifier: GPL-3.0-or-later
-
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Storage in-memory per il code verifier PKCE su client auth effimeri.

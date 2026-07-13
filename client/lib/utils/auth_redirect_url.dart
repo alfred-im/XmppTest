@@ -1,7 +1,3 @@
-// Copyright (C) 2026 im.alfred
-//
-// SPDX-License-Identifier: GPL-3.0-or-later
-
 import 'package:flutter/foundation.dart' show kIsWeb, visibleForTesting;
 
 /// URL di ritorno dopo conferma email o reset password (Supabase Auth).
