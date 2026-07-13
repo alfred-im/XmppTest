@@ -115,7 +115,11 @@ class MessageBubble extends StatelessWidget {
               message.mediaUrl != null && message.mediaUrl!.startsWith('pending://')
                   ? _PendingImageContent(message: message)
                   : _NetworkImageContent(url: message.mediaUrl!),
-            if (message.isVideo) VideoMessageContent(message: message),
+            if (message.isVideo)
+              VideoMessageContent(
+                key: ValueKey(message.mediaUrl ?? message.id),
+                message: message,
+              ),
             if (message.isVoice)
               VoiceMessageContent(message: message, isMine: isMine),
             if (message.isLocation)

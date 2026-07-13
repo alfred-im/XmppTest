@@ -17,6 +17,7 @@ import '../services/location_service.dart';
 import '../services/voice_recording_service.dart';
 import '../theme/alfred_colors.dart';
 import '../utils/duration_format.dart';
+import '../utils/picked_file_bytes.dart';
 import '../utils/video_duration.dart';
 import 'location_map_preview.dart';
 import 'voice_message_content.dart';
@@ -194,20 +195,40 @@ class _ChatInputBarState extends State<ChatInputBar> {
     );
 
     final file = result?.files.single;
-    final bytes = file?.bytes;
-    if (bytes == null || bytes.isEmpty) return;
+    if (file == null) return;
 
-    final extension = (file?.extension ?? 'mp4').toLowerCase();
+    final bytes = await readPickedFileBytes(file);
+    if (bytes == null || bytes.isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Impossibile leggere il video selezionato'),
+        ),
+      );
+      return;
+    }
+
+    final extension = (file.extension ?? 'mp4').toLowerCase();
+    if (!ChatMediaConfig.videoExtensions.contains(extension)) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Formato video non supportato. Usa MP4 o WebM.'),
+        ),
+      );
+      return;
+    }
+
     final mime =
         ChatMediaConfig.videoMimeForExtension(extension) ?? 'video/mp4';
     final durationSeconds = await readVideoDurationSeconds(
-      bytes: Uint8List.fromList(bytes),
+      bytes: bytes,
       extension: extension,
     );
     final caption = _takeCaption();
 
     await widget.onSendVideo!(
-      Uint8List.fromList(bytes),
+      bytes,
       extension: extension,
       mime: mime,
       durationSeconds: durationSeconds,

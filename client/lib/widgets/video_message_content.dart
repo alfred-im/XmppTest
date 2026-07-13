@@ -2,6 +2,8 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 
@@ -24,30 +26,71 @@ class VideoMessageContent extends StatefulWidget {
 class _VideoMessageContentState extends State<VideoMessageContent> {
   VideoPlayerController? _controller;
   bool _failed = false;
+  bool _initializing = false;
 
   @override
   void initState() {
     super.initState();
-    _initPlayer();
+    unawaited(_initPlayer());
+  }
+
+  @override
+  void didUpdateWidget(covariant VideoMessageContent oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final oldUrl = oldWidget.message.mediaUrl ?? '';
+    final newUrl = widget.message.mediaUrl ?? '';
+    if (oldUrl != newUrl) {
+      unawaited(_reloadPlayer());
+    }
+  }
+
+  Future<void> _reloadPlayer() async {
+    await _disposePlayer();
+    if (!mounted) return;
+    setState(() {
+      _failed = false;
+      _initializing = false;
+    });
+    await _initPlayer();
   }
 
   Future<void> _initPlayer() async {
     final url = widget.message.mediaUrl;
     if (url == null || url.isEmpty || url.startsWith('pending://')) return;
+    if (_initializing) return;
 
+    _initializing = true;
     final controller = VideoPlayerController.networkUrl(Uri.parse(url));
     _controller = controller;
     try {
       await controller.initialize();
-      if (mounted) setState(() {});
+      if (mounted) {
+        setState(() {
+          _failed = false;
+          _initializing = false;
+        });
+      }
     } catch (_) {
-      if (mounted) setState(() => _failed = true);
+      if (mounted) {
+        setState(() {
+          _failed = true;
+          _initializing = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _disposePlayer() async {
+    final controller = _controller;
+    _controller = null;
+    if (controller != null) {
+      await controller.dispose();
     }
   }
 
   @override
   void dispose() {
-    _controller?.dispose();
+    unawaited(_disposePlayer());
     super.dispose();
   }
 

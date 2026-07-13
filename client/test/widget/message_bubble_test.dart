@@ -127,6 +127,45 @@ void main() {
     expect(find.byType(CircularProgressIndicator), findsWidgets);
   });
 
+  testWidgets('MessageBubble reloads video player when pending url resolves',
+      (tester) async {
+    final message = ValueNotifier(
+      const ChatMessage(
+        id: '2d',
+        body: '',
+        timeLabel: '12:32',
+        isMine: true,
+        status: MessageStatus.pending,
+        contentType: MessageContentType.video,
+        mediaUrl: 'pending://client-id',
+        durationSeconds: 8,
+      ),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AlfredTheme.light,
+        home: Scaffold(
+          body: ValueListenableBuilder<ChatMessage>(
+            valueListenable: message,
+            builder: (context, value, _) => MessageBubble(message: value),
+          ),
+        ),
+      ),
+    );
+
+    expect(find.byType(CircularProgressIndicator), findsWidgets);
+
+    message.value = message.value.copyWith(
+      mediaUrl: 'https://example.com/smoke.mp4',
+      status: MessageStatus.sent,
+    );
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 2));
+
+    expect(find.byIcon(Icons.videocam_off_outlined), findsOneWidget);
+  });
+
   testWidgets('MessageBubble renders voice player', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
