@@ -2,10 +2,8 @@
 --
 -- SPDX-License-Identifier: GPL-3.0-or-later
 
--- Photo (image) and video messages: enum, RPC validation, storage bucket.
-
-alter type public.message_content_type add value if not exists 'image';
-alter type public.message_content_type add value if not exists 'video';
+-- Photo (image) and video messages: RPC validation, storage bucket.
+-- Requires 20260713100000_message_image_video_enum.sql applied first.
 
 create or replace function public.mailbox_has_renderable_content(
   p_body text,
