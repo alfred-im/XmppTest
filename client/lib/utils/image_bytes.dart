@@ -90,7 +90,7 @@ NormalizedImageBytes normalizeImageBytes(Uint8List bytes) {
         extension: 'webp',
       );
     case DetectedImageFormat.heic:
-      throw UnsupportedImageFormatException.heic();
+      throw UnsupportedImageFormatException.heicConversionFailed();
     case DetectedImageFormat.unknown:
       throw UnsupportedImageFormatException.unsupported();
   }
@@ -99,10 +99,9 @@ NormalizedImageBytes normalizeImageBytes(Uint8List bytes) {
 class UnsupportedImageFormatException implements Exception {
   UnsupportedImageFormatException._(this.userMessage);
 
-  factory UnsupportedImageFormatException.heic() =>
+  factory UnsupportedImageFormatException.heicConversionFailed() =>
       UnsupportedImageFormatException._(
-        'Formato HEIC non supportato. Riprova scattando una nuova foto '
-        'o scegli un file JPEG/PNG/WebP.',
+        'Impossibile convertire la foto HEIC. Riprova con un’altra immagine.',
       );
 
   factory UnsupportedImageFormatException.unsupported() =>

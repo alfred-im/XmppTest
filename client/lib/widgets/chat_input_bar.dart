@@ -18,6 +18,7 @@ import '../services/voice_recording_service.dart';
 import '../theme/alfred_colors.dart';
 import '../utils/duration_format.dart';
 import '../utils/image_bytes.dart';
+import '../utils/prepare_image_for_upload.dart';
 import '../utils/video_duration.dart';
 import 'location_map_preview.dart';
 import 'voice_message_content.dart';
@@ -180,7 +181,7 @@ class _ChatInputBarState extends State<ChatInputBar> {
 
     final NormalizedImageBytes normalized;
     try {
-      normalized = normalizeImageBytes(bytes);
+      normalized = await prepareImageForUpload(bytes);
     } on UnsupportedImageFormatException catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
