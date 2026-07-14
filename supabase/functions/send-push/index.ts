@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-import { createClient } from "jsr:@supabase/supabase-js@2";
+import { createClient, type SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import webpush from "web-push";
 
 type PushPayload = {
@@ -14,15 +14,40 @@ type PushPayload = {
   content_type?: string;
 };
 
-const vapidPublicKey = Deno.env.get("VAPID_PUBLIC_KEY") ?? "";
-const vapidPrivateKey = Deno.env.get("VAPID_PRIVATE_KEY") ?? "";
-const vapidSubject = Deno.env.get("VAPID_SUBJECT") ?? "mailto:push@alfred.app";
-const dispatchSecret = Deno.env.get("PUSH_DISPATCH_SECRET") ?? "";
+type PushRuntimeConfig = {
+  vapidPublicKey: string;
+  vapidPrivateKey: string;
+  vapidSubject: string;
+  dispatchSecret: string;
+};
+
 const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
 const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 
-if (vapidPublicKey && vapidPrivateKey) {
-  webpush.setVapidDetails(vapidSubject, vapidPublicKey, vapidPrivateKey);
+async function resolvePushConfig(
+  supabase: SupabaseClient,
+): Promise<PushRuntimeConfig> {
+  let vapidPublicKey = Deno.env.get("VAPID_PUBLIC_KEY") ?? "";
+  let vapidPrivateKey = Deno.env.get("VAPID_PRIVATE_KEY") ?? "";
+  let vapidSubject = Deno.env.get("VAPID_SUBJECT") ?? "mailto:push@alfred.app";
+  let dispatchSecret = Deno.env.get("PUSH_DISPATCH_SECRET") ?? "";
+
+  if (
+    !vapidPublicKey ||
+    !vapidPrivateKey ||
+    !dispatchSecret
+  ) {
+    const { data, error } = await supabase.rpc("internal_push_dispatch_config");
+    if (!error && data && typeof data === "object") {
+      const row = data as Record<string, string | null>;
+      vapidPublicKey = vapidPublicKey || row.vapid_public_key || "";
+      vapidPrivateKey = vapidPrivateKey || row.vapid_private_key || "";
+      vapidSubject = row.vapid_subject || vapidSubject;
+      dispatchSecret = dispatchSecret || row.dispatch_secret || "";
+    }
+  }
+
+  return { vapidPublicKey, vapidPrivateKey, vapidSubject, dispatchSecret };
 }
 
 function unauthorized(): Response {
@@ -36,6 +61,17 @@ Deno.serve(async (req) => {
   if (req.method !== "POST") {
     return new Response("method not allowed", { status: 405 });
   }
+
+  if (!supabaseUrl || !serviceRoleKey) {
+    return new Response(JSON.stringify({ error: "push not configured" }), {
+      status: 503,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  const supabase = createClient(supabaseUrl, serviceRoleKey);
+  const { vapidPublicKey, vapidPrivateKey, vapidSubject, dispatchSecret } =
+    await resolvePushConfig(supabase);
 
   if (dispatchSecret) {
     const headerSecret = req.headers.get("X-Push-Dispatch-Secret");
@@ -65,14 +101,15 @@ Deno.serve(async (req) => {
     });
   }
 
-  if (!vapidPublicKey || !vapidPrivateKey || !supabaseUrl || !serviceRoleKey) {
+  if (!vapidPublicKey || !vapidPrivateKey) {
     return new Response(JSON.stringify({ error: "push not configured" }), {
       status: 503,
       headers: { "Content-Type": "application/json" },
     });
   }
 
-  const supabase = createClient(supabaseUrl, serviceRoleKey);
+  webpush.setVapidDetails(vapidSubject, vapidPublicKey, vapidPrivateKey);
+
   const { data: subscriptions, error } = await supabase
     .from("push_subscriptions")
     .select("id, endpoint, p256dh_key, auth_key")
