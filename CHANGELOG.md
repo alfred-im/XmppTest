@@ -8,11 +8,13 @@ Modifiche rilevanti al progetto per tracciare evoluzione tecnica e decisioni imp
 
 ### Aggiunto
 
+- **#192** — `SYS-PUSH` + `PROM-PUSH-NOTIFY` + `SURF-NOTIFICATIONS`: Web Push VAPID (migrazioni, Edge Function `send-push`, client, SW); e2e completo `e2e-push-local`; subscribe-first
 - **#190** — `PROM-CHAT-MEDIA`: foto e video in chat 1:1 e gruppo (picker, fotocamera, didascalia, HEIC→JPEG, bolla ottimistica, coda outbound)
 - **#191** — Copertura test media: `messages_controller_media_test.dart`, `group_messages_controller_media_test.dart`, `chat_media_support_test.dart`; fixture/fake test; tracciabilità SDD aggiornata
 
 ### Documentazione
 
+- Post-merge **#192**: registry `implemented` per SYS-PUSH, PROM-PUSH-NOTIFY, SURF-NOTIFICATIONS
 - Revisione post-#191: `PROM-CHAT-MEDIA`, `SURF-CHAT-013`, `SURF-GROUP-CONVERSATION-006`, `guides/media.md`, `rpc.md`; gate **192** test
 
 ---
