@@ -14,9 +14,17 @@ import '../utils/push_platform.dart';
 
 /// Gestisce tap notifica push → focus account + apertura chat.
 class PushNotificationListener extends StatefulWidget {
-  const PushNotificationListener({super.key, required this.child});
+  const PushNotificationListener({
+    super.key,
+    required this.child,
+    @visibleForTesting this.debugOpenChatIntents,
+  });
 
   final Widget child;
+
+  /// Solo test: stream intent senza dipendere da `kIsWeb` / service worker.
+  @visibleForTesting
+  final Stream<PushOpenChatIntent>? debugOpenChatIntents;
 
   @override
   State<PushNotificationListener> createState() =>
@@ -29,6 +37,11 @@ class _PushNotificationListenerState extends State<PushNotificationListener> {
   @override
   void initState() {
     super.initState();
+    final debugStream = widget.debugOpenChatIntents;
+    if (debugStream != null) {
+      _sub = debugStream.listen(_onOpenChat);
+      return;
+    }
     if (kIsWeb) {
       PushPlatform.ensureMessageHook();
       _sub = PushPlatform.openChatIntents.listen(_onOpenChat);

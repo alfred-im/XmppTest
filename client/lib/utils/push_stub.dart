@@ -8,7 +8,12 @@ import 'dart:async';
 class PushPlatform {
   const PushPlatform._();
 
-  static Future<String> getOrCreateDeviceId() async => '00000000-0000-4000-8000-000000000000';
+  static bool get isPushSupported => false;
+
+  static String? get notificationPermission => null;
+
+  static Future<String> getOrCreateDeviceId() async =>
+      '00000000-0000-4000-8000-000000000000';
 
   static Future<String?> requestPermissionIfNeeded() async => null;
 

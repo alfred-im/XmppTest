@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 import 'package:alfred_client/services/push_subscription_service.dart';
+import 'package:alfred_client/utils/push_permission_flow.dart';
 import 'package:alfred_client/utils/push_stub.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -16,5 +17,20 @@ void main() {
       isLastAccountOnDevice: true,
     );
     expect(await PushPlatform.getOrCreateDeviceId(), isNotEmpty);
+  });
+
+  test('off-web push is not supported', () {
+    expect(PushPlatform.isPushSupported, isFalse);
+    expect(PushPlatform.notificationPermission, isNull);
+  });
+
+  test('service skips sync when push unsupported', () async {
+    expect(
+      shouldAttemptPushSubscription(
+        isPushSupported: PushPlatform.isPushSupported,
+        notificationPermission: PushPlatform.notificationPermission,
+      ),
+      isFalse,
+    );
   });
 }

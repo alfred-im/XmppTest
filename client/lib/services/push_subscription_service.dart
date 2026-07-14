@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart';
 import '../config/app_config.dart';
 import '../models/open_account.dart';
 import 'account_session.dart';
+import '../utils/push_permission_flow.dart';
 import '../utils/push_platform.dart';
 
 /// Registra subscription Web Push per tutti gli account nel manifest.
@@ -19,13 +20,22 @@ class PushSubscriptionService {
 
     PushPlatform.ensureMessageHook();
 
-    final permission = await PushPlatform.requestPermissionIfNeeded();
-    if (permission != 'granted') return;
+    if (!shouldAttemptPushSubscription(
+      isPushSupported: PushPlatform.isPushSupported,
+      notificationPermission: PushPlatform.notificationPermission,
+    )) {
+      return;
+    }
 
     final keys = await PushPlatform.ensureSubscription(
       vapidPublicKey: AppConfig.vapidPublicKey,
     );
-    if (keys == null) return;
+    if (keys == null ||
+        !shouldPersistPushSubscription(
+          notificationPermission: PushPlatform.notificationPermission,
+        )) {
+      return;
+    }
 
     final deviceId = await PushPlatform.getOrCreateDeviceId();
     final userAgent = defaultTargetPlatform.name;

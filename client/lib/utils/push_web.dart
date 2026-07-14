@@ -5,6 +5,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:js_interop';
+import 'dart:js_interop_unsafe';
 import 'dart:typed_data';
 
 import 'package:uuid/uuid.dart';
@@ -23,6 +24,25 @@ final _openChatController = StreamController<PushOpenChatIntent>.broadcast();
 class PushPlatform {
   const PushPlatform._();
 
+  /// `Notification`, `serviceWorker` e `PushManager` disponibili (es. no iOS Safari tab).
+  static bool get isPushSupported {
+    try {
+      final _ = web.Notification.permission;
+      return _jsHas('serviceWorker') && _jsHas('PushManager');
+    } catch (_) {
+      return false;
+    }
+  }
+
+  static String? get notificationPermission {
+    try {
+      if (!isPushSupported) return null;
+      return web.Notification.permission;
+    } catch (_) {
+      return null;
+    }
+  }
+
   static Future<String> getOrCreateDeviceId() async {
     final storage = web.window.localStorage;
     final existing = storage.getItem(_deviceIdKey);
@@ -34,60 +54,62 @@ class PushPlatform {
     return id;
   }
 
+  /// Legge lo stato permesso; il prompt nativo avviene in [ensureSubscription] via `subscribe()`.
   static Future<String?> requestPermissionIfNeeded() async {
-    try {
-      if (web.Notification.permission == 'granted') {
-        return 'granted';
-      }
-      if (web.Notification.permission == 'denied') {
-        return 'denied';
-      }
-      final result = (await web.Notification.requestPermission().toDart).toDart;
-      if (result == 'granted') return 'granted';
-      if (result == 'denied') return 'denied';
-      return 'default';
-    } catch (_) {
-      return 'denied';
-    }
+    return notificationPermission;
   }
 
+  /// Registra `push_sw.js` e sottoscrive VAPID. Con permesso `default`, `subscribe()` apre il dialog di sistema.
   static Future<PushSubscriptionKeys?> ensureSubscription({
     required String vapidPublicKey,
   }) async {
-    if (web.Notification.permission != 'granted') return null;
+    if (!isPushSupported) return null;
     if (vapidPublicKey.isEmpty) return null;
+    if (web.Notification.permission == 'denied') return null;
 
     final base = web.document.querySelector('base')?.getAttribute('href') ?? '/';
     final swUrl = '${base}push_sw.js';
-    final registration = await web.window.navigator.serviceWorker
-        .register(swUrl.toJS)
-        .toDart;
 
-    final existing = await registration.pushManager.getSubscription().toDart;
-    web.PushSubscription subscription;
-    if (existing != null) {
-      subscription = existing;
-    } else {
-      subscription = await registration.pushManager
-          .subscribe(
-            web.PushSubscriptionOptionsInit(
-              userVisibleOnly: true,
-              applicationServerKey: _urlBase64ToUint8Array(vapidPublicKey),
-            ),
-          )
+    web.ServiceWorkerRegistration registration;
+    try {
+      registration = await web.window.navigator.serviceWorker
+          .register(swUrl.toJS)
           .toDart;
+    } catch (_) {
+      return null;
     }
 
-    final endpoint = subscription.endpoint;
-    final key = subscription.getKey('p256dh');
-    final auth = subscription.getKey('auth');
-    if (key == null || auth == null) return null;
+    try {
+      final existing = await registration.pushManager.getSubscription().toDart;
+      web.PushSubscription subscription;
+      if (existing != null) {
+        subscription = existing;
+      } else {
+        subscription = await registration.pushManager
+            .subscribe(
+              web.PushSubscriptionOptionsInit(
+                userVisibleOnly: true,
+                applicationServerKey: _urlBase64ToUint8Array(vapidPublicKey),
+              ),
+            )
+            .toDart;
+      }
 
-    return PushSubscriptionKeys(
-      endpoint: endpoint,
-      p256dhKey: _bufferToBase64Url(key),
-      authKey: _bufferToBase64Url(auth),
-    );
+      if (web.Notification.permission != 'granted') return null;
+
+      final endpoint = subscription.endpoint;
+      final key = subscription.getKey('p256dh');
+      final auth = subscription.getKey('auth');
+      if (key == null || auth == null) return null;
+
+      return PushSubscriptionKeys(
+        endpoint: endpoint,
+        p256dhKey: _bufferToBase64Url(key),
+        authKey: _bufferToBase64Url(auth),
+      );
+    } catch (_) {
+      return null;
+    }
   }
 
   static void updateSuppression({
@@ -148,6 +170,10 @@ class PushPlatform {
     final sub = await registration.pushManager.getSubscription().toDart;
     await sub?.unsubscribe().toDart;
   }
+}
+
+bool _jsHas(String name) {
+  return globalContext.has(name);
 }
 
 JSUint8Array _urlBase64ToUint8Array(String base64String) {
