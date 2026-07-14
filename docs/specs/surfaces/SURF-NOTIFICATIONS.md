@@ -1,0 +1,87 @@
+# SURF-NOTIFICATIONS — Web Push e service worker
+
+| Campo | Valore |
+|-------|--------|
+| **Superficie ID** | `SURF-NOTIFICATIONS` |
+| **Status** | `draft` |
+| **Ultima revisione** | 2026-07-14 |
+| **Promesse** | [PROM-PUSH-NOTIFY](../promises/product/PROM-PUSH-NOTIFY.md), [SYS-PUSH](../promises/system/SYS-PUSH.md) |
+
+Binding UX e service worker per notifiche Web Push VAPID: permesso browser, registrazione subscription, visualizzazione notifica, tap → chat.
+
+---
+
+## 1. Superficie
+
+| Elemento | Valore |
+|----------|--------|
+| Service worker | `client/web/push_sw.js` (o modulo registrato da `flutter_bootstrap.js`) |
+| Client Dart | `PushSubscriptionService`, `PushSuppressionState` |
+| Bootstrap | `AppShell` / `AccountManager` — permesso e sync post-login |
+| Storage locale | `alfred_device_id` (localStorage), subscription keys via SW |
+
+---
+
+## 2. Promesse SURFACE
+
+### MUST
+
+| ID | Promessa |
+|----|----------|
+| **SURF-NOTIFICATIONS-001** | All'avvio app (dopo `sessionReady`): se `Notification.permission === 'default'` → `Notification.requestPermission()` |
+| **SURF-NOTIFICATIONS-002** | Se `granted`: registra service worker push, `pushManager.subscribe` con VAPID public key, UPSERT `push_subscriptions` per ogni account nel manifest |
+| **SURF-NOTIFICATIONS-003** | Post-login / «Aggiungi account»: re-registrazione subscription per il nuovo `user_id` |
+| **SURF-NOTIFICATIONS-004** | «Chiudi account»: DELETE subscription server + `unsubscribe` locale se ultimo account sul device |
+| **SURF-NOTIFICATIONS-005** | Handler SW `push`: mostra `Notification` con `title` = peer display name, `body` = anteprima ([PROM-PUSH-NOTIFY](../promises/product/PROM-PUSH-NOTIFY.md)) |
+| **SURF-NOTIFICATIONS-006** | Handler SW `notificationclick`: focus finestra app + messaggio client `{ type: 'open_chat', recipientUserId, peerProfileId }` |
+| **SURF-NOTIFICATIONS-007** | Client riceve `open_chat` → `AccountManager.setFocus(recipientUserId)` + apre chat peer |
+| **SURF-NOTIFICATIONS-008** | Soppressione: SW consulta stato client (focus + peer attivo) prima di `showNotification`; se soppresso → `event.waitUntil` senza UI |
+| **SURF-NOTIFICATIONS-009** | Icona notifica: `icons/Icon-192.png`; `badge` coerente brand `#2D2926` |
+
+### SHOULD
+
+| ID | Promessa |
+|----|----------|
+| **SURF-NOTIFICATIONS-020** | `last_seen_at` aggiornato su ogni re-registrazione subscription |
+| **SURF-NOTIFICATIONS-021** | Tag notifica = `logical_message_id` per evitare duplicati SW sullo stesso messaggio |
+
+### MUST NOT
+
+| ID | Promessa |
+|----|----------|
+| **SURF-NOTIFICATIONS-030** | Richiedere permesso ripetutamente dopo `denied` |
+| **SURF-NOTIFICATIONS-031** | Mostrare notifica senza controllare soppressione |
+| **SURF-NOTIFICATIONS-032** | Service worker che bypassa RLS o invia push autonomamente |
+
+### Note piattaforma
+
+| ID | Nota |
+|----|------|
+| **SURF-NOTIFICATIONS-040** | iOS: push web solo PWA installata (Add to Home Screen), iOS ≥ 16.4 — non garantito in Safari tab |
+| **SURF-NOTIFICATIONS-041** | GitHub Pages HTTPS: requisito Web Push soddisfatto |
+
+---
+
+## 3. Tracciabilità
+
+| SURF-ID / PROM-ID | Verifica |
+|-------------------|----------|
+| SURF-NOTIFICATIONS-001–002 | `client/test/widget/notification_permission_test.dart` |
+| SURF-NOTIFICATIONS-003–004 | `client/test/unit/push_subscription_service_test.dart` |
+| SURF-NOTIFICATIONS-005–008 | `client/test/unit/push_suppression_test.dart`; `client/e2e/push-registration.spec.ts` |
+| SURF-NOTIFICATIONS-006–007 | `client/e2e/push-notification-click.spec.ts` |
+| SURF-NOTIFICATIONS-008 | `client/test/unit/push_suppression_test.dart` |
+| PROM-PUSH-NOTIFY-022 | Scenario manuale in [PROM-PUSH-NOTIFY](../promises/product/PROM-PUSH-NOTIFY.md) §6 |
+
+**Gate**: `bash scripts/check-spec-sync.sh` + `verify.sh` + `integration-push` + e2e push
+
+---
+
+## 4. Riferimenti
+
+| Documento | Ruolo |
+|-----------|--------|
+| [PROM-PUSH-NOTIFY](../promises/product/PROM-PUSH-NOTIFY.md) | Regole prodotto |
+| [SYS-PUSH](../promises/system/SYS-PUSH.md) | Server e VAPID |
+| [SURF-APP-SHELL](./SURF-AUTH.md) | Shell sempre visibile |
+| [registry.md](../registry.md) | Indice promesse |

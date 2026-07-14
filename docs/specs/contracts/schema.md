@@ -1,7 +1,7 @@
 # Contratto schema — dominio mailbox (mailbox)
 
-**Ultima revisione**: 2026-07-12  
-**Status**: `implemented` su `main` (migrazioni fino a `20260711190000`, incl. account boundary delivery plane)  
+**Ultima revisione**: 2026-07-14  
+**Status**: `implemented` su `main` (migrazioni fino a `20260711190000`, incl. account boundary delivery plane); `push_subscriptions` in bozza [SYS-PUSH](../promises/system/SYS-PUSH.md) (`draft`)  
 **Fonte di verità**: `supabase/migrations/`
 
 Contratto **tabelle ed enum** usati dalle promesse SYSTEM. Per RPC: [rpc.md](./rpc.md). Per indice promesse: [registry.md](../registry.md).
@@ -18,6 +18,7 @@ profiles 1──* messages (owner_id = archivio; author_id = autore contenuto)
 messages *── peer profiles (peer_profile_id denormalizzato)
 messages 1──* outbox (ogni invio/lettura può accodare eventi)
 profiles 1──* sync_cursors (profile_id, peer_profile_id, protocol, cursor_key)
+profiles 1──* push_subscriptions (user_id, device_id) — bozza SYS-PUSH
 bridge_jobs (coda bridge)
 storage: chat-media, avatars
 ```
@@ -146,7 +147,7 @@ Coda eventi — popolata per **ogni** invio (internal + federato) e per ogni `re
 | `deliver`, `group_erogate` | Copia **mittente** (o archivio gruppo per broadcast) |
 | `read_receipt` | Copia **lettore** (riga in entrata con `read_at` aggiornato) |
 
-Payload include `event_kind`: `deliver`, `read_receipt`, `group_erogate`. Stato colonna `status`: tipo `queue_status`.
+Payload include `event_kind`: `deliver`, `read_receipt`, `group_erogate`, `push_notify` (bozza [SYS-PUSH](../promises/system/SYS-PUSH.md)). Stato colonna `status`: tipo `queue_status`.
 
 Consumer internal: worker `alfred_delivery.process_outbox` (sincrono in transazione RPC account); federato: fase B bridge (stub).
 
@@ -170,6 +171,28 @@ Worker infrastruttura **non-account** — unico attore autorizzato a attraversar
 | `erogate_group_message(...)` | Fan-out proxy partecipanti |
 
 **GRANT**: nessuno su `authenticated`. Migrazione `20260711190000`.
+
+---
+
+## `push_subscriptions` (bozza — SYS-PUSH)
+
+| Colonna | Tipo | Note |
+|---------|------|------|
+| `id` | uuid PK | default `gen_random_uuid()` |
+| `user_id` | uuid FK → `auth.users` | Account proprietario subscription |
+| `device_id` | uuid NOT NULL | Id stabile client (`alfred_device_id`) |
+| `endpoint` | text NOT NULL | URL push service browser |
+| `p256dh_key` | text NOT NULL | Chiave client subscription |
+| `auth_key` | text NOT NULL | Secret client subscription |
+| `user_agent` | text nullable | Debug |
+| `created_at` | timestamptz | default `now()` |
+| `last_seen_at` | timestamptz | Aggiornato a ogni re-registrazione |
+
+**UNIQUE**: `(user_id, device_id)`; `endpoint`.
+
+**RLS**: SELECT, INSERT, UPDATE, DELETE `user_id = auth.uid()`.
+
+**Spec**: [SYS-PUSH](../promises/system/SYS-PUSH.md).
 
 ---
 

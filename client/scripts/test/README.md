@@ -35,6 +35,7 @@ Richiedono rete (Supabase live) e/o browser. Non bloccano merge.
 |-------|---------|---------------|
 | **integration** | `bash scripts/test.sh integration` | Login agent1/agent2 + RPC inbox/peer + **contratto spunte** (✓/✓✓/allow list) |
 | **integration-ticks** | `bash scripts/test.sh integration-ticks` | Solo contratto spunte delivery plane (3 fasi) |
+| **integration-push** | `bash scripts/test.sh integration-push` | Push VAPID: subscription DB + evento post-recapito ([PROM-PUSH-NOTIFY](../../docs/specs/promises/product/PROM-PUSH-NOTIFY.md), post-implementazione) |
 | **e2e** | `bash scripts/test.sh e2e` | Tutti i Playwright in `client/e2e/` |
 | **e2e-multi** | `bash scripts/test.sh e2e-multi` | Multi-account mobile: persistenza F5 + messaggi (UI + DB) |
 | **live** | `bash scripts/test.sh live` | Dart con tag `@Tags(['live'])` (es. password reset PKCE) |
@@ -48,6 +49,26 @@ Richiedono rete (Supabase live) e/o browser. Non bloccano merge.
 | `multi-account-messages.spec.ts` | `e2e-multi` | Scambio messaggi + verifica DB (`list_peer_messages`) |
 | `inbox-load.spec.ts` | `e2e` | Inbox senza digitare in ricerca |
 | `pages-smoke.spec.ts` | `e2e` | Smoke generico (fragile su canvas Flutter) |
+| `push-registration.spec.ts` | `e2e` | Registrazione subscription multi-account (post SYS-PUSH) |
+| `push-notification-click.spec.ts` | `e2e` | Tap notifica → focus account + chat (post SYS-PUSH) |
+
+### SQL smoke push (`supabase/tests/` — post SYS-PUSH)
+
+| File | Verifica |
+|------|----------|
+| `push_subscriptions_schema_smoke.sql` | DDL, indici, UNIQUE |
+| `push_subscriptions_rls_smoke.sql` | RLS cross-user negato |
+| `push_delivery_trigger_smoke.sql` | Recapito → push_notify; allow list rifiutata → nessun push |
+| `push_multi_device_smoke.sql` | Subscription multiple per user_id |
+
+### Dart unit push (post SYS-PUSH)
+
+| File | Verifica |
+|------|----------|
+| `push_subscription_service_test.dart` | device_id, upsert, delete on close |
+| `push_suppression_test.dart` | Matrice focus × peer × visibility |
+| `push_preview_test.dart` | Anteprima testo/media allineata inbox |
+| `notification_permission_test.dart` | Permesso granted/denied/default |
 
 Default URL: hosted web client `https://alfred-im.github.io/alfred-im/`  
 Locale: `ALFRED_BASE_URL=http://localhost:8080/ bash scripts/test.sh e2e-multi`

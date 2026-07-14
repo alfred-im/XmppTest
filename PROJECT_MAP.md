@@ -1,6 +1,6 @@
 # Alfred - Mappa Completa del Progetto
 
-**Ultimo aggiornamento**: 2026-07-12  
+**Ultimo aggiornamento**: 2026-07-14  
 **Stato**: stabile — senza versionamento release (pubspec Flutter default invariato)
 
 ---
