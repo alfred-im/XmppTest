@@ -35,7 +35,7 @@ Richiedono rete (Supabase live) e/o browser. Non bloccano merge.
 |-------|---------|---------------|
 | **integration** | `bash scripts/test.sh integration` | Login agent1/agent2 + RPC inbox/peer + **contratto spunte** (✓/✓✓/allow list) |
 | **integration-ticks** | `bash scripts/test.sh integration-ticks` | Solo contratto spunte delivery plane (3 fasi) |
-| **integration-push** | `bash scripts/test.sh integration-push` | Delivery plane API; smoke SQL in `supabase/tests/push_*` (DB di test, non account utente) |
+| **integration-push** | `bash scripts/test.sh integration-push` | Smoke SQL `push_*` su stack locale; oppure delivery plane live con agent1/2 |
 | **e2e-push-local** | `bash scripts/test.sh e2e-push-local` | Playwright push **completo** (permesso → subscribe → messaggio → notifica ricevuta) — solo stack locale |
 | **e2e** | `bash scripts/test.sh e2e` | Tutti i Playwright in `client/e2e/` |
 | **e2e-multi** | `bash scripts/test.sh e2e-multi` | Multi-account mobile: persistenza F5 + messaggi (UI + DB) |

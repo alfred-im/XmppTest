@@ -28,7 +28,7 @@ Binding UX e service worker per notifiche Web Push VAPID: permesso browser, regi
 
 | ID | Promessa |
 |----|----------|
-| **SURF-NOTIFICATIONS-001** | All'avvio app (dopo `sessionReady`): se `Notification.permission === 'default'` → `Notification.requestPermission()` |
+| **SURF-NOTIFICATIONS-001** | Dopo `sessionReady`: se push supportata e permesso ≠ `denied`, registra service worker e `pushManager.subscribe` (VAPID, `userVisibleOnly: true`); con permesso `default` il dialog di sistema compare durante subscribe — **nessuna** `Notification.requestPermission()` separata prima di subscribe |
 | **SURF-NOTIFICATIONS-002** | Se `granted`: registra service worker push, `pushManager.subscribe` con VAPID public key, UPSERT `push_subscriptions` per ogni account nel manifest |
 | **SURF-NOTIFICATIONS-003** | Post-login / «Aggiungi account»: re-registrazione subscription per il nuovo `user_id` |
 | **SURF-NOTIFICATIONS-004** | «Chiudi account»: DELETE subscription server + `unsubscribe` locale se ultimo account sul device |
@@ -66,14 +66,14 @@ Binding UX e service worker per notifiche Web Push VAPID: permesso browser, regi
 
 | SURF-ID / PROM-ID | Verifica |
 |-------------------|----------|
-| SURF-NOTIFICATIONS-001–002 | `client/test/widget/notification_permission_test.dart` |
+| SURF-NOTIFICATIONS-001–002 | `client/test/unit/notification_permission_test.dart`; `client/e2e/push-registration.spec.ts` |
 | SURF-NOTIFICATIONS-003–004 | `client/test/unit/push_subscription_service_test.dart` |
-| SURF-NOTIFICATIONS-005–008 | `client/test/unit/push_suppression_test.dart`; `client/e2e/push-registration.spec.ts` |
-| SURF-NOTIFICATIONS-006–007 | `client/e2e/push-notification-click.spec.ts` |
+| SURF-NOTIFICATIONS-005–008 | `client/test/unit/push_suppression_test.dart`; `client/e2e/push-full.spec.ts` |
+| SURF-NOTIFICATIONS-006–007 | `client/test/widget/push_notification_listener_test.dart`; `client/e2e/push-full.spec.ts` |
 | SURF-NOTIFICATIONS-008 | `client/test/unit/push_suppression_test.dart` |
 | PROM-PUSH-NOTIFY-022 | Scenario manuale in [PROM-PUSH-NOTIFY](../promises/product/PROM-PUSH-NOTIFY.md) §6 |
 
-**Gate**: `bash scripts/check-spec-sync.sh` + `verify.sh` + `integration-push` + e2e push
+**Gate**: `bash scripts/check-spec-sync.sh` + `verify.sh` + `bash scripts/test.sh e2e-push-local` (stack locale)
 
 ---
 

@@ -63,16 +63,27 @@ export function configureLocalPushSettings(): void {
 export function addReceptionAllowlist(options: {
   ownerUserId: string;
   allowedProfileId: string;
-}): void {
-  const sql =
-    `INSERT INTO public.reception_allowlist (owner_id, allowed_profile_id) ` +
-    `VALUES ('${options.ownerUserId}', '${options.allowedProfileId}') ` +
-    `ON CONFLICT ON CONSTRAINT reception_allowlist_owner_allowed_unique DO NOTHING;`;
-
-  execSync(
-    `docker exec -i supabase_db_alfred psql -U postgres -d postgres -v ON_ERROR_STOP=1 -c ${JSON.stringify(sql)}`,
-    { stdio: 'pipe' },
-  );
+  ownerAccessToken: string;
+}): Promise<void> {
+  return fetch(`${SUPABASE_URL}/rest/v1/reception_allowlist`, {
+    method: 'POST',
+    headers: {
+      apikey: ANON_KEY,
+      Authorization: `Bearer ${options.ownerAccessToken}`,
+      'Content-Type': 'application/json',
+      Prefer: 'resolution=ignore-duplicates',
+    },
+    body: JSON.stringify({
+      owner_id: options.ownerUserId,
+      allowed_profile_id: options.allowedProfileId,
+    }),
+  }).then(async (res) => {
+    if (!res.ok && res.status !== 409) {
+      throw new Error(
+        `reception_allowlist insert failed (${res.status}): ${await res.text()}`,
+      );
+    }
+  });
 }
 
 export async function sendMessageToProfile(options: {

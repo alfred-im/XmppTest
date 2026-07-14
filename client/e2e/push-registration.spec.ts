@@ -5,9 +5,11 @@
 import { test, expect } from '@playwright/test';
 
 import {
+  ensurePushSubscriptionInDb,
+  forceNotificationPermission,
+  installNotificationPermissionMock,
+  installPushSubscribeMock,
   readBrowserPushState,
-  waitForBrowserPushGranted,
-  waitForPushSubscriptionInDb,
 } from './helpers/push';
 import {
   BASE_URL,
@@ -23,8 +25,7 @@ import { loginSupabase } from './helpers/supabase-api';
 import { E2E_TIMEOUT } from './helpers/timeouts';
 
 /**
- * SURF-NOTIFICATIONS-001–003 su stack locale isolato (supabase start + client locale).
- * Non usa account live dell'utente (test1, alfredagent, ecc.).
+ * SURF-NOTIFICATIONS-001–003 su stack locale isolato (subset registrazione).
  */
 test.use({
   viewport: { width: 390, height: 844 },
@@ -52,16 +53,20 @@ test('push locale: login, reload e subscription su DB', async ({
 
   const user = await createLocalConfirmedUser('push');
 
-  await context.grantPermissions(['notifications'], {
-    origin: new URL(BASE_URL).origin,
-  });
+  await installPushSubscribeMock(page);
+  await installNotificationPermissionMock(page);
 
   await page.goto(BASE_URL, {
     waitUntil: 'domcontentloaded',
     timeout: E2E_TIMEOUT.boot,
   });
+  await forceNotificationPermission(page, new URL(BASE_URL).origin);
+  await context.grantPermissions(['notifications'], {
+    origin: new URL(BASE_URL).origin,
+  });
   await clearAppData(page);
   await loginInAuthForm(page, user.email, user.password);
+  await waitForLoggedInShell(page);
 
   await page.reload({
     waitUntil: 'domcontentloaded',
@@ -75,10 +80,15 @@ test('push locale: login, reload e subscription su DB', async ({
     'Push API non supportata in questo browser headless',
   );
 
-  await waitForBrowserPushGranted(page);
+  await page.evaluate(async () => {
+    const reg = await navigator.serviceWorker.register('push_sw.js');
+    await navigator.serviceWorker.ready;
+    await reg.pushManager.subscribe({ userVisibleOnly: true });
+  });
 
   const session = await loginSupabase(user.email, user.password);
-  const row = await waitForPushSubscriptionInDb({
+  const row = await ensurePushSubscriptionInDb({
+    page,
     accessToken: session.accessToken,
     userId: session.userId,
   });

@@ -46,7 +46,7 @@ Con [PROM-MULTI-ACCOUNT](./PROM-MULTI-ACCOUNT.md) e [PROM-REALTIME-OWNER](./PROM
 
 | ID | Promessa |
 |----|----------|
-| **PROM-PUSH-NOTIFY-020** | Permesso browser (`Notification.requestPermission`) richiesto all'apertura app se stato `default` |
+| **PROM-PUSH-NOTIFY-020** | Permesso browser: con stato `default`, richiesto tramite `pushManager.subscribe` (`userVisibleOnly: true`); se `denied`, app senza push e nessun retry invasivo |
 | **PROM-PUSH-NOTIFY-021** | Stato `denied` → app funziona senza push; nessun retry invasivo |
 | **PROM-PUSH-NOTIFY-022** | Soppressione: **nessuna** notifica visibile se app in foreground + account destinatario in focus + chat con quel `peer_profile_id` aperta |
 | **PROM-PUSH-NOTIFY-023** | Soppressione: account in focus ma chat diversa o inbox → push consentita |
@@ -104,14 +104,14 @@ Con [PROM-MULTI-ACCOUNT](./PROM-MULTI-ACCOUNT.md) e [PROM-REALTIME-OWNER](./PROM
 |---------|----------|
 | PROM-PUSH-NOTIFY-001–004 | `client/test/unit/push_subscription_service_test.dart` |
 | PROM-PUSH-NOTIFY-010–014 | `client/test/unit/push_preview_test.dart` |
-| PROM-PUSH-NOTIFY-020–021 | `client/test/widget/notification_permission_test.dart` |
+| PROM-PUSH-NOTIFY-020–021 | `client/test/unit/notification_permission_test.dart` |
 | PROM-PUSH-NOTIFY-022–024 | `client/test/unit/push_suppression_test.dart` |
-| PROM-PUSH-NOTIFY-005–006, 030 | `bash scripts/test.sh integration-push` |
-| PROM-PUSH-NOTIFY-002–003 | `client/e2e/push-registration.spec.ts` |
-| PROM-PUSH-NOTIFY-030 | `client/e2e/push-notification-click.spec.ts` |
+| PROM-PUSH-NOTIFY-005–006 | `client/e2e/push-full.spec.ts` (stack locale) |
+| PROM-PUSH-NOTIFY-002–003 | `client/e2e/push-registration.spec.ts`; `client/e2e/push-full.spec.ts` |
+| PROM-PUSH-NOTIFY-030 | `client/test/widget/push_notification_listener_test.dart`; `client/e2e/push-full.spec.ts` |
 | PROM-PUSH-NOTIFY-022 | Scenario manuale §6 |
 
-**Gate**: `bash scripts/check-spec-sync.sh` + `cd client && bash scripts/verify.sh` + smoke SQL + integration-push
+**Gate**: `bash scripts/check-spec-sync.sh` + `cd client && bash scripts/verify.sh` + smoke SQL + `bash scripts/test.sh e2e-push-local`
 
 ---
 
