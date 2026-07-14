@@ -22,6 +22,8 @@ class OutboundMessageQueue {
 
   static const _storageKey = 'alfred_outbound_queue_v1';
   static const _webMediaStorageKey = 'alfred_outbound_media_v1';
+  /// SharedPreferences is unsuitable for large video blobs on web.
+  static const _webPersistMaxBytes = 4 * 1024 * 1024;
 
   final Future<SharedPreferences> _preferencesFuture;
   final _controller = StreamController<List<OutboundQueueItem>>.broadcast();
@@ -70,7 +72,9 @@ class OutboundMessageQueue {
     OutboundMediaCache.instance.put(clientId, bytes);
 
     if (kIsWeb) {
-      await _persistWebMedia(clientId, bytes);
+      if (bytes.length <= _webPersistMaxBytes) {
+        await _persistWebMedia(clientId, bytes);
+      }
       return 'memory://$clientId';
     }
 

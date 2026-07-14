@@ -115,15 +115,33 @@ class _VideoMessageContentState extends State<VideoMessageContent> {
     if (url == null || url.isEmpty) return const SizedBox.shrink();
 
     if (url.startsWith('pending://')) {
-      return const SizedBox(
+      return SizedBox(
         width: _videoMaxWidth,
-        height: 120,
-        child: Center(
-          child: SizedBox(
-            width: 28,
-            height: 28,
-            child: CircularProgressIndicator(strokeWidth: 2),
-          ),
+        height: _videoMaxHeight,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: ColoredBox(
+                color: AlfredColors.panel.withValues(alpha: 0.45),
+                child: const SizedBox(
+                  width: _videoMaxWidth,
+                  height: _videoMaxHeight,
+                  child: Icon(
+                    Icons.videocam_outlined,
+                    size: 48,
+                    color: AlfredColors.textSecondary,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(
+              width: 28,
+              height: 28,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+          ],
         ),
       );
     }

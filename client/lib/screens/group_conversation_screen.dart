@@ -94,16 +94,9 @@ class GroupConversationScreen extends StatelessWidget {
                   bytes: bytes,
                   caption: caption,
                 ),
-                onSendVideo: (bytes,
-                        {required extension,
-                        required mime,
-                        required durationSeconds,
-                        caption}) =>
-                    controller.sendVideo(
-                  bytes: bytes,
-                  extension: extension,
-                  mime: mime,
-                  durationSeconds: durationSeconds,
+                onSendVideo: (file, {caption}) =>
+                    controller.sendVideoFromPicker(
+                  file: file,
                   caption: caption,
                 ),
                 onSendVoice: (bytes, durationMs) => controller.sendVoice(

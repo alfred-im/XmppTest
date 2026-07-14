@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 import 'dart:async';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
@@ -24,7 +25,9 @@ import '../utils/date_format.dart';
 import '../utils/merge_chat_message.dart';
 import '../utils/prepare_image_for_upload.dart';
 import '../utils/image_bytes.dart';
+import '../utils/picked_file_bytes.dart';
 import '../utils/video_duration.dart';
+import '../utils/video_file_extension.dart';
 
 class MessagesController extends ChangeNotifier {
   MessagesController({
@@ -460,6 +463,21 @@ class MessagesController extends ChangeNotifier {
     );
   }
 
+  Future<void> sendVideoFromPicker({
+    required PlatformFile file,
+    String? caption,
+  }) async {
+    final extension = videoExtensionFromPickedFile(file);
+    final mime =
+        ChatMediaConfig.videoMimeForExtension(extension) ?? 'video/mp4';
+    await _sendVideo(
+      readBytes: () => readPickedFileBytes(file),
+      extension: extension,
+      mime: mime,
+      caption: caption,
+    );
+  }
+
   Future<void> sendVideo({
     required Uint8List bytes,
     required String extension,
@@ -467,35 +485,102 @@ class MessagesController extends ChangeNotifier {
     required int durationSeconds,
     String? caption,
   }) async {
-    if (bytes.isEmpty || isSending) return;
+    await _sendVideo(
+      readBytes: () async => bytes,
+      extension: extension,
+      mime: mime,
+      caption: caption,
+      initialDurationSeconds: durationSeconds,
+    );
+  }
+
+  Future<void> _sendVideo({
+    required Future<Uint8List?> Function() readBytes,
+    required String extension,
+    required String mime,
+    String? caption,
+    int initialDurationSeconds = 1,
+  }) async {
+    if (isSending) {
+      error = 'Invio già in corso, attendi il completamento.';
+      notifyListeners();
+      return;
+    }
     if (!_ensureValidSession()) return;
 
     final body = caption?.trim() ?? '';
     final clientId = _uuid.v4();
-    final mediaPath = await _outboundQueue.persistMediaBytes(
-      clientId: clientId,
-      bytes: bytes,
-      extension: extension,
+
+    var resolvedDuration = initialDurationSeconds.clamp(
+      1,
+      ChatMediaConfig.maxVideoDurationSeconds,
     );
 
-    await _sendOptimistic(
-      optimistic: ChatMessage(
-        id: clientId,
-        body: body,
-        timeLabel: formatMessageTime(DateTime.now()),
-        isMine: true,
-        status: MessageStatus.pending,
-        createdAt: DateTime.now(),
-        clientMessageId: clientId,
-        senderId: userId,
-        contentType: MessageContentType.video,
-        mediaUrl: 'pending://$clientId',
-        durationSeconds: durationSeconds,
-        mediaMime: mime,
-        mediaSizeBytes: bytes.length,
-        retryPayloadPath: mediaPath,
-      ),
-      queueItem: OutboundQueueItem(
+    final optimistic = ChatMessage(
+      id: clientId,
+      body: body,
+      timeLabel: formatMessageTime(DateTime.now()),
+      isMine: true,
+      status: MessageStatus.pending,
+      createdAt: DateTime.now(),
+      clientMessageId: clientId,
+      senderId: userId,
+      contentType: MessageContentType.video,
+      mediaUrl: 'pending://$clientId',
+      durationSeconds: resolvedDuration,
+      mediaMime: mime,
+    );
+
+    isSending = true;
+    messages = [...messages, optimistic];
+    notifyListeners();
+
+    String? mediaPath;
+    try {
+      final bytes = await readBytes();
+      if (bytes == null || bytes.isEmpty) {
+        throw StateError('Impossibile leggere il video selezionato');
+      }
+
+      OutboundMediaCache.instance.put(clientId, bytes);
+      messages = messages
+          .map(
+            (m) => m.id == clientId
+                ? m.copyWith(mediaSizeBytes: bytes.length)
+                : m,
+          )
+          .toList();
+      notifyListeners();
+
+      final probed = await readVideoDurationSeconds(
+        bytes: bytes,
+        extension: extension,
+      );
+      resolvedDuration = probed.clamp(1, ChatMediaConfig.maxVideoDurationSeconds);
+      messages = messages
+          .map(
+            (m) => m.id == clientId
+                ? m.copyWith(durationSeconds: resolvedDuration)
+                : m,
+          )
+          .toList();
+      notifyListeners();
+
+      mediaPath = await _outboundQueue.persistMediaBytes(
+        clientId: clientId,
+        bytes: bytes,
+        extension: extension,
+      );
+      messages = messages
+          .map(
+            (m) => m.id == clientId
+                ? m.copyWith(retryPayloadPath: mediaPath)
+                : m,
+          )
+          .toList();
+      notifyListeners();
+
+      final queueItem = OutboundQueueItem(
         clientId: clientId,
         queueKey: _queueKey,
         kind: OutboundContentKind.video,
@@ -503,29 +588,70 @@ class MessagesController extends ChangeNotifier {
         queuedAt: DateTime.now(),
         body: body.isEmpty ? null : body,
         localMediaPath: mediaPath,
-        durationSeconds: durationSeconds,
+        durationSeconds: resolvedDuration,
         mediaMime: mime,
         mediaExtension: extension,
-      ),
-      send: (id) async {
-        final mediaUrl = await messageMediaService.uploadVideo(
-          bytes: bytes,
-          userId: userId,
-          extension: extension,
-          contentType: mime,
-        );
-        return messageService.sendVideoToProfile(
-          recipientProfileId: peerProfileId,
-          mediaUrl: mediaUrl,
-          mediaMime: mime,
-          durationSeconds: durationSeconds,
-          mediaSizeBytes: bytes.length,
-          currentUserId: userId,
-          clientMessageId: id,
-          body: body,
-        );
-      },
-    );
+      );
+      await _outboundQueue.enqueue(queueItem);
+      notifyListeners();
+
+      final mediaUrl = await messageMediaService.uploadVideo(
+        bytes: bytes,
+        userId: userId,
+        extension: extension,
+        contentType: mime,
+      );
+      final saved = await messageService.sendVideoToProfile(
+        recipientProfileId: peerProfileId,
+        mediaUrl: mediaUrl,
+        mediaMime: mime,
+        durationSeconds: resolvedDuration,
+        mediaSizeBytes: bytes.length,
+        currentUserId: userId,
+        clientMessageId: clientId,
+        body: body,
+      );
+      messages = _replaceOrInsertMessage(messages, _withTimeLabel(saved));
+      await _outboundQueue.remove(clientId);
+      await _outboundQueue.deleteMediaFile(
+        mediaPath,
+        clientId: clientId,
+      );
+      error = null;
+      if (onMessagesChanged != null) {
+        await onMessagesChanged!();
+      }
+    } catch (e) {
+      final failedItem = OutboundQueueItem(
+        clientId: clientId,
+        queueKey: _queueKey,
+        kind: OutboundContentKind.video,
+        attempts: 1,
+        queuedAt: DateTime.now(),
+        body: body.isEmpty ? null : body,
+        localMediaPath: mediaPath,
+        durationSeconds: resolvedDuration,
+        mediaMime: mime,
+        mediaExtension: extension,
+        lastError: e.toString(),
+      );
+      await _outboundQueue.enqueue(failedItem);
+      messages = messages
+          .map(
+            (m) => m.id == clientId
+                ? m.copyWith(
+                    status: MessageStatus.failed,
+                    isMine: true,
+                    retryPayloadPath: mediaPath,
+                  )
+                : m,
+          )
+          .toList();
+      error = e.toString();
+    } finally {
+      isSending = false;
+      notifyListeners();
+    }
   }
 
   Future<void> sendVoice({

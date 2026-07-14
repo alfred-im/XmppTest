@@ -4,10 +4,12 @@
 
 import 'dart:async';
 
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
+import '../config/chat_media_config.dart';
 import '../config/location_config.dart';
 import '../config/voice_config.dart';
 import '../models/message.dart';
@@ -19,6 +21,9 @@ import '../utils/author_display.dart' show enrichMessageAuthor;
 import '../utils/date_format.dart';
 import '../utils/merge_chat_message.dart';
 import '../utils/prepare_image_for_upload.dart';
+import '../utils/picked_file_bytes.dart';
+import '../utils/video_duration.dart';
+import '../utils/video_file_extension.dart';
 
 /// Messaggistica account gruppo — storico unico + broadcast allow list.
 class GroupMessagesController extends ChangeNotifier {
@@ -176,6 +181,32 @@ class GroupMessagesController extends ChangeNotifier {
         body: body,
       );
     });
+  }
+
+  Future<void> sendVideoFromPicker({
+    required PlatformFile file,
+    String? caption,
+  }) async {
+    final extension = videoExtensionFromPickedFile(file);
+    if (!isSupportedVideoExtension(extension)) return;
+
+    final bytes = await readPickedFileBytes(file);
+    if (bytes == null || bytes.isEmpty) return;
+
+    final mime =
+        ChatMediaConfig.videoMimeForExtension(extension) ?? 'video/mp4';
+    final durationSeconds = await readVideoDurationSeconds(
+      bytes: bytes,
+      extension: extension,
+    );
+
+    await sendVideo(
+      bytes: bytes,
+      extension: extension,
+      mime: mime,
+      durationSeconds: durationSeconds,
+      caption: caption,
+    );
   }
 
   Future<void> sendVideo({

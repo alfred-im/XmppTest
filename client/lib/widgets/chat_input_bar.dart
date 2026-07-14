@@ -9,7 +9,6 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
-import '../config/chat_media_config.dart';
 import '../config/location_config.dart';
 import '../config/voice_config.dart';
 import '../models/location_reading.dart';
@@ -17,8 +16,6 @@ import '../services/location_service.dart';
 import '../services/voice_recording_service.dart';
 import '../theme/alfred_colors.dart';
 import '../utils/duration_format.dart';
-import '../utils/picked_file_bytes.dart';
-import '../utils/video_duration.dart';
 import '../utils/video_file_extension.dart';
 import 'location_map_preview.dart';
 import 'voice_message_content.dart';
@@ -34,10 +31,7 @@ typedef ImageSendCallback = Future<void> Function(
   String? caption,
 });
 typedef VideoSendCallback = Future<void> Function(
-  Uint8List bytes, {
-  required String extension,
-  required String mime,
-  required int durationSeconds,
+  PlatformFile file, {
   String? caption,
 });
 
@@ -190,7 +184,7 @@ class _ChatInputBarState extends State<ChatInputBar> {
 
     final result = await FilePicker.platform.pickFiles(
       type: FileType.video,
-      withData: true,
+      withData: false,
       withReadStream: true,
       allowMultiple: false,
     );
@@ -198,18 +192,7 @@ class _ChatInputBarState extends State<ChatInputBar> {
     final file = result?.files.single;
     if (file == null) return;
 
-    final bytes = await readPickedFileBytes(file);
-    if (bytes == null || bytes.isEmpty) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Impossibile leggere il video selezionato'),
-        ),
-      );
-      return;
-    }
-
-    final extension = videoExtensionFromFilename(file.name);
+    final extension = videoExtensionFromPickedFile(file);
     if (!isSupportedVideoExtension(extension)) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -220,19 +203,10 @@ class _ChatInputBarState extends State<ChatInputBar> {
       return;
     }
 
-    final mime =
-        ChatMediaConfig.videoMimeForExtension(extension) ?? 'video/mp4';
-    final durationSeconds = await readVideoDurationSeconds(
-      bytes: bytes,
-      extension: extension,
-    );
     final caption = _takeCaption();
 
     await widget.onSendVideo!(
-      bytes,
-      extension: extension,
-      mime: mime,
-      durationSeconds: durationSeconds,
+      file,
       caption: caption,
     );
   }
