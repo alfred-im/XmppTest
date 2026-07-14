@@ -29,7 +29,7 @@
 | **Piattaforma** | Supabase `tvwpoxxcqwphryvuyqzu` — schema dominio + RLS + RPC |
 | **Bridge** | `bridge-xmpp/` · `bridge-matrix/` — stub health Fly.io (federazione non implementata) |
 | **Cronologia merge** | `CHANGELOG.md` |
-| **Spec (SDD)** | Registro promesse: `docs/specs/registry.md` — `SYS-*` (incl. `SYS-ACCOUNT-BOUNDARY`, `SYS-DELIVERY`), `PROM-*`, `SURF-*` |
+| **Spec (SDD)** | Registro promesse: `docs/specs/registry.md` — `SYS-PUSH` `approved`, `PROM-PUSH-NOTIFY`, `SURF-NOTIFICATIONS` |
 
 **Non deducibile — URL live ≠ branch `main`**: https://alfred-im.github.io/alfred-im/ pubblica l’**ultimo** `deploy-pages` riuscito (PR o push). **Non** è vero che «il sito live builda sempre da `main`». Per sapere quale codice è live, controllare quale workflow/PR ha deployato per ultimo (`concurrency: pages-dev-demo` → ultimo vince). Panoramica pubblica: `README.md`.
 
@@ -250,7 +250,7 @@ Test: `bash scripts/test.sh integration-ticks`
 
 ### Limiti noti
 
-Badge / realtime account in background — rinviato (BroadcastChannel web). Multi-tab stesso browser: last-write-wins.
+Badge / realtime account in background — push Web VAPID ([SYS-PUSH](docs/specs/promises/system/SYS-PUSH.md)). Multi-tab stesso browser: last-write-wins.
 
 ---
 

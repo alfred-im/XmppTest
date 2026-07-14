@@ -22,4 +22,11 @@ class AppConfig {
     'ALFRED_IM_SERVER',
     defaultValue: 'alfred.app',
   );
+
+  /// VAPID public key per Web Push (publishable).
+  static const vapidPublicKey = String.fromEnvironment(
+    'VAPID_PUBLIC_KEY',
+    defaultValue:
+        'BIUztTni13vzA9Jo8so7xIRTNF5FHWjxb3mV4V0T9O8G_InKfZwp5_z7Ue8AMJGRBeehWf_2gSiL9rdqJXawefg',
+  );
 }

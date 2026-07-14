@@ -109,6 +109,9 @@ case "$CMD" in
   integration-ticks|ticks)
     run_integration_ticks "$@"
     ;;
+  integration-push|push)
+    bash scripts/integration-push.sh "$@"
+    ;;
   e2e|playwright)
     run_e2e "$@"
     ;;

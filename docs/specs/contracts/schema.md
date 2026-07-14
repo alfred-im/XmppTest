@@ -1,7 +1,7 @@
 # Contratto schema — dominio mailbox (mailbox)
 
 **Ultima revisione**: 2026-07-14  
-**Status**: `implemented` su `main` (migrazioni fino a `20260711190000`, incl. account boundary delivery plane); `push_subscriptions` in bozza [SYS-PUSH](../promises/system/SYS-PUSH.md) (`draft`)  
+**Status**: `implemented` su `main` (migrazioni fino a `20260714100000`, incl. push_subscriptions SYS-PUSH)  
 **Fonte di verità**: `supabase/migrations/`
 
 Contratto **tabelle ed enum** usati dalle promesse SYSTEM. Per RPC: [rpc.md](./rpc.md). Per indice promesse: [registry.md](../registry.md).
@@ -174,7 +174,7 @@ Worker infrastruttura **non-account** — unico attore autorizzato a attraversar
 
 ---
 
-## `push_subscriptions` (bozza — SYS-PUSH)
+## `push_subscriptions` (SYS-PUSH)
 
 | Colonna | Tipo | Note |
 |---------|------|------|

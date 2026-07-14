@@ -4,7 +4,7 @@
 |-------|--------|
 | **Promessa ID** | `PROM-PUSH-NOTIFY` |
 | **Classe** | PRODUCT |
-| **Status** | `draft` |
+| **Status** | `approved` |
 | **Ultima revisione** | 2026-07-14 |
 
 Promessa di prodotto: notifiche Web Push su tutti i dispositivi attivi per account e per tutti gli account aperti sullo stesso dispositivo; anteprima testo; soppressione in chat attiva.
@@ -92,7 +92,7 @@ Con [PROM-MULTI-ACCOUNT](./PROM-MULTI-ACCOUNT.md) e [PROM-REALTIME-OWNER](./PROM
 
 | Superficie | Stato | File |
 |------------|-------|------|
-| SURF-NOTIFICATIONS | `draft` | [SURF-NOTIFICATIONS.md](../../surfaces/SURF-NOTIFICATIONS.md) |
+| SURF-NOTIFICATIONS | `approved` | [SURF-NOTIFICATIONS.md](../../surfaces/SURF-NOTIFICATIONS.md) |
 | SURF-APP-SHELL | `implemented` | Bootstrap permesso + registrazione |
 | SURF-AUTH | `implemented` | Registrazione post-login |
 
