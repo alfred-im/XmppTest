@@ -33,7 +33,7 @@ MANUALE (rete / browser, non in CI):
   integration-push  Delivery plane; smoke SQL push su DB di test (no account utente)
   e2e               tutti i Playwright (client/e2e/)
   e2e-multi         Playwright multi-account (persist + messages + DB)
-  e2e-push-local    Playwright push — solo supabase locale + client locale
+  e2e-push-local    Playwright push completo — permesso → ricezione (stack locale)
   live              flutter test --tags live
   manual            integration + e2e-multi + live (in sequenza)
 

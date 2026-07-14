@@ -45,13 +45,27 @@ self.addEventListener('push', (event) => {
   const tag = payload.logicalMessageId || undefined;
 
   event.waitUntil(
-    self.registration.showNotification(title, {
-      body,
-      tag,
-      icon: 'icons/Icon-192.png',
-      badge: 'icons/Icon-192.png',
-      data: payload,
-    }),
+    (async () => {
+      await self.registration.showNotification(title, {
+        body,
+        tag,
+        icon: 'icons/Icon-192.png',
+        badge: 'icons/Icon-192.png',
+        data: payload,
+      });
+
+      const windowClients = await self.clients.matchAll({
+        type: 'window',
+        includeUncontrolled: true,
+      });
+      const notice = JSON.stringify({
+        type: 'alfred_push_received',
+        payload,
+      });
+      for (const client of windowClients) {
+        client.postMessage(notice);
+      }
+    })(),
   );
 });
 

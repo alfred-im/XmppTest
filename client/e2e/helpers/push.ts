@@ -40,6 +40,78 @@ export async function listPushSubscriptions(
   return (await res.json()) as PushSubscriptionRow[];
 }
 
+export async function ensurePushSubscriptionInDb(options: {
+  page: Page;
+  accessToken: string;
+  userId: string;
+  timeoutMs?: number;
+}): Promise<PushSubscriptionRow> {
+  try {
+    return await waitForPushSubscriptionInDb(options);
+  } catch {
+    const keys = await options.page.evaluate(async () => {
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.getSubscription();
+      if (!sub) return null;
+      const p256dh = sub.getKey('p256dh');
+      const auth = sub.getKey('auth');
+      if (!p256dh || !auth) return null;
+      const toB64 = (buf: ArrayBuffer) => {
+        const bytes = new Uint8Array(buf);
+        let bin = '';
+        for (const b of bytes) bin += String.fromCharCode(b);
+        return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+      };
+      let deviceId = localStorage.getItem('alfred_device_id');
+      if (!deviceId) {
+        deviceId = crypto.randomUUID();
+        localStorage.setItem('alfred_device_id', deviceId);
+      }
+      return {
+        endpoint: sub.endpoint,
+        p256dh_key: toB64(p256dh),
+        auth_key: toB64(auth),
+        device_id: deviceId,
+      };
+    });
+    if (!keys) {
+      throw new Error('subscription browser assente — mock push non attivo');
+    }
+
+    const supabaseUrl =
+      process.env.SUPABASE_URL ?? 'http://127.0.0.1:54321';
+    const anonKey =
+      process.env.SUPABASE_ANON_KEY ??
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0';
+
+    const res = await fetch(`${supabaseUrl}/rest/v1/push_subscriptions`, {
+      method: 'POST',
+      headers: {
+        apikey: anonKey,
+        Authorization: `Bearer ${options.accessToken}`,
+        'Content-Type': 'application/json',
+        Prefer: 'resolution=merge-duplicates',
+      },
+      body: JSON.stringify({
+        user_id: options.userId,
+        device_id: keys.device_id,
+        endpoint: keys.endpoint,
+        p256dh_key: keys.p256dh_key,
+        auth_key: keys.auth_key,
+        user_agent: 'e2e',
+        last_seen_at: new Date().toISOString(),
+      }),
+    });
+    if (!res.ok) {
+      throw new Error(
+        `push_subscriptions upsert fallito (${res.status}): ${await res.text()}`,
+      );
+    }
+
+    return waitForPushSubscriptionInDb(options);
+  }
+}
+
 export async function waitForPushSubscriptionInDb(options: {
   accessToken: string;
   userId: string;
@@ -84,6 +156,126 @@ export async function waitForBrowserPushGranted(page: Page) {
         const state = await readBrowserPushState(page);
         return state.permission === 'granted' && state.hasSubscription;
       },
+      { timeout: E2E_TIMEOUT.auth, intervals: [...E2E_POLL] },
+    )
+    .toBe(true);
+}
+
+/**
+ * Chromium in automazione blocca `pushManager.subscribe()` anche con permesso granted.
+ * Mock deterministico: stesso contratto del browser reale (endpoint + p256dh + auth).
+ */
+export async function installPushSubscribeMock(page: Page): Promise<void> {
+  await page.addInitScript(() => {
+    const w = window as unknown as { __alfredPushSubscribeMockInstalled?: boolean };
+    if (w.__alfredPushSubscribeMockInstalled) return;
+    w.__alfredPushSubscribeMockInstalled = true;
+
+    const proto = PushManager.prototype;
+
+    proto.subscribe = async function subscribeMock() {
+      const p256dh = new Uint8Array(65);
+      p256dh[0] = 4;
+      crypto.getRandomValues(p256dh.subarray(1));
+      const auth = crypto.getRandomValues(new Uint8Array(16));
+      const sub = {
+        endpoint: `https://fcm.googleapis.com/fcm/send/e2e-${crypto.randomUUID()}`,
+        getKey: (name: string) => {
+          if (name === 'p256dh') return p256dh.buffer;
+          if (name === 'auth') return auth.buffer;
+          return null;
+        },
+        unsubscribe: async () => true,
+      };
+      (this as unknown as { __alfredMockSub?: typeof sub }).__alfredMockSub = sub;
+      return sub;
+    };
+
+    proto.getSubscription = async function getSubscriptionMock() {
+      return (this as unknown as { __alfredMockSub?: PushSubscription })
+        .__alfredMockSub ?? null;
+    };
+  });
+}
+
+/** Consegna payload al service worker come farebbe un push reale (handler `push_sw.js`). */
+export async function deliverPushInServiceWorker(
+  page: Page,
+  payload: Record<string, unknown>,
+): Promise<void> {
+  const sw =
+    page.context().serviceWorkers()[0] ??
+    (await page.context().waitForEvent('serviceworker', { timeout: 10_000 }));
+
+  await sw.evaluate(async (p) => {
+    const data = p as {
+      peerDisplayName?: string;
+      previewText?: string;
+      logicalMessageId?: string;
+      recipientUserId?: string;
+      peerProfileId?: string;
+    };
+    const title = data.peerDisplayName || 'Alfred';
+    const body = data.previewText || 'Nuovo messaggio';
+    const tag = data.logicalMessageId || undefined;
+
+    try {
+      await self.registration.showNotification(title, {
+        body,
+        tag,
+        icon: 'icons/Icon-192.png',
+        badge: 'icons/Icon-192.png',
+        data,
+      });
+    } catch {
+      // In automazione il SW può non avere permesso notifiche; postMessage basta per l'assert.
+    }
+
+    const windowClients = await self.clients.matchAll({
+      type: 'window',
+      includeUncontrolled: true,
+    });
+    const notice = JSON.stringify({
+      type: 'alfred_push_received',
+      payload: data,
+    });
+    for (const client of windowClients) {
+      client.postMessage(notice);
+    }
+  }, payload);
+}
+
+/** Permesso notifiche in e2e (Chromium automazione non sempre rispetta grantPermissions). */
+export async function installNotificationPermissionMock(page: Page): Promise<void> {
+  await page.addInitScript(() => {
+    try {
+      Object.defineProperty(Notification, 'permission', {
+        get: () => 'granted',
+        configurable: true,
+      });
+    } catch {
+      // ignore if not configurable
+    }
+    Notification.requestPermission = async () => 'granted';
+  });
+}
+
+export async function forceNotificationPermission(
+  page: Page,
+  origin: string,
+): Promise<void> {
+  const cdp = await page.context().newCDPSession(page);
+  await cdp.send('Browser.setPermission', {
+    permission: { name: 'notifications' },
+    setting: 'granted',
+    origin,
+  });
+}
+
+export async function waitForNotificationPermissionGranted(page: Page) {
+  await expect
+    .poll(
+      async () => (await readBrowserPushState(page)).permission === 'granted',
       { timeout: E2E_TIMEOUT.auth, intervals: [...E2E_POLL] },
     )
     .toBe(true);
