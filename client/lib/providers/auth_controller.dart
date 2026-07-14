@@ -14,6 +14,7 @@ import '../models/chat_peer.dart';
 import '../models/profile.dart';
 import '../services/account_manager.dart';
 import '../services/account_session.dart';
+import '../services/push_subscription_service.dart';
 import '../utils/auth_identity.dart';
 
 class AuthController extends ChangeNotifier {
@@ -23,6 +24,7 @@ class AuthController extends ChangeNotifier {
   }
 
   final AccountManager _manager;
+  final PushSubscriptionService _pushService = PushSubscriptionService();
 
   bool isLoading = true;
   bool sessionReady = false;
@@ -56,6 +58,7 @@ class AuthController extends ChangeNotifier {
         showAuthOverlay = true;
         authOverlayDismissible = false;
       }
+      await _pushService.syncOpenAccounts(_manager.openAccounts);
     } finally {
       isLoading = false;
       sessionReady = true;
@@ -123,6 +126,7 @@ class AuthController extends ChangeNotifier {
     await _withLoading(() async {
       await _manager.openWithPassword(email: email, password: password);
       showAuthOverlay = false;
+      await _pushService.syncOpenAccounts(_manager.openAccounts);
     });
   }
 
@@ -166,6 +170,7 @@ class AuthController extends ChangeNotifier {
         profileKind: profileKind,
       );
       showAuthOverlay = false;
+      await _pushService.syncOpenAccounts(_manager.openAccounts);
     });
   }
 
@@ -193,6 +198,20 @@ class AuthController extends ChangeNotifier {
   }
 
   Future<void> removeAccount(String userId) async {
+    OpenAccount? account;
+    for (final entry in _manager.openAccounts) {
+      if (entry.userId == userId) {
+        account = entry;
+        break;
+      }
+    }
+    final remaining =
+        _manager.openAccounts.where((a) => a.userId != userId).length;
+    await _pushService.unregisterAccount(
+      userId: userId,
+      account: account,
+      isLastAccountOnDevice: remaining == 0,
+    );
     await _manager.removeAccount(userId);
     if (!_manager.hasOpenAccounts) {
       showAuthOverlay = true;

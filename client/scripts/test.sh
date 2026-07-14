@@ -30,8 +30,10 @@ GATE (CI, sempre):
 MANUALE (rete / browser, non in CI):
   integration       API Supabase live — agent1↔agent2 + contratto spunte
   integration-ticks Solo contratto spunte (✓ / ✓✓ grigie / ✓✓ blu + allow list)
+  integration-push  Delivery plane; smoke SQL push su DB di test (no account utente)
   e2e               tutti i Playwright (client/e2e/)
   e2e-multi         Playwright multi-account (persist + messages + DB)
+  e2e-push-local    Playwright push completo — permesso → ricezione (stack locale)
   live              flutter test --tags live
   manual            integration + e2e-multi + live (in sequenza)
 
@@ -108,6 +110,12 @@ case "$CMD" in
     ;;
   integration-ticks|ticks)
     run_integration_ticks "$@"
+    ;;
+  integration-push|push)
+    bash scripts/integration-push.sh "$@"
+    ;;
+  e2e-push-local|push-local)
+    bash scripts/run-push-e2e-local.sh "$@"
     ;;
   e2e|playwright)
     run_e2e "$@"

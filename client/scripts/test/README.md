@@ -35,6 +35,8 @@ Richiedono rete (Supabase live) e/o browser. Non bloccano merge.
 |-------|---------|---------------|
 | **integration** | `bash scripts/test.sh integration` | Login agent1/agent2 + RPC inbox/peer + **contratto spunte** (✓/✓✓/allow list) |
 | **integration-ticks** | `bash scripts/test.sh integration-ticks` | Solo contratto spunte delivery plane (3 fasi) |
+| **integration-push** | `bash scripts/test.sh integration-push` | Smoke SQL `push_*` su stack locale; oppure delivery plane live con agent1/2 |
+| **e2e-push-local** | `bash scripts/test.sh e2e-push-local` | Playwright push **completo** (permesso → subscribe → messaggio → notifica ricevuta) — solo stack locale |
 | **e2e** | `bash scripts/test.sh e2e` | Tutti i Playwright in `client/e2e/` |
 | **e2e-multi** | `bash scripts/test.sh e2e-multi` | Multi-account mobile: persistenza F5 + messaggi (UI + DB) |
 | **live** | `bash scripts/test.sh live` | Dart con tag `@Tags(['live'])` (es. password reset PKCE) |
@@ -48,11 +50,32 @@ Richiedono rete (Supabase live) e/o browser. Non bloccano merge.
 | `multi-account-messages.spec.ts` | `e2e-multi` | Scambio messaggi + verifica DB (`list_peer_messages`) |
 | `inbox-load.spec.ts` | `e2e` | Inbox senza digitare in ricerca |
 | `pages-smoke.spec.ts` | `e2e` | Smoke generico (fragile su canvas Flutter) |
+| `push-registration.spec.ts` | `e2e-push-local` | Solo registrazione subscription (subset) |
+| `push-full.spec.ts` | `e2e-push-local` | **E2e completo** permesso → messaggio → notifica ricevuta (stack locale) |
+
+### SQL smoke push (`supabase/tests/` — post SYS-PUSH)
+
+| File | Verifica |
+|------|----------|
+| `push_subscriptions_schema_smoke.sql` | DDL, indici, UNIQUE |
+| `push_subscriptions_rls_smoke.sql` | RLS cross-user negato |
+| `push_delivery_trigger_smoke.sql` | Recapito → push_notify; allow list rifiutata → nessun push |
+| `push_multi_device_smoke.sql` | Subscription multiple per user_id |
+
+### Dart unit push (post SYS-PUSH)
+
+| File | Verifica |
+|------|----------|
+| `push_subscription_service_test.dart` | device_id, upsert, delete on close |
+| `push_suppression_test.dart` | Matrice focus × peer × visibility |
+| `push_preview_test.dart` | Anteprima testo/media allineata inbox |
+| `push_notification_listener_test.dart` | Tap notifica / open_chat → chat peer (mock, gate CI) |
+| `notification_permission_test.dart` | Matrice permesso push + subscribe-first |
 
 Default URL: hosted web client `https://alfred-im.github.io/alfred-im/`  
 Locale: `ALFRED_BASE_URL=http://localhost:8080/ bash scripts/test.sh e2e-multi`
 
-Account: default `alfredagent1`/`alfredagent2`; per `test1`/`test2` → env `ALFRED_ACCOUNT{1,2}_{EMAIL,PASSWORD,USERNAME}`.
+Account: per `e2e-multi` su live usare env `ALFRED_ACCOUNT{1,2}_{EMAIL,PASSWORD}` — **non** usare `test1`–`test4` negli script agente. Push e2e: solo locale (`e2e-push-local`).
 
 ### Utilità ambiente GUI
 

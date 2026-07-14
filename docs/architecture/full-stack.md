@@ -163,7 +163,8 @@ Dettaglio deploy: `PROJECT_MAP.md` § Build, workflow `.github/workflows/deploy-
 | Rubrica XMPP/Matrix | ✅ salvataggio |
 | Invio federato | ⏸ outbox `pending` |
 | Ricezione federata | ❌ bridge |
-| Push, E2EE | ❌ fuori scope |
+| Push Web (VAPID) | ✅ spec `approved` — migrazione + client + Edge Function `send-push` |
+| E2EE | ❌ fuori scope |
 
 ---
 

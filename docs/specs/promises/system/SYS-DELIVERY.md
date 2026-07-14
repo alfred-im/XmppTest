@@ -5,7 +5,7 @@
 | **Promessa ID** | `SYS-DELIVERY` |
 | **Classe** | SYSTEM |
 | **Status** | `implemented` |
-| **Ultima revisione** | 2026-07-11 |
+| **Ultima revisione** | 2026-07-14 |
 | **ADR** | [bridge-stateless.md](../../../decisions/bridge-stateless.md), [server-as-reception.md](../../../decisions/server-as-reception.md) |
 | **PR origine** | #179 |
 
@@ -36,6 +36,8 @@ Gli account accettano invio/lettura solo nel proprio archivio e accodano eventi 
 | **SYS-DELIVERY-005** | Payload `deliver` include λ, `sender_id`, `recipient_profile_id`, snapshot contenuto |
 | **SYS-DELIVERY-006** | Payload `read_receipt` include λ, `reader_id`, `sender_profile_id` |
 | **SYS-DELIVERY-007** | RLS `outbox`: deny `authenticated` (solo worker/service) |
+| **SYS-DELIVERY-008** | `event_kind = push_notify` — invio notifica Web Push post-recapito ([SYS-PUSH](./SYS-PUSH.md), `draft`) |
+| **SYS-DELIVERY-009** | Payload `push_notify` include `recipient_user_id`, `peer_profile_id`, `peer_display_name`, `preview_text`, `logical_message_id`, `content_type` |
 
 ### WORKER — `alfred_delivery`
 
@@ -54,14 +56,18 @@ Gli account accettano invio/lettura solo nel proprio archivio e accodano eventi 
 | **SYS-DELIVERY-018** | ✓ singola: copia mittente con `delivered_at` null permanente se gate rifiuta |
 | **SYS-DELIVERY-019** | ✓✓ grigie: worker `deliver` valorizza `delivered_at` su copia mittente; `read_at` null |
 | **SYS-DELIVERY-020** | ✓✓ blu: lettore aggiorna solo archivio locale; worker `read_receipt` propaga `read_at` alla copia mittente |
+| **SYS-DELIVERY-021** | Dopo recapito riuscito (`deliver_internal` / erogazione gruppo): accoda `push_notify` o invoca pipeline [SYS-PUSH](./SYS-PUSH.md) |
+| **SYS-DELIVERY-022** | `push_notify` eseguito **solo** se copia destinatario materializzata (stessa condizione di ✓✓ grigie) |
+| **SYS-DELIVERY-023** | `process_push_notify`: risolve preview, SELECT subscriptions destinatario, invoca Edge Function `send-push` |
 
 ### MUST NOT
 
 | ID | Promessa |
 |----|----------|
-| **SYS-DELIVERY-023** | RPC account che eseguono INSERT/UPDATE cross-boundary al posto del worker |
-| **SYS-DELIVERY-024** | Errore RPC verso mittente su rifiuto allow list (rifiuto silenzioso invariato) |
-| **SYS-DELIVERY-025** | Worker con `auth.uid()` come identità operativa |
+| **SYS-DELIVERY-026** | RPC account che eseguono INSERT/UPDATE cross-boundary al posto del worker |
+| **SYS-DELIVERY-027** | Errore RPC verso mittente su rifiuto allow list (rifiuto silenzioso invariato) |
+| **SYS-DELIVERY-028** | Worker con `auth.uid()` come identità operativa |
+| **SYS-DELIVERY-029** | `push_notify` su recapito rifiutato da allow list |
 
 ### Flussi (internal sincrono)
 
@@ -72,6 +78,7 @@ send_message_to_profile (account mittente)
   → alfred_delivery.process_outbox
        → gate reception (lato destinatario)
        → SE ok: INSERT destinatario/gruppo + delivered_at mittente
+       → push_notify (se SYS-PUSH implemented)
        → outbox completed
 
 mark_peer_read (account lettore)
@@ -91,6 +98,7 @@ mark_peer_read (account lettore)
 | Schema + worker | `supabase/migrations/*account_boundary_delivery*` |
 | RPC account | `send_message_to_profile`, `mark_peer_read`, `broadcast_message_to_allowlist` |
 | Helper gate | `is_sender_allowed_for_reception`, `is_bidirectional_allowed` (solo worker) |
+| Push (bozza) | `supabase/functions/send-push/`, migrazione `push_subscriptions` — [SYS-PUSH](./SYS-PUSH.md) |
 
 ---
 
@@ -103,6 +111,7 @@ mark_peer_read (account lettore)
 | SYS-DELIVERY-012 | `reception_allowlist_gate_smoke.sql`, `delivery_ticks_smoke.sql` |
 | SYS-DELIVERY-018–020 | `delivery_ticks_smoke.sql`, `bash scripts/test.sh integration-ticks` |
 | SYS-DELIVERY-013–015 | `group_delivery_smoke.sql`, `group_broadcast_smoke.sql` |
+| SYS-DELIVERY-008–009, 021–023, 029 | `push_delivery_trigger_smoke.sql`, `push_multi_device_smoke.sql` (post SYS-PUSH) |
 
 ---
 
@@ -113,3 +122,4 @@ mark_peer_read (account lettore)
 | [SYS-ACCOUNT-BOUNDARY](./SYS-ACCOUNT-BOUNDARY.md) | Legge madre confine |
 | [SYS-MAILBOX](./SYS-MAILBOX.md) | Semantica archivio e date spunta |
 | [SYS-RECEPTION](./SYS-RECEPTION.md) | Gate allow list nel worker |
+| [SYS-PUSH](./SYS-PUSH.md) | Web Push post-recapito (`draft`) |

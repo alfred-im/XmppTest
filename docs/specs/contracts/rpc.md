@@ -1,8 +1,8 @@
 # Contratto RPC — messaggistica
 
-**Ultima revisione**: 2026-07-12  
-**Status**: `implemented` su `main` (migrazioni fino a `20260711190000`, incl. account boundary delivery)  
-**Spec**: [SYS-MAILBOX](../promises/system/SYS-MAILBOX.md), [SYS-GROUP](../promises/system/SYS-GROUP.md), [SYS-CONTACTS](../promises/system/SYS-CONTACTS.md), [SYS-PROFILE](../promises/system/SYS-PROFILE.md), [SYS-RECEPTION](../promises/system/SYS-RECEPTION.md), [SYS-ACCOUNT-BOUNDARY](../promises/system/SYS-ACCOUNT-BOUNDARY.md), [SYS-DELIVERY](../promises/system/SYS-DELIVERY.md)
+**Ultima revisione**: 2026-07-14  
+**Status**: `implemented` su `main` (migrazioni fino a `20260711190000`, incl. account boundary delivery); `push_subscriptions` bozza [SYS-PUSH](../promises/system/SYS-PUSH.md)  
+**Spec**: [SYS-MAILBOX](../promises/system/SYS-MAILBOX.md), [SYS-GROUP](../promises/system/SYS-GROUP.md), [SYS-CONTACTS](../promises/system/SYS-CONTACTS.md), [SYS-PROFILE](../promises/system/SYS-PROFILE.md), [SYS-RECEPTION](../promises/system/SYS-RECEPTION.md), [SYS-ACCOUNT-BOUNDARY](../promises/system/SYS-ACCOUNT-BOUNDARY.md), [SYS-DELIVERY](../promises/system/SYS-DELIVERY.md), [SYS-PUSH](../promises/system/SYS-PUSH.md) (`draft`)
 
 Fonte di verità: `supabase/migrations/`. PostgREST espone solo overload **espliciti** — niente ambiguità di firma.
 
@@ -298,6 +298,30 @@ Gate client: `verify.sh` + `bash scripts/test.sh integration` + `bash scripts/te
 | `is_username_available` | Registrazione / validazione username |
 | `search_profiles` | `ContactService.searchProfiles` |
 | `reception_allowlist` (PostgREST) | `ReceptionAllowlistService` |
+| `push_subscriptions` (PostgREST) | `PushSubscriptionService` — bozza [SYS-PUSH](../promises/system/SYS-PUSH.md) |
+
+---
+
+## `push_subscriptions` (PostgREST — bozza SYS-PUSH)
+
+Client autenticato: UPSERT via PostgREST su `push_subscriptions` (RLS `user_id = auth.uid()`).
+
+| Operazione | Quando |
+|------------|--------|
+| UPSERT `(user_id, device_id, endpoint, keys…)` | Permesso browser `granted`; login; aggiungi account; avvio app |
+| DELETE `WHERE user_id AND device_id` | Chiudi account |
+
+**MUST NOT**: client invoca Edge Function `send-push`.
+
+**Spec**: [SYS-PUSH](../promises/system/SYS-PUSH.md), [PROM-PUSH-NOTIFY](../promises/product/PROM-PUSH-NOTIFY.md).
+
+---
+
+## Edge Function `send-push` (bozza SYS-PUSH)
+
+Invocata solo da infrastruttura server (hook delivery / `push_notify` outbox). Non esposta al client.
+
+Input (JSON): `recipient_user_id`, `peer_profile_id`, `peer_display_name`, `preview_text`, `logical_message_id`, `content_type`.
 
 ---
 

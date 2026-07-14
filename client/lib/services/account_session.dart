@@ -442,18 +442,19 @@ class AccountSession {
     required ProfileSummary profile,
     String refreshToken = 'test-refresh-token',
     SupabaseClient? client,
+    InboxService? inboxService,
     MessageService? messageService,
     MessageMediaService? messageMediaService,
     ProfileService? profileService,
   }) async {
     final resolvedClient = client ?? createClient(profile.id);
-    final inboxService = InboxService(resolvedClient);
+    final resolvedInboxService = inboxService ?? InboxService(resolvedClient);
     final resolvedProfileService =
         profileService ?? ProfileService(resolvedClient);
     final session = AccountSession._(
       userId: profile.id,
       client: resolvedClient,
-      inboxService: inboxService,
+      inboxService: resolvedInboxService,
       messageService: messageService ?? MessageService(resolvedClient),
       profileService: resolvedProfileService,
       contactService: ContactService(resolvedClient),
@@ -464,7 +465,7 @@ class AccountSession {
       composeService: ComposeService(profileService: resolvedProfileService),
       inboxController: InboxController(
         userId: profile.id,
-        inboxService: inboxService,
+        inboxService: resolvedInboxService,
         enableRealtime: false,
         enableInboxLoads: !profile.isGroup,
       ),
