@@ -70,8 +70,8 @@ L'utente può condividere foto e video nelle conversazioni 1:1 e nei broadcast d
 | PROM-ID | Verifica |
 |---------|----------|
 | PROM-CHAT-MEDIA-001–002 | `mailbox_send_media_smoke.sql` |
-| PROM-CHAT-MEDIA-003–007 | `models_and_utils_test.dart`, `messages_controller_multi_account_test.dart` |
-| PROM-CHAT-MEDIA-008 | `group_broadcast` smoke + widget test |
+| PROM-CHAT-MEDIA-003–007 | `messages_controller_media_test.dart`, `chat_media_support_test.dart`, `image_bytes_test.dart`, `merge_chat_message_test.dart`, `message_bubble_test.dart` |
+| PROM-CHAT-MEDIA-008 | `group_messages_controller_media_test.dart`, `group_broadcast` smoke |
 | PROM-CHAT-MEDIA | `bash scripts/test.sh gate` |
 
 Gate: `bash scripts/check-spec-sync.sh` + `cd client && bash scripts/verify.sh`
