@@ -51,7 +51,10 @@ class AuthController extends ChangeNotifier {
 
   /// Re-registra subscription push (es. dopo resume PWA o permesso concesso).
   Future<void> syncPushSubscriptions() async {
-    await _pushService.syncOpenAccounts(_manager.openAccounts);
+    await _pushService.syncOpenAccounts(
+      _manager.openAccounts,
+      focusedSession: _manager.focusedSession,
+    );
   }
 
   Future<void> initialize() async {
@@ -63,7 +66,10 @@ class AuthController extends ChangeNotifier {
         showAuthOverlay = true;
         authOverlayDismissible = false;
       }
-      await _pushService.syncOpenAccounts(_manager.openAccounts);
+      await _pushService.syncOpenAccounts(
+        _manager.openAccounts,
+        focusedSession: _manager.focusedSession,
+      );
     } finally {
       isLoading = false;
       sessionReady = true;
@@ -93,6 +99,19 @@ class AuthController extends ChangeNotifier {
       error = _friendlyAuthError(e);
     }
     notifyListeners();
+  }
+
+  /// Tap notifica push: focus sull'account destinatario prima di aprire la chat.
+  Future<bool> focusAccountForPushNotification(String recipientUserId) async {
+    if (!_manager.hasOpenAccount(recipientUserId)) return false;
+
+    if (_manager.focusUserId != recipientUserId) {
+      await setFocus(recipientUserId);
+    }
+
+    return _manager.focusUserId == recipientUserId &&
+        _manager.focusedSession != null &&
+        error == null;
   }
 
   void openConversation(ChatPeer peer) {
@@ -131,7 +150,10 @@ class AuthController extends ChangeNotifier {
     await _withLoading(() async {
       await _manager.openWithPassword(email: email, password: password);
       showAuthOverlay = false;
-      await _pushService.syncOpenAccounts(_manager.openAccounts);
+      await _pushService.syncOpenAccounts(
+        _manager.openAccounts,
+        focusedSession: _manager.focusedSession,
+      );
     });
   }
 
@@ -175,7 +197,10 @@ class AuthController extends ChangeNotifier {
         profileKind: profileKind,
       );
       showAuthOverlay = false;
-      await _pushService.syncOpenAccounts(_manager.openAccounts);
+      await _pushService.syncOpenAccounts(
+        _manager.openAccounts,
+        focusedSession: _manager.focusedSession,
+      );
     });
   }
 

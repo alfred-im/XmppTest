@@ -51,17 +51,20 @@ class _PushNotificationListenerState extends State<PushNotificationListener> {
   Future<void> _onOpenChat(PushOpenChatIntent intent) async {
     if (!mounted) return;
     final auth = context.read<AuthController>();
-    if (auth.userId != intent.recipientUserId) {
-      await auth.setFocus(intent.recipientUserId);
-    }
-    if (!mounted) return;
+
+    final focused = await auth.focusAccountForPushNotification(
+      intent.recipientUserId,
+    );
+    if (!focused || !mounted) return;
+
     final session = auth.focusedSession;
-    if (session == null) return;
+    if (session == null || session.userId != intent.recipientUserId) return;
 
     final summary = await session.profileService.findById(
       intent.peerProfileId,
     );
     if (!mounted || summary == null) return;
+    if (summary.id == session.userId) return;
 
     auth.openConversation(ChatPeer(profile: summary));
   }

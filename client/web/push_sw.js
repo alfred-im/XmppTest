@@ -26,6 +26,17 @@ function shouldSuppress(data) {
   );
 }
 
+/** Multi-account: indica su quale account Alfred è arrivato il messaggio. */
+function formatNotificationTitle(payload) {
+  const peer = payload.peerDisplayName || 'Alfred';
+  const account =
+    payload.recipientUsername || payload.recipientDisplayName || null;
+  if (account) {
+    return account + ' · da ' + peer;
+  }
+  return peer;
+}
+
 self.addEventListener('push', (event) => {
   if (!event.data) return;
 
@@ -40,7 +51,7 @@ self.addEventListener('push', (event) => {
     return;
   }
 
-  const title = payload.peerDisplayName || 'Alfred';
+  const title = formatNotificationTitle(payload);
   const body = payload.previewText || 'Nuovo messaggio';
   const tag = payload.logicalMessageId || undefined;
 

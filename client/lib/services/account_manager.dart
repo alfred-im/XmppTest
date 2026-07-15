@@ -108,6 +108,9 @@ class AccountManager {
       _manifestAccounts.any((a) => a.userId == userId) ||
       _testOnlyAccountIds.contains(userId);
 
+  /// Account presente nel manifest o nel set di test.
+  bool hasOpenAccount(String userId) => _hasAccount(userId);
+
   @visibleForTesting
   void seedTestAccount(String userId) {
     _testOnlyAccountIds.add(userId);
@@ -342,7 +345,24 @@ class AccountManager {
 
     final previousFocus = _focusUserId;
 
-    await _disposeSessionsInRam(clearAuthStorage: false);
+    // Test harness: sessioni iniettate restano in RAM tra un focus e l'altro.
+    final keepTestSessions = _testOnlyAccountIds.isEmpty
+        ? <String, AccountSession>{}
+        : Map<String, AccountSession>.fromEntries(
+            _sessions.entries.where(
+              (entry) => _testOnlyAccountIds.contains(entry.key),
+            ),
+          );
+
+    if (keepTestSessions.isEmpty) {
+      await _disposeSessionsInRam(clearAuthStorage: false);
+    } else {
+      for (final entry in _sessions.entries.toList()) {
+        if (keepTestSessions.containsKey(entry.key)) continue;
+        await entry.value.disposeResources(clearAuthStorage: false);
+        _sessions.remove(entry.key);
+      }
+    }
 
     _focusUserId = userId;
     await _storage.saveFocusUserId(userId);

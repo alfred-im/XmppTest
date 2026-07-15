@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 import 'package:flutter/foundation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../config/app_config.dart';
 import '../models/open_account.dart';
@@ -14,7 +15,10 @@ import '../utils/push_platform.dart';
 class PushSubscriptionService {
   PushSubscriptionService();
 
-  Future<void> syncOpenAccounts(List<OpenAccount> accounts) async {
+  Future<void> syncOpenAccounts(
+    List<OpenAccount> accounts, {
+    AccountSession? focusedSession,
+  }) async {
     if (!kIsWeb) return;
     if (accounts.isEmpty) return;
 
@@ -42,6 +46,16 @@ class PushSubscriptionService {
 
     for (final account in accounts) {
       if (account.refreshToken.isEmpty) continue;
+      if (focusedSession != null && focusedSession.userId == account.userId) {
+        await _upsertWithClient(
+          client: focusedSession.client,
+          account: account,
+          deviceId: deviceId,
+          keys: keys,
+          userAgent: userAgent,
+        );
+        continue;
+      }
       await _upsertForAccount(
         account: account,
         deviceId: deviceId,
@@ -76,6 +90,29 @@ class PushSubscriptionService {
 
     if (isLastAccountOnDevice) {
       await PushPlatform.unregisterServiceWorkerSubscription();
+    }
+  }
+
+  Future<void> _upsertWithClient({
+    required SupabaseClient client,
+    required OpenAccount account,
+    required String deviceId,
+    required PushSubscriptionKeys keys,
+    required String userAgent,
+  }) async {
+    try {
+      final now = DateTime.now().toUtc().toIso8601String();
+      await client.from('push_subscriptions').upsert({
+        'user_id': account.userId,
+        'device_id': deviceId,
+        'endpoint': keys.endpoint,
+        'p256dh_key': keys.p256dhKey,
+        'auth_key': keys.authKey,
+        'user_agent': userAgent,
+        'last_seen_at': now,
+      }, onConflict: 'user_id,device_id');
+    } catch (_) {
+      // Best-effort: sessione in focus può essere offline.
     }
   }
 
