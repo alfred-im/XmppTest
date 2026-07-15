@@ -102,7 +102,7 @@ void main() {
     await tester.pump();
 
     intents.add(
-      const PushOpenChatIntent(
+      PushOpenChatIntent.fromParts(
         recipientUserId: 'owner-uuid',
         peerProfileId: 'peer-uuid',
       ),
@@ -192,7 +192,7 @@ void main() {
     expect(auth.userId, 'account-a');
 
     intents.add(
-      const PushOpenChatIntent(
+      PushOpenChatIntent.fromParts(
         recipientUserId: 'account-b',
         peerProfileId: 'account-a',
       ),

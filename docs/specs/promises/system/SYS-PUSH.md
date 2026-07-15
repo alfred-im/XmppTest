@@ -5,7 +5,7 @@
 | **Promessa ID** | `SYS-PUSH` |
 | **Classe** | SYSTEM |
 | **Status** | `implemented` |
-| **Ultima revisione** | 2026-07-14 |
+| **Ultima revisione** | 2026-07-15 |
 | **Contratti** | [schema.md](../../contracts/schema.md) · [rpc.md](../../contracts/rpc.md) |
 | **Correlata** | [SYS-DELIVERY](./SYS-DELIVERY.md), [SYS-RECEPTION](./SYS-RECEPTION.md), [SYS-ACCOUNT-BOUNDARY](./SYS-ACCOUNT-BOUNDARY.md) |
 
@@ -54,10 +54,11 @@ L'utente Alfred riceve notifiche su **tutti i dispositivi** dove ha aperto un ac
 |----|----------|
 | **SYS-PUSH-020** | Push inviata **solo** dopo INSERT copia destinatario riuscito in `alfred_delivery.deliver_internal` (o erogazione gruppo equivalente) |
 | **SYS-PUSH-021** | Nessuna push su rifiuto silenzioso allow list ([SYS-RECEPTION](./SYS-RECEPTION.md)) |
-| **SYS-PUSH-022** | Payload push include: `recipient_user_id`, `peer_profile_id`, `peer_display_name`, `preview_text`, `logical_message_id`, `content_type` |
+| **SYS-PUSH-022** | Payload push include: `recipient_user_id`, `peer_profile_id`, `peer_display_name`, `recipient_display_name`, `recipient_username`, `preview_text`, `logical_message_id`, `content_type` |
 | **SYS-PUSH-023** | Invio a **tutte** le righe `push_subscriptions` WHERE `user_id = recipient_user_id` |
 | **SYS-PUSH-024** | Gruppi: stesso contratto invio — `recipient_user_id` = owner archivio che riceve (umano o gruppo); nessuna esclusione per `profile_kind` |
 | **SYS-PUSH-025** | Hook delivery: dopo recapito, accoda `outbox` con `event_kind = push_notify` oppure invoca direttamente Edge Function da worker (implementazione equivalente, un solo percorso in produzione) |
+| **SYS-PUSH-026** | Identità push server = coppia **`(recipient_user_id, peer_profile_id)`** obbligatoria; nessun evento `push_notify` valido se manca un membro della coppia |
 
 ### MUST NOT
 
@@ -67,6 +68,7 @@ L'utente Alfred riceve notifiche su **tutti i dispositivi** dove ha aperto un ac
 | **SYS-PUSH-031** | Leak metadati su messaggio rifiutato da allow list |
 | **SYS-PUSH-032** | Client che invoca `send-push` con payload arbitrario |
 | **SYS-PUSH-033** | Subscription cross-user (RLS bypass) |
+| **SYS-PUSH-034** | Payload `push_notify` o notifica inviata con solo `peer_profile_id` (senza `recipient_user_id`) |
 
 ---
 

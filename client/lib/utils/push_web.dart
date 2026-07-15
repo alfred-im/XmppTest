@@ -11,9 +11,11 @@ import 'dart:typed_data';
 import 'package:uuid/uuid.dart';
 import 'package:web/web.dart' as web;
 
+import '../models/push_conversation_key.dart';
 import 'push_permission_flow.dart';
 import 'push_stub.dart' show PushOpenChatIntent, PushSubscriptionKeys;
 
+export '../models/push_conversation_key.dart';
 export 'push_stub.dart' show PushOpenChatIntent, PushSubscriptionKeys;
 
 const _deviceIdKey = 'alfred_device_id';
@@ -154,12 +156,9 @@ class PushPlatform {
     }
 
     if (map['type'] != 'open_chat') return;
-    final recipient = map['recipientUserId'] as String?;
-    final peer = map['peerProfileId'] as String?;
-    if (recipient == null || peer == null) return;
-    _openChatController.add(
-      PushOpenChatIntent(recipientUserId: recipient, peerProfileId: peer),
-    );
+    final conversation = PushConversationKey.tryFromPayload(map);
+    if (conversation == null) return;
+    _openChatController.add(PushOpenChatIntent(conversation));
   }
 
   static var _messageHookInstalled = false;

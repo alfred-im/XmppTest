@@ -5,6 +5,40 @@
 /* Alfred Web Push service worker — VAPID notifications */
 
 const SUPPRESSION_KEY = 'alfred_push_suppression';
+const PUSH_KEY_SEPARATOR = '|';
+
+/** Chiave univoca push: account destinatario + peer (mai solo peer). */
+function pushConversationKey(ownerUserId, peerProfileId) {
+  return ownerUserId + PUSH_KEY_SEPARATOR + peerProfileId;
+}
+
+function tryParsePushConversation(payload) {
+  if (!payload || !payload.recipientUserId || !payload.peerProfileId) {
+    return null;
+  }
+  if (payload.recipientUserId === payload.peerProfileId) return null;
+  return {
+    ownerUserId: payload.recipientUserId,
+    peerProfileId: payload.peerProfileId,
+    canonicalKey: pushConversationKey(
+      payload.recipientUserId,
+      payload.peerProfileId,
+    ),
+  };
+}
+
+function pushNotificationTag(payload) {
+  const conversation = tryParsePushConversation(payload);
+  if (!conversation) return undefined;
+  if (payload.logicalMessageId) {
+    return (
+      conversation.canonicalKey +
+      PUSH_KEY_SEPARATOR +
+      payload.logicalMessageId
+    );
+  }
+  return conversation.canonicalKey;
+}
 
 function readSuppression() {
   try {
@@ -17,12 +51,13 @@ function readSuppression() {
 }
 
 function shouldSuppress(data) {
+  const conversation = tryParsePushConversation(data);
+  if (!conversation) return false;
   const state = readSuppression();
   if (!state || !state.appVisible) return false;
-  if (!data || !data.recipientUserId || !data.peerProfileId) return false;
   return (
-    state.focusUserId === data.recipientUserId &&
-    state.activePeerProfileId === data.peerProfileId
+    state.focusUserId === conversation.ownerUserId &&
+    state.activePeerProfileId === conversation.peerProfileId
   );
 }
 
@@ -51,9 +86,12 @@ self.addEventListener('push', (event) => {
     return;
   }
 
+  const conversation = tryParsePushConversation(payload);
+  if (!conversation) return;
+
   const title = formatNotificationTitle(payload);
   const body = payload.previewText || 'Nuovo messaggio';
-  const tag = payload.logicalMessageId || undefined;
+  const tag = pushNotificationTag(payload);
 
   event.waitUntil(
     (async () => {
@@ -83,6 +121,8 @@ self.addEventListener('push', (event) => {
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   const data = event.notification.data || {};
+  const conversation = tryParsePushConversation(data);
+  if (!conversation) return;
 
   event.waitUntil(
     (async () => {
@@ -95,8 +135,8 @@ self.addEventListener('notificationclick', (event) => {
         client.postMessage(
           JSON.stringify({
             type: 'open_chat',
-            recipientUserId: data.recipientUserId,
-            peerProfileId: data.peerProfileId,
+            recipientUserId: conversation.ownerUserId,
+            peerProfileId: conversation.peerProfileId,
           }),
         );
         if ('focus' in client) {

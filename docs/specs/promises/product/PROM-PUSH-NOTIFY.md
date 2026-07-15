@@ -5,7 +5,7 @@
 | **Promessa ID** | `PROM-PUSH-NOTIFY` |
 | **Classe** | PRODUCT |
 | **Status** | `implemented` |
-| **Ultima revisione** | 2026-07-14 |
+| **Ultima revisione** | 2026-07-15 |
 
 Promessa di prodotto: notifiche Web Push su tutti i dispositivi attivi per account e per tutti gli account aperti sullo stesso dispositivo; anteprima testo; soppressione in chat attiva.
 
@@ -36,11 +36,19 @@ Con [PROM-MULTI-ACCOUNT](./PROM-MULTI-ACCOUNT.md) e [PROM-REALTIME-OWNER](./PROM
 
 | ID | Promessa |
 |----|----------|
-| **PROM-PUSH-NOTIFY-010** | Titolo notifica: `display_name` del peer (persona o gruppo) |
+| **PROM-PUSH-NOTIFY-010** | Titolo notifica multi-account: `{username o display_name account destinatario} · da {display_name peer}`; se etichetta account assente, solo display name peer |
 | **PROM-PUSH-NOTIFY-011** | Corpo: anteprima testo messaggio troncata come preview inbox ([SURF-CHAT](../../surfaces/SURF-CHAT.md) SURF-CHAT-008) |
 | **PROM-PUSH-NOTIFY-012** | Media: etichette `[GIF]`, `🎤`, `📍 Posizione`, `📷 Foto`, `🎬 Video` (+ didascalia se presente) — stesse regole inbox |
 | **PROM-PUSH-NOTIFY-013** | Chat gruppo (`peer` con `profile_kind = group`): stesso formato 1:1; corpo può prefissare autore (`PROM-GROUP-AUTHOR-DISPLAY`) prima dell'anteprima |
 | **PROM-PUSH-NOTIFY-014** | Nessuna distinzione o esclusione notifiche per account gruppo vs utente |
+
+### MUST — identità conversazione (account + peer)
+
+| ID | Promessa |
+|----|----------|
+| **PROM-PUSH-NOTIFY-033** | Identità push = coppia **`(recipient_user_id, peer_profile_id)`** — stessa semantica di archivio `(owner_id, peer_profile_id)`; **mai** interpretare target, soppressione, tap o tag come «solo peer» |
+| **PROM-PUSH-NOTIFY-034** | Chiave canonica client/SW: `recipient_user_id|peer_profile_id` ([`PushConversationKey`](../../../client/lib/models/push_conversation_key.dart)); payload incompleto → nessuna UI, nessun `open_chat` |
+| **PROM-PUSH-NOTIFY-035** | Tag notifica browser = `recipient_user_id|peer_profile_id|logical_message_id` — distinto per account anche con stesso peer o stesso messaggio logico su altro account |
 
 ### MUST — soppressione e permesso
 
@@ -66,6 +74,7 @@ Con [PROM-MULTI-ACCOUNT](./PROM-MULTI-ACCOUNT.md) e [PROM-REALTIME-OWNER](./PROM
 | **PROM-PUSH-NOTIFY-040** | Notifica per messaggio non recapitato (allow list rifiutata) |
 | **PROM-PUSH-NOTIFY-041** | Notifica duplicata visibile in chat già aperta e visibile (soppressione) |
 | **PROM-PUSH-NOTIFY-042** | Subscription di un account associata al `user_id` di un altro |
+| **PROM-PUSH-NOTIFY-043** | Handler push che apre chat o sopprime notifica usando solo `peer_profile_id` senza `recipient_user_id` |
 
 ### Fuori scope (v1)
 
@@ -82,6 +91,7 @@ Con [PROM-MULTI-ACCOUNT](./PROM-MULTI-ACCOUNT.md) e [PROM-REALTIME-OWNER](./PROM
 | Elemento | Responsabilità |
 |----------|----------------|
 | `PushSubscriptionService` | `device_id`, register/unregister, sync manifest |
+| `PushConversationKey` | Chiave univoca `owner|peer` — parse, tag, soppressione |
 | `PushSuppressionState` | Espone focus + peer attivo al SW |
 | `client/web/push_sw.js` o estensione SW | Handler `push`, `notificationclick` |
 | JS interop | `registerPushSubscription`, permesso browser |
@@ -104,6 +114,7 @@ Con [PROM-MULTI-ACCOUNT](./PROM-MULTI-ACCOUNT.md) e [PROM-REALTIME-OWNER](./PROM
 |---------|----------|
 | PROM-PUSH-NOTIFY-001–004 | `client/test/unit/push_subscription_service_test.dart` |
 | PROM-PUSH-NOTIFY-010–014 | `client/test/unit/push_preview_test.dart` |
+| PROM-PUSH-NOTIFY-033–035 | `client/test/unit/push_conversation_key_test.dart`; `client/test/unit/push_suppression_test.dart` |
 | PROM-PUSH-NOTIFY-020–021 | `client/test/unit/notification_permission_test.dart` |
 | PROM-PUSH-NOTIFY-022–024 | `client/test/unit/push_suppression_test.dart` |
 | PROM-PUSH-NOTIFY-005–006 | `client/e2e/push-full.spec.ts` (stack locale) |

@@ -4,6 +4,8 @@
 
 import 'dart:async';
 
+import '../models/push_conversation_key.dart';
+
 /// Web Push platform hooks — stub (non-web / test).
 class PushPlatform {
   const PushPlatform._();
@@ -49,11 +51,23 @@ class PushSubscriptionKeys {
 }
 
 class PushOpenChatIntent {
-  const PushOpenChatIntent({
-    required this.recipientUserId,
-    required this.peerProfileId,
-  });
+  const PushOpenChatIntent(this.conversation);
 
-  final String recipientUserId;
-  final String peerProfileId;
+  factory PushOpenChatIntent.fromParts({
+    required String recipientUserId,
+    required String peerProfileId,
+  }) {
+    return PushOpenChatIntent(
+      PushConversationKey(
+        ownerUserId: recipientUserId,
+        peerProfileId: peerProfileId,
+      ),
+    );
+  }
+
+  final PushConversationKey conversation;
+
+  String get recipientUserId => conversation.ownerUserId;
+
+  String get peerProfileId => conversation.peerProfileId;
 }

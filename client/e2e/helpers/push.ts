@@ -208,16 +208,28 @@ export async function deliverPushInServiceWorker(
     (await page.context().waitForEvent('serviceworker', { timeout: 10_000 }));
 
   await sw.evaluate(async (p) => {
+    const SEP = '|';
     const data = p as {
       peerDisplayName?: string;
+      recipientDisplayName?: string;
+      recipientUsername?: string;
       previewText?: string;
       logicalMessageId?: string;
       recipientUserId?: string;
       peerProfileId?: string;
     };
-    const title = data.peerDisplayName || 'Alfred';
+    if (!data.recipientUserId || !data.peerProfileId) return;
+    if (data.recipientUserId === data.peerProfileId) return;
+
+    const peer = data.peerDisplayName || 'Alfred';
+    const account = data.recipientUsername || data.recipientDisplayName || null;
+    const title = account ? account + ' · da ' + peer : peer;
     const body = data.previewText || 'Nuovo messaggio';
-    const tag = data.logicalMessageId || undefined;
+    const conversationKey =
+      data.recipientUserId + SEP + data.peerProfileId;
+    const tag = data.logicalMessageId
+      ? conversationKey + SEP + data.logicalMessageId
+      : conversationKey;
 
     try {
       await self.registration.showNotification(title, {
