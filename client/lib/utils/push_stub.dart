@@ -33,6 +33,14 @@ class PushPlatform {
   static Stream<PushOpenChatIntent> get openChatIntents =>
       const Stream<PushOpenChatIntent>.empty();
 
+  static void persistPendingOpenChat(PushConversationKey conversation) {}
+
+  static PushOpenChatIntent? readPendingOpenChat() => null;
+
+  static void clearPendingOpenChat() {}
+
+  static void tryDrainPendingOpenChat() {}
+
   static void ensureMessageHook() {}
 
   static Future<void> unregisterServiceWorkerSubscription() async {}

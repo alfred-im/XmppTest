@@ -20,6 +20,7 @@ export 'push_stub.dart' show PushOpenChatIntent, PushSubscriptionKeys;
 
 const _deviceIdKey = 'alfred_device_id';
 const _suppressionKey = 'alfred_push_suppression';
+const _pendingOpenChatKey = 'alfred_pending_open_chat';
 
 final _openChatController = StreamController<PushOpenChatIntent>.broadcast();
 
@@ -135,6 +136,43 @@ class PushPlatform {
   static Stream<PushOpenChatIntent> get openChatIntents =>
       _openChatController.stream;
 
+  /// Tap notifica con app chiusa: SW scrive in localStorage prima di postMessage.
+  static void persistPendingOpenChat(PushConversationKey conversation) {
+    final payload = jsonEncode({
+      'recipientUserId': conversation.ownerUserId,
+      'peerProfileId': conversation.peerProfileId,
+    });
+    web.window.localStorage.setItem(_pendingOpenChatKey, payload);
+  }
+
+  static PushOpenChatIntent? readPendingOpenChat() {
+    final raw = web.window.localStorage.getItem(_pendingOpenChatKey);
+    if (raw == null || raw.isEmpty) return null;
+    try {
+      final map = jsonDecode(raw) as Map<String, dynamic>;
+      final conversation = PushConversationKey.tryFromPayload(map);
+      if (conversation == null) return null;
+      return PushOpenChatIntent(conversation);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static void clearPendingOpenChat() {
+    web.window.localStorage.removeItem(_pendingOpenChatKey);
+  }
+
+  /// Emette intent pendente (cold start / listener non ancora pronto).
+  static void tryDrainPendingOpenChat() {
+    final intent = readPendingOpenChat();
+    if (intent == null) return;
+    _openChatController.add(intent);
+  }
+
+  static void _emitOpenChat(PushConversationKey conversation) {
+    _openChatController.add(PushOpenChatIntent(conversation));
+  }
+
   static void _handleWindowMessage(web.Event event) {
     if (!event.isA<web.MessageEvent>()) return;
     final messageEvent = event as web.MessageEvent;
@@ -158,7 +196,8 @@ class PushPlatform {
     if (map['type'] != 'open_chat') return;
     final conversation = PushConversationKey.tryFromPayload(map);
     if (conversation == null) return;
-    _openChatController.add(PushOpenChatIntent(conversation));
+    persistPendingOpenChat(conversation);
+    _emitOpenChat(conversation);
   }
 
   static var _messageHookInstalled = false;
@@ -167,6 +206,7 @@ class PushPlatform {
     if (_messageHookInstalled) return;
     _messageHookInstalled = true;
     web.window.addEventListener('message', _handleWindowMessage.toJS);
+    tryDrainPendingOpenChat();
   }
 
   static Future<void> unregisterServiceWorkerSubscription() async {

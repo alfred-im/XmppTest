@@ -47,13 +47,21 @@ class PushSubscriptionService {
     for (final account in accounts) {
       if (account.refreshToken.isEmpty) continue;
       if (focusedSession != null && focusedSession.userId == account.userId) {
-        await _upsertWithClient(
+        final ok = await _upsertWithClient(
           client: focusedSession.client,
           account: account,
           deviceId: deviceId,
           keys: keys,
           userAgent: userAgent,
         );
+        if (!ok) {
+          await _upsertForAccount(
+            account: account,
+            deviceId: deviceId,
+            keys: keys,
+            userAgent: userAgent,
+          );
+        }
         continue;
       }
       await _upsertForAccount(
@@ -93,7 +101,7 @@ class PushSubscriptionService {
     }
   }
 
-  Future<void> _upsertWithClient({
+  Future<bool> _upsertWithClient({
     required SupabaseClient client,
     required OpenAccount account,
     required String deviceId,
@@ -111,8 +119,14 @@ class PushSubscriptionService {
         'user_agent': userAgent,
         'last_seen_at': now,
       }, onConflict: 'user_id,device_id');
-    } catch (_) {
-      // Best-effort: sessione in focus può essere offline.
+      return true;
+    } catch (e, stack) {
+      if (kDebugMode) {
+        debugPrint(
+          'push_subscriptions upsert failed for ${account.userId}: $e\n$stack',
+        );
+      }
+      return false;
     }
   }
 
@@ -135,8 +149,12 @@ class PushSubscriptionService {
         'user_agent': userAgent,
         'last_seen_at': now,
       }, onConflict: 'user_id,device_id');
-    } catch (_) {
-      // Account offline or session expired — skip silently.
+    } catch (e, stack) {
+      if (kDebugMode) {
+        debugPrint(
+          'push_subscriptions upsert failed for ${account.userId}: $e\n$stack',
+        );
+      }
     } finally {
       await session?.disposeResources(clearAuthStorage: false);
     }

@@ -31,7 +31,7 @@ L'utente Alfred riceve notifiche su **tutti i dispositivi** dove ha aperto un ac
 |----|----------|
 | **SYS-PUSH-001** | Tabella `push_subscriptions`: `id` uuid PK, `user_id` FK → `auth.users`, `device_id` uuid NOT NULL, `endpoint` text NOT NULL, `p256dh_key` text NOT NULL, `auth_key` text NOT NULL, `user_agent` text nullable, `created_at` timestamptz, `last_seen_at` timestamptz |
 | **SYS-PUSH-002** | UNIQUE `(user_id, device_id)` — un record per account per dispositivo |
-| **SYS-PUSH-003** | UNIQUE `endpoint` — un endpoint browser = una riga (ri-registrazione aggiorna la stessa riga se endpoint invariato) |
+| **SYS-PUSH-003** | UNIQUE `(user_id, device_id)` — un record per account Alfred per dispositivo; UNIQUE `(user_id, endpoint)` — stesso endpoint FCM può essere condiviso da account diversi sullo stesso browser (multi-account), ma non duplicato per lo stesso account |
 | **SYS-PUSH-004** | RLS: SELECT, INSERT, UPDATE, DELETE solo `user_id = auth.uid()` |
 | **SYS-PUSH-005** | Nessun `GRANT` invio push a `authenticated` — solo infrastruttura delivery / Edge Function |
 
@@ -89,6 +89,7 @@ L'utente Alfred riceve notifiche su **tutti i dispositivi** dove ha aperto un ac
 | SYS-ID | Verifica |
 |--------|----------|
 | SYS-PUSH-001–004 | `supabase/tests/push_subscriptions_schema_smoke.sql` |
+| SYS-PUSH-003 | `supabase/tests/push_multi_account_endpoint_smoke.sql` |
 | SYS-PUSH-004–005 | `supabase/tests/push_subscriptions_rls_smoke.sql` |
 | SYS-PUSH-020–021 | `supabase/tests/push_delivery_trigger_smoke.sql` |
 | SYS-PUSH-010–013 | `supabase/functions/send-push/index.ts`; `client/e2e/push-full.spec.ts` (invio locale) |

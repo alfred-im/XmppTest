@@ -5,11 +5,26 @@
 /* Alfred Web Push service worker — VAPID notifications */
 
 const SUPPRESSION_KEY = 'alfred_push_suppression';
+const PENDING_OPEN_CHAT_KEY = 'alfred_pending_open_chat';
 const PUSH_KEY_SEPARATOR = '|';
 
 /** Chiave univoca push: account destinatario + peer (mai solo peer). */
 function pushConversationKey(ownerUserId, peerProfileId) {
   return ownerUserId + PUSH_KEY_SEPARATOR + peerProfileId;
+}
+
+function persistPendingOpenChat(conversation) {
+  try {
+    localStorage.setItem(
+      PENDING_OPEN_CHAT_KEY,
+      JSON.stringify({
+        recipientUserId: conversation.ownerUserId,
+        peerProfileId: conversation.peerProfileId,
+      }),
+    );
+  } catch (_) {
+    // localStorage può essere bloccato in alcuni contesti SW.
+  }
 }
 
 function tryParsePushConversation(payload) {
@@ -123,6 +138,8 @@ self.addEventListener('notificationclick', (event) => {
   const data = event.notification.data || {};
   const conversation = tryParsePushConversation(data);
   if (!conversation) return;
+
+  persistPendingOpenChat(conversation);
 
   event.waitUntil(
     (async () => {

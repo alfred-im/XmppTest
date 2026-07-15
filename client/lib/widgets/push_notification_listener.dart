@@ -51,6 +51,8 @@ class _PushNotificationListenerState extends State<PushNotificationListener> {
   Future<void> _onOpenChat(PushOpenChatIntent intent) async {
     if (!mounted) return;
     final auth = context.read<AuthController>();
+    if (!auth.sessionReady) return;
+
     final conversation = intent.conversation;
 
     final focused = await auth.focusAccountForPushNotification(
@@ -68,6 +70,16 @@ class _PushNotificationListenerState extends State<PushNotificationListener> {
     if (summary.id == session.userId) return;
 
     auth.openConversation(ChatPeer(profile: summary));
+    if (kIsWeb) {
+      PushPlatform.clearPendingOpenChat();
+    }
+  }
+
+  void _drainPendingWhenReady() {
+    if (!kIsWeb) return;
+    final auth = context.read<AuthController>();
+    if (!auth.sessionReady) return;
+    PushPlatform.tryDrainPendingOpenChat();
   }
 
   @override
@@ -77,5 +89,9 @@ class _PushNotificationListenerState extends State<PushNotificationListener> {
   }
 
   @override
-  Widget build(BuildContext context) => widget.child;
+  Widget build(BuildContext context) {
+    context.watch<AuthController>();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _drainPendingWhenReady());
+    return widget.child;
+  }
 }
