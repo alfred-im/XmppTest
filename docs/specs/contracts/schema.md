@@ -188,7 +188,7 @@ Worker infrastruttura **non-account** — unico attore autorizzato a attraversar
 | `created_at` | timestamptz | default `now()` |
 | `last_seen_at` | timestamptz | Aggiornato a ogni re-registrazione |
 
-**UNIQUE**: `(user_id, device_id)`; `endpoint`.
+**UNIQUE**: `(user_id, device_id)`; `(user_id, endpoint)` — stesso endpoint FCM ammesso per account diversi sullo stesso browser.
 
 **RLS**: SELECT, INSERT, UPDATE, DELETE `user_id = auth.uid()`.
 

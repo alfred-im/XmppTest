@@ -2,8 +2,9 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-import { expect, type Page } from '@playwright/test';
+import { expect, type BrowserContext, type Page } from '@playwright/test';
 
+import { waitForFocusedUserId } from './focus';
 import { E2E_POLL, E2E_TIMEOUT } from './timeouts';
 
 export type PushSubscriptionRow = {
@@ -208,16 +209,28 @@ export async function deliverPushInServiceWorker(
     (await page.context().waitForEvent('serviceworker', { timeout: 10_000 }));
 
   await sw.evaluate(async (p) => {
+    const SEP = '|';
     const data = p as {
       peerDisplayName?: string;
+      recipientDisplayName?: string;
+      recipientUsername?: string;
       previewText?: string;
       logicalMessageId?: string;
       recipientUserId?: string;
       peerProfileId?: string;
     };
-    const title = data.peerDisplayName || 'Alfred';
+    if (!data.recipientUserId || !data.peerProfileId) return;
+    if (data.recipientUserId === data.peerProfileId) return;
+
+    const peer = data.peerDisplayName || 'Alfred';
+    const account = data.recipientUsername || data.recipientDisplayName || null;
+    const title = account ? account + ' · da ' + peer : peer;
     const body = data.previewText || 'Nuovo messaggio';
-    const tag = data.logicalMessageId || undefined;
+    const conversationKey =
+      data.recipientUserId + SEP + data.peerProfileId;
+    const tag = data.logicalMessageId
+      ? conversationKey + SEP + data.logicalMessageId
+      : conversationKey;
 
     try {
       await self.registration.showNotification(title, {
@@ -280,3 +293,68 @@ export async function waitForNotificationPermissionGranted(page: Page) {
     )
     .toBe(true);
 }
+
+export async function installPushTestEnvironment(
+  page: Page,
+  context: BrowserContext,
+  baseUrl: string,
+): Promise<void> {
+  await installPushSubscribeMock(page);
+  await installNotificationPermissionMock(page);
+  const origin = new URL(baseUrl).origin;
+  await forceNotificationPermission(page, origin);
+  await context.grantPermissions(['notifications'], { origin });
+}
+
+/**
+ * Simula tap notifica: `notificationclick` in push_sw.js (postMessage open_chat).
+ * In headless prova SW, poi fallback `window.postMessage` se il focus non cambia.
+ */
+export async function simulateNotificationTap(
+  page: Page,
+  payload: {
+    recipientUserId: string;
+    peerProfileId: string;
+  },
+): Promise<void> {
+  const openChatBody = JSON.stringify({
+    type: 'open_chat',
+    recipientUserId: payload.recipientUserId,
+    peerProfileId: payload.peerProfileId,
+  });
+
+  const sw =
+    page.context().serviceWorkers()[0] ??
+    (await page
+      .waitForEvent('serviceworker', { timeout: 10_000 })
+      .catch(() => null));
+
+  if (sw) {
+    await sw.evaluate(async (msg) => {
+      const clients = await self.clients.matchAll({
+        type: 'window',
+        includeUncontrolled: true,
+      });
+      for (const client of clients) {
+        client.postMessage(msg);
+        try {
+          if ('focus' in client) await client.focus();
+        } catch {
+          // headless: focus vietato
+        }
+      }
+    }, openChatBody);
+
+    if (await waitForFocusedUserId(page, payload.recipientUserId, 4_000)) {
+      return;
+    }
+  }
+
+  await page.evaluate((msg) => {
+    window.postMessage(msg, '*');
+  }, openChatBody);
+
+  await waitForFocusedUserId(page, payload.recipientUserId, E2E_TIMEOUT.ui);
+}
+
+export { expectFocusedUserId } from './focus';

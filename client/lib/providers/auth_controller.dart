@@ -49,6 +49,14 @@ class AuthController extends ChangeNotifier {
   String? get email => focusedSession?.client.auth.currentUser?.email;
   String? get username => focusedSession?.profile.username;
 
+  /// Re-registra subscription push (es. dopo resume PWA o permesso concesso).
+  Future<void> syncPushSubscriptions() async {
+    await _pushService.syncOpenAccounts(
+      _manager.openAccounts,
+      focusedSession: _manager.focusedSession,
+    );
+  }
+
   Future<void> initialize() async {
     isLoading = true;
     notifyListeners();
@@ -58,12 +66,12 @@ class AuthController extends ChangeNotifier {
         showAuthOverlay = true;
         authOverlayDismissible = false;
       }
-      await _pushService.syncOpenAccounts(_manager.openAccounts);
     } finally {
       isLoading = false;
       sessionReady = true;
       notifyListeners();
     }
+    unawaited(syncPushSubscriptions());
   }
 
   void openAuthOverlay({required bool dismissible}) {
@@ -88,6 +96,25 @@ class AuthController extends ChangeNotifier {
       error = _friendlyAuthError(e);
     }
     notifyListeners();
+  }
+
+  /// Tap notifica push: focus sull'account destinatario prima di aprire la chat.
+  Future<bool> focusAccountForPushNotification(String recipientUserId) async {
+    if (!_manager.hasOpenAccount(recipientUserId)) return false;
+
+    try {
+      await _manager.ensureRecipientAccountActive(recipientUserId);
+      error = null;
+    } catch (e) {
+      error = _friendlyAuthError(e);
+    }
+    notifyListeners();
+
+    final session = _manager.focusedSession;
+    return _manager.focusUserId == recipientUserId &&
+        session != null &&
+        session.userId == recipientUserId &&
+        error == null;
   }
 
   void openConversation(ChatPeer peer) {
@@ -126,7 +153,10 @@ class AuthController extends ChangeNotifier {
     await _withLoading(() async {
       await _manager.openWithPassword(email: email, password: password);
       showAuthOverlay = false;
-      await _pushService.syncOpenAccounts(_manager.openAccounts);
+      await _pushService.syncOpenAccounts(
+        _manager.openAccounts,
+        focusedSession: _manager.focusedSession,
+      );
     });
   }
 
@@ -170,7 +200,10 @@ class AuthController extends ChangeNotifier {
         profileKind: profileKind,
       );
       showAuthOverlay = false;
-      await _pushService.syncOpenAccounts(_manager.openAccounts);
+      await _pushService.syncOpenAccounts(
+        _manager.openAccounts,
+        focusedSession: _manager.focusedSession,
+      );
     });
   }
 

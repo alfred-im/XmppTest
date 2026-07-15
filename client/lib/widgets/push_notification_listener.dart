@@ -22,48 +22,135 @@ class PushNotificationListener extends StatefulWidget {
 
   final Widget child;
 
-  /// Solo test: stream intent senza dipendere da `kIsWeb` / service worker.
   @visibleForTesting
   final Stream<PushOpenChatIntent>? debugOpenChatIntents;
 
   @override
   State<PushNotificationListener> createState() =>
-      _PushNotificationListenerState();
+      PushNotificationListenerState();
 }
 
-class _PushNotificationListenerState extends State<PushNotificationListener> {
+class PushNotificationListenerState extends State<PushNotificationListener> {
   StreamSubscription<PushOpenChatIntent>? _sub;
+  bool _drainScheduled = false;
+  Future<void> _openChatChain = Future<void>.value();
 
   @override
   void initState() {
     super.initState();
     final debugStream = widget.debugOpenChatIntents;
     if (debugStream != null) {
-      _sub = debugStream.listen(_onOpenChat);
+      _sub = debugStream.listen(_enqueueOpenChat);
       return;
     }
     if (kIsWeb) {
       PushPlatform.ensureMessageHook();
-      _sub = PushPlatform.openChatIntents.listen(_onOpenChat);
+      _sub = PushPlatform.openChatIntents.listen(_enqueueOpenChat);
     }
   }
 
-  Future<void> _onOpenChat(PushOpenChatIntent intent) async {
+  void _enqueueOpenChat(PushOpenChatIntent intent) {
+    _openChatChain = _openChatChain.then((_) async {
+      await _handleOpenChat(intent);
+    });
+  }
+
+  /// Test: esegue il percorso tap push senza dipendere dal timing dello stream.
+  @visibleForTesting
+  Future<void> processOpenChatForTest(PushOpenChatIntent intent) async {
+    await _handleOpenChat(intent);
+  }
+
+  Future<void> _handleOpenChat(PushOpenChatIntent intent) async {
     if (!mounted) return;
     final auth = context.read<AuthController>();
-    if (auth.userId != intent.recipientUserId) {
-      await auth.setFocus(intent.recipientUserId);
+    if (!auth.sessionReady) {
+      if (kIsWeb) {
+        PushPlatform.persistPendingOpenChat(intent.conversation);
+      }
+      return;
     }
-    if (!mounted) return;
-    final session = auth.focusedSession;
-    if (session == null) return;
 
-    final summary = await session.profileService.findById(
-      intent.peerProfileId,
+    final conversation = intent.conversation;
+
+    if (!auth.accountManager.hasOpenAccount(conversation.ownerUserId)) {
+      if (kIsWeb) PushPlatform.clearPendingOpenChat();
+      return;
+    }
+
+    final focused = await auth.focusAccountForPushNotification(
+      conversation.ownerUserId,
     );
-    if (!mounted || summary == null) return;
+    if (!focused || !mounted) {
+      if (kIsWeb) PushPlatform.clearPendingOpenChat();
+      return;
+    }
 
-    auth.openConversation(ChatPeer(profile: summary));
+    final session = auth.focusedSession;
+    if (session == null || session.userId != conversation.ownerUserId) {
+      if (kIsWeb) PushPlatform.clearPendingOpenChat();
+      return;
+    }
+
+    // Dopo il focus, il peer è in inbox (list_inbox) — non fare SELECT diretta su
+    // profiles (RLS / permessi variabili tra ambienti).
+    ChatPeer? peer;
+    for (var attempt = 0; attempt < 20; attempt++) {
+      if (!mounted) return;
+      final liveSession = auth.focusedSession;
+      if (liveSession == null ||
+          liveSession.userId != conversation.ownerUserId) {
+        break;
+      }
+
+      peer = liveSession.inboxController.findByProfileId(
+        conversation.peerProfileId,
+      );
+      if (peer != null && peer.profileId != liveSession.userId) {
+        break;
+      }
+
+      try {
+        final summary = await liveSession.profileService.findById(
+          conversation.peerProfileId,
+        );
+        if (summary != null && summary.id != liveSession.userId) {
+          peer = ChatPeer(profile: summary);
+          break;
+        }
+      } catch (_) {
+        // Inbox o profilo non ancora pronti (RLS / rete).
+      }
+
+      peer = null;
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+    }
+
+    if (peer == null) {
+      if (kIsWeb) PushPlatform.clearPendingOpenChat();
+      return;
+    }
+
+    final peerToOpen = peer;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      context.read<AuthController>().openConversation(peerToOpen);
+      if (kIsWeb) {
+        PushPlatform.clearPendingOpenChat();
+      }
+    });
+  }
+
+  void _scheduleDrainPending() {
+    if (!kIsWeb || _drainScheduled) return;
+    final auth = context.read<AuthController>();
+    if (!auth.sessionReady) return;
+    _drainScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _drainScheduled = false;
+      if (!mounted) return;
+      PushPlatform.tryDrainPendingOpenChat();
+    });
   }
 
   @override
@@ -73,5 +160,9 @@ class _PushNotificationListenerState extends State<PushNotificationListener> {
   }
 
   @override
-  Widget build(BuildContext context) => widget.child;
+  Widget build(BuildContext context) {
+    context.watch<AuthController>();
+    _scheduleDrainPending();
+    return widget.child;
+  }
 }

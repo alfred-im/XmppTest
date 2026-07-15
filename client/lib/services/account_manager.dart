@@ -25,6 +25,10 @@ class AccountManager {
   AccountManager({AccountStorageService? storage})
       : _storage = storage ?? AccountStorageService();
 
+  /// Sostituisce [AccountSession.restore] nei test (percorso dispose + ripristino).
+  @visibleForTesting
+  Future<AccountSession> Function(OpenAccount account)? restoreSessionForTest;
+
   /// Chiamato quando il sync profilo in background termina (es. avvio app).
   VoidCallback? onFocusedProfileSynced;
 
@@ -108,6 +112,9 @@ class AccountManager {
       _manifestAccounts.any((a) => a.userId == userId) ||
       _testOnlyAccountIds.contains(userId);
 
+  /// Account presente nel manifest o nel set di test.
+  bool hasOpenAccount(String userId) => _hasAccount(userId);
+
   @visibleForTesting
   void seedTestAccount(String userId) {
     _testOnlyAccountIds.add(userId);
@@ -120,6 +127,11 @@ class AccountManager {
   void injectTestSession(AccountSession session) {
     _sessions[session.userId] = session;
     session.wireStorage(_storage);
+  }
+
+  @visibleForTesting
+  void clearSessionsInRamForTest() {
+    _sessions.clear();
   }
 
   /// Imposta focus su sessione iniettata (test) senza dispose/restore GoTrue.
@@ -317,6 +329,11 @@ class AccountManager {
   }
 
   Future<AccountSession> _restoreWithRetry(OpenAccount account) async {
+    final restoreForTest = restoreSessionForTest;
+    if (restoreForTest != null) {
+      return restoreForTest(account);
+    }
+
     Object? lastError;
     for (var attempt = 0; attempt < 3; attempt++) {
       try {
@@ -332,17 +349,46 @@ class AccountManager {
     throw lastError ?? const AuthException('Ripristino account non riuscito.');
   }
 
+  /// Tap push / deep link: garantisce focus e sessione GoTrue in RAM.
+  Future<void> ensureRecipientAccountActive(String userId) async {
+    if (!_hasAccount(userId)) {
+      throw StateError('Account non aperto: $userId');
+    }
+    await setFocus(userId);
+  }
+
   Future<void> setFocus(String userId) async {
     if (!_hasAccount(userId)) return;
 
     if (_focusUserId == userId) {
+      if (_sessions[userId] == null &&
+          !_testOnlyAccountIds.contains(userId)) {
+        await _activateFocusedSession(requireSession: true);
+      }
       await _loadFocusedInboxIfNeeded();
       return;
     }
 
     final previousFocus = _focusUserId;
 
-    await _disposeSessionsInRam(clearAuthStorage: false);
+    // Test harness: sessioni iniettate restano in RAM tra un focus e l'altro.
+    final keepTestSessions = _testOnlyAccountIds.isEmpty
+        ? <String, AccountSession>{}
+        : Map<String, AccountSession>.fromEntries(
+            _sessions.entries.where(
+              (entry) => _testOnlyAccountIds.contains(entry.key),
+            ),
+          );
+
+    if (keepTestSessions.isEmpty) {
+      await _disposeSessionsInRam(clearAuthStorage: false);
+    } else {
+      for (final entry in _sessions.entries.toList()) {
+        if (keepTestSessions.containsKey(entry.key)) continue;
+        await entry.value.disposeResources(clearAuthStorage: false);
+        _sessions.remove(entry.key);
+      }
+    }
 
     _focusUserId = userId;
     await _storage.saveFocusUserId(userId);

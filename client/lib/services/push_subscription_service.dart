@@ -2,7 +2,10 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../config/app_config.dart';
 import '../models/open_account.dart';
@@ -14,7 +17,38 @@ import '../utils/push_platform.dart';
 class PushSubscriptionService {
   PushSubscriptionService();
 
-  Future<void> syncOpenAccounts(List<OpenAccount> accounts) async {
+  static Future<void>? _syncInFlight;
+
+  Future<void> syncOpenAccounts(
+    List<OpenAccount> accounts, {
+    AccountSession? focusedSession,
+  }) async {
+    if (!kIsWeb) return;
+    if (accounts.isEmpty) return;
+
+    while (_syncInFlight != null) {
+      await _syncInFlight;
+    }
+
+    final gate = Completer<void>();
+    _syncInFlight = gate.future;
+    try {
+      await _syncOpenAccountsImpl(
+        accounts,
+        focusedSession: focusedSession,
+      );
+    } finally {
+      gate.complete();
+      if (identical(_syncInFlight, gate.future)) {
+        _syncInFlight = null;
+      }
+    }
+  }
+
+  Future<void> _syncOpenAccountsImpl(
+    List<OpenAccount> accounts, {
+    AccountSession? focusedSession,
+  }) async {
     if (!kIsWeb) return;
     if (accounts.isEmpty) return;
 
@@ -42,6 +76,24 @@ class PushSubscriptionService {
 
     for (final account in accounts) {
       if (account.refreshToken.isEmpty) continue;
+      if (focusedSession != null && focusedSession.userId == account.userId) {
+        final ok = await _upsertWithClient(
+          client: focusedSession.client,
+          account: account,
+          deviceId: deviceId,
+          keys: keys,
+          userAgent: userAgent,
+        );
+        if (!ok) {
+          await _upsertForAccount(
+            account: account,
+            deviceId: deviceId,
+            keys: keys,
+            userAgent: userAgent,
+          );
+        }
+        continue;
+      }
       await _upsertForAccount(
         account: account,
         deviceId: deviceId,
@@ -79,6 +131,35 @@ class PushSubscriptionService {
     }
   }
 
+  Future<bool> _upsertWithClient({
+    required SupabaseClient client,
+    required OpenAccount account,
+    required String deviceId,
+    required PushSubscriptionKeys keys,
+    required String userAgent,
+  }) async {
+    try {
+      final now = DateTime.now().toUtc().toIso8601String();
+      await client.from('push_subscriptions').upsert({
+        'user_id': account.userId,
+        'device_id': deviceId,
+        'endpoint': keys.endpoint,
+        'p256dh_key': keys.p256dhKey,
+        'auth_key': keys.authKey,
+        'user_agent': userAgent,
+        'last_seen_at': now,
+      }, onConflict: 'user_id,device_id');
+      return true;
+    } catch (e, stack) {
+      if (kDebugMode) {
+        debugPrint(
+          'push_subscriptions upsert failed for ${account.userId}: $e\n$stack',
+        );
+      }
+      return false;
+    }
+  }
+
   Future<void> _upsertForAccount({
     required OpenAccount account,
     required String deviceId,
@@ -98,8 +179,12 @@ class PushSubscriptionService {
         'user_agent': userAgent,
         'last_seen_at': now,
       }, onConflict: 'user_id,device_id');
-    } catch (_) {
-      // Account offline or session expired — skip silently.
+    } catch (e, stack) {
+      if (kDebugMode) {
+        debugPrint(
+          'push_subscriptions upsert failed for ${account.userId}: $e\n$stack',
+        );
+      }
     } finally {
       await session?.disposeResources(clearAuthStorage: false);
     }

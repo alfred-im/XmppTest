@@ -6,6 +6,28 @@ import 'package:alfred_client/utils/push_permission_flow.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  group('isWebPushEnvironmentSupported', () {
+    test('false when serviceWorker checked on window only', () {
+      expect(
+        isWebPushEnvironmentSupported(
+          hasPushManagerOnWindow: true,
+          hasServiceWorkerOnNavigator: false,
+        ),
+        isFalse,
+      );
+    });
+
+    test('true when PushManager on window and serviceWorker on navigator', () {
+      expect(
+        isWebPushEnvironmentSupported(
+          hasPushManagerOnWindow: true,
+          hasServiceWorkerOnNavigator: true,
+        ),
+        isTrue,
+      );
+    });
+  });
+
   group('shouldAttemptPushSubscription', () {
     test('false when push not supported', () {
       expect(

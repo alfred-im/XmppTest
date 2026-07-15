@@ -102,11 +102,12 @@ void main() {
     await tester.pump();
 
     intents.add(
-      const PushOpenChatIntent(
+      PushOpenChatIntent.fromParts(
         recipientUserId: 'owner-uuid',
         peerProfileId: 'peer-uuid',
       ),
     );
+    await tester.pump();
     for (var i = 0; i < 200; i++) {
       await tester.pump(const Duration(milliseconds: 5));
       if (find.text('E2E Peer').evaluate().isNotEmpty) break;
@@ -116,6 +117,99 @@ void main() {
     expect(find.text('E2E Peer'), findsWidgets);
     expect(auth.activePeer, isA<ChatPeer>());
     expect(auth.activePeer?.profile.id, 'peer-uuid');
+
+    await intents.close();
+  });
+
+  testWidgets('open_chat intent cambia focus sull account destinatario', (
+    tester,
+  ) async {
+    const accountA = ProfileSummary(
+      id: 'account-a',
+      username: 'agent_a',
+      displayName: 'Agent A',
+    );
+    const accountB = ProfileSummary(
+      id: 'account-b',
+      username: 'agent_b',
+      displayName: 'Agent B',
+    );
+
+    final client = createTestSupabaseClient();
+    final sessionA = await AccountSession.createForTest(
+      profile: accountA,
+      client: client,
+      inboxService: FakeInboxService(),
+      profileService: _FakeProfileService({'account-b': accountB}),
+      messageService: FakeMessageService(client),
+    );
+    final sessionB = await AccountSession.createForTest(
+      profile: accountB,
+      client: createTestSupabaseClient(),
+      inboxService: FakeInboxService(),
+      profileService: _FakeProfileService({'account-a': accountA}),
+      messageService: FakeMessageService(client),
+    );
+
+    final manager = AccountManager();
+    manager.focusTestSession(sessionA);
+    manager.seedTestAccount('account-b');
+    manager.injectTestSession(sessionB);
+
+    final auth = AuthController(accountManager: manager)
+      ..isLoading = false
+      ..sessionReady = true;
+
+    addTearDown(() async {
+      await sessionA.disposeResources(clearAuthStorage: false);
+      await sessionB.disposeResources(clearAuthStorage: false);
+    });
+
+    final intents = StreamController<PushOpenChatIntent>.broadcast();
+
+    await tester.binding.setSurfaceSize(const Size(1200, 800));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AlfredTheme.light,
+        home: MultiProvider(
+          providers: [
+            ChangeNotifierProvider<AuthController>.value(value: auth),
+          ],
+          child: PushNotificationListener(
+            debugOpenChatIntents: intents.stream,
+            child: const HomeScreen(),
+          ),
+        ),
+      ),
+    );
+    for (var i = 0; i < 200; i++) {
+      await tester.pump(const Duration(milliseconds: 5));
+      if (find.byType(CircularProgressIndicator).evaluate().isEmpty) break;
+    }
+    await tester.pump();
+
+    expect(auth.userId, 'account-a');
+
+    intents.add(
+      PushOpenChatIntent.fromParts(
+        recipientUserId: 'account-b',
+        peerProfileId: 'account-a',
+      ),
+    );
+    await tester.pump();
+    for (var i = 0; i < 200; i++) {
+      await tester.pump(const Duration(milliseconds: 5));
+      if (auth.userId == 'account-b' &&
+          find.text('Agent A').evaluate().isNotEmpty) {
+        break;
+      }
+    }
+    await tester.pump();
+
+    expect(auth.userId, 'account-b');
+    expect(auth.activePeer?.profile.id, 'account-a');
 
     await intents.close();
   });

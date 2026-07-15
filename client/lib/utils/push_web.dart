@@ -11,12 +11,18 @@ import 'dart:typed_data';
 import 'package:uuid/uuid.dart';
 import 'package:web/web.dart' as web;
 
+import '../models/push_conversation_key.dart';
+import 'push_deep_link.dart';
+import 'push_launch.dart';
+import 'push_permission_flow.dart';
 import 'push_stub.dart' show PushOpenChatIntent, PushSubscriptionKeys;
 
+export '../models/push_conversation_key.dart';
+export 'push_deep_link.dart';
 export 'push_stub.dart' show PushOpenChatIntent, PushSubscriptionKeys;
 
 const _deviceIdKey = 'alfred_device_id';
-const _suppressionKey = 'alfred_push_suppression';
+const _pendingOpenChatKey = 'alfred_pending_open_chat';
 
 final _openChatController = StreamController<PushOpenChatIntent>.broadcast();
 
@@ -24,11 +30,14 @@ final _openChatController = StreamController<PushOpenChatIntent>.broadcast();
 class PushPlatform {
   const PushPlatform._();
 
-  /// `Notification`, `serviceWorker` e `PushManager` disponibili (es. no iOS Safari tab).
   static bool get isPushSupported {
     try {
       final _ = web.Notification.permission;
-      return _jsHas('serviceWorker') && _jsHas('PushManager');
+      return isWebPushEnvironmentSupported(
+        hasPushManagerOnWindow: _jsHas('PushManager'),
+        hasServiceWorkerOnNavigator:
+            (web.window.navigator as JSObject).has('serviceWorker'),
+      );
     } catch (_) {
       return false;
     }
@@ -54,12 +63,10 @@ class PushPlatform {
     return id;
   }
 
-  /// Legge lo stato permesso; il prompt nativo avviene in [ensureSubscription] via `subscribe()`.
   static Future<String?> requestPermissionIfNeeded() async {
     return notificationPermission;
   }
 
-  /// Registra `push_sw.js` e sottoscrive VAPID. Con permesso `default`, `subscribe()` apre il dialog di sistema.
   static Future<PushSubscriptionKeys?> ensureSubscription({
     required String vapidPublicKey,
   }) async {
@@ -118,28 +125,88 @@ class PushPlatform {
     required bool appVisible,
   }) {
     final payload = jsonEncode({
+      'type': 'alfred_push_suppression',
       'focusUserId': focusUserId,
       'activePeerProfileId': activePeerProfileId,
       'appVisible': appVisible,
     });
-    web.window.localStorage.setItem(_suppressionKey, payload);
+    unawaited(_postToServiceWorker(payload));
+  }
+
+  static Future<void> _postToServiceWorker(String payload) async {
+    try {
+      final controller = web.window.navigator.serviceWorker.controller;
+      controller?.postMessage(payload.toJS);
+    } catch (_) {
+      // SW non ancora attivo.
+    }
   }
 
   static Stream<PushOpenChatIntent> get openChatIntents =>
       _openChatController.stream;
 
+  static void persistPendingOpenChat(PushConversationKey conversation) {
+    final payload = jsonEncode({
+      'recipientUserId': conversation.ownerUserId,
+      'peerProfileId': conversation.peerProfileId,
+    });
+    web.window.localStorage.setItem(_pendingOpenChatKey, payload);
+  }
+
+  static PushOpenChatIntent? readPendingOpenChat() {
+    final raw = web.window.localStorage.getItem(_pendingOpenChatKey);
+    if (raw == null || raw.isEmpty) return null;
+    try {
+      final map = jsonDecode(raw) as Map<String, dynamic>;
+      final conversation = PushConversationKey.tryFromPayload(map);
+      if (conversation == null) return null;
+      return PushOpenChatIntent(conversation);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static void clearPendingOpenChat() {
+    web.window.localStorage.removeItem(_pendingOpenChatKey);
+    clearPushLaunchFragment();
+  }
+
+  static void tryDrainPendingOpenChat() {
+    consumePushLaunchFragment();
+    final intent = readPendingOpenChat();
+    if (intent == null) return;
+    // Evita ri-emissione a ogni rebuild (pending restava fino alla fine handler).
+    web.window.localStorage.removeItem(_pendingOpenChatKey);
+    _emitOpenChat(intent.conversation);
+  }
+
+  static void consumePushLaunchFragment() {
+    final fragment = readPushLaunchFragment();
+    final conversation = PushDeepLink.tryParseFragment(fragment);
+    if (conversation == null) return;
+    persistPendingOpenChat(conversation);
+    clearPushLaunchFragment();
+  }
+
+  static void _emitOpenChat(PushConversationKey conversation) {
+    _openChatController.add(PushOpenChatIntent(conversation));
+  }
+
+  static String? _coerceMessagePayload(JSAny? data) {
+    if (data == null) return null;
+    if (data.isA<JSString>()) {
+      return (data as JSString).toDart;
+    }
+    final dartified = data.dartify();
+    if (dartified is String) return dartified;
+    return null;
+  }
+
   static void _handleWindowMessage(web.Event event) {
     if (!event.isA<web.MessageEvent>()) return;
     final messageEvent = event as web.MessageEvent;
-    final data = messageEvent.data;
-    if (data == null) return;
-
-    final String? raw;
-    if (data.isA<JSString>()) {
-      raw = (data as JSString).toDart;
-    } else {
-      return;
-    }
+    final raw = _coerceMessagePayload(messageEvent.data);
+    if (raw == null) return;
 
     Map<String, dynamic> map;
     try {
@@ -149,12 +216,13 @@ class PushPlatform {
     }
 
     if (map['type'] != 'open_chat') return;
-    final recipient = map['recipientUserId'] as String?;
-    final peer = map['peerProfileId'] as String?;
-    if (recipient == null || peer == null) return;
-    _openChatController.add(
-      PushOpenChatIntent(recipientUserId: recipient, peerProfileId: peer),
-    );
+    final conversation = PushConversationKey.tryFromPayload(map);
+    if (conversation == null) return;
+    _emitOpenChat(conversation);
+  }
+
+  static void _handleHashChange(web.Event event) {
+    tryDrainPendingOpenChat();
   }
 
   static var _messageHookInstalled = false;
@@ -163,6 +231,8 @@ class PushPlatform {
     if (_messageHookInstalled) return;
     _messageHookInstalled = true;
     web.window.addEventListener('message', _handleWindowMessage.toJS);
+    web.window.addEventListener('hashchange', _handleHashChange.toJS);
+    tryDrainPendingOpenChat();
   }
 
   static Future<void> unregisterServiceWorkerSubscription() async {

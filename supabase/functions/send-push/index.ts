@@ -7,6 +7,8 @@ import webpush from "web-push";
 
 type PushPayload = {
   recipient_user_id: string;
+  recipient_display_name?: string;
+  recipient_username?: string | null;
   peer_profile_id: string;
   peer_display_name: string;
   preview_text: string;
@@ -124,6 +126,8 @@ Deno.serve(async (req) => {
 
   const notification = JSON.stringify({
     recipientUserId: payload.recipient_user_id,
+    recipientDisplayName: payload.recipient_display_name ?? null,
+    recipientUsername: payload.recipient_username ?? null,
     peerProfileId: payload.peer_profile_id,
     peerDisplayName: payload.peer_display_name,
     previewText: payload.preview_text,
@@ -132,7 +136,7 @@ Deno.serve(async (req) => {
   });
 
   let sent = 0;
-  const stale: string[] = [];
+  const staleEndpoints = new Set<string>();
 
   for (const sub of subscriptions ?? []) {
     try {
@@ -151,16 +155,16 @@ Deno.serve(async (req) => {
     } catch (err) {
       const statusCode = (err as { statusCode?: number }).statusCode;
       if (statusCode === 404 || statusCode === 410) {
-        stale.push(sub.id);
+        staleEndpoints.add(sub.endpoint);
       }
     }
   }
 
-  if (stale.length > 0) {
-    await supabase.from("push_subscriptions").delete().in("id", stale);
+  for (const endpoint of staleEndpoints) {
+    await supabase.from("push_subscriptions").delete().eq("endpoint", endpoint);
   }
 
-  return new Response(JSON.stringify({ sent, stale: stale.length }), {
+  return new Response(JSON.stringify({ sent, stale: staleEndpoints.size }), {
     status: 200,
     headers: { "Content-Type": "application/json" },
   });
