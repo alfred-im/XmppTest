@@ -4,11 +4,8 @@
 
 import { expect, type Page } from '@playwright/test';
 
-import {
-  enableFlutterAccessibility,
-  readSavedAccountsManifest,
-  type ManifestEntry,
-} from './flutter-a11y';
+import { enableFlutterAccessibility, readSavedAccountsManifest, type ManifestEntry } from './flutter-a11y';
+import { expectFocusedUserId } from './focus';
 import { E2E_POLL, E2E_TIMEOUT } from './timeouts';
 
 export const BASE_URL =
@@ -213,24 +210,6 @@ function activeAccountGroup(page: Page, displayName: string) {
   return page.getByRole('group', {
     name: new RegExp(escapeRegExp(displayName)),
   });
-}
-
-async function expectFocusedUserId(page: Page, userId: string) {
-  await expect
-    .poll(
-      async () =>
-        page.evaluate((id) => {
-          const raw = localStorage.getItem('flutter.alfred_focus_user_id');
-          if (!raw) return false;
-          let value: unknown = raw;
-          while (typeof value === 'string' && value.startsWith('"')) {
-            value = JSON.parse(value);
-          }
-          return value === id;
-        }, userId),
-      { timeout: E2E_TIMEOUT.ui },
-    )
-    .toBe(true);
 }
 
 function inboxPeerButton(page: Page, displayName: string) {

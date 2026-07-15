@@ -36,7 +36,7 @@ Richiedono rete (Supabase live) e/o browser. Non bloccano merge.
 | **integration** | `bash scripts/test.sh integration` | Login agent1/agent2 + RPC inbox/peer + **contratto spunte** (✓/✓✓/allow list) |
 | **integration-ticks** | `bash scripts/test.sh integration-ticks` | Solo contratto spunte delivery plane (3 fasi) |
 | **integration-push** | `bash scripts/test.sh integration-push` | Smoke SQL `push_*` su stack locale; oppure delivery plane live con agent1/2 |
-| **e2e-push-local** | `bash scripts/test.sh e2e-push-local` | Playwright push **completo** (permesso → subscribe → messaggio → notifica ricevuta) — solo stack locale |
+| **e2e-push-local** | `bash scripts/test.sh e2e-push-local` | Playwright push locale: ricezione SW + **tap multi-account** (stack locale) |
 | **e2e** | `bash scripts/test.sh e2e` | Tutti i Playwright in `client/e2e/` |
 | **e2e-multi** | `bash scripts/test.sh e2e-multi` | Multi-account mobile: persistenza F5 + messaggi (UI + DB) |
 | **live** | `bash scripts/test.sh live` | Dart con tag `@Tags(['live'])` (es. password reset PKCE) |
@@ -51,7 +51,13 @@ Richiedono rete (Supabase live) e/o browser. Non bloccano merge.
 | `inbox-load.spec.ts` | `e2e` | Inbox senza digitare in ricerca |
 | `pages-smoke.spec.ts` | `e2e` | Smoke generico (fragile su canvas Flutter) |
 | `push-registration.spec.ts` | `e2e-push-local` | Solo registrazione subscription (subset) |
-| `push-full.spec.ts` | `e2e-push-local` | **E2e completo** permesso → messaggio → notifica ricevuta (stack locale) |
+| `push-full.spec.ts` | `e2e-push-local` | Permesso → subscribe → messaggio → notifica in SW |
+| `push-tap-multi-account.spec.ts` | `e2e-push-local` | Due account → tap notifica → focus destinatario + chat |
+
+Helper riusabili: `e2e/helpers/local-multi-account.ts`, `focus.ts`, `push.ts` (`simulateNotificationTap`, `installPushTestEnvironment`).
+
+Lancio: `bash scripts/test.sh e2e-push-local` (avvia Supabase locale, Flutter su `:8080` con VAPID e2e).  
+Per riusare un `flutter run` già avviato sullo stack locale: `E2E_PUSH_REUSE_FLUTTER=1 bash scripts/test.sh e2e-push-local`
 
 ### SQL smoke push (`supabase/tests/` — post SYS-PUSH)
 

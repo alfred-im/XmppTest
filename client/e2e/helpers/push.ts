@@ -2,8 +2,9 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-import { expect, type Page } from '@playwright/test';
+import { expect, type BrowserContext, type Page } from '@playwright/test';
 
+import { waitForFocusedUserId } from './focus';
 import { E2E_POLL, E2E_TIMEOUT } from './timeouts';
 
 export type PushSubscriptionRow = {
@@ -293,18 +294,27 @@ export async function waitForNotificationPermissionGranted(page: Page) {
     .toBe(true);
 }
 
+export async function installPushTestEnvironment(
+  page: Page,
+  context: BrowserContext,
+  baseUrl: string,
+): Promise<void> {
+  await installPushSubscribeMock(page);
+  await installNotificationPermissionMock(page);
+  const origin = new URL(baseUrl).origin;
+  await forceNotificationPermission(page, origin);
+  await context.grantPermissions(['notifications'], { origin });
+}
+
 /**
- * Simula il tap su una notifica: stesso percorso di `notificationclick` in push_sw.js
- * (postMessage open_chat + focus finestra).
+ * Simula tap notifica: `notificationclick` in push_sw.js (postMessage open_chat).
+ * In headless prova SW, poi fallback `window.postMessage` se il focus non cambia.
  */
 export async function simulateNotificationTap(
   page: Page,
   payload: {
     recipientUserId: string;
     peerProfileId: string;
-    peerDisplayName?: string;
-    previewText?: string;
-    logicalMessageId?: string;
   },
 ): Promise<void> {
   const openChatBody = JSON.stringify({
@@ -313,20 +323,18 @@ export async function simulateNotificationTap(
     peerProfileId: payload.peerProfileId,
   });
 
-  // Percorso SW (produzione): postMessage al client aperto.
   const sw =
     page.context().serviceWorkers()[0] ??
-    (await page.context().waitForEvent('serviceworker', { timeout: 10_000 }).catch(
-      () => null,
-    ));
+    (await page
+      .waitForEvent('serviceworker', { timeout: 10_000 })
+      .catch(() => null));
 
   if (sw) {
-    const delivered = await sw.evaluate(async (msg) => {
+    await sw.evaluate(async (msg) => {
       const clients = await self.clients.matchAll({
         type: 'window',
         includeUncontrolled: true,
       });
-      if (clients.length === 0) return false;
       for (const client of clients) {
         client.postMessage(msg);
         try {
@@ -335,44 +343,18 @@ export async function simulateNotificationTap(
           // headless: focus vietato
         }
       }
-      return true;
     }, openChatBody);
-    if (delivered) {
-      await page.waitForTimeout(800);
-      const focused = await page.evaluate((id) => {
-        const raw = localStorage.getItem('flutter.alfred_focus_user_id');
-        if (!raw) return false;
-        let value: unknown = raw;
-        while (typeof value === 'string' && value.startsWith('"')) {
-          value = JSON.parse(value);
-        }
-        return value === id;
-      }, payload.recipientUserId);
-      if (focused) return;
+
+    if (await waitForFocusedUserId(page, payload.recipientUserId, 4_000)) {
+      return;
     }
   }
 
-  // Fallback e2e: Chromium headless non consegna sempre SW→page postMessage.
   await page.evaluate((msg) => {
     window.postMessage(msg, '*');
   }, openChatBody);
-  await page.waitForTimeout(1500);
+
+  await waitForFocusedUserId(page, payload.recipientUserId, E2E_TIMEOUT.ui);
 }
 
-export async function expectFocusedUserId(page: Page, userId: string) {
-  await expect
-    .poll(
-      async () =>
-        page.evaluate((id) => {
-          const raw = localStorage.getItem('flutter.alfred_focus_user_id');
-          if (!raw) return false;
-          let value: unknown = raw;
-          while (typeof value === 'string' && value.startsWith('"')) {
-            value = JSON.parse(value);
-          }
-          return value === id;
-        }, userId),
-      { timeout: E2E_TIMEOUT.ui, intervals: [...E2E_POLL] },
-    )
-    .toBe(true);
-}
+export { expectFocusedUserId } from './focus';

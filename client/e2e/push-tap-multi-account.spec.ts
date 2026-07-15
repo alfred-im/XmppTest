@@ -4,45 +4,32 @@
 
 import { test, expect } from '@playwright/test';
 
+import { expectFocusedUserId } from './helpers/focus';
+import { configureLocalPushSettings, sendMessageToProfile } from './helpers/local-push-setup';
 import {
-  addReceptionAllowlist,
-  configureLocalPushSettings,
-  sendMessageToProfile,
-} from './helpers/local-push-setup';
-import {
-  createLocalConfirmedUser,
-  isLocalSupabaseStack,
-  type LocalE2eUser,
-} from './helpers/local-auth';
+  prepareLocalMessagingPair,
+  setupTwoLocalAccounts,
+} from './helpers/local-multi-account';
+import { isLocalSupabaseStack } from './helpers/local-auth';
 import {
   BASE_URL,
-  clearAppData,
-  clickAggiungiAccount,
-  expectManifestCount,
-  expectMultiAccountList,
-  loginInAuthForm,
-  manifestEntryForUsername,
   switchToAccountByDisplayName,
-  waitForAuthForm,
   waitForChatInput,
-  waitForLoggedInShell,
 } from './helpers/multi-account';
-import { readSavedAccountsManifest } from './helpers/flutter-a11y';
+import { attachPageErrorCollector } from './helpers/page-errors';
 import {
   deliverPushInServiceWorker,
   ensurePushSubscriptionInDb,
-  expectFocusedUserId,
-  forceNotificationPermission,
-  installNotificationPermissionMock,
-  installPushSubscribeMock,
+  installPushTestEnvironment,
   simulateNotificationTap,
 } from './helpers/push';
-import { loginSupabase } from './helpers/supabase-api';
 import { E2E_TIMEOUT } from './helpers/timeouts';
 
 /**
- * Tap notifica push con due account aperti: focus su A, push per B → tap → focus B + chat.
- * Solo stack locale (nessun account utente sul live).
+ * Tap push multi-account: focus su A, notifica per B → tap → focus B + chat col mittente.
+ * Stack locale isolato (`supabase start` + Flutter su localhost con VAPID e2e).
+ *
+ * Lancio: `bash scripts/test.sh e2e-push-local`
  */
 test.use({
   viewport: { width: 390, height: 844 },
@@ -62,75 +49,20 @@ test.beforeAll(() => {
   configureLocalPushSettings();
 });
 
-async function setupTwoLocalAccounts(
-  page: import('@playwright/test').Page,
-  acct1: LocalE2eUser,
-  acct2: LocalE2eUser,
-) {
-  await page.goto(BASE_URL, {
-    waitUntil: 'domcontentloaded',
-    timeout: E2E_TIMEOUT.boot,
-  });
-  await clearAppData(page);
-  await loginInAuthForm(page, acct1.email, acct1.password);
-  expectManifestCount(await readSavedAccountsManifest(page), 1);
-  await expectMultiAccountList(page, false);
-
-  await clickAggiungiAccount(page);
-  await waitForAuthForm(page);
-  await loginInAuthForm(page, acct2.email, acct2.password, {
-    minAccounts: 2,
-  });
-  expectManifestCount(await readSavedAccountsManifest(page), 2);
-  await expectMultiAccountList(page, true);
-
-  const manifest = (await readSavedAccountsManifest(page))!;
-  return {
-    account1: manifestEntryForUsername(manifest, acct1.username),
-    account2: manifestEntryForUsername(manifest, acct2.username),
-  };
-}
-
 test('tap push con focus su altro account apre chat destinatario', async ({
   page,
   context,
 }) => {
-  const errors: string[] = [];
-  page.on('pageerror', (err) => {
-    if (err.message.includes('InboxController was used after being disposed')) {
-      return;
-    }
-    errors.push(err.message);
-  });
+  const errors = attachPageErrorCollector(page);
 
-  const acct1 = await createLocalConfirmedUser('tap1');
-  const acct2 = await createLocalConfirmedUser('tap2');
-
-  const session1 = await loginSupabase(acct1.email, acct1.password);
-  const session2 = await loginSupabase(acct2.email, acct2.password);
-
-  await addReceptionAllowlist({
-    ownerUserId: acct1.userId,
-    allowedProfileId: acct2.userId,
-    ownerAccessToken: session1.accessToken,
-  });
-  await addReceptionAllowlist({
-    ownerUserId: acct2.userId,
-    allowedProfileId: acct1.userId,
-    ownerAccessToken: session2.accessToken,
-  });
-
-  await installPushSubscribeMock(page);
-  await installNotificationPermissionMock(page);
+  const { acct1, acct2, session1, session2 } =
+    await prepareLocalMessagingPair('tap1', 'tap2');
 
   await page.goto(BASE_URL, {
     waitUntil: 'domcontentloaded',
     timeout: E2E_TIMEOUT.boot,
   });
-  await forceNotificationPermission(page, new URL(BASE_URL).origin);
-  await context.grantPermissions(['notifications'], {
-    origin: new URL(BASE_URL).origin,
-  });
+  await installPushTestEnvironment(page, context, BASE_URL);
 
   const { account1, account2 } = await setupTwoLocalAccounts(
     page,
@@ -138,7 +70,6 @@ test('tap push con focus su altro account apre chat destinatario', async ({
     acct2,
   );
 
-  // Focus su account 1 (utente «sul conto sbagliato» rispetto alla push per account 2).
   await switchToAccountByDisplayName(
     page,
     account1.displayName!,
@@ -166,20 +97,17 @@ test('tap push con focus su altro account apre chat destinatario', async ({
     clientMessageId: `e2e-push-tap-${Date.now()}`,
   });
 
-  const swPayload = {
+  await deliverPushInServiceWorker(page, {
     recipientUserId: acct2.userId,
     peerProfileId: acct1.userId,
     peerDisplayName: account1.displayName ?? acct1.username,
     recipientUsername: acct2.username,
     previewText: messageBody,
-  };
-
-  await deliverPushInServiceWorker(page, swPayload);
+  });
 
   await simulateNotificationTap(page, {
     recipientUserId: acct2.userId,
     peerProfileId: acct1.userId,
-    previewText: messageBody,
   });
 
   await expectFocusedUserId(page, account2.userId);

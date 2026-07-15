@@ -3,8 +3,8 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-# Push e2e Playwright completo — solo stack locale isolato (nessun dato utente sul live).
-# Permesso → subscribe → messaggio → notifica ricevuta nel service worker.
+# Push e2e Playwright — stack locale isolato (nessun dato utente sul live).
+# Suite: permesso/subscribe/ricezione (push-full) + tap multi-account (push-tap-multi-account).
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -71,14 +71,12 @@ ensure_flutter_local() {
   export ALFRED_BASE_URL="${ALFRED_BASE_URL:-http://localhost:8080/}"
   local base="${ALFRED_BASE_URL%/}/"
 
-  if curl -sf -m 3 "$base" | grep -q 'flutter_bootstrap.js'; then
-    return 0
-  fi
-
-  if lsof -ti :8080 >/dev/null 2>&1; then
-    echo "==> Libero porta 8080 (processo non-Flutter)"
+  if [[ "${E2E_PUSH_REUSE_FLUTTER:-}" != "1" ]] && lsof -ti :8080 >/dev/null 2>&1; then
+    echo "==> Libero :8080 (usa E2E_PUSH_REUSE_FLUTTER=1 per riusare il dev server)"
     lsof -ti :8080 | xargs -r kill
     sleep 1
+  elif curl -sf -m 3 "$base" | grep -q 'flutter_bootstrap.js'; then
+    return 0
   fi
 
   echo "==> Avvio flutter web-server locale (Supabase + VAPID e2e)"
@@ -124,4 +122,4 @@ ensure_flutter_local
 export ALFRED_BASE_URL="${ALFRED_BASE_URL:-http://localhost:8080/}"
 
 echo "==> e2e-push-local ALFRED_BASE_URL=${ALFRED_BASE_URL} SUPABASE_URL=${SUPABASE_URL}"
-npx playwright test e2e/push-full.spec.ts "$@"
+npx playwright test e2e/push-full.spec.ts e2e/push-tap-multi-account.spec.ts "$@"
