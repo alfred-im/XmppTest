@@ -49,6 +49,11 @@ class AuthController extends ChangeNotifier {
   String? get email => focusedSession?.client.auth.currentUser?.email;
   String? get username => focusedSession?.profile.username;
 
+  /// Re-registra subscription push (es. dopo resume PWA o permesso concesso).
+  Future<void> syncPushSubscriptions() async {
+    await _pushService.syncOpenAccounts(_manager.openAccounts);
+  }
+
   Future<void> initialize() async {
     isLoading = true;
     notifyListeners();

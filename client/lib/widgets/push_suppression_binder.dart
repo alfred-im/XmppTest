@@ -2,6 +2,8 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:provider/provider.dart';
@@ -41,6 +43,9 @@ class _PushSuppressionBinderState extends State<PushSuppressionBinder>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     _sync();
+    if (state == AppLifecycleState.resumed) {
+      unawaited(context.read<AuthController>().syncPushSubscriptions());
+    }
   }
 
   void _sync() {

@@ -2,6 +2,14 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+/// Feature-detect Web Push: `PushManager` su `window`, `serviceWorker` su `navigator`.
+bool isWebPushEnvironmentSupported({
+  required bool hasPushManagerOnWindow,
+  required bool hasServiceWorkerOnNavigator,
+}) {
+  return hasPushManagerOnWindow && hasServiceWorkerOnNavigator;
+}
+
 /// Logica pura per decidere se tentare la registrazione push (testabile senza browser).
 bool shouldAttemptPushSubscription({
   required bool isPushSupported,

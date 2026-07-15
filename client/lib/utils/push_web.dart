@@ -11,6 +11,7 @@ import 'dart:typed_data';
 import 'package:uuid/uuid.dart';
 import 'package:web/web.dart' as web;
 
+import 'push_permission_flow.dart';
 import 'push_stub.dart' show PushOpenChatIntent, PushSubscriptionKeys;
 
 export 'push_stub.dart' show PushOpenChatIntent, PushSubscriptionKeys;
@@ -24,11 +25,15 @@ final _openChatController = StreamController<PushOpenChatIntent>.broadcast();
 class PushPlatform {
   const PushPlatform._();
 
-  /// `Notification`, `serviceWorker` e `PushManager` disponibili (es. no iOS Safari tab).
+  /// `Notification`, `serviceWorker` (su `navigator`) e `PushManager` (su `window`).
   static bool get isPushSupported {
     try {
       final _ = web.Notification.permission;
-      return _jsHas('serviceWorker') && _jsHas('PushManager');
+      return isWebPushEnvironmentSupported(
+        hasPushManagerOnWindow: _jsHas('PushManager'),
+        hasServiceWorkerOnNavigator:
+            (web.window.navigator as JSObject).has('serviceWorker'),
+      );
     } catch (_) {
       return false;
     }
