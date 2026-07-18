@@ -255,11 +255,27 @@ class _HomeScreenState extends State<HomeScreen> {
       );
     }
 
+    final needsSessionRecovery =
+        auth.hasOpenAccounts && session == null;
+
     return Scaffold(
       key: _scaffoldKey,
       drawer: Drawer(
         child: _accountSidebar(context),
       ),
+      appBar: needsSessionRecovery
+          ? AppBar(
+              backgroundColor: AlfredColors.panel,
+              foregroundColor: AlfredColors.textPrimary,
+              elevation: 0,
+              leading: IconButton(
+                icon: const Icon(Icons.menu),
+                tooltip: 'Account',
+                onPressed: _openDrawer,
+              ),
+              title: const Text('Riconnessione…'),
+            )
+          : null,
       body: !showChatOnMobile || auth.showInboxOnMobile
           ? inboxArea
           : _chatArea(
