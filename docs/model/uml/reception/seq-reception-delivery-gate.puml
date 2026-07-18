@@ -1,0 +1,36 @@
+@startuml seq-reception-delivery-gate
+' Context: reception
+' SDD: SYS-RECEPTION-005–010, PROM-RECEPTION-FILTER-005
+' Revision: 2026-07-18
+
+title Reception — gate recapito nel worker delivery
+
+participant "send_message_to_profile" as RPC
+database "messages\n(sender copy)" as Msg
+participant "alfred_delivery\nprocess_outbox" as Worker
+participant "is_sender_allowed_for_reception" as Gate
+database "reception_allowlist" as Allow
+database "messages\n(recipient copy)" as Recv
+
+RPC -> Msg : INSERT copia mittente (✓)
+RPC -> Worker : outbox deliver
+
+Worker -> Gate : check(owner=dest, sender=mittente)
+Gate -> Allow : EXISTS allowed row?
+
+alt sender allowed
+  Allow --> Gate : true
+  Gate --> Worker : allowed
+  Worker -> Recv : INSERT copia destinatario
+  Worker -> Msg : UPDATE delivered_at\n(✓✓ mittente)
+else sender not allowed
+  Allow --> Gate : false
+  Gate --> Worker : rejected
+  note right of Worker
+    Nessuna copia destinatario.
+    delivered_at resta null.
+    RPC già ritornata ok al mittente.
+  end note
+end
+
+@enduml

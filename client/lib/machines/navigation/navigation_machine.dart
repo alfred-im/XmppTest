@@ -48,6 +48,30 @@ final class OpenFromPushTap extends NavigationEvent {
   final String peerProfileId;
 }
 
+/// Adapter shareable-link → `openConversationOnAccount` (clear stale + fallback).
+final class OpenFromShareableLink extends NavigationEvent {
+  const OpenFromShareableLink({
+    required this.accountUserId,
+    required this.peerProfileId,
+  });
+
+  final String accountUserId;
+  final String peerProfileId;
+}
+
+/// Back mobile / chiudi chat — inbox o group home.
+final class CloseConversation extends NavigationEvent {
+  const CloseConversation();
+}
+
+final class OpenGroupChat extends NavigationEvent {
+  const OpenGroupChat();
+}
+
+final class BackToGroupHome extends NavigationEvent {
+  const BackToGroupHome();
+}
+
 /// Macchina navigation — unico ingresso shell inbox/chat.
 class NavigationMachine {
   NavigationMachine(this._effects);
@@ -60,7 +84,9 @@ class NavigationMachine {
     switch (event) {
       case SwitchToAccount(:final accountUserId):
         await _effects.focusAccount(accountUserId);
-        shellState = NavigationShellState.inboxVisible;
+        shellState = _effects.focusedAccountIsGroup
+            ? NavigationShellState.groupShell
+            : NavigationShellState.inboxVisible;
       case OpenPeerOnFocusedAccount(:final peer):
         _effects.openPeerOnFocusedAccount(peer);
         shellState = NavigationShellState.chatOpen;
@@ -76,7 +102,9 @@ class NavigationMachine {
         );
         shellState = ok
             ? NavigationShellState.chatOpen
-            : NavigationShellState.inboxVisible;
+            : _effects.focusedAccountIsGroup
+                ? NavigationShellState.groupShell
+                : NavigationShellState.inboxVisible;
       case OpenFromPushTap(:final accountUserId, :final peerProfileId):
         final ok = await _effects.openConversationFromPushTap(
           accountUserId: accountUserId,
@@ -84,7 +112,31 @@ class NavigationMachine {
         );
         shellState = ok
             ? NavigationShellState.chatOpen
+            : _effects.focusedAccountIsGroup
+                ? NavigationShellState.groupShell
+                : NavigationShellState.inboxVisible;
+      case OpenFromShareableLink(:final accountUserId, :final peerProfileId):
+        final ok = await _effects.openConversationOnAccount(
+          accountUserId: accountUserId,
+          peerProfileId: peerProfileId,
+          allowProfileFallback: true,
+        );
+        shellState = ok
+            ? NavigationShellState.chatOpen
+            : _effects.focusedAccountIsGroup
+                ? NavigationShellState.groupShell
+                : NavigationShellState.inboxVisible;
+      case CloseConversation():
+        _effects.closeConversation();
+        shellState = _effects.focusedAccountIsGroup
+            ? NavigationShellState.groupShell
             : NavigationShellState.inboxVisible;
+      case OpenGroupChat():
+        _effects.openGroupChat();
+        shellState = NavigationShellState.groupShell;
+      case BackToGroupHome():
+        _effects.backToGroupHome();
+        shellState = NavigationShellState.groupShell;
     }
   }
 }

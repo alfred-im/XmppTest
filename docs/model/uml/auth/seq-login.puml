@@ -1,0 +1,47 @@
+@startuml seq-login
+' Context: auth
+' SDD: SURF-AUTH-004, SURF-AUTH-007
+' Revision: 2026-07-18
+
+title Auth — login (password)
+
+actor User
+participant "AuthScreen" as UI
+participant "AuthController" as AC
+participant "AuthMachine" as AM
+participant "AccountManager" as Mgr
+participant "AccountSession" as Sess
+participant "EphemeralBootstrap" as Boot
+participant "GoTrue" as GT
+
+User -> UI : Accedi (email, password)
+UI -> AC : signIn(email, password)
+AC -> AM : SignInRequested
+AM --> AC : AuthOperationStarted
+
+AC -> AC : validateEmail
+alt email non valida
+  AC -> AM : ValidationRejected
+  AC --> UI : error
+else email ok
+  AC -> Mgr : openWithPassword
+  Mgr -> Sess : signInOpenAccount
+  Sess -> Boot : createBootstrapClient()
+  Sess -> GT : signInWithPassword
+  GT --> Sess : AuthResponse
+  Sess -> Sess : openAccountFromAuthResponse\n(SessionAdoption)
+  note right of Sess
+    setSession su client dedicato
+    alfred_auth_{userId}
+    **no signOut** sul bootstrap
+  end note
+  Sess --> Mgr : OpenAccount
+  Mgr -> Mgr : upsertAccount + _rebuildFromManifest
+  Mgr --> AC : AccountSession
+  AC -> AM : AuthOperationCompleted(success)
+  AM --> AC : SessionEstablished
+  AC -> AC : showAuthOverlay = false
+  AC --> UI : overlay chiuso
+end
+
+@enduml

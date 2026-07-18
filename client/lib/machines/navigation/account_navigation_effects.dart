@@ -24,6 +24,29 @@ class AccountNavigationEffects implements NavigationEffects {
   }
 
   @override
+  bool get focusedAccountIsGroup =>
+      _manager.focusedSession?.profile.isGroup ?? false;
+
+  @override
+  void closeConversation() {
+    if (focusedAccountIsGroup) {
+      backToGroupHome();
+      return;
+    }
+    _manager.showInboxOnMobile();
+  }
+
+  @override
+  void openGroupChat() {
+    _manager.openGroupChat();
+  }
+
+  @override
+  void backToGroupHome() {
+    _manager.backToGroupHome();
+  }
+
+  @override
   void openPeerOnFocusedAccount(ChatPeer peer) {
     final focus = _manager.focusUserId;
     if (focus == null || peer.profileId == focus) {

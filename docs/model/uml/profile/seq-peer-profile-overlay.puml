@@ -1,0 +1,52 @@
+@startuml seq-peer-profile-overlay
+' Context: profile
+' SDD: PROM-PEER-PROFILE
+' Revision: 2026-07-18
+
+title Profile — overlay peer (apertura e azioni)
+
+actor User
+participant "ProfileAvatar\n(tap)" as Tap
+participant "showPeerProfileOverlay" as Entry
+participant "PeerProfileOverlay" as Overlay
+participant "ProfileService" as ProfSvc
+participant "ReceptionAllowlistController" as Allow
+participant "ContactsController" as Contacts
+participant "AuthController" as Auth
+
+User -> Tap : tap avatar peer
+Tap -> Entry : showPeerProfileOverlay(context, profile)
+
+alt profile.id == auth.userId
+  Entry --> Tap : return (no overlay)
+else peer Alfred
+  Entry -> Overlay : showGeneralDialog
+  Overlay -> ProfSvc : findById(profile.id)\n[HydratePeerProfile]
+  ProfSvc --> Overlay : ProfileSummary
+  Overlay -> Overlay : mergeDisplay
+
+  opt switch «Consenti messaggi» ON
+    User -> Overlay : ToggleAllowMessages(true)
+    Overlay -> Allow : addProfile(profile)
+    Allow -> Allow : LoadAllowlist
+  end
+
+  opt switch OFF
+    User -> Overlay : ToggleAllowMessages(false)
+    Overlay -> Allow : removeByProfileId(profile.id)
+  end
+
+  opt rubrica
+    User -> Overlay : ToggleRubrica
+    Overlay -> Contacts : addInternal / removeInternalByProfileId
+    Contacts -> Contacts : LoadContacts
+  end
+
+  opt «Inizia a chattare»
+    User -> Overlay : StartChatFromProfile
+    Overlay -> Auth : openConversation(ChatPeer.fromProfile)
+    Overlay -> Overlay : Navigator.pop
+  end
+end
+
+@enduml

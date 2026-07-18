@@ -48,4 +48,29 @@ class NavigationAdapters {
     );
     return _machine.shellState == NavigationShellState.chatOpen;
   }
+
+  Future<bool> openFromShareableLink({
+    required String accountUserId,
+    required String peerProfileId,
+  }) async {
+    await _machine.send(
+      OpenFromShareableLink(
+        accountUserId: accountUserId,
+        peerProfileId: peerProfileId,
+      ),
+    );
+    return _machine.shellState == NavigationShellState.chatOpen;
+  }
+
+  Future<void> closeConversation() {
+    return _machine.send(const CloseConversation());
+  }
+
+  Future<void> openGroupChat() {
+    return _machine.send(const OpenGroupChat());
+  }
+
+  Future<void> backToGroupHome() {
+    return _machine.send(const BackToGroupHome());
+  }
 }

@@ -61,6 +61,28 @@ class NavigationCoordinator {
     );
   }
 
+  Future<bool> openFromShareableLink({
+    required String accountUserId,
+    required String peerProfileId,
+  }) {
+    return adapters.openFromShareableLink(
+      accountUserId: accountUserId,
+      peerProfileId: peerProfileId,
+    );
+  }
+
+  Future<void> closeConversation() {
+    return adapters.closeConversation();
+  }
+
+  Future<void> openGroupChat() {
+    return adapters.openGroupChat();
+  }
+
+  Future<void> backToGroupHome() {
+    return adapters.backToGroupHome();
+  }
+
   @visibleForTesting
   Future<ChatPeer?> resolvePeerInInboxForTest({
     required AccountSession session,

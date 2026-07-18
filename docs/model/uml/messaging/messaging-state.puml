@@ -1,0 +1,48 @@
+@startuml messaging-state
+' Context: messaging
+' SDD: PROM-OUTBOUND-SEND, PROM-MESSAGE-STATUS, PROM-REALTIME-OWNER
+' Revision: 2026-07-18
+
+title Messaging — per-conversation state machine (MessagesController)
+
+state Loading : isLoading = true
+state Ready : messages loaded\nisSending = false
+state Sending : isSending = true
+state SessionBlocked : session expired\nno load/send
+
+[*] --> Loading : Init\n/ LoadMessages
+
+Loading --> Ready : MessagesLoaded
+Loading --> SessionBlocked : SessionExpired
+Loading --> Ready : LoadFailed\n[error set, isLoading false]
+
+Ready --> Loading : ReloadMessages
+Ready --> Sending : SendMessage\nSendGif SendVoice SendLocation\nSendImage SendVideo
+Ready --> Ready : RealtimeReceived\n/ mergeChatMessage
+Ready --> Ready : DeliveryTickReceived\n/ merge ticks on isMine
+Ready --> Sending : RetryMessage
+Ready --> Sending : QueueRetry\n[timer, backoff elapsed]
+
+Sending --> Ready : SendAcknowledged\n/ remove queue item
+Sending --> Ready : SendFailed\n/ status failed, update queue
+
+state c_realtime {
+  RealtimeDetached
+  RealtimeAttached
+  [*] --> RealtimeDetached
+  RealtimeDetached --> RealtimeAttached : AttachRealtime
+  RealtimeAttached --> RealtimeDetached : DisposeMessaging
+}
+
+note right of Ready
+  Init side effects (once):
+  MarkRead, RestoreFailedQueue,
+  StartRetryTimer (15s)
+end note
+
+note bottom of Sending
+  isSending blocks parallel
+  sends and auto QueueRetry
+end note
+
+@enduml

@@ -1,20 +1,31 @@
 # Contesto: contacts
 
-**Stato modellazione:** `scheletro`
+**Stato modellazione:** `implemented` (dominio + UML + macchina documentata)
 
-Vedi [bounded-contexts.md](../bounded-contexts.md) e [metodo dominio](../README.md).
+Vedi [glossary.md](./glossary.md) · [commands-and-events.md](./commands-and-events.md) · [UML](../../model/uml/contacts/)
 
-## File da compilare
+Statechart: `client/lib/machines/contacts/` — `ContactsMachine` documenta `ContactsController` (load, filtro, CRUD).
 
-| File | Contenuto |
-|------|-----------|
-| `glossary.md` | Linguaggio ubiquo |
-| `commands-and-events.md` | Comandi, eventi, invarianti (Event Storming) |
+## Artefatti
 
-## UML
+| File | Stato |
+|------|-------|
+| [glossary.md](./glossary.md) | compilato |
+| [commands-and-events.md](./commands-and-events.md) | compilato |
+| [contacts-state.puml](../../model/uml/contacts/contacts-state.puml) | compilato |
+| [seq-add-internal-contact.puml](../../model/uml/contacts/seq-add-internal-contact.puml) | compilato |
+| [seq-compose-from-contact.puml](../../model/uml/contacts/seq-compose-from-contact.puml) | compilato |
+| [statechart](../../../client/lib/machines/contacts/) | documentato (produzione = `ContactsController`) |
 
-`docs/model/uml/contacts/` — `contacts-state.puml`, `seq-*.puml`
+## Implementazione runtime
 
-## Statechart (se UI)
+| Componente | Ruolo |
+|------------|-------|
+| `ContactsController` | Orchestratore produzione — load, filtro, add/remove |
+| `ContactService` | PostgREST `contacts` + RPC `search_profiles` |
+| `ContactsScreen` | Lista, ricerca, sheet aggiunta Alfred/Esterno |
+| `ComposeService.peerFromContact` | Scorciatoia internal → `ChatPeer` |
 
-`client/lib/machines/contacts/` — vedi [client/lib/machines/README.md](../../../client/lib/machines/README.md)
+## SDD (confine prodotto)
+
+[PROM-PERSONAL-CONTACTS](../../specs/promises/product/PROM-PERSONAL-CONTACTS.md) · [SYS-CONTACTS](../../specs/promises/system/SYS-CONTACTS.md) · [SURF-CONTACTS](../../specs/surfaces/SURF-CONTACTS.md)

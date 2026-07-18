@@ -13,14 +13,23 @@ state GroupShell
 
 InboxVisible --> ChatOpen : OpenPeerOnFocusedAccount\n/ ConversationOpened
 InboxVisible --> ChatOpen : OpenConversationOnAccount\n/ ConversationOpened
-InboxVisible --> GroupShell : [account gruppo in focus]
+InboxVisible --> GroupShell : SwitchToAccount\n[account gruppo]
 
-ChatOpen --> InboxVisible : CloseConversation
-GroupShell --> GroupShell : OpenGroupChat
+ChatOpen --> InboxVisible : CloseConversation\n/ NavigationIdle
+
+GroupShell --> GroupShell : OpenGroupChat\n/ GroupChatOpened
+GroupShell --> GroupShell : BackToGroupHome\n/ GroupShellEntered
+GroupShell --> GroupShell : CloseConversation\n[chat gruppo aperta]
 
 note right of ChatOpen
   OpenFromPushTap e OpenFromShareableLink
   usano OpenConversationOnAccount
+end note
+
+note bottom of GroupShell
+  Account gruppo: inbox classica sostituita
+  da GroupHomePanel; chat gruppo è
+  sotto-stato di GroupShell (groupChatOpen)
 end note
 
 @enduml

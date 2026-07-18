@@ -1,20 +1,33 @@
 # Contesto: messaging
 
-**Stato modellazione:** `scheletro`
+**Stato modellazione:** `implemented`
 
 Vedi [bounded-contexts.md](../bounded-contexts.md) e [metodo dominio](../README.md).
 
-## File da compilare
+## Artefatti
 
-| File | Contenuto |
-|------|-----------|
-| `glossary.md` | Linguaggio ubiquo |
-| `commands-and-events.md` | Comandi, eventi, invarianti (Event Storming) |
+| File | Stato |
+|------|-------|
+| [glossary.md](./glossary.md) | compilato |
+| [commands-and-events.md](./commands-and-events.md) | compilato |
+| [UML state](../../model/uml/messaging/messaging-state.puml) | compilato |
+| [seq-send-optimistic](../../model/uml/messaging/seq-send-optimistic.puml) | compilato |
+| [seq-realtime-merge](../../model/uml/messaging/seq-realtime-merge.puml) | compilato |
+| [statechart](../../../client/lib/machines/messaging/) | **implementato** (mirror load/send/realtime) |
 
-## UML
+## Implementazione runtime
 
-`docs/model/uml/messaging/` — `messaging-state.puml`, `seq-*.puml`
+| Componente | Ruolo |
+|------------|-------|
+| `MessagesController` | Orchestratore produzione — load, send, realtime, retry |
+| `MessageService` | RPC + subscribe Realtime owner |
+| `OutboundMessageQueue` | Coda persistente e media retry |
+| `MessagingMachine` | Statechart documentato; effetti delegano al controller |
 
-## Statechart (se UI)
+## SDD (confine prodotto)
 
-`client/lib/machines/messaging/` — vedi [client/lib/machines/README.md](../../../client/lib/machines/README.md)
+[PROM-OUTBOUND-SEND](../../specs/promises/product/PROM-OUTBOUND-SEND.md) · [PROM-MESSAGE-STATUS](../../specs/promises/product/PROM-MESSAGE-STATUS.md) · [PROM-REALTIME-OWNER](../../specs/promises/product/PROM-REALTIME-OWNER.md) · [SYS-MAILBOX](../../specs/promises/system/SYS-MAILBOX.md)
+
+## Sotto-contesto media
+
+Voice, foto, video, location: [docs/domain/media/](../media/)

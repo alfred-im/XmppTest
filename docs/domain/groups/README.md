@@ -1,20 +1,42 @@
 # Contesto: groups
 
-**Stato modellazione:** `scheletro`
+**Stato modellazione:** `implemented`
 
 Vedi [bounded-contexts.md](../bounded-contexts.md) e [metodo dominio](../README.md).
 
-## File da compilare
+## Artefatti
 
-| File | Contenuto |
-|------|-----------|
-| `glossary.md` | Linguaggio ubiquo |
-| `commands-and-events.md` | Comandi, eventi, invarianti (Event Storming) |
+| File | Stato |
+|------|-------|
+| [glossary.md](./glossary.md) | compilato |
+| [commands-and-events.md](./commands-and-events.md) | compilato |
+| [UML state](../../model/uml/groups/groups-state.puml) | compilato |
+| [seq-broadcast](../../model/uml/groups/seq-broadcast.puml) | compilato |
+| Statechart client | **non richiesto** — produzione = `GroupHomeController` + `GroupMessagesController` |
 
-## UML
+## Implementazione runtime
 
-`docs/model/uml/groups/` — `groups-state.puml`, `seq-*.puml`
+| Componente | Ruolo |
+|------------|-------|
+| `GroupHomeController` | Home gruppo — conteggi, autori attivi, tile conversazione |
+| `GroupMessagesController` | Storico owner, broadcast allow list, realtime |
+| `GroupHomePanel` | Shell home senza inbox |
+| `GroupConversationScreen` | Chat gruppo con `showAuthorLabels` |
+| `MessageService` | `fetchOwnerMessages`, `broadcast*ToAllowlist`, `subscribeToOwnerMessages` |
+| `home_screen.dart` | Branch `_GroupAccountLayout` se `profile.isGroup` |
 
-## Statechart (se UI)
+## Flussi backend
 
-`client/lib/machines/groups/` — vedi [client/lib/machines/README.md](../../../client/lib/machines/README.md)
+- Umano → gruppo: `send_message_to_profile` → worker `deliver_internal` → storico gruppo + erogazione
+- Gruppo broadcast: `broadcast_message_to_allowlist` → `group_erogate` → `erogate_group_message`
+
+## SDD (confine prodotto)
+
+[SYS-GROUP](../../specs/promises/system/SYS-GROUP.md) · [SYS-DELIVERY](../../specs/promises/system/SYS-DELIVERY.md) · guida [groups.md](../../guides/groups.md)
+
+## Contesti correlati
+
+- **messaging** — chat umano verso gruppo (`peerIsGroup`)
+- **delivery** — worker erogazione
+- **reception** — gate allow list bidirezionale
+- **navigation** — `OpenGroupChat` / `BackToGroupHome`

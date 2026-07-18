@@ -23,4 +23,13 @@ abstract class NavigationEffects {
   });
 
   void openPeerOnFocusedAccount(ChatPeer peer);
+
+  void closeConversation();
+
+  void openGroupChat();
+
+  void backToGroupHome();
+
+  /// Account in focus con `profileKind == group`.
+  bool get focusedAccountIsGroup;
 }

@@ -1,20 +1,44 @@
 # Contesto: delivery
 
-**Stato modellazione:** `scheletro`
+**Stato modellazione:** `implemented`
 
 Vedi [bounded-contexts.md](../bounded-contexts.md) e [metodo dominio](../README.md).
 
-## File da compilare
+## Artefatti
 
-| File | Contenuto |
-|------|-----------|
-| `glossary.md` | Linguaggio ubiquo |
-| `commands-and-events.md` | Comandi, eventi, invarianti (Event Storming) |
+| File | Stato |
+|------|-------|
+| [glossary.md](./glossary.md) | compilato |
+| [commands-and-events.md](./commands-and-events.md) | compilato |
+| [seq-process-outbox](../../model/uml/delivery/seq-process-outbox.puml) | compilato |
+| [seq-reception-gate](../../model/uml/delivery/seq-reception-gate.puml) | compilato |
+| Statechart client | **no** — infrastruttura server-only |
 
-## UML
+## Implementazione runtime
 
-`docs/model/uml/delivery/` — `delivery-state.puml`, `seq-*.puml`
+| Componente | Ruolo |
+|------------|-------|
+| Schema `alfred_delivery` | Worker SQL `SECURITY DEFINER` |
+| `process_outbox` | Dispatcher per `event_kind` |
+| `deliver_internal` | Recapito 1:1 e verso gruppo + gate reception |
+| `group_erogate` / `erogate_group_message` | Broadcast ed erogazione gruppo |
+| `process_read_receipt` / `propagate_read_receipt` | Spunte lette |
+| Tabella `outbox` | Bus eventi; RLS deny authenticated |
+| RPC account | Solo INSERT confine proprio + `perform process_outbox` |
 
-## Statechart (se UI)
+Migrazione canonica: `supabase/migrations/20260711190000_account_boundary_delivery.sql`
 
-`client/lib/machines/delivery/` — vedi [client/lib/machines/README.md](../../../client/lib/machines/README.md)
+## Modello
+
+Internal: worker **sincrono** nella stessa transazione RPC account. Federato: stesso outbox, consumer bridge (stub) — vedi contesto **federation**.
+
+## SDD (confine prodotto)
+
+[SYS-DELIVERY](../../specs/promises/system/SYS-DELIVERY.md) · [SYS-ACCOUNT-BOUNDARY](../../specs/promises/system/SYS-ACCOUNT-BOUNDARY.md) · [mailbox-inbox-outbox-spec.md](../../architecture/mailbox-inbox-outbox-spec.md)
+
+## Contesti correlati
+
+- **messaging** — RPC che accodano outbox
+- **reception** — policy gate nel worker
+- **groups** — branch gruppo e `group_erogate`
+- **federation** — outbox `protocol != internal`

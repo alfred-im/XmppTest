@@ -1,20 +1,32 @@
 # Contesto: media
 
-**Stato modellazione:** `scheletro`
+**Stato modellazione:** `implemented` (sotto-contesto di messaging)
 
 Vedi [bounded-contexts.md](../bounded-contexts.md) e [metodo dominio](../README.md).
 
-## File da compilare
+## Artefatti
 
-| File | Contenuto |
-|------|-----------|
-| `glossary.md` | Linguaggio ubiquo |
-| `commands-and-events.md` | Comandi, eventi, invarianti (Event Storming) |
+| File | Stato |
+|------|-------|
+| [glossary.md](./glossary.md) | compilato |
+| [commands-and-events.md](./commands-and-events.md) | compilato |
+| [seq-voice-hold-send](../../model/uml/media/seq-voice-hold-send.puml) | compilato |
+| [seq-media-upload](../../model/uml/media/seq-media-upload.puml) | compilato |
 
-## UML
+## Implementazione runtime
 
-`docs/model/uml/media/` — `media-state.puml`, `seq-*.puml`
+| Componente | Ruolo |
+|------------|-------|
+| `MessageMediaService` | Upload `chat-media` bucket |
+| `MessagesController.send*` | Optimistic + coda + RPC |
+| `ChatInputBar` | Voice hold, pin location, picker allegati |
+| `VoiceRecordingService` | Registrazione WebM/Opus |
+| `prepareImageForUpload` | HEIC → JPEG |
 
-## Statechart (se UI)
+## SDD
 
-`client/lib/machines/media/` — vedi [client/lib/machines/README.md](../../../client/lib/machines/README.md)
+[PROM-CHAT-MEDIA](../../specs/promises/product/PROM-CHAT-MEDIA.md) · [PROM-OUTBOUND-SEND](../../specs/promises/product/PROM-OUTBOUND-SEND.md)
+
+## Guida operativa
+
+[docs/guides/media.md](../../guides/media.md)

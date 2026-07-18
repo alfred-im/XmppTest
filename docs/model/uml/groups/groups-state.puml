@@ -1,0 +1,57 @@
+@startuml groups-state
+' Context: groups
+' SDD: SYS-GROUP, SYS-DELIVERY (erogazione)
+' Revision: 2026-07-18
+
+title Groups — UI state machines (GroupHome + GroupMessages)
+
+state "GroupHomeController" as GH {
+  state GH_Loading : isLoading = true
+  state GH_Ready : summary + authors + tile
+  state GH_Error : error != null
+
+  [*] --> GH_Loading : LoadGroupHome
+  GH_Loading --> GH_Ready : GroupHomeLoaded
+  GH_Loading --> GH_Error : GroupHomeLoadFailed
+  GH_Error --> GH_Loading : LoadGroupHome\n/reload()
+  GH_Ready --> GH_Loading : LoadGroupHome\n/reload()
+}
+
+state "GroupMessagesController" as GM {
+  state GM_Loading : isLoading = true
+  state GM_Ready : isSending = false
+  state GM_Sending : isSending = true
+  state GM_Error : error != null
+
+  [*] --> GM_Loading : LoadGroupMessages\n+ AttachOwnerRealtime
+
+  GM_Loading --> GM_Ready : GroupMessagesLoaded
+  GM_Loading --> GM_Error : GroupMessagesLoadFailed
+  GM_Error --> GM_Loading : LoadGroupMessages\n/reload()
+
+  GM_Ready --> GM_Sending : BroadcastMessage\nBroadcastGif BroadcastVoice\nBroadcastImage BroadcastVideo\nBroadcastLocation
+  GM_Sending --> GM_Ready : BroadcastAcknowledged\n/ load()
+  GM_Sending --> GM_Error : BroadcastFailed
+
+  GM_Ready --> GM_Ready : OwnerRealtimeReceived\n/ merge or append
+}
+
+state c_nav {
+  GroupHomeVisible
+  GroupChatOpen
+  [*] --> GroupHomeVisible
+  GroupHomeVisible --> GroupChatOpen : OpenGroupChat
+  GroupChatOpen --> GroupHomeVisible : BackToGroupHome
+}
+
+note right of GM_Sending
+  No optimistic bubble —
+  serializes via isSending
+end note
+
+note bottom of GH
+  Production: GroupHomeController
+  + GroupHomePanel (no inbox)
+end note
+
+@enduml

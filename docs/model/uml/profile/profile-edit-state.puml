@@ -1,0 +1,28 @@
+@startuml profile-edit-state
+' Context: profile
+' SDD: PROM-PROFILE-IDENTITY
+' Revision: 2026-07-18
+
+title Profile — ProfileController state machine (own profile)
+
+state Idle : isSaving = false\nisUploadingAvatar = false
+state Saving : isSaving = true
+state UploadingAvatar : isUploadingAvatar = true
+
+[*] --> Idle
+
+Idle --> Saving : SaveProfile
+Saving --> Idle : ProfileSaved
+Saving --> Idle : ProfileSaveFailed\n[error set]
+
+Idle --> UploadingAvatar : UploadAvatar
+UploadingAvatar --> Saving : upload ok\n+ SaveProfile(avatarUrl)
+UploadingAvatar --> Idle : AvatarUploadFailed\n[error set]
+
+note right of Saving
+  ProfileScreen chiama
+  AuthController.refreshProfile()
+  dopo save riuscito
+end note
+
+@enduml

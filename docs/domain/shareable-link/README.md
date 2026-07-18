@@ -1,20 +1,7 @@
 # Contesto: shareable-link
 
-**Stato modellazione:** `scheletro`
+**Stato modellazione:** `implemented` (dominio + UML + macchina cablata)
 
-Vedi [bounded-contexts.md](../bounded-contexts.md) e [metodo dominio](../README.md).
+Vedi [glossary.md](./glossary.md) · [commands-and-events.md](./commands-and-events.md) · [UML](../../model/uml/shareable-link/) · [guida operativa](../../guides/shareable-link.md)
 
-## File da compilare
-
-| File | Contenuto |
-|------|-----------|
-| `glossary.md` | Linguaggio ubiquo |
-| `commands-and-events.md` | Comandi, eventi, invarianti (Event Storming) |
-
-## UML
-
-`docs/model/uml/shareable-link/` — `shareable-link-state.puml`, `seq-*.puml`
-
-## Statechart (se UI)
-
-`client/lib/machines/shareable-link/` — vedi [client/lib/machines/README.md](../../../client/lib/machines/README.md)
+Statechart: `client/lib/machines/shareable-link/` — `ShareableLinkController` delega a `ShareableLinkMachine`; chat via `OpenFromShareableLink` → `NavigationCoordinator`.

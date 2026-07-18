@@ -1,0 +1,53 @@
+@startuml seq-process-outbox
+' Context: delivery
+' Command: ProcessOutbox
+' SDD: SYS-DELIVERY-011
+' Revision: 2026-07-18
+
+title seq-process-outbox — dispatcher worker
+
+participant "Account RPC" as RPC
+database "outbox" as OB
+participant "alfred_delivery.process_outbox" as PO
+participant "alfred_delivery.deliver_internal" as DI
+participant "alfred_delivery.group_erogate" as GE
+participant "alfred_delivery.process_read_receipt" as PR
+database "messages" as MSG
+
+RPC -> OB : INSERT status=queued\npayload.event_kind = *
+RPC -> PO : process_outbox(outbox_id)
+
+PO -> OB : SELECT event_kind
+
+alt event_kind = read_receipt
+  PO -> PR : process_read_receipt
+  PR -> MSG : UPDATE read_at copia mittente (λ)
+  PR -> OB : status = completed
+else event_kind = group_erogate
+  PO -> GE : group_erogate
+  GE -> MSG : SELECT riga archivio gruppo
+  GE -> GE : erogate_group_message (fan-out)
+  GE -> OB : status = completed
+else event_kind = deliver (default)
+  PO -> DI : deliver_internal
+  DI -> DI : gate reception
+  alt allowed
+    DI -> MSG : INSERT copia destinatario / storico gruppo
+    DI -> MSG : UPDATE delivered_at mittente
+    opt destinatario è gruppo
+      DI -> DI : erogate_group_message
+    end
+    DI -> OB : status = completed
+  else rejected
+    DI -> OB : status = completed\nreception_rejected = true
+  end
+end
+
+PO --> RPC : (stessa transazione)
+
+note over RPC, PO
+  Internal: sincrono nella RPC account.
+  Federato: consumer = bridge (stub) — vedi federation.
+end note
+
+@enduml

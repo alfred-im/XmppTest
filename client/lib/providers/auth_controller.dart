@@ -7,9 +7,13 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../machines/auth/auth_adapters.dart';
+import '../machines/auth/auth_machine.dart';
 import '../machines/notifications/auth_notifications_effects.dart';
 import '../machines/notifications/notifications_adapters.dart';
 import '../machines/notifications/notifications_machine.dart';
+import '../machines/multi-account/account_multi_account_effects.dart';
+import '../machines/multi-account/multi_account_adapters.dart';
 import '../machines/multi-account/multi_account_machine.dart';
 import '../models/open_account.dart';
 import '../models/profile_summary.dart';
@@ -31,10 +35,17 @@ class AuthController extends ChangeNotifier {
   }) : _manager = accountManager ?? AccountManager() {
     _navigation = navigation ?? NavigationCoordinator(_manager);
     _manager.onFocusedProfileSynced = notifyListeners;
-    final effects = AuthNotificationsEffects(this);
-    notificationsMachine = NotificationsMachine(effects: effects);
+    final notificationEffects = AuthNotificationsEffects(this);
+    notificationsMachine = NotificationsMachine(effects: notificationEffects);
     notificationsAdapters = NotificationsAdapters(notificationsMachine);
-    multiAccountMachine = MultiAccountMachine(manager: _manager);
+    final multiAccountEffects = AccountMultiAccountEffects(this, _navigation);
+    multiAccountMachine = MultiAccountMachine(effects: multiAccountEffects);
+    multiAccountAdapters = MultiAccountAdapters(
+      multiAccountMachine,
+      effects: multiAccountEffects,
+    );
+    authMachine = AuthMachine();
+    authAdapters = AuthAdapters(authMachine);
   }
 
   final AccountManager _manager;
@@ -43,6 +54,9 @@ class AuthController extends ChangeNotifier {
   late final NotificationsMachine notificationsMachine;
   late final NotificationsAdapters notificationsAdapters;
   late final MultiAccountMachine multiAccountMachine;
+  late final MultiAccountAdapters multiAccountAdapters;
+  late final AuthMachine authMachine;
+  late final AuthAdapters authAdapters;
 
   @visibleForTesting
   NavigationCoordinator get navigation => _navigation;
@@ -105,48 +119,54 @@ class AuthController extends ChangeNotifier {
   }
 
   Future<void> initialize() async {
+    authAdapters.onBootstrapStarted();
     isLoading = true;
     notifyListeners();
     try {
       await _manager.initialize();
-      if (!_manager.hasOpenAccounts) {
-        showAuthOverlay = true;
-        authOverlayDismissible = false;
-      }
+      authAdapters.onBootstrapCompleted(
+        hasOpenAccounts: _manager.hasOpenAccounts,
+      );
     } finally {
       isLoading = false;
       sessionReady = true;
-      multiAccountMachine.syncFromManager();
+      multiAccountAdapters.onManifestInitialized(
+        hasOpenAccounts: _manager.hasOpenAccounts,
+        hasFocusedSession: _manager.focusedSession != null,
+      );
+      _syncAuthOverlayFromMachine();
       notifyListeners();
     }
     unawaited(syncPushSubscriptions());
   }
 
   void openAuthOverlay({required bool dismissible}) {
-    showAuthOverlay = true;
-    authOverlayDismissible = dismissible;
+    authAdapters.onOverlayOpen(dismissible: dismissible);
+    _syncAuthOverlayFromMachine();
     error = null;
     notifyListeners();
   }
 
   void closeAuthOverlay() {
     if (!authOverlayDismissible && !_manager.hasOpenAccounts) return;
-    showAuthOverlay = false;
+    authAdapters.onOverlayClose();
+    _syncAuthOverlayFromMachine();
     error = null;
     notifyListeners();
   }
 
+  void _syncAuthOverlayFromMachine() {
+    showAuthOverlay = authMachine.showOverlay;
+    authOverlayDismissible = authMachine.overlayDismissible;
+  }
+
   Future<void> setFocus(String userId) async {
-    multiAccountMachine.send(FocusAccountRequested(userId));
     try {
-      await _navigation.switchToAccount(userId);
+      await multiAccountAdapters.focusAccount(userId);
       error = null;
     } catch (e) {
       error = _friendlyAuthError(e);
     }
-    multiAccountMachine.send(
-      FocusAccountCompleted(sessionReady: _manager.focusedSession != null),
-    );
     notifyListeners();
   }
 
@@ -154,7 +174,7 @@ class AuthController extends ChangeNotifier {
   Future<void> reconnectFocusedSession() async {
     if (!hasOpenAccounts || focusedSession != null) return;
     try {
-      await _manager.reconnectFocusedSession();
+      await multiAccountAdapters.reconnectFocusedSession();
       error = null;
     } catch (e) {
       error = _friendlyAuthError(e);
@@ -220,23 +240,43 @@ class AuthController extends ChangeNotifier {
     }
   }
 
+  /// Link `#indirizzo/chat` sull'account in focus (adapter shareable-link).
+  Future<bool> openConversationFromShareableLink({
+    required String accountUserId,
+    required String peerProfileId,
+  }) async {
+    try {
+      final ok = await _navigation.openFromShareableLink(
+        accountUserId: accountUserId,
+        peerProfileId: peerProfileId,
+      );
+      if (ok) error = null;
+      notifyListeners();
+      return ok;
+    } catch (e) {
+      error = _friendlyAuthError(e);
+      notifyListeners();
+      return false;
+    }
+  }
+
   void openConversation(ChatPeer peer) {
     _navigation.openPeerOnFocusedAccount(peer);
     notifyListeners();
   }
 
   void backToInboxOnMobile() {
-    _manager.showInboxOnMobile();
+    unawaited(_navigation.closeConversation());
     notifyListeners();
   }
 
   void openGroupChat() {
-    _manager.openGroupChat();
+    unawaited(_navigation.openGroupChat());
     notifyListeners();
   }
 
   void backToGroupHome() {
-    _manager.backToGroupHome();
+    unawaited(_navigation.backToGroupHome());
     notifyListeners();
   }
 
@@ -248,6 +288,7 @@ class AuthController extends ChangeNotifier {
   Future<void> signIn(String email, String password) async {
     final validationError = AuthIdentity.validateEmail(email);
     if (validationError != null) {
+      authAdapters.onValidationRejected();
       error = validationError;
       notifyListeners();
       return;
@@ -255,7 +296,11 @@ class AuthController extends ChangeNotifier {
 
     await _withLoading(() async {
       await _manager.openWithPassword(email: email, password: password);
-      showAuthOverlay = false;
+      authAdapters.onAuthOperationCompleted(success: true);
+      multiAccountAdapters.onAccountOpened(
+        sessionReady: _manager.focusedSession != null,
+      );
+      _syncAuthOverlayFromMachine();
       await _pushService.syncOpenAccounts(
         _manager.openAccounts,
         focusedSession: _manager.focusedSession,
@@ -272,6 +317,7 @@ class AuthController extends ChangeNotifier {
   }) async {
     final emailError = AuthIdentity.validateEmail(email);
     if (emailError != null) {
+      authAdapters.onValidationRejected();
       error = emailError;
       notifyListeners();
       return;
@@ -279,12 +325,14 @@ class AuthController extends ChangeNotifier {
 
     final usernameError = AuthIdentity.validateUsername(username);
     if (usernameError != null) {
+      authAdapters.onValidationRejected();
       error = usernameError;
       notifyListeners();
       return;
     }
 
     if (displayName.trim().isEmpty) {
+      authAdapters.onValidationRejected();
       error = 'Inserisci un nome visualizzato';
       notifyListeners();
       return;
@@ -302,7 +350,11 @@ class AuthController extends ChangeNotifier {
         displayName: displayName.trim(),
         profileKind: profileKind,
       );
-      showAuthOverlay = false;
+      authAdapters.onAuthOperationCompleted(success: true);
+      multiAccountAdapters.onAccountOpened(
+        sessionReady: _manager.focusedSession != null,
+      );
+      _syncAuthOverlayFromMachine();
       await _pushService.syncOpenAccounts(
         _manager.openAccounts,
         focusedSession: _manager.focusedSession,
@@ -350,10 +402,11 @@ class AuthController extends ChangeNotifier {
     );
     notificationsMachine.send(const UnregisterSubscriptionRequested());
     await _manager.removeAccount(userId);
+    multiAccountAdapters.onAccountClosed(wasLastAccount: remaining == 0);
     if (!_manager.hasOpenAccounts) {
-      showAuthOverlay = true;
-      authOverlayDismissible = false;
+      authAdapters.onLastAccountRemoved();
     }
+    _syncAuthOverlayFromMachine();
     notifyListeners();
   }
 
@@ -366,11 +419,14 @@ class AuthController extends ChangeNotifier {
 
   Future<void> _withLoading(Future<void> Function() action) async {
     error = null;
+    authAdapters.onAuthOperationStarted();
     isLoading = true;
     notifyListeners();
     try {
       await action();
     } catch (e) {
+      authAdapters.onAuthOperationFailed();
+      _syncAuthOverlayFromMachine();
       error = _friendlyAuthError(e);
     } finally {
       isLoading = false;
