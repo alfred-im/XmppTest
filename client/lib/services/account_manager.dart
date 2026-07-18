@@ -39,6 +39,7 @@ class AccountManager {
   final Set<String> _testOnlyAccountIds = {};
   List<OpenAccount> _manifestAccounts = [];
   String? _focusUserId;
+  Future<void> _focusOperationChain = Future<void>.value();
 
   /// Tutti gli account aperti (manifest); il focus può avere profilo aggiornato
   /// dalla sessione viva.
@@ -361,7 +362,38 @@ class AccountManager {
     diagLog('push', 'ensure_focus.ok', data: {'userId': userId});
   }
 
-  Future<void> setFocus(String userId) async {
+  /// Manifest con account ma sessione GoTrue assente in RAM — ripristina il focus.
+  Future<void> reconnectFocusedSession() {
+    return _enqueueFocusOperation(_reconnectFocusedSessionImpl);
+  }
+
+  Future<void> _reconnectFocusedSessionImpl() async {
+    await _refreshManifestCache();
+    if (_manifestAccounts.isEmpty) return;
+
+    final target = (_focusUserId != null && _hasAccount(_focusUserId!))
+        ? _focusUserId!
+        : _manifestAccounts.first.userId;
+    await _setFocusImpl(target);
+  }
+
+  Future<void> setFocus(String userId) {
+    return _enqueueFocusOperation(() => _setFocusImpl(userId));
+  }
+
+  Future<void> _enqueueFocusOperation(Future<void> Function() operation) async {
+    final previous = _focusOperationChain;
+    final gate = Completer<void>();
+    _focusOperationChain = gate.future;
+    await previous;
+    try {
+      await operation();
+    } finally {
+      gate.complete();
+    }
+  }
+
+  Future<void> _setFocusImpl(String userId) async {
     if (!_hasAccount(userId)) return;
 
     if (_focusUserId == userId) {
