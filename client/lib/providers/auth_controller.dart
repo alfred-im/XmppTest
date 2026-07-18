@@ -14,17 +14,25 @@ import '../models/chat_peer.dart';
 import '../models/profile.dart';
 import '../services/account_manager.dart';
 import '../services/account_session.dart';
+import '../services/navigation_coordinator.dart';
 import '../services/push_subscription_service.dart';
 import '../utils/auth_identity.dart';
 
 class AuthController extends ChangeNotifier {
-  AuthController({AccountManager? accountManager})
-      : _manager = accountManager ?? AccountManager() {
+  AuthController({
+    AccountManager? accountManager,
+    NavigationCoordinator? navigation,
+  }) : _manager = accountManager ?? AccountManager() {
+    _navigation = navigation ?? NavigationCoordinator(_manager);
     _manager.onFocusedProfileSynced = notifyListeners;
   }
 
   final AccountManager _manager;
+  late final NavigationCoordinator _navigation;
   final PushSubscriptionService _pushService = PushSubscriptionService();
+
+  @visibleForTesting
+  NavigationCoordinator get navigation => _navigation;
 
   bool isLoading = true;
   bool sessionReady = false;
@@ -90,7 +98,7 @@ class AuthController extends ChangeNotifier {
 
   Future<void> setFocus(String userId) async {
     try {
-      await _manager.setFocus(userId);
+      await _navigation.switchToAccount(userId);
       error = null;
     } catch (e) {
       error = _friendlyAuthError(e);
@@ -98,27 +106,67 @@ class AuthController extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Tap notifica push: focus sull'account destinatario prima di aprire la chat.
+  /// Tap notifica push: focus sull'account destinatario (delega a [NavigationCoordinator]).
   Future<bool> focusAccountForPushNotification(String recipientUserId) async {
-    if (!_manager.hasOpenAccount(recipientUserId)) return false;
-
     try {
-      await _manager.ensureRecipientAccountActive(recipientUserId);
-      error = null;
+      final ok = await _navigation.ensureAccountFocused(recipientUserId);
+      if (ok) {
+        error = null;
+      }
+      notifyListeners();
+      return ok;
     } catch (e) {
       error = _friendlyAuthError(e);
+      notifyListeners();
+      return false;
     }
-    notifyListeners();
+  }
 
-    final session = _manager.focusedSession;
-    return _manager.focusUserId == recipientUserId &&
-        session != null &&
-        session.userId == recipientUserId &&
-        error == null;
+  /// Tap push: account destinatario → inbox → conversazione (solo peer in inbox).
+  Future<bool> openConversationAfterPushTap({
+    required String recipientUserId,
+    required String peerProfileId,
+  }) async {
+    try {
+      final ok = await _navigation.openConversationOnAccount(
+        accountUserId: recipientUserId,
+        peerProfileId: peerProfileId,
+        allowProfileFallback: false,
+      );
+      if (ok) error = null;
+      notifyListeners();
+      return ok;
+    } catch (e) {
+      error = _friendlyAuthError(e);
+      notifyListeners();
+      return false;
+    }
+  }
+
+  /// Apre conversazione su account specifico (link condivisibili, compose).
+  Future<bool> openConversationOnAccount({
+    required String accountUserId,
+    required String peerProfileId,
+    bool allowProfileFallback = true,
+  }) async {
+    try {
+      final ok = await _navigation.openConversationOnAccount(
+        accountUserId: accountUserId,
+        peerProfileId: peerProfileId,
+        allowProfileFallback: allowProfileFallback,
+      );
+      if (ok) error = null;
+      notifyListeners();
+      return ok;
+    } catch (e) {
+      error = _friendlyAuthError(e);
+      notifyListeners();
+      return false;
+    }
   }
 
   void openConversation(ChatPeer peer) {
-    _manager.openConversation(peer);
+    _navigation.openPeerOnFocusedAccount(peer);
     notifyListeners();
   }
 

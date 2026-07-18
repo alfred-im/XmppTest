@@ -4,6 +4,15 @@ Modifiche rilevanti al progetto per tracciare evoluzione tecnica e decisioni imp
 
 ---
 
+## [Unreleased] - 2026-07-18
+
+### Aggiunto
+
+- **#194** — `diagnostic_log.dart`: log console `[alfred][categoria]` con `--dart-define=ALFRED_DIAGNOSTIC_LOG=true`; prima categoria `push` (tap notifica, focus, peer). Documentato in `AGENTS.md` e `client/scripts/test/README.md`. Build Pages senza define = silenzio.
+- Fix tap push: listener `navigator.serviceWorker` `message` per `Client.postMessage` dal SW (prima solo `window.message`, percorso sbagliato).
+
+---
+
 ## [Unreleased] - 2026-07-14
 
 ### Aggiunto

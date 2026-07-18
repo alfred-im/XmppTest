@@ -56,8 +56,21 @@ Richiedono rete (Supabase live) e/o browser. Non bloccano merge.
 
 Helper riusabili: `e2e/helpers/local-multi-account.ts`, `focus.ts`, `push.ts` (`simulateNotificationTap`, `installPushTestEnvironment`).
 
-Lancio: `bash scripts/test.sh e2e-push-local` (avvia Supabase locale, Flutter su `:8080` con VAPID e2e).  
+Lancio: `bash scripts/test.sh e2e-push-local` (avvia Supabase locale, Flutter su `:8080` con VAPID e2e e `ALFRED_DIAGNOSTIC_LOG=true`).  
 Per riusare un `flutter run` già avviato sullo stack locale: `E2E_PUSH_REUSE_FLUTTER=1 bash scripts/test.sh e2e-push-local`
+
+#### Log diagnostici push (`ALFRED_DIAGNOSTIC_LOG`)
+
+Strumentazione in `client/lib/utils/diagnostic_log.dart` — **non** inclusa nelle build Pages.
+
+```bash
+cd client && flutter run -d web-server --web-port=8080 --web-hostname=0.0.0.0 \
+  --dart-define=SUPABASE_URL=http://127.0.0.1:54321 \
+  --dart-define=SUPABASE_ANON_KEY=<anon locale> \
+  --dart-define=ALFRED_DIAGNOSTIC_LOG=true
+```
+
+In DevTools (console pagina), filtrare `[alfred][push]`. Fasi attese su tap riuscito: `sw.message` → `open_chat.emit` → `handler.enqueue` → `focus.ok` → `handler.chat_opened`. Uscite `FAIL …` indicano il punto esatto (es. `peer_timeout`, `focus_failed`). Script riproduzione locale: `client/e2e/push-bug-repro.spec.ts` (non in CI).
 
 ### SQL smoke push (`supabase/tests/` — post SYS-PUSH)
 

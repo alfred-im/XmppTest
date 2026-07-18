@@ -16,6 +16,11 @@ import {
   switchToAccountByDisplayName,
   waitForChatInput,
 } from './helpers/multi-account';
+import {
+  attachDiagnosticLogCollector,
+  dumpDiagnosticLogsOnFailure,
+  formatDiagnosticLogsFooter,
+} from './helpers/diagnostic-logs';
 import { attachPageErrorCollector } from './helpers/page-errors';
 import {
   deliverPushInServiceWorker,
@@ -49,11 +54,22 @@ test.beforeAll(() => {
   configureLocalPushSettings();
 });
 
+let diagLogs: string[] = [];
+
+test.beforeEach(({ page }) => {
+  diagLogs = attachDiagnosticLogCollector(page);
+});
+
+test.afterEach(({}, testInfo) => {
+  dumpDiagnosticLogsOnFailure(diagLogs, testInfo);
+});
+
 test('tap push con focus su altro account apre chat destinatario', async ({
   page,
   context,
 }) => {
   const errors = attachPageErrorCollector(page);
+  const diagFooter = () => formatDiagnosticLogsFooter(diagLogs);
 
   const { acct1, acct2, session1, session2 } =
     await prepareLocalMessagingPair('tap1', 'tap2');
@@ -116,5 +132,17 @@ test('tap push con focus su altro account apre chat destinatario', async ({
     timeout: E2E_TIMEOUT.message,
   });
 
-  expect(errors, `errori JS: ${errors.join('; ')}`).toEqual([]);
+  expect(
+    diagLogs.some(
+      (line) =>
+        line.includes('open_on_account.ok') ||
+        line.includes('resolve_peer') ||
+        line.includes('[nav]'),
+    ),
+    `percorso navigazione push atteso; ${diagFooter()}`,
+  ).toBe(true);
+
+  expect(errors, `errori JS: ${errors.join('; ')}; ${diagFooter()}`).toEqual(
+    [],
+  );
 });

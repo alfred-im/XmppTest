@@ -8,8 +8,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:provider/provider.dart';
 
-import '../models/chat_peer.dart';
 import '../providers/auth_controller.dart';
+import '../utils/diagnostic_log.dart';
 import '../utils/push_platform.dart';
 
 /// Gestisce tap notifica push → focus account + apertura chat.
@@ -50,6 +50,14 @@ class PushNotificationListenerState extends State<PushNotificationListener> {
   }
 
   void _enqueueOpenChat(PushOpenChatIntent intent) {
+    diagLog(
+      'push',
+      'handler.enqueue',
+      data: {
+        'recipientUserId': intent.conversation.ownerUserId,
+        'peerProfileId': intent.conversation.peerProfileId,
+      },
+    );
     _openChatChain = _openChatChain.then((_) async {
       await _handleOpenChat(intent);
     });
@@ -62,83 +70,50 @@ class PushNotificationListenerState extends State<PushNotificationListener> {
   }
 
   Future<void> _handleOpenChat(PushOpenChatIntent intent) async {
-    if (!mounted) return;
+    final conversation = intent.conversation;
+    if (!mounted) {
+      diagLogFail(
+        'push',
+        'handler.open_chat',
+        'unmounted',
+        data: {'recipientUserId': conversation.ownerUserId},
+      );
+      return;
+    }
     final auth = context.read<AuthController>();
     if (!auth.sessionReady) {
+      diagLogFail('push', 'handler.open_chat', 'session_not_ready');
       if (kIsWeb) {
-        PushPlatform.persistPendingOpenChat(intent.conversation);
+        PushPlatform.persistPendingOpenChat(conversation);
       }
       return;
     }
-
-    final conversation = intent.conversation;
 
     if (!auth.accountManager.hasOpenAccount(conversation.ownerUserId)) {
-      if (kIsWeb) PushPlatform.clearPendingOpenChat();
-      return;
-    }
-
-    final focused = await auth.focusAccountForPushNotification(
-      conversation.ownerUserId,
-    );
-    if (!focused || !mounted) {
-      if (kIsWeb) PushPlatform.clearPendingOpenChat();
-      return;
-    }
-
-    final session = auth.focusedSession;
-    if (session == null || session.userId != conversation.ownerUserId) {
-      if (kIsWeb) PushPlatform.clearPendingOpenChat();
-      return;
-    }
-
-    // Dopo il focus, il peer è in inbox (list_inbox) — non fare SELECT diretta su
-    // profiles (RLS / permessi variabili tra ambienti).
-    ChatPeer? peer;
-    for (var attempt = 0; attempt < 20; attempt++) {
-      if (!mounted) return;
-      final liveSession = auth.focusedSession;
-      if (liveSession == null ||
-          liveSession.userId != conversation.ownerUserId) {
-        break;
-      }
-
-      peer = liveSession.inboxController.findByProfileId(
-        conversation.peerProfileId,
+      diagLogFail(
+        'push',
+        'handler.open_chat',
+        'no_open_account',
+        data: {'recipientUserId': conversation.ownerUserId},
       );
-      if (peer != null && peer.profileId != liveSession.userId) {
-        break;
-      }
-
-      try {
-        final summary = await liveSession.profileService.findById(
-          conversation.peerProfileId,
-        );
-        if (summary != null && summary.id != liveSession.userId) {
-          peer = ChatPeer(profile: summary);
-          break;
-        }
-      } catch (_) {
-        // Inbox o profilo non ancora pronti (RLS / rete).
-      }
-
-      peer = null;
-      await Future<void>.delayed(const Duration(milliseconds: 100));
-    }
-
-    if (peer == null) {
       if (kIsWeb) PushPlatform.clearPendingOpenChat();
       return;
     }
 
-    final peerToOpen = peer;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      context.read<AuthController>().openConversation(peerToOpen);
+    final opened = await auth.openConversationAfterPushTap(
+      recipientUserId: conversation.ownerUserId,
+      peerProfileId: conversation.peerProfileId,
+    );
+
+    if (!mounted) return;
+
+    if (opened) {
       if (kIsWeb) {
         PushPlatform.clearPendingOpenChat();
       }
-    });
+    } else if (kIsWeb) {
+      PushPlatform.clearPendingOpenChat();
+    }
   }
 
   void _scheduleDrainPending() {
