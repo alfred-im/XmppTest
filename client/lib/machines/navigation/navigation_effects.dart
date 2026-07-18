@@ -12,6 +12,8 @@ abstract class NavigationEffects {
     required String accountUserId,
     required String peerProfileId,
     required bool allowProfileFallback,
+    int inboxRetryAttempts = 10,
+    bool skipStaleClear = false,
   });
 
   /// Tap notifica push — PROM-PUSH-NOTIFY-030/036, SURF-NOTIFICATIONS-007.

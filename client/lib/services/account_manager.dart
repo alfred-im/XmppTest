@@ -77,6 +77,18 @@ class AccountManager {
     _setViewFor(accountUserId, _storedViewFor(accountUserId).clearConversation());
   }
 
+  /// Link / compose: azzera chat solo se il peer attivo è diverso dal target.
+  void clearStaleConversationUnlessPeer(
+    String accountUserId,
+    String peerProfileId,
+  ) {
+    if (!_hasAccount(accountUserId)) return;
+    final active = _viewFor(accountUserId).activePeer?.profileId;
+    if (active != null && active != peerProfileId) {
+      clearConversationForAccount(accountUserId);
+    }
+  }
+
   void showInboxOnMobile() {
     final userId = _focusUserId;
     if (userId == null) return;

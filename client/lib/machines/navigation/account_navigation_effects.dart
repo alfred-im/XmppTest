@@ -14,6 +14,10 @@ class AccountNavigationEffects implements NavigationEffects {
 
   final AccountManager _manager;
 
+  static const _defaultInboxRetryAttempts = 10;
+  static const _pushInboxRetryAttempts = 12;
+  static const _inboxRetryDelay = Duration(milliseconds: 100);
+
   @override
   Future<void> focusAccount(String accountUserId) async {
     await _manager.setFocus(accountUserId);
@@ -44,6 +48,8 @@ class AccountNavigationEffects implements NavigationEffects {
     required String accountUserId,
     required String peerProfileId,
     required bool allowProfileFallback,
+    int inboxRetryAttempts = _defaultInboxRetryAttempts,
+    bool skipStaleClear = false,
   }) async {
     diagLog(
       'nav',
@@ -65,6 +71,10 @@ class AccountNavigationEffects implements NavigationEffects {
       return false;
     }
 
+    if (!skipStaleClear) {
+      _manager.clearStaleConversationUnlessPeer(accountUserId, peerProfileId);
+    }
+
     if (!await _ensureAccountFocused(accountUserId)) {
       return false;
     }
@@ -83,10 +93,12 @@ class AccountNavigationEffects implements NavigationEffects {
       return false;
     }
 
-    final peer = await _resolvePeerInInbox(
+    final peer = await _resolvePeer(
       session: session,
       peerProfileId: peerProfileId,
       allowProfileFallback: allowProfileFallback,
+      inboxRetryAttempts: inboxRetryAttempts,
+      logSource: 'resolve_peer',
     );
 
     if (peer == null) {
@@ -112,69 +124,15 @@ class AccountNavigationEffects implements NavigationEffects {
   Future<bool> openConversationFromPushTap({
     required String accountUserId,
     required String peerProfileId,
-  }) async {
-    diagLog(
-      'nav',
-      'open_from_push.start',
-      data: {
-        'accountUserId': accountUserId,
-        'peerProfileId': peerProfileId,
-        'focusBefore': _manager.focusUserId,
-      },
-    );
-
-    if (accountUserId == peerProfileId) {
-      diagLogFail(
-        'nav',
-        'open_from_push',
-        'self_peer',
-        data: {'accountUserId': accountUserId},
-      );
-      return false;
-    }
-
+  }) {
     _manager.clearConversationForAccount(accountUserId);
-
-    if (!await _ensureAccountFocused(accountUserId)) {
-      return false;
-    }
-
-    final session = _manager.focusedSession;
-    if (session == null || session.userId != accountUserId) {
-      diagLogFail(
-        'nav',
-        'open_from_push',
-        'wrong_session',
-        data: {
-          'expected': accountUserId,
-          'actual': session?.userId,
-        },
-      );
-      return false;
-    }
-
-    final peer = await _resolvePeerForPushTap(
-      session: session,
+    return openConversationOnAccount(
+      accountUserId: accountUserId,
       peerProfileId: peerProfileId,
+      allowProfileFallback: true,
+      inboxRetryAttempts: _pushInboxRetryAttempts,
+      skipStaleClear: true,
     );
-
-    if (peer == null) {
-      diagLogFail(
-        'nav',
-        'open_from_push',
-        'peer_not_found',
-        data: {'peerProfileId': peerProfileId},
-      );
-      return false;
-    }
-
-    _manager.openConversation(peer);
-    diagLog(
-      'nav',
-      'open_from_push.ok',
-      data: {'accountUserId': accountUserId, 'peerProfileId': peerProfileId},
-    );
-    return true;
   }
 
   Future<bool> _ensureAccountFocused(String accountUserId) async {
@@ -226,48 +184,44 @@ class AccountNavigationEffects implements NavigationEffects {
     required String peerProfileId,
     bool allowProfileFallback = true,
   }) {
-    return _resolvePeerInInbox(
+    return _resolvePeer(
       session: session,
       peerProfileId: peerProfileId,
       allowProfileFallback: allowProfileFallback,
+      inboxRetryAttempts: _defaultInboxRetryAttempts,
+      logSource: 'resolve_peer',
     );
   }
 
-  Future<ChatPeer?> _resolvePeerInInbox({
+  Future<ChatPeer?> _resolvePeer({
     required AccountSession session,
     required String peerProfileId,
     required bool allowProfileFallback,
+    required int inboxRetryAttempts,
+    required String logSource,
   }) async {
     if (peerProfileId == session.userId) return null;
 
-    await session.inboxController.load();
-
-    var peer = session.inboxController.findByProfileId(peerProfileId);
-    if (peer != null && peer.profileId != session.userId) {
-      diagLog(
-        'nav',
-        'resolve_peer',
-        data: {'source': 'inbox', 'attempt': 0},
-      );
-      return peer;
-    }
-
-    for (var attempt = 1; attempt < 10; attempt++) {
+    for (var attempt = 0; attempt < inboxRetryAttempts; attempt++) {
       if (session.inboxController.isLoading) {
-        await Future<void>.delayed(const Duration(milliseconds: 50));
+        await Future<void>.delayed(_inboxRetryDelay);
         continue;
       }
+
       await session.inboxController.load();
-      peer = session.inboxController.findByProfileId(peerProfileId);
+      final peer = session.inboxController.findByProfileId(peerProfileId);
       if (peer != null && peer.profileId != session.userId) {
         diagLog(
           'nav',
-          'resolve_peer',
+          logSource,
           data: {'source': 'inbox', 'attempt': attempt},
         );
         return peer;
       }
-      break;
+
+      if (attempt < inboxRetryAttempts - 1) {
+        await Future<void>.delayed(_inboxRetryDelay);
+      }
     }
 
     if (!allowProfileFallback) return null;
@@ -277,7 +231,7 @@ class AccountNavigationEffects implements NavigationEffects {
       if (summary != null && summary.id != session.userId) {
         diagLog(
           'nav',
-          'resolve_peer',
+          logSource,
           data: {'source': 'profile_fallback'},
         );
         return ChatPeer(profile: summary);
@@ -285,60 +239,7 @@ class AccountNavigationEffects implements NavigationEffects {
     } catch (e) {
       diagLogFail(
         'nav',
-        'resolve_peer',
-        'profile_lookup_error',
-        data: {'error': e.runtimeType.toString()},
-      );
-    }
-
-    return null;
-  }
-
-  static const _pushInboxRetryAttempts = 12;
-  static const _pushInboxRetryDelay = Duration(milliseconds: 100);
-
-  Future<ChatPeer?> _resolvePeerForPushTap({
-    required AccountSession session,
-    required String peerProfileId,
-  }) async {
-    if (peerProfileId == session.userId) return null;
-
-    for (var attempt = 0; attempt < _pushInboxRetryAttempts; attempt++) {
-      if (session.inboxController.isLoading) {
-        await Future<void>.delayed(_pushInboxRetryDelay);
-        continue;
-      }
-
-      await session.inboxController.load();
-      final peer = session.inboxController.findByProfileId(peerProfileId);
-      if (peer != null && peer.profileId != session.userId) {
-        diagLog(
-          'nav',
-          'resolve_peer_push',
-          data: {'source': 'inbox', 'attempt': attempt},
-        );
-        return peer;
-      }
-
-      if (attempt < _pushInboxRetryAttempts - 1) {
-        await Future<void>.delayed(_pushInboxRetryDelay);
-      }
-    }
-
-    try {
-      final summary = await session.profileService.findById(peerProfileId);
-      if (summary != null && summary.id != session.userId) {
-        diagLog(
-          'nav',
-          'resolve_peer_push',
-          data: {'source': 'profile_fallback'},
-        );
-        return ChatPeer(profile: summary);
-      }
-    } catch (e) {
-      diagLogFail(
-        'nav',
-        'resolve_peer_push',
+        logSource,
         'profile_lookup_error',
         data: {'error': e.runtimeType.toString()},
       );

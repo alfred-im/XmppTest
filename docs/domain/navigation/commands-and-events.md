@@ -13,7 +13,7 @@
 | `OpenPeerOnFocusedAccount` | Tap riga inbox / contatto | Chat su account già in focus. |
 | `OpenConversationOnAccount` | Push, link, compose | Focus + resolve peer + open chat. |
 | `OpenFromPushTap` | Adapter notifications | `openConversationFromPushTap`: clear stale, focus, retry inbox, fallback profilo. |
-| `OpenFromShareableLink` | Adapter shareable-link | `OpenConversationOnAccount`, fallback consentito. |
+| `OpenFromShareableLink` | Adapter shareable-link | `openConversationOnAccount` con clear stale + fallback profilo. |
 | `CloseConversation` | Back mobile / chiudi chat | Torna a inbox (AccountViewState). |
 
 ---

@@ -26,7 +26,7 @@
 |----------|-----------|
 | **multi-account** | `FocusAccount` prima di aprire chat su altro account. |
 | **notifications** | `OpenFromPushTap` → percorso dedicato `openConversationFromPushTap` (clear stale + retry + fallback profilo). |
-| **shareable-link** | `OpenFromShareableLink` → stesso percorso composito. |
+| **shareable-link** | `OpenFromShareableLink` → `openConversationOnAccount` (clear stale se peer diverso, fallback profilo). |
 
 ---
 
