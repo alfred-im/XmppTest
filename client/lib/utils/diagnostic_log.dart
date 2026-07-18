@@ -4,9 +4,21 @@
 
 import 'package:flutter/foundation.dart';
 
-/// Log diagnostici client — attivi solo con `--dart-define=ALFRED_DIAGNOSTIC_LOG=true`.
+/// Log diagnostici client (solo sviluppo / agenti).
 ///
-/// Release / GitHub Pages: define assente → nessun output (ramo eliminato a compile-time).
+/// **Attivazione:** `--dart-define=ALFRED_DIAGNOSTIC_LOG=true` su `flutter run` o build
+/// locale. GitHub Pages / `verify.sh --build` **non** passano il define → nessun output
+/// (ramo eliminato a compile-time).
+///
+/// **API:** [diagLog] fase informativa; [diagLogFail] uscita anticipata (`FAIL motivo`).
+///
+/// **Formato console:** `[alfred][categoria] fase …` oppure `… FAIL motivo key=value`
+///
+/// **Categorie attuali:** `push` (tap notifica: ingresso SW→pagina, focus, peer, chat).
+/// Altre categorie usano lo stesso modulo quando servono.
+///
+/// **Lettura:** DevTools pagina (non service worker). Filtrare per `[alfred]`.
+/// Vedi `AGENTS.md` § Log diagnostici e `client/scripts/test/README.md`.
 const bool kDiagnosticLogEnabled = bool.fromEnvironment('ALFRED_DIAGNOSTIC_LOG');
 
 const _prefix = '[alfred]';

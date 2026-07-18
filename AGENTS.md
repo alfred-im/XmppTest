@@ -94,6 +94,21 @@ backend out of the box.
 - **Integrazione multi-account senza browser** (affidabile per agenti): `bash scripts/test.sh integration` — login agent1/agent2 + RPC inbox/messaggi su Supabase live.
 - **E2E multi-account** (browser): `bash scripts/test.sh e2e-multi`
 
+### Log diagnostici (`ALFRED_DIAGNOSTIC_LOG`)
+
+Modulo: `client/lib/utils/diagnostic_log.dart` — **non** è promessa SDD; solo debug agente/sviluppo.
+
+| | |
+|---|---|
+| **Attivazione** | `--dart-define=ALFRED_DIAGNOSTIC_LOG=true` su `flutter run` / build locale |
+| **Produzione (Pages)** | CI **non** passa il define → nessun log in console |
+| **Formato** | `[alfred][push] fase …` o `… FAIL motivo key=value` |
+| **Dove leggere** | DevTools **pagina** (Console), filtro `[alfred]` — non il pannello service worker |
+
+`e2e-push-local` abilita il define sul dev server Flutter locale.
+
+**Tap push:** se dopo il tap non compare `window.message` / `open_chat.emit`, l'intento **non è entrato** in Flutter (sospetto canale SW `client.postMessage` → pagina). Se compare la catena fino a `handler.chat_opened`, il Dart ha fatto focus + chat.
+
 ### Running the app (dev)
 - `cd client && flutter run -d web-server --web-port=8080 --web-hostname=0.0.0.0`, then open `http://localhost:8080/`.
 - Use the `web-server` device (above): `-d chrome` requires `CHROME_EXECUTABLE` + a display and is less reliable here.
