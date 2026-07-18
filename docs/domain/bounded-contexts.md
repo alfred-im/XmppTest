@@ -39,4 +39,4 @@ messaging ──RPC──► reception, delivery
 | `approved` | Modello congelato — si implementa |
 | `implemented` | Codice allineato al modello su `main` |
 
-Tutti i contesti sono **`scheletro`** tranne **notifications** (`implemented` — vedi [notifications/README.md](./notifications/README.md)).
+Tutti i contesti sono **`scheletro`** tranne **notifications**, **multi-account** e **navigation** (`implemented`).

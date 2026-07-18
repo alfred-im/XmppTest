@@ -10,6 +10,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../machines/notifications/auth_notifications_effects.dart';
 import '../machines/notifications/notifications_adapters.dart';
 import '../machines/notifications/notifications_machine.dart';
+import '../machines/multi-account/multi_account_machine.dart';
 import '../models/open_account.dart';
 import '../models/profile_summary.dart';
 import '../models/account_view_state.dart';
@@ -33,6 +34,7 @@ class AuthController extends ChangeNotifier {
     final effects = AuthNotificationsEffects(this);
     notificationsMachine = NotificationsMachine(effects: effects);
     notificationsAdapters = NotificationsAdapters(notificationsMachine);
+    multiAccountMachine = MultiAccountMachine(manager: _manager);
   }
 
   final AccountManager _manager;
@@ -40,6 +42,7 @@ class AuthController extends ChangeNotifier {
   final PushSubscriptionService _pushService = PushSubscriptionService();
   late final NotificationsMachine notificationsMachine;
   late final NotificationsAdapters notificationsAdapters;
+  late final MultiAccountMachine multiAccountMachine;
 
   @visibleForTesting
   NavigationCoordinator get navigation => _navigation;
@@ -113,6 +116,7 @@ class AuthController extends ChangeNotifier {
     } finally {
       isLoading = false;
       sessionReady = true;
+      multiAccountMachine.syncFromManager();
       notifyListeners();
     }
     unawaited(syncPushSubscriptions());
@@ -133,12 +137,16 @@ class AuthController extends ChangeNotifier {
   }
 
   Future<void> setFocus(String userId) async {
+    multiAccountMachine.send(FocusAccountRequested(userId));
     try {
       await _navigation.switchToAccount(userId);
       error = null;
     } catch (e) {
       error = _friendlyAuthError(e);
     }
+    multiAccountMachine.send(
+      FocusAccountCompleted(sessionReady: _manager.focusedSession != null),
+    );
     notifyListeners();
   }
 
@@ -164,10 +172,9 @@ class AuthController extends ChangeNotifier {
     required String peerProfileId,
   }) async {
     try {
-      final ok = await _navigation.openConversationOnAccount(
+      final ok = await _navigation.adapters.openFromPushTap(
         accountUserId: recipientUserId,
         peerProfileId: peerProfileId,
-        allowProfileFallback: false,
       );
       if (ok) error = null;
       notifyListeners();
