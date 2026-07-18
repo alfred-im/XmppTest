@@ -307,8 +307,8 @@ export async function installPushTestEnvironment(
 }
 
 /**
- * Simula tap notifica: `notificationclick` in push_sw.js (postMessage open_chat).
- * In headless prova SW, poi fallback `window.postMessage` se il focus non cambia.
+ * Simula tap notifica: `notificationclick` in push_sw.js → `Client.postMessage`.
+ * Il client Flutter ascolta `navigator.serviceWorker` `message` (non `window`).
  */
 export async function simulateNotificationTap(
   page: Page,
@@ -329,29 +329,23 @@ export async function simulateNotificationTap(
       .waitForEvent('serviceworker', { timeout: 10_000 })
       .catch(() => null));
 
-  if (sw) {
-    await sw.evaluate(async (msg) => {
-      const clients = await self.clients.matchAll({
-        type: 'window',
-        includeUncontrolled: true,
-      });
-      for (const client of clients) {
-        client.postMessage(msg);
-        try {
-          if ('focus' in client) await client.focus();
-        } catch {
-          // headless: focus vietato
-        }
-      }
-    }, openChatBody);
-
-    if (await waitForFocusedUserId(page, payload.recipientUserId, 4_000)) {
-      return;
-    }
+  if (!sw) {
+    throw new Error('service worker push non registrato');
   }
 
-  await page.evaluate((msg) => {
-    window.postMessage(msg, '*');
+  await sw.evaluate(async (msg) => {
+    const clients = await self.clients.matchAll({
+      type: 'window',
+      includeUncontrolled: true,
+    });
+    for (const client of clients) {
+      client.postMessage(msg);
+      try {
+        if ('focus' in client) await client.focus();
+      } catch {
+        // headless: focus vietato
+      }
+    }
   }, openChatBody);
 
   await waitForFocusedUserId(page, payload.recipientUserId, E2E_TIMEOUT.ui);

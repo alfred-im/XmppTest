@@ -70,7 +70,7 @@ cd client && flutter run -d web-server --web-port=8080 --web-hostname=0.0.0.0 \
   --dart-define=ALFRED_DIAGNOSTIC_LOG=true
 ```
 
-In DevTools (console pagina), filtrare `[alfred][push]`. Fasi attese su tap riuscito: `window.message` → `open_chat.emit` → `handler.enqueue` → `focus.ok` → `handler.chat_opened`. Uscite `FAIL …` indicano il punto esatto (es. `peer_timeout`, `focus_failed`). Script riproduzione locale: `client/e2e/push-bug-repro.spec.ts` (non in CI).
+In DevTools (console pagina), filtrare `[alfred][push]`. Fasi attese su tap riuscito: `sw.message` → `open_chat.emit` → `handler.enqueue` → `focus.ok` → `handler.chat_opened`. Uscite `FAIL …` indicano il punto esatto (es. `peer_timeout`, `focus_failed`). Script riproduzione locale: `client/e2e/push-bug-repro.spec.ts` (non in CI).
 
 ### SQL smoke push (`supabase/tests/` — post SYS-PUSH)
 

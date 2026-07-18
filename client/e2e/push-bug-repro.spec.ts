@@ -125,33 +125,6 @@ test('A scrive a B, tap notifica B con notificationclick reale', async ({
   });
   console.log('=== SW BEFORE CLICK ===', JSON.stringify(swDiagnostics));
 
-  const openChatBody = JSON.stringify({
-    type: 'open_chat',
-    recipientUserId: acct2.userId,
-    peerProfileId: acct1.userId,
-  });
-
-  const swPost = await sw.evaluate(async (msg) => {
-    const clients = await self.clients.matchAll({
-      type: 'window',
-      includeUncontrolled: true,
-    });
-    for (const client of clients) {
-      client.postMessage(msg);
-    }
-    return clients.length;
-  }, openChatBody);
-  console.log('=== SW POSTMESSAGE (explicit) ===', swPost);
-  await page.waitForTimeout(2_000);
-  console.log('=== DIAG AFTER SW POST ===\n' + diagLogs.join('\n'));
-
-  await page.evaluate((msg) => {
-    window.postMessage(msg, '*');
-  }, openChatBody);
-  console.log('=== WINDOW POSTMESSAGE (explicit) ===');
-  await page.waitForTimeout(2_000);
-  console.log('=== DIAG AFTER WINDOW POST ===\n' + diagLogs.join('\n'));
-
   const clickResult = await sw.evaluate(async () => {
     const notifications = await self.registration.getNotifications();
     if (notifications.length === 0) {
@@ -194,8 +167,8 @@ test('A scrive a B, tap notifica B con notificationclick reale', async ({
   await page.screenshot({ path: '/tmp/push-bug-repro.png', fullPage: true });
 
   expect(
-    diagLogs.some((l) => l.includes('window.message') || l.includes('open_chat.emit')),
-    'open_chat deve comparire nei log diagnostici',
+    diagLogs.some((l) => l.includes('sw.message') || l.includes('open_chat.emit')),
+    `tap deve arrivare via sw.message; log:\n${diagLogs.join('\n')}`,
   ).toBe(true);
 
   expect(focusedB, `focus atteso B (${acct2.userId}), log:\n${diagLogs.join('\n')}`).toBe(

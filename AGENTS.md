@@ -107,7 +107,7 @@ Modulo: `client/lib/utils/diagnostic_log.dart` — **non** è promessa SDD; solo
 
 `e2e-push-local` abilita il define sul dev server Flutter locale.
 
-**Tap push:** se dopo il tap non compare `window.message` / `open_chat.emit`, l'intento **non è entrato** in Flutter (sospetto canale SW `client.postMessage` → pagina). Se compare la catena fino a `handler.chat_opened`, il Dart ha fatto focus + chat.
+**Tap push:** se dopo il tap non compare `sw.message` / `open_chat.emit`, l'intento **non è entrato** in Flutter. Il canale corretto è `navigator.serviceWorker` `message` (non `window.message` per `Client.postMessage` dal SW). Se compare la catena fino a `handler.chat_opened`, il Dart ha fatto focus + chat.
 
 ### Running the app (dev)
 - `cd client && flutter run -d web-server --web-port=8080 --web-hostname=0.0.0.0`, then open `http://localhost:8080/`.

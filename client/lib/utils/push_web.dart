@@ -237,9 +237,10 @@ class PushPlatform {
     return null;
   }
 
-  static void _handleWindowMessage(web.Event event) {
-    if (!event.isA<web.MessageEvent>()) return;
-    final messageEvent = event as web.MessageEvent;
+  static void _handleIncomingMessage(
+    web.MessageEvent messageEvent,
+    String logSource,
+  ) {
     final raw = _coerceMessagePayload(messageEvent.data);
     if (raw == null) return;
 
@@ -253,12 +254,12 @@ class PushPlatform {
     if (map['type'] != 'open_chat') return;
     final conversation = PushConversationKey.tryFromPayload(map);
     if (conversation == null) {
-      diagLogFail('push', 'window.message', 'open_chat_invalid_payload');
+      diagLogFail('push', logSource, 'open_chat_invalid_payload');
       return;
     }
     diagLog(
       'push',
-      'window.message',
+      logSource,
       data: {
         'type': 'open_chat',
         'recipientUserId': conversation.ownerUserId,
@@ -266,6 +267,16 @@ class PushPlatform {
       },
     );
     _emitOpenChat(conversation);
+  }
+
+  static void _handleWindowMessage(web.Event event) {
+    if (!event.isA<web.MessageEvent>()) return;
+    _handleIncomingMessage(event as web.MessageEvent, 'window.message');
+  }
+
+  static void _handleServiceWorkerMessage(web.Event event) {
+    if (!event.isA<web.MessageEvent>()) return;
+    _handleIncomingMessage(event as web.MessageEvent, 'sw.message');
   }
 
   static void _handleHashChange(web.Event event) {
@@ -279,6 +290,10 @@ class PushPlatform {
     if (_messageHookInstalled) return;
     _messageHookInstalled = true;
     diagLog('push', 'hook.install');
+    web.window.navigator.serviceWorker.addEventListener(
+      'message',
+      _handleServiceWorkerMessage.toJS,
+    );
     web.window.addEventListener('message', _handleWindowMessage.toJS);
     web.window.addEventListener('hashchange', _handleHashChange.toJS);
     tryDrainPendingOpenChat();
