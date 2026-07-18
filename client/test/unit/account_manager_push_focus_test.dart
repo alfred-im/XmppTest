@@ -109,5 +109,17 @@ void main() {
       expect(manager.focusedSession?.userId, 'account-b');
       expect(restoreCallsForB, 1);
     });
+
+    test('reconnectFocusedSession restores session when manifest has focus but RAM is empty',
+        () async {
+      await manager.initialize();
+      manager.clearSessionsInRamForTest();
+
+      await manager.reconnectFocusedSession();
+
+      expect(manager.focusUserId, 'account-a');
+      expect(manager.focusedSession?.userId, 'account-a');
+      expect(restoreCallsForA, 2);
+    });
   });
 }

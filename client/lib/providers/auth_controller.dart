@@ -150,6 +150,18 @@ class AuthController extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Account nel manifest ma sessione assente: ripristina connessione GoTrue.
+  Future<void> reconnectFocusedSession() async {
+    if (!hasOpenAccounts || focusedSession != null) return;
+    try {
+      await _manager.reconnectFocusedSession();
+      error = null;
+    } catch (e) {
+      error = _friendlyAuthError(e);
+    }
+    notifyListeners();
+  }
+
   /// Tap notifica push: focus sull'account destinatario (delega a [NavigationCoordinator]).
   Future<bool> focusAccountForPushNotification(String recipientUserId) async {
     try {

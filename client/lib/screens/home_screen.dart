@@ -208,20 +208,22 @@ class _HomeScreenState extends State<HomeScreen> {
     final showChatOnMobile = auth.activePeer != null;
     final sidebarWidth = width >= 1100 ? 380.0 : 320.0;
 
-    final inboxArea = accountUserId != null && inbox != null
-        ? ListenableBuilder(
+    final inboxArea = !auth.hasOpenAccounts
+        ? const NoAccountPlaceholder()
+        : session == null
+            ? const _ReconnectingAccountPlaceholder()
+            : ListenableBuilder(
             key: ValueKey(accountUserId),
-            listenable: inbox,
+            listenable: inbox!,
             builder: (context, _) => _inboxPanel(
               context: context,
               auth: auth,
               inbox: inbox,
-              accountUserId: accountUserId,
+              accountUserId: accountUserId!,
               showDrawerButton: !isWide,
               showTopBar: !isWide,
             ),
-          )
-        : const NoAccountPlaceholder();
+          );
 
     if (isWide) {
       return Scaffold(
@@ -253,11 +255,27 @@ class _HomeScreenState extends State<HomeScreen> {
       );
     }
 
+    final needsSessionRecovery =
+        auth.hasOpenAccounts && session == null;
+
     return Scaffold(
       key: _scaffoldKey,
       drawer: Drawer(
         child: _accountSidebar(context),
       ),
+      appBar: needsSessionRecovery
+          ? AppBar(
+              backgroundColor: AlfredColors.panel,
+              foregroundColor: AlfredColors.textPrimary,
+              elevation: 0,
+              leading: IconButton(
+                icon: const Icon(Icons.menu),
+                tooltip: 'Account',
+                onPressed: _openDrawer,
+              ),
+              title: const Text('Riconnessione…'),
+            )
+          : null,
       body: !showChatOnMobile || auth.showInboxOnMobile
           ? inboxArea
           : _chatArea(
@@ -278,6 +296,35 @@ class _HomeScreenState extends State<HomeScreen> {
         _mainContent(context),
         if (auth.showAuthOverlay) const AuthOverlay(),
       ],
+    );
+  }
+}
+
+/// Manifest con account ma sessione non ancora in RAM: riconnette invece del placeholder.
+class _ReconnectingAccountPlaceholder extends StatefulWidget {
+  const _ReconnectingAccountPlaceholder();
+
+  @override
+  State<_ReconnectingAccountPlaceholder> createState() =>
+      _ReconnectingAccountPlaceholderState();
+}
+
+class _ReconnectingAccountPlaceholderState
+    extends State<_ReconnectingAccountPlaceholder> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      unawaited(context.read<AuthController>().reconnectFocusedSession());
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return const ColoredBox(
+      color: AlfredColors.surface,
+      child: Center(child: CircularProgressIndicator()),
     );
   }
 }
