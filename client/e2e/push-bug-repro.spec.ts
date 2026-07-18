@@ -28,6 +28,11 @@ import {
   ensurePushSubscriptionInDb,
   installPushTestEnvironment,
 } from './helpers/push';
+import {
+  attachDiagnosticLogCollector,
+  dumpDiagnosticLogsOnFailure,
+  formatDiagnosticLogsFooter,
+} from './helpers/diagnostic-logs';
 import { E2E_TIMEOUT } from './helpers/timeouts';
 
 test.use({
@@ -36,6 +41,16 @@ test.use({
   headless: false,
 });
 test.setTimeout(300_000);
+
+let diagLogs: string[] = [];
+
+test.beforeEach(({ page }) => {
+  diagLogs = attachDiagnosticLogCollector(page);
+});
+
+test.afterEach(({}, testInfo) => {
+  dumpDiagnosticLogsOnFailure(diagLogs, testInfo);
+});
 
 test.beforeAll(() => {
   test.skip(!isLocalSupabaseStack(), 'stack locale richiesto');
@@ -52,11 +67,7 @@ test('A scrive a B, tap notifica B con notificationclick reale', async ({
   page,
   context,
 }) => {
-  const diagLogs: string[] = [];
-  page.on('console', (msg) => {
-    const text = msg.text();
-    if (text.includes('[alfred]')) diagLogs.push(text);
-  });
+  const diagFooter = () => formatDiagnosticLogsFooter(diagLogs);
 
   const { acct1, acct2, session1, session2 } =
     await prepareLocalMessagingPair('bugA', 'bugB');
@@ -158,22 +169,15 @@ test('A scrive a B, tap notifica B con notificationclick reale', async ({
   const focusAfter = await readFocusedUserId(page);
   const focusedB = focusAfter === acct2.userId;
 
-  // Report
-  console.log('=== CLICK RESULT ===', JSON.stringify(clickResult));
-  console.log('=== FOCUS AFTER ===', focusAfter);
-  console.log('=== FOCUSED B? ===', focusedB);
-  console.log('=== DIAG LOGS ===\n' + diagLogs.join('\n'));
-
-  await page.screenshot({ path: '/tmp/push-bug-repro.png', fullPage: true });
-
   expect(
     diagLogs.some((l) => l.includes('sw.message') || l.includes('open_chat.emit')),
-    `tap deve arrivare via sw.message; log:\n${diagLogs.join('\n')}`,
+    `tap deve arrivare via sw.message; ${diagFooter()}`,
   ).toBe(true);
 
-  expect(focusedB, `focus atteso B (${acct2.userId}), log:\n${diagLogs.join('\n')}`).toBe(
-    true,
-  );
+  expect(
+    focusedB,
+    `focus atteso B (${acct2.userId}); ${diagFooter()}`,
+  ).toBe(true);
 
   await waitForChatInput(page);
   await expect(page.getByText(messageBodyAlreadySent)).toBeVisible({
