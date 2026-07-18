@@ -108,6 +108,75 @@ class AccountNavigationEffects implements NavigationEffects {
     return true;
   }
 
+  @override
+  Future<bool> openConversationFromPushTap({
+    required String accountUserId,
+    required String peerProfileId,
+  }) async {
+    diagLog(
+      'nav',
+      'open_from_push.start',
+      data: {
+        'accountUserId': accountUserId,
+        'peerProfileId': peerProfileId,
+        'focusBefore': _manager.focusUserId,
+      },
+    );
+
+    if (accountUserId == peerProfileId) {
+      diagLogFail(
+        'nav',
+        'open_from_push',
+        'self_peer',
+        data: {'accountUserId': accountUserId},
+      );
+      return false;
+    }
+
+    _manager.clearConversationForAccount(accountUserId);
+
+    if (!await _ensureAccountFocused(accountUserId)) {
+      return false;
+    }
+
+    final session = _manager.focusedSession;
+    if (session == null || session.userId != accountUserId) {
+      diagLogFail(
+        'nav',
+        'open_from_push',
+        'wrong_session',
+        data: {
+          'expected': accountUserId,
+          'actual': session?.userId,
+        },
+      );
+      return false;
+    }
+
+    final peer = await _resolvePeerForPushTap(
+      session: session,
+      peerProfileId: peerProfileId,
+    );
+
+    if (peer == null) {
+      diagLogFail(
+        'nav',
+        'open_from_push',
+        'peer_not_found',
+        data: {'peerProfileId': peerProfileId},
+      );
+      return false;
+    }
+
+    _manager.openConversation(peer);
+    diagLog(
+      'nav',
+      'open_from_push.ok',
+      data: {'accountUserId': accountUserId, 'peerProfileId': peerProfileId},
+    );
+    return true;
+  }
+
   Future<bool> _ensureAccountFocused(String accountUserId) async {
     diagLog(
       'nav',
@@ -217,6 +286,59 @@ class AccountNavigationEffects implements NavigationEffects {
       diagLogFail(
         'nav',
         'resolve_peer',
+        'profile_lookup_error',
+        data: {'error': e.runtimeType.toString()},
+      );
+    }
+
+    return null;
+  }
+
+  static const _pushInboxRetryAttempts = 12;
+  static const _pushInboxRetryDelay = Duration(milliseconds: 100);
+
+  Future<ChatPeer?> _resolvePeerForPushTap({
+    required AccountSession session,
+    required String peerProfileId,
+  }) async {
+    if (peerProfileId == session.userId) return null;
+
+    for (var attempt = 0; attempt < _pushInboxRetryAttempts; attempt++) {
+      if (session.inboxController.isLoading) {
+        await Future<void>.delayed(_pushInboxRetryDelay);
+        continue;
+      }
+
+      await session.inboxController.load();
+      final peer = session.inboxController.findByProfileId(peerProfileId);
+      if (peer != null && peer.profileId != session.userId) {
+        diagLog(
+          'nav',
+          'resolve_peer_push',
+          data: {'source': 'inbox', 'attempt': attempt},
+        );
+        return peer;
+      }
+
+      if (attempt < _pushInboxRetryAttempts - 1) {
+        await Future<void>.delayed(_pushInboxRetryDelay);
+      }
+    }
+
+    try {
+      final summary = await session.profileService.findById(peerProfileId);
+      if (summary != null && summary.id != session.userId) {
+        diagLog(
+          'nav',
+          'resolve_peer_push',
+          data: {'source': 'profile_fallback'},
+        );
+        return ChatPeer(profile: summary);
+      }
+    } catch (e) {
+      diagLogFail(
+        'nav',
+        'resolve_peer_push',
         'profile_lookup_error',
         data: {'error': e.runtimeType.toString()},
       );

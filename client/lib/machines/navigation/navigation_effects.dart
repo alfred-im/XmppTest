@@ -14,5 +14,11 @@ abstract class NavigationEffects {
     required bool allowProfileFallback,
   });
 
+  /// Tap notifica push — PROM-PUSH-NOTIFY-030/036, SURF-NOTIFICATIONS-007.
+  Future<bool> openConversationFromPushTap({
+    required String accountUserId,
+    required String peerProfileId,
+  });
+
   void openPeerOnFocusedAccount(ChatPeer peer);
 }

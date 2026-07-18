@@ -71,6 +71,12 @@ class AccountManager {
     _setViewFor(userId, _storedViewFor(userId).openChat(peer));
   }
 
+  /// Tap push: evita chat stale su account destinatario prima di aprire il peer.
+  void clearConversationForAccount(String accountUserId) {
+    if (!_hasAccount(accountUserId)) return;
+    _setViewFor(accountUserId, _storedViewFor(accountUserId).clearConversation());
+  }
+
   void showInboxOnMobile() {
     final userId = _focusUserId;
     if (userId == null) return;
