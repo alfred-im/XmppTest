@@ -218,6 +218,31 @@ function inboxPeerButton(page: Page, displayName: string) {
     .filter({ hasNotText: /@/ });
 }
 
+/** Shell autenticata: inbox (FAB) oppure chat ripristinata (input messaggio). */
+export async function waitForAccountShell(page: Page) {
+  const fab = page.getByRole('button', { name: 'Nuovo messaggio' });
+  const chatInput = page
+    .getByRole('textbox', { name: /Scrivi un messaggio/i })
+    .or(page.locator('flt-semantics[role="textbox"]').last());
+  const emailField = page.getByRole('textbox', { name: 'Email' });
+  await expect
+    .poll(
+      async () => {
+        await enableFlutterAccessibility(page);
+        const overlayClosed = !(await emailField.isVisible().catch(() => false));
+        const noPlaceholder = !(await page
+          .getByText('Nessun account aperto')
+          .isVisible()
+          .catch(() => false));
+        const inboxReady = await fab.isVisible().catch(() => false);
+        const chatReady = await chatInput.isVisible().catch(() => false);
+        return overlayClosed && noPlaceholder && (inboxReady || chatReady);
+      },
+      { timeout: E2E_TIMEOUT.auth, intervals: [...E2E_POLL] },
+    )
+    .toBe(true);
+}
+
 /**
  * Cambia focus account dal drawer mobile.
  * Clic solo nel drawer — non sulla riga inbox (stesso nome del destinatario).
@@ -245,7 +270,7 @@ export async function switchToAccountByDisplayName(
     await expectFocusedUserId(page, userId);
   }
 
-  await waitForLoggedInShell(page);
+  await waitForAccountShell(page);
 }
 
 export async function waitForChatInput(page: Page) {

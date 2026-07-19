@@ -67,4 +67,22 @@ class AccountViewStateStore {
       (view) => view.mergeActivePeer(inboxRow),
     );
   }
+
+  /// Dopo restore scope su switch account: su mobile torna alla chat se c'è peer attivo.
+  void revealRestoredConversationOnMobile() {
+    final userId = _manager.focusUserId;
+    if (userId == null) return;
+    final view = _manager.viewStateFor(userId);
+    final peer = view.activePeer;
+    if (peer == null || peer.profileId == userId) return;
+    if (!view.showInboxOnMobile) return;
+    _manager.applyAccountViewState(
+      userId,
+      (current) => AccountViewState(
+        activePeer: peer,
+        showInboxOnMobile: false,
+        groupChatOpen: current.groupChatOpen,
+      ),
+    );
+  }
 }

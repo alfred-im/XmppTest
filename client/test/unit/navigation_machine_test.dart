@@ -295,6 +295,22 @@ void main() {
       expect(nav.machine.shellState, NavigationShellState.chatOpen);
     });
 
+    test('SwitchToAccount riapre chat mobile se era su inbox con peer attivo', () async {
+      manager.applyAccountViewState(
+        'account-b',
+        (view) => view.openChat(_peer('peer-x')).backToInboxOnMobile(),
+      );
+      manager.injectTestSession(await _testSession('account-a'));
+      manager.injectTestSession(await _testSession('account-b'));
+      manager.focusTestSession(await _testSession('account-a'));
+
+      await nav.switchToAccount('account-b');
+
+      expect(nav.committedScope?.peerProfileId, 'peer-x');
+      expect(manager.viewState.showInboxOnMobile, isFalse);
+      expect(nav.machine.shellState, NavigationShellState.chatOpen);
+    });
+
     test('setFocus preserva view state per account', () async {
       manager.injectTestSession(await _testSession('account-a'));
       manager.injectTestSession(await _testSession('account-b'));

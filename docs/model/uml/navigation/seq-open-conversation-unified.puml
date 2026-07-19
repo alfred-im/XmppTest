@@ -18,9 +18,8 @@ alt source == push
 else source == link | compose
   Nav -> VS : ClearStaleUnlessPeer(account, peer)
 end
-Nav -> MAM : FocusAccount(account, restoreScope=false)
-note right of MAM : onFocusSettled NON ripristina scope\n(OpenConversation commette dopo)
-MAM --> Nav : FocusSettled
+Nav -> MAM : FocusAccount (solo I/O, no scope)
+MAM --> Nav : sessione pronta
 Nav -> Nav : ResolvePeer
 alt peer risolto
   Nav -> VS : OpenChat(peer)

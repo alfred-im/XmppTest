@@ -54,6 +54,7 @@ class AccountNavigationEffects implements NavigationEffects {
       return;
     }
     _commitScope(ConversationScope.fromSession(session, peer));
+    _viewState.revealRestoredConversationOnMobile();
   }
 
   @override

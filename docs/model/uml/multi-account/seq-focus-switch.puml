@@ -1,23 +1,26 @@
 @startuml seq-focus-switch
-' Context: multi-account
+' Context: multi-account + navigation
 ' Profile: client
-' Command: FocusAccount
 ' Revision: 2026-07-19
 
-title seq-focus-switch — cambio focus account (sidebar)
+title seq-focus-switch — cambio account (sidebar)
 
 actor Utente
 participant "UI" as UI
-participant "MultiAccountMachine" as MA
 participant "NavigationMachine" as Nav
+participant "MultiAccountMachine" as MA
 participant "AccountManager" as AM
 
-Utente -> UI : tap account
-UI -> MA : FocusAccount(userId, restoreScope=true)
+Utente -> UI : tap account sidebar
+UI -> Nav : SwitchToAccount(userId)
+Nav -> Nav : InvalidateConversationScope
+Nav -> MA : FocusAccount(userId)
 MA -> AM : executeFocus(userId)
 AM -> UI : onFocusIdentityChanged
 AM --> MA : sessione pronta
-MA -> Nav : restoreCommittedScopeAfterFocusSettled
-MA --> UI : AccountFocused
+MA --> Nav : focus ok
+Nav -> Nav : restoreCommittedScopeFromViewState
+Nav -> Nav : syncShellFromCommittedScope
+Nav -> UI : onStateChanged
 
 @enduml

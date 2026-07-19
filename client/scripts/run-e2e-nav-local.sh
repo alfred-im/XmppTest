@@ -37,7 +37,11 @@ if [[ ! -x node_modules/.bin/playwright ]]; then
 fi
 
 echo "==> e2e-nav-local ALFRED_BASE_URL=${ALFRED_BASE_URL} SUPABASE_URL=${SUPABASE_URL}"
+# workers=1: i test condividono stack locale e manifest; in parallelo sono flaky.
 npx playwright test \
   e2e/inbox-open-chat.spec.ts \
+  e2e/account-switch-restore.spec.ts \
+  e2e/push-tap-multi-account.spec.ts \
   e2e/manual-push-poison-repro.spec.ts \
+  --workers=1 \
   "$@"
