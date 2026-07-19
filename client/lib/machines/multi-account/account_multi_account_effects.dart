@@ -2,6 +2,8 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+import 'package:flutter/foundation.dart';
+
 import '../../models/profile_summary.dart';
 import '../../services/account_manager.dart';
 import 'multi_account_effects.dart';
@@ -11,6 +13,9 @@ class AccountMultiAccountEffects implements MultiAccountEffects {
   AccountMultiAccountEffects(this._manager);
 
   final AccountManager _manager;
+
+  /// Notifica UI quando l'identità focus cambia prima che la sessione GoTrue sia pronta.
+  VoidCallback? onFocusIdentityChanged;
 
   @override
   bool get hasFocusedSession => _manager.focusedSession != null;
@@ -27,8 +32,11 @@ class AccountMultiAccountEffects implements MultiAccountEffects {
   }
 
   @override
-  Future<void> executeFocus(String userId) {
-    return _manager.executeFocus(userId);
+  Future<void> executeFocus(String userId) async {
+    await _manager.executeFocus(
+      userId,
+      onFocusIdentityChanged: onFocusIdentityChanged,
+    );
   }
 
   @override

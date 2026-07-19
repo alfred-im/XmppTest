@@ -9,7 +9,7 @@
 
 | Comando | Emesso da | Descrizione |
 |---------|-----------|-------------|
-| `FocusAccount` | Utente / Policy | Imposta quale account è attivo. |
+| `FocusAccount` | Utente / Policy | Solo I/O focus GoTrue. Scope e shell: `NavigationMachine.SwitchToAccount`. |
 | `OpenAccount` | Utente | Aggiunge account al manifest (login o registrazione). |
 | `CloseAccount` | Utente | Rimuove account dal manifest. |
 

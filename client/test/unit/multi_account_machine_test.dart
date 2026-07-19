@@ -80,6 +80,7 @@ class _RecordingEffects implements MultiAccountEffects {
       remainingUserIds: [],
     );
   }
+
 }
 
 void main() {

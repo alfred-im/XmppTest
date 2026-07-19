@@ -7,6 +7,7 @@ import 'dart:convert';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:alfred_client/models/chat_peer.dart';
+import 'package:alfred_client/models/conversation_scope.dart';
 import 'package:alfred_client/models/message.dart';
 import 'package:alfred_client/models/profile_summary.dart';
 import 'package:alfred_client/providers/messages_controller.dart';
@@ -326,6 +327,30 @@ class FakeMessageService extends MessageService {
   }
 }
 
+/// [FakeMessageService] con ritardo artificiale sul fetch (race scope in test).
+class DelayedFakeMessageService extends FakeMessageService {
+  DelayedFakeMessageService(
+    super.client, {
+    this.fetchDelay = const Duration(milliseconds: 50),
+  });
+
+  final Duration fetchDelay;
+
+  @override
+  Future<List<ChatMessage>> fetchPeerMessages({
+    required String peerProfileId,
+    required String currentUserId,
+    int limit = 100,
+  }) async {
+    await Future<void>.delayed(fetchDelay);
+    return super.fetchPeerMessages(
+      peerProfileId: peerProfileId,
+      currentUserId: currentUserId,
+      limit: limit,
+    );
+  }
+}
+
 class FakeProfileService extends ProfileService {
   FakeProfileService(super.client);
 
@@ -357,6 +382,19 @@ class FakeInboxService extends InboxService {
   Future<void> markRead(String peerProfileId) async {
     markReadCalls.add(peerProfileId);
   }
+}
+
+/// Scope di test — [isScopeCommitted] nei test può restare `() => true`.
+ConversationScope testConversationScope({
+  required String userId,
+  required String peerProfileId,
+  int sessionEpoch = 1,
+}) {
+  return ConversationScope(
+    ownerUserId: userId,
+    peerProfileId: peerProfileId,
+    sessionEpoch: sessionEpoch,
+  );
 }
 
 Future<void> waitForMessagesController(MessagesController controller) async {

@@ -5,6 +5,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:alfred_client/models/conversation_scope.dart';
 import 'package:alfred_client/models/message.dart';
 import 'package:alfred_client/providers/messages_controller.dart';
 import 'package:alfred_client/services/message_media_service.dart';
@@ -63,6 +64,7 @@ void main() {
       ];
 
       final asAgent1 = MessagesController(
+        scope: testConversationScope(userId: _agent1, peerProfileId: _agent2, sessionEpoch: 1),
         userId: _agent1,
         peerProfileId: _agent2,
         messageService: messageService,
@@ -73,6 +75,7 @@ void main() {
       await waitForMessagesController(asAgent1);
 
       final asAgent2 = MessagesController(
+        scope: testConversationScope(userId: _agent2, peerProfileId: _agent1, sessionEpoch: 1),
         userId: _agent2,
         peerProfileId: _agent1,
         messageService: messageService,
@@ -91,33 +94,21 @@ void main() {
       asAgent2.dispose();
     });
 
-    test('wrong peer on same account yields empty history', () async {
-      messageService.messagesByConversation[conversationKey(
-        userId: _agent1,
-        peerProfileId: _agent2,
-      )] = [
-        _msg(id: 'm1', body: 'con agent2', senderId: _agent1),
-      ];
-
-      // Bug storico: peer = proprio userId (stale dopo switch account).
-      final wrongPeer = MessagesController(
-        userId: _agent1,
-        peerProfileId: _agent1,
-        messageService: messageService,
-        messageMediaService: mediaService,
-        inboxService: inboxService,
-        outboundQueue: OutboundMessageQueue(),
+    test('self peer is not a valid conversation scope', () {
+      expect(
+        () => ConversationScope(
+          ownerUserId: _agent1,
+          peerProfileId: _agent1,
+          sessionEpoch: 1,
+        ),
+        throwsAssertionError,
       );
-      await waitForMessagesController(wrongPeer);
-
-      expect(wrongPeer.messages, isEmpty);
-
-      wrongPeer.dispose();
     });
 
     test('load surfaces service errors instead of silent empty chat', () async {
       final broken = _BrokenMessageService();
       final controller = MessagesController(
+        scope: testConversationScope(userId: _agent1, peerProfileId: _agent2, sessionEpoch: 1),
         userId: _agent1,
         peerProfileId: _agent2,
         messageService: broken,
@@ -135,6 +126,7 @@ void main() {
 
     test('load reports expired session instead of silent empty chat', () async {
       final controller = MessagesController(
+        scope: testConversationScope(userId: _agent1, peerProfileId: _agent2, sessionEpoch: 1),
         userId: _agent1,
         peerProfileId: _agent2,
         messageService: messageService,
@@ -156,6 +148,7 @@ void main() {
       const serverId = 'server-uuid-confirmed';
 
       final controller = MessagesController(
+        scope: testConversationScope(userId: _agent1, peerProfileId: _agent2, sessionEpoch: 1),
         userId: _agent1,
         peerProfileId: _agent2,
         messageService: messageService,

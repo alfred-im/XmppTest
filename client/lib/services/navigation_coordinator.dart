@@ -10,8 +10,9 @@ import '../machines/navigation/account_navigation_effects.dart';
 import '../machines/navigation/navigation_adapters.dart';
 import '../machines/navigation/navigation_machine.dart';
 import '../models/chat_peer.dart';
-import 'account_manager.dart';
-import 'account_session.dart';
+import '../models/conversation_scope.dart';
+import '../services/account_manager.dart';
+import '../services/account_session.dart';
 
 /// Fallback test: focus diretto su manager senza macchina.
 class _ManagerFocusCommand implements AccountFocusCommand {
@@ -27,8 +28,7 @@ class _ManagerFocusCommand implements AccountFocusCommand {
 
 /// Unico ingresso per navigazione account → inbox → conversazione.
 ///
-/// Implementazione: [NavigationMachine] + [AccountNavigationEffects].
-/// Sidebar, tap inbox, push, link condivisibili passano da qui (via [AuthController]).
+/// Tutti i cambi account (sidebar, push, link) passano da [NavigationMachine].
 class NavigationCoordinator {
   NavigationCoordinator(
     this._manager, {
@@ -37,6 +37,7 @@ class NavigationCoordinator {
     final command = focusCommand ?? _ManagerFocusCommand(_manager);
     _effects = AccountNavigationEffects(_manager, focusCommand: command);
     _machine = NavigationMachine(_effects);
+    _effects.navigationMachine = _machine;
     adapters = NavigationAdapters(_machine);
     externalIntents = ExternalIntentAdapter(adapters);
   }
@@ -48,14 +49,44 @@ class NavigationCoordinator {
   late final NavigationAdapters adapters;
   late final ExternalIntentAdapter externalIntents;
 
+  /// Dopo ogni transazione navigation completata (scope commesso o invalidato).
+  VoidCallback? onStateChanged;
+
   NavigationMachine get machine => _machine;
 
-  Future<void> switchToAccount(String accountUserId) {
-    return adapters.switchToAccount(accountUserId);
+  ConversationScope? get committedScope => _machine.committedScope;
+
+  bool get isChatShellOpen =>
+      _machine.shellState == NavigationShellState.chatOpen;
+
+  bool isConversationReady({
+    required AccountSession session,
+    required ChatPeer peer,
+  }) {
+    return _machine.isConversationReady(session: session, peer: peer);
   }
 
-  void openPeerOnFocusedAccount(ChatPeer peer) {
-    adapters.openPeerOnFocusedAccount(peer);
+  void _notifyStateChanged() => onStateChanged?.call();
+
+  void invalidateCommittedScope() {
+    _machine.invalidateCommittedScope();
+  }
+
+  /// Bootstrap / reconnect: riallinea scope da view-state e shell.
+  void restoreCommittedScopeAfterFocusSettled() {
+    _machine.restoreCommittedScopeFromViewState();
+    _machine.syncShellFromCommittedScope();
+    _notifyStateChanged();
+  }
+
+  Future<void> switchToAccount(String accountUserId) async {
+    await adapters.switchToAccount(accountUserId);
+    _notifyStateChanged();
+  }
+
+  Future<void> openPeerOnFocusedAccount(ChatPeer peer) async {
+    await adapters.openPeerOnFocusedAccount(peer);
+    _notifyStateChanged();
   }
 
   Future<bool> ensureAccountFocused(String accountUserId) async {
@@ -64,55 +95,66 @@ class NavigationCoordinator {
     }
     await adapters.switchToAccount(accountUserId);
     final session = _manager.focusedSession;
-    return _manager.focusUserId == accountUserId &&
+    final ok = _manager.focusUserId == accountUserId &&
         session != null &&
         session.userId == accountUserId;
+    if (ok) _notifyStateChanged();
+    return ok;
   }
 
   Future<bool> openConversationOnAccount({
     required String accountUserId,
     required String peerProfileId,
     bool allowProfileFallback = true,
-  }) {
-    return adapters.openConversationOnAccount(
+  }) async {
+    final ok = await adapters.openConversationOnAccount(
       accountUserId: accountUserId,
       peerProfileId: peerProfileId,
       allowProfileFallback: allowProfileFallback,
     );
+    _notifyStateChanged();
+    return ok;
   }
 
   Future<bool> openFromShareableLink({
     required String accountUserId,
     required String peerProfileId,
-  }) {
-    return externalIntents.openFromShareableLink(
+  }) async {
+    final ok = await externalIntents.openFromShareableLink(
       accountUserId: accountUserId,
       peerProfileId: peerProfileId,
     );
+    _notifyStateChanged();
+    return ok;
   }
 
   Future<bool> openFromCompose({
     required String accountUserId,
     required String peerProfileId,
     bool allowProfileFallback = true,
-  }) {
-    return externalIntents.openFromCompose(
+  }) async {
+    final ok = await externalIntents.openFromCompose(
       accountUserId: accountUserId,
       peerProfileId: peerProfileId,
       allowProfileFallback: allowProfileFallback,
     );
+    _notifyStateChanged();
+    return ok;
   }
 
-  Future<void> closeConversation() {
-    return adapters.closeConversation();
+  Future<void> closeConversation() async {
+    await adapters.closeConversation();
+    _notifyStateChanged();
   }
 
-  Future<void> openGroupChat() {
-    return adapters.openGroupChat();
+  Future<void> openGroupChat() async {
+    await adapters.openGroupChat();
+    _notifyStateChanged();
   }
 
-  Future<void> backToGroupHome() {
-    return adapters.backToGroupHome();
+  Future<void> backToGroupHome() async {
+    await adapters.backToGroupHome();
+    _notifyStateChanged();
   }
 
   @visibleForTesting

@@ -6,7 +6,7 @@ import '../../models/profile_summary.dart';
 import 'multi_account_effects.dart';
 import 'multi_account_machine.dart';
 
-/// Comando focus account — implementato da [MultiAccountAdapters] per navigation.
+/// Comando focus account — solo I/O GoTrue; scope/navigation restano in [NavigationMachine].
 abstract class AccountFocusCommand {
   Future<void> focusAccount(String accountUserId);
 }
@@ -21,6 +21,7 @@ class MultiAccountAdapters implements AccountFocusCommand {
   final MultiAccountEffects effects;
 
   /// F5 / avvio: carica manifest, macchina decide focus, effetti attivano sessione.
+  /// Ripristino scope conversazione: [NavigationCoordinator] dopo bootstrap.
   Future<void> bootstrapManifest() async {
     final bootstrap = await effects.loadManifestBootstrap();
     await _machine.send(

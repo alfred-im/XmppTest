@@ -8,12 +8,14 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../models/chat_peer.dart';
+import '../models/conversation_scope.dart';
 import '../models/profile_summary.dart';
 import '../providers/auth_controller.dart';
 import '../providers/inbox_controller.dart';
 import '../providers/messages_controller.dart';
 import '../services/account_session.dart';
 import '../theme/alfred_colors.dart';
+import '../utils/conversation_scope_guard.dart';
 import '../widgets/account_sidebar.dart';
 import '../widgets/auth_overlay.dart';
 import '../widgets/chat_panel.dart';
@@ -165,11 +167,30 @@ class _HomeScreenState extends State<HomeScreen> {
       return const EmptyChatPlaceholder();
     }
 
+    if (session.userId != auth.userId) {
+      return const ColoredBox(
+        color: AlfredColors.surface,
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    final scope = ConversationScope.fromSession(session, peer);
+    if (!auth.isConversationReady(
+      session: session,
+      peer: peer,
+    )) {
+      return const ColoredBox(
+        color: AlfredColors.surface,
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return _ChatWithMessages(
-      key: messagesSessionKey(session, peer.profileId),
+      key: conversationScopeKey(scope),
       auth: auth,
       session: session,
       peer: peer,
+      scope: scope,
       showBackButton: showBackButton,
       onBack: onBack,
       onMessagesChanged: _onMessagesChanged,
@@ -207,7 +228,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
     final width = MediaQuery.sizeOf(context).width;
     final isWide = width >= _breakpoint;
-    final showChatOnMobile = auth.activePeer != null;
+    final showChatOnMobile =
+        auth.isChatShellOpen && auth.committedScope != null;
     final sidebarWidth = width >= 1100 ? 380.0 : 320.0;
 
     final inboxArea = !auth.hasOpenAccounts
@@ -294,6 +316,10 @@ class _HomeScreenState extends State<HomeScreen> {
     final auth = context.watch<AuthController>();
 
     return Stack(
+      key: navigationShellKey(
+        focusUserId: auth.userId,
+        committedScope: auth.committedScope,
+      ),
       children: [
         _mainContent(context),
         if (auth.showAuthOverlay) const AuthOverlay(),
@@ -457,6 +483,7 @@ class _ChatWithMessages extends StatelessWidget {
     required this.auth,
     required this.session,
     required this.peer,
+    required this.scope,
     this.showBackButton = false,
     this.onBack,
     required this.onMessagesChanged,
@@ -465,6 +492,7 @@ class _ChatWithMessages extends StatelessWidget {
   final AuthController auth;
   final AccountSession session;
   final ChatPeer peer;
+  final ConversationScope scope;
   final bool showBackButton;
   final VoidCallback? onBack;
   final Future<void> Function() onMessagesChanged;
@@ -477,7 +505,13 @@ class _ChatWithMessages extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final liveSession = auth.focusedSession;
-    if (liveSession == null || liveSession.userId != session.userId) {
+    if (liveSession == null ||
+        liveSession.userId != session.userId ||
+        !scope.matches(liveSession, peer) ||
+        !auth.isConversationReady(
+          session: liveSession,
+          peer: peer,
+        )) {
       return const ColoredBox(
         color: AlfredColors.surface,
         child: Center(child: CircularProgressIndicator()),
@@ -486,6 +520,7 @@ class _ChatWithMessages extends StatelessWidget {
 
     return ChangeNotifierProvider(
       create: (_) => MessagesController(
+        scope: scope,
         userId: liveSession.userId,
         peerProfileId: peer.profileId,
         messageService: liveSession.messageService,
@@ -495,6 +530,13 @@ class _ChatWithMessages extends StatelessWidget {
         peerIsGroup: peer.isGroup,
         onMessagesChanged: onMessagesChanged,
         hasValidSession: _focusedSessionValid,
+        isScopeCommitted: () => isMessagesScopeActive(
+          scope: scope,
+          peer: peer,
+          liveSession: auth.focusedSession,
+          isConversationReady: (session, activePeer) =>
+              auth.isConversationReady(session: session, peer: activePeer),
+        ),
       ),
       child: ChatPanel(
         peer: peer,

@@ -138,6 +138,7 @@ Modulo: `client/lib/utils/diagnostic_log.dart` — **non** è promessa SDD; solo
 
 - **Try it:** https://alfred-im.github.io/alfred-im/ — vedi [README.md](README.md) per la panoramica pubblica.
 - Build web: `bash scripts/verify.sh --build` (base-href `/alfred-im/`).
+- **Verifica PWA prima del merge**: non serve aspettare il merge su `main`. Ogni **PR su `main`** che tocca `client/**` esegue `deploy-pages` e pubblica sulla **stessa** URL Pages. Dopo push sul branch della PR, attendi il workflow verde, poi prova dal telefono (PWA). Il merge non è prerequisito per la review utente.
 - **Non** assumere che l'URL rifletta il branch `main`: `deploy-pages` pubblica da **PR su `main`** e da **push su `main`** (ultimo deploy riuscito vince). Vedi `docs/architecture/full-stack.md` §7.
 
 ### Fly.io bridges

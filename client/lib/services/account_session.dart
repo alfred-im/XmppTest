@@ -27,8 +27,11 @@ import 'reception_allowlist_service.dart';
 
 /// Sessione Supabase dedicata a un account messaggistica aperto.
 class AccountSession {
+  static int _nextEpoch = 0;
+
   AccountSession._({
     required this.userId,
+    required this.epoch,
     required this.client,
     required this.inboxService,
     required this.messageService,
@@ -43,6 +46,10 @@ class AccountSession {
   });
 
   final String userId;
+
+  /// Generazione sessione — cambia solo su restore/dispose, non su token refresh.
+  final int epoch;
+
   final SupabaseClient client;
   final InboxService inboxService;
   final MessageService messageService;
@@ -312,6 +319,7 @@ class AccountSession {
     final profileService = ProfileService(client);
     final session = AccountSession._(
       userId: userId,
+      epoch: ++_nextEpoch,
       client: client,
       inboxService: inboxService,
       messageService: MessageService(client),
@@ -453,6 +461,7 @@ class AccountSession {
         profileService ?? ProfileService(resolvedClient);
     final session = AccountSession._(
       userId: profile.id,
+      epoch: ++_nextEpoch,
       client: resolvedClient,
       inboxService: resolvedInboxService,
       messageService: messageService ?? MessageService(resolvedClient),

@@ -322,9 +322,14 @@ class AccountManager {
   Future<void> executeFocus(
     String userId, {
     bool deferProfileSync = false,
+    VoidCallback? onFocusIdentityChanged,
   }) {
     return _enqueueFocusOperation(
-      () => _executeFocusImpl(userId, deferProfileSync: deferProfileSync),
+      () => _executeFocusImpl(
+        userId,
+        deferProfileSync: deferProfileSync,
+        onFocusIdentityChanged: onFocusIdentityChanged,
+      ),
     );
   }
 
@@ -346,6 +351,7 @@ class AccountManager {
   Future<void> _executeFocusImpl(
     String userId, {
     bool deferProfileSync = false,
+    VoidCallback? onFocusIdentityChanged,
   }) async {
     if (!_hasAccount(userId)) return;
 
@@ -384,6 +390,7 @@ class AccountManager {
 
     _focusUserId = userId;
     await _storage.saveFocusUserId(userId);
+    onFocusIdentityChanged?.call();
 
     try {
       if (!_testOnlyAccountIds.contains(userId)) {
@@ -401,6 +408,7 @@ class AccountManager {
       } else {
         await _storage.saveFocusUserId(null);
       }
+      onFocusIdentityChanged?.call();
       if (previousFocus != null &&
           !_testOnlyAccountIds.contains(previousFocus)) {
         try {

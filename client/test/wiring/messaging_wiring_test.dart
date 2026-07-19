@@ -32,6 +32,7 @@ void main() {
     test('send fallisce se la sessione diventa invalida dopo il load', () async {
       var sessionValid = true;
       final controller = MessagesController(
+        scope: testConversationScope(userId: _userId, peerProfileId: _peerId, sessionEpoch: 1),
         userId: _userId,
         peerProfileId: _peerId,
         messageService: messageService,
@@ -51,6 +52,7 @@ void main() {
 
     test('sendText attraversa coordinator ed effects live', () async {
       final controller = MessagesController(
+        scope: testConversationScope(userId: _userId, peerProfileId: _peerId, sessionEpoch: 1),
         userId: _userId,
         peerProfileId: _peerId,
         messageService: messageService,

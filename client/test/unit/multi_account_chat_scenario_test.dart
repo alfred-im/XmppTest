@@ -123,6 +123,7 @@ void main() {
       expect(auth.viewState.activePeer?.profileId, _agent2);
 
       final chatAsAgent1 = MessagesController(
+        scope: testConversationScope(userId: _agent1, peerProfileId: auth.viewState.activePeer!.profileId, sessionEpoch: 1),
         userId: _agent1,
         peerProfileId: auth.viewState.activePeer!.profileId,
         messageService: messageService,
@@ -137,6 +138,7 @@ void main() {
       expect(auth.viewState.activePeer?.profileId, _agent1);
 
       final chatAsAgent2 = MessagesController(
+        scope: testConversationScope(userId: _agent2, peerProfileId: auth.viewState.activePeer!.profileId, sessionEpoch: 1),
         userId: _agent2,
         peerProfileId: auth.viewState.activePeer!.profileId,
         messageService: messageService,
@@ -150,6 +152,7 @@ void main() {
       expect(auth.viewState.activePeer?.profileId, _agent2);
 
       final chatAgainAgent1 = MessagesController(
+        scope: testConversationScope(userId: _agent1, peerProfileId: auth.viewState.activePeer!.profileId, sessionEpoch: 1),
         userId: _agent1,
         peerProfileId: auth.viewState.activePeer!.profileId,
         messageService: messageService,

@@ -21,6 +21,7 @@ import '../models/open_account.dart';
 import '../models/profile_summary.dart';
 import '../models/account_view_state.dart';
 import '../models/chat_peer.dart';
+import '../models/conversation_scope.dart';
 import '../models/profile.dart';
 import '../services/account_manager.dart';
 import '../services/account_session.dart';
@@ -44,6 +45,8 @@ class AuthController extends ChangeNotifier {
           _manager,
           focusCommand: multiAccountAdapters,
         );
+    multiAccountEffects.onFocusIdentityChanged = notifyListeners;
+    _navigation.onStateChanged = notifyListeners;
     _manager.onFocusedProfileSynced = notifyListeners;
     final notificationEffects = AuthNotificationsEffects(this);
     notificationsMachine = NotificationsMachine(effects: notificationEffects);
@@ -101,6 +104,17 @@ class AuthController extends ChangeNotifier {
 
   AccountManager get accountManager => _manager;
 
+  ConversationScope? get committedScope => _navigation.committedScope;
+
+  bool get isChatShellOpen => _navigation.isChatShellOpen;
+
+  bool isConversationReady({
+    required AccountSession session,
+    required ChatPeer peer,
+  }) {
+    return _navigation.isConversationReady(session: session, peer: peer);
+  }
+
   List<OpenAccount> get openAccounts => _manager.openAccounts;
   AccountSession? get focusedSession => _manager.focusedSession;
   String? get userId => _manager.focusUserId;
@@ -118,7 +132,10 @@ class AuthController extends ChangeNotifier {
   Future<void> syncPushSubscriptions() =>
       _pushCoordinator.syncPushSubscriptions();
 
-  Future<void> initialize() => _sessionCoordinator.initialize();
+  Future<void> initialize() async {
+    await _sessionCoordinator.initialize();
+    _navigation.restoreCommittedScopeAfterFocusSettled();
+  }
 
   void openAuthOverlay({required bool dismissible}) =>
       _sessionCoordinator.openAuthOverlay(dismissible: dismissible);
@@ -129,7 +146,7 @@ class AuthController extends ChangeNotifier {
 
   Future<void> setFocus(String userId) async {
     try {
-      await multiAccountAdapters.focusAccount(userId);
+      await _navigation.switchToAccount(userId);
       error = null;
     } catch (e) {
       error = friendlyAuthError(e);
@@ -141,6 +158,7 @@ class AuthController extends ChangeNotifier {
     if (!hasOpenAccounts || focusedSession != null) return;
     try {
       await multiAccountAdapters.reconnectFocusedSession();
+      _navigation.restoreCommittedScopeAfterFocusSettled();
       error = null;
     } catch (e) {
       error = friendlyAuthError(e);
@@ -222,24 +240,20 @@ class AuthController extends ChangeNotifier {
     }
   }
 
-  void openConversation(ChatPeer peer) {
-    _navigation.openPeerOnFocusedAccount(peer);
-    notifyListeners();
+  Future<void> openConversation(ChatPeer peer) async {
+    await _navigation.openPeerOnFocusedAccount(peer);
   }
 
-  void backToInboxOnMobile() {
-    unawaited(_navigation.closeConversation());
-    notifyListeners();
+  Future<void> backToInboxOnMobile() async {
+    await _navigation.closeConversation();
   }
 
-  void openGroupChat() {
-    unawaited(_navigation.openGroupChat());
-    notifyListeners();
+  Future<void> openGroupChat() async {
+    await _navigation.openGroupChat();
   }
 
-  void backToGroupHome() {
-    unawaited(_navigation.backToGroupHome());
-    notifyListeners();
+  Future<void> backToGroupHome() async {
+    await _navigation.backToGroupHome();
   }
 
   void mergeActivePeerFromInbox(ChatPeer inboxRow) {

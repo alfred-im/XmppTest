@@ -11,6 +11,7 @@ import '../machines/messaging/messaging_adapters.dart';
 import '../machines/messaging/messaging_conversation_state.dart';
 import '../machines/messaging/messaging_coordinator.dart';
 import '../machines/messaging/messaging_effects.dart';
+import '../models/conversation_scope.dart';
 import '../models/message.dart';
 import '../services/inbox_service.dart';
 import '../services/message_media_service.dart';
@@ -20,6 +21,7 @@ import '../services/profile_service.dart';
 
 class MessagesController extends ChangeNotifier {
   MessagesController({
+    required this.scope,
     required this.userId,
     required this.peerProfileId,
     required this.messageService,
@@ -29,11 +31,13 @@ class MessagesController extends ChangeNotifier {
     this.peerIsGroup = false,
     this.onMessagesChanged,
     this.hasValidSession,
+    this.isScopeCommitted,
     OutboundMessageQueue? outboundQueue,
   }) {
     _state = MessagingConversationState();
     _effects = MessagesControllerEffects(
       state: _state,
+      scope: scope,
       userId: userId,
       peerProfileId: peerProfileId,
       messageService: messageService,
@@ -43,6 +47,7 @@ class MessagesController extends ChangeNotifier {
       peerIsGroup: peerIsGroup,
       onMessagesChanged: onMessagesChanged,
       hasValidSession: hasValidSession,
+      isScopeCommitted: isScopeCommitted,
       outboundQueue: outboundQueue,
       onChanged: notifyListeners,
     );
@@ -61,10 +66,12 @@ class MessagesController extends ChangeNotifier {
   static const sessionExpiredMessage =
       MessagesControllerEffects.sessionExpiredMessage;
 
+  final ConversationScope scope;
   final String userId;
   final String peerProfileId;
   final Future<void> Function()? onMessagesChanged;
   final bool Function()? hasValidSession;
+  final bool Function()? isScopeCommitted;
   final MessageService messageService;
   final MessageMediaService messageMediaService;
   final InboxService inboxService;
@@ -75,6 +82,7 @@ class MessagesController extends ChangeNotifier {
   late final MessagesControllerEffects _effects;
   late final MessagingCoordinator _coordinator;
   late final MessagingAdapters _adapters;
+  bool _notifierDisposed = false;
 
   List<ChatMessage> get messages => _coordinator.messages;
   set messages(List<ChatMessage> value) => _state.messages = value;
@@ -147,7 +155,16 @@ class MessagesController extends ChangeNotifier {
       _adapters.retryMessage(clientId);
 
   @override
+  void notifyListeners() {
+    if (_notifierDisposed) return;
+    super.notifyListeners();
+  }
+
+  @override
   void dispose() {
+    if (_notifierDisposed) return;
+    _notifierDisposed = true;
+    _effects.markDisposed();
     _adapters.dispose();
     super.dispose();
   }

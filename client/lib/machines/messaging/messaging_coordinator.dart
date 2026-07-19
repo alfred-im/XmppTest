@@ -43,14 +43,18 @@ class MessagingCoordinator {
 
   Future<void> init() async {
     await load();
+    if (effects.isDisposed) return;
     await effects.restoreFailedFromQueue();
+    if (effects.isDisposed) return;
     if (state.messages.any(
       (m) => m.isMine && m.status == MessageStatus.failed,
     )) {
       sendMachine.send(const FailedQueueRestored());
     }
     await effects.markRead();
+    if (effects.isDisposed) return;
     attachRealtime();
+    if (effects.isDisposed) return;
     effects.startRetryTimer(() => unawaited(_processRetries()));
     _notify();
   }
@@ -62,6 +66,9 @@ class MessagingCoordinator {
     await load();
   }
 
+  static const _fetchScopeRetryAttempts = 8;
+  static const _fetchScopeRetryDelay = Duration(milliseconds: 50);
+
   Future<void> load() async {
     if (!effects.ensureValidSession()) {
       loadMachine.send(const SessionExpired());
@@ -71,7 +78,26 @@ class MessagingCoordinator {
     loadMachine.send(const LoadMessages());
     _notify();
     try {
-      await effects.fetchAndSetMessages();
+      var applied = false;
+      for (var attempt = 0; attempt < _fetchScopeRetryAttempts; attempt++) {
+        applied = await effects.fetchAndSetMessages();
+        if (effects.isDisposed) return;
+        if (applied) break;
+        if (attempt < _fetchScopeRetryAttempts - 1) {
+          await Future<void>.delayed(_fetchScopeRetryDelay);
+          if (!effects.ensureValidSession()) {
+            loadMachine.send(const SessionExpired());
+            _notify();
+            return;
+          }
+        }
+      }
+      if (!applied && !effects.isDisposed) {
+        state.error = MessagesControllerEffects.sessionExpiredMessage;
+        loadMachine.send(const SessionExpired());
+        _notify();
+        return;
+      }
       state.error = null;
       loadMachine.send(const ConversationReady());
     } catch (e) {
@@ -207,5 +233,8 @@ class MessagingCoordinator {
     effects.disposeQueue();
   }
 
-  void _notify() => onChanged();
+  void _notify() {
+    if (effects.isDisposed) return;
+    onChanged();
+  }
 }

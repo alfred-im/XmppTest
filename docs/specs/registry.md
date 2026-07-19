@@ -46,6 +46,7 @@ Dettaglio implementativo (DDL, firme RPC, RLS): **[contracts/schema.md](./contra
 | **PROM-SHAREABLE-LINK** | Link condivisibili stabili (`#indirizzo`, `#indirizzo/chat`) | `implemented` | [PROM-SHAREABLE-LINK.md](./promises/product/PROM-SHAREABLE-LINK.md) |
 | **PROM-CHAT-MEDIA** | Foto e video in chat (picker, fotocamera, didascalia) | `implemented` | [PROM-CHAT-MEDIA.md](./promises/product/PROM-CHAT-MEDIA.md) |
 | **PROM-PUSH-NOTIFY** | Push multi-device / multi-account, anteprima, soppressione | `implemented` | [PROM-PUSH-NOTIFY.md](./promises/product/PROM-PUSH-NOTIFY.md) |
+| **PROM-CONVERSATION-SCOPE** | Ambito unico conversazione attiva (account + peer + sessione) | `approved` | [PROM-CONVERSATION-SCOPE.md](./promises/product/PROM-CONVERSATION-SCOPE.md) |
 
 ---
 

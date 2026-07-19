@@ -39,6 +39,7 @@ void main() {
       mediaService = FakeMessageMediaService();
       outboundQueue = OutboundMessageQueue();
       controller = MessagesController(
+        scope: testConversationScope(userId: _agent1, peerProfileId: _agent2, sessionEpoch: 1),
         userId: _agent1,
         peerProfileId: _agent2,
         messageService: messageService,

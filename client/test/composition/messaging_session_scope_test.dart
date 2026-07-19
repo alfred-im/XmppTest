@@ -103,6 +103,7 @@ void main() {
       final staleService = setup.servicesBySession[sessionBefore]!;
 
       final controller = MessagesController(
+        scope: testConversationScope(userId: _userA, peerProfileId: _peerId, sessionEpoch: 1),
         userId: _userA,
         peerProfileId: _peerId,
         messageService: staleService,
@@ -151,6 +152,7 @@ void main() {
       expect(liveSession, isNot(same(sessionBefore)));
 
       final controller = MessagesController(
+        scope: testConversationScope(userId: _userA, peerProfileId: _peerId, sessionEpoch: 1),
         userId: _userA,
         peerProfileId: _peerId,
         messageService: liveSession.messageService,
