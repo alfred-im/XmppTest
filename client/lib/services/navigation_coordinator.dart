@@ -22,7 +22,10 @@ class _ManagerFocusCommand implements AccountFocusCommand {
   final AccountManager _manager;
 
   @override
-  Future<void> focusAccount(String accountUserId) {
+  Future<void> focusAccount(
+    String accountUserId, {
+    bool restoreScopeFromViewState = true,
+  }) {
     return _manager.executeFocus(accountUserId);
   }
 }
@@ -51,6 +54,9 @@ class NavigationCoordinator implements NavigationScopeHost {
   late final NavigationAdapters adapters;
   late final ExternalIntentAdapter externalIntents;
 
+  /// Dopo ogni transazione navigation completata (scope commesso o invalidato).
+  VoidCallback? onStateChanged;
+
   NavigationMachine get machine => _machine;
 
   ConversationScope? get committedScope => _machine.committedScope;
@@ -62,6 +68,8 @@ class NavigationCoordinator implements NavigationScopeHost {
     return _machine.isConversationReady(session: session, peer: peer);
   }
 
+  void _notifyStateChanged() => onStateChanged?.call();
+
   @override
   void invalidateCommittedScope() {
     _machine.invalidateCommittedScope();
@@ -70,17 +78,17 @@ class NavigationCoordinator implements NavigationScopeHost {
   @override
   void restoreCommittedScopeAfterFocusSettled() {
     _machine.restoreCommittedScopeFromViewState(_manager);
+    _notifyStateChanged();
   }
 
-  @override
-  bool get isOpenConversationInFlight => _effects.isOpenConversationInFlight;
-
-  Future<void> switchToAccount(String accountUserId) {
-    return adapters.switchToAccount(accountUserId);
+  Future<void> switchToAccount(String accountUserId) async {
+    await adapters.switchToAccount(accountUserId);
+    _notifyStateChanged();
   }
 
-  void openPeerOnFocusedAccount(ChatPeer peer) {
-    adapters.openPeerOnFocusedAccount(peer);
+  Future<void> openPeerOnFocusedAccount(ChatPeer peer) async {
+    await adapters.openPeerOnFocusedAccount(peer);
+    _notifyStateChanged();
   }
 
   Future<bool> ensureAccountFocused(String accountUserId) async {
@@ -89,55 +97,66 @@ class NavigationCoordinator implements NavigationScopeHost {
     }
     await adapters.switchToAccount(accountUserId);
     final session = _manager.focusedSession;
-    return _manager.focusUserId == accountUserId &&
+    final ok = _manager.focusUserId == accountUserId &&
         session != null &&
         session.userId == accountUserId;
+    if (ok) _notifyStateChanged();
+    return ok;
   }
 
   Future<bool> openConversationOnAccount({
     required String accountUserId,
     required String peerProfileId,
     bool allowProfileFallback = true,
-  }) {
-    return adapters.openConversationOnAccount(
+  }) async {
+    final ok = await adapters.openConversationOnAccount(
       accountUserId: accountUserId,
       peerProfileId: peerProfileId,
       allowProfileFallback: allowProfileFallback,
     );
+    _notifyStateChanged();
+    return ok;
   }
 
   Future<bool> openFromShareableLink({
     required String accountUserId,
     required String peerProfileId,
-  }) {
-    return externalIntents.openFromShareableLink(
+  }) async {
+    final ok = await externalIntents.openFromShareableLink(
       accountUserId: accountUserId,
       peerProfileId: peerProfileId,
     );
+    _notifyStateChanged();
+    return ok;
   }
 
   Future<bool> openFromCompose({
     required String accountUserId,
     required String peerProfileId,
     bool allowProfileFallback = true,
-  }) {
-    return externalIntents.openFromCompose(
+  }) async {
+    final ok = await externalIntents.openFromCompose(
       accountUserId: accountUserId,
       peerProfileId: peerProfileId,
       allowProfileFallback: allowProfileFallback,
     );
+    _notifyStateChanged();
+    return ok;
   }
 
-  Future<void> closeConversation() {
-    return adapters.closeConversation();
+  Future<void> closeConversation() async {
+    await adapters.closeConversation();
+    _notifyStateChanged();
   }
 
-  Future<void> openGroupChat() {
-    return adapters.openGroupChat();
+  Future<void> openGroupChat() async {
+    await adapters.openGroupChat();
+    _notifyStateChanged();
   }
 
-  Future<void> backToGroupHome() {
-    return adapters.backToGroupHome();
+  Future<void> backToGroupHome() async {
+    await adapters.backToGroupHome();
+    _notifyStateChanged();
   }
 
   @visibleForTesting

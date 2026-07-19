@@ -9,7 +9,7 @@
 
 | Comando | Emesso da | Descrizione |
 |---------|-----------|-------------|
-| `FocusAccount` | Utente / Policy | Imposta quale account è attivo. |
+| `FocusAccount` | Utente / Policy | Imposta quale account è attivo. Con `restoreScopeFromViewState: false` quando il focus è parte di `OpenConversation` (navigation commette lo scope). |
 | `OpenAccount` | Utente | Aggiunge account al manifest (login o registrazione). |
 | `CloseAccount` | Utente | Rimuove account dal manifest. |
 

@@ -22,7 +22,10 @@ class _ImmediateFocus implements AccountFocusCommand {
   final AccountManager _manager;
 
   @override
-  Future<void> focusAccount(String accountUserId) async {
+  Future<void> focusAccount(
+    String accountUserId, {
+    bool restoreScopeFromViewState = true,
+  }) async {
     final session = _manager.focusedSession;
     if (session != null && session.userId == accountUserId) return;
   }
@@ -92,6 +95,21 @@ void main() {
       );
 
       expect(navigation.committedScope?.sessionEpoch, sessionA.epoch);
+    });
+
+    test('openPeerOnFocusedAccount via coordinator committa scope prima di notify', () async {
+      manager.focusTestSession(sessionA);
+
+      await navigation.openPeerOnFocusedAccount(ChatPeer(profile: peer));
+
+      expect(navigation.committedScope?.peerProfileId, 'peer-z');
+      expect(
+        navigation.isConversationReady(
+          session: sessionA,
+          peer: ChatPeer(profile: peer),
+        ),
+        isTrue,
+      );
     });
 
     test('restoreCommittedScopeFromViewState riallinea dopo restore', () {

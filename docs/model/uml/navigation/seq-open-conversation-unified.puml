@@ -9,6 +9,7 @@ participant "Ingresso" as In
 participant "NavigationMachine" as Nav
 participant "MultiAccountMachine" as MAM
 participant "AccountViewState" as VS
+participant "AuthController" as Auth
 
 In -> Nav : OpenConversation(account, peer, source)
 Nav -> Nav : InvalidateConversationScope
@@ -17,12 +18,14 @@ alt source == push
 else source == link | compose
   Nav -> VS : ClearStaleUnlessPeer(account, peer)
 end
-Nav -> MAM : FocusAccount (se necessario)
+Nav -> MAM : FocusAccount(account, restoreScope=false)
+note right of MAM : onFocusSettled NON ripristina scope\n(OpenConversation commette dopo)
 MAM --> Nav : FocusSettled
 Nav -> Nav : ResolvePeer
 alt peer risolto
   Nav -> VS : OpenChat(peer)
   Nav -> Nav : CommitConversationScope
+  Nav -> Auth : onStateChanged
   Nav --> In : ConversationVisible
 else fallito
   Nav --> In : NavigationFailed

@@ -6,9 +6,6 @@
 abstract class NavigationScopeHost {
   void invalidateCommittedScope();
 
-  /// Dopo bootstrap / reconnect / focus switch: riallinea scope da view-state.
+  /// Dopo bootstrap / reconnect / switch account esplicito: riallinea scope da view-state.
   void restoreCommittedScopeAfterFocusSettled();
-
-  /// True mentre [AccountNavigationEffects.openConversation] è in corso.
-  bool get isOpenConversationInFlight;
 }

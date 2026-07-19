@@ -32,9 +32,6 @@ class AccountManager {
   /// Chiamato quando il sync profilo in background termina (es. avvio app).
   VoidCallback? onFocusedProfileSynced;
 
-  /// Chiamato quando [focusUserId] cambia (o viene ripristinato dopo errore).
-  VoidCallback? onFocusChanged;
-
   final AccountStorageService _storage;
   final Map<String, AccountSession> _sessions = {};
   final Map<String, AccountViewState> _viewsByAccount = {};
@@ -325,9 +322,14 @@ class AccountManager {
   Future<void> executeFocus(
     String userId, {
     bool deferProfileSync = false,
+    VoidCallback? onFocusIdentityChanged,
   }) {
     return _enqueueFocusOperation(
-      () => _executeFocusImpl(userId, deferProfileSync: deferProfileSync),
+      () => _executeFocusImpl(
+        userId,
+        deferProfileSync: deferProfileSync,
+        onFocusIdentityChanged: onFocusIdentityChanged,
+      ),
     );
   }
 
@@ -349,6 +351,7 @@ class AccountManager {
   Future<void> _executeFocusImpl(
     String userId, {
     bool deferProfileSync = false,
+    VoidCallback? onFocusIdentityChanged,
   }) async {
     if (!_hasAccount(userId)) return;
 
@@ -387,7 +390,7 @@ class AccountManager {
 
     _focusUserId = userId;
     await _storage.saveFocusUserId(userId);
-    onFocusChanged?.call();
+    onFocusIdentityChanged?.call();
 
     try {
       if (!_testOnlyAccountIds.contains(userId)) {
@@ -405,7 +408,7 @@ class AccountManager {
       } else {
         await _storage.saveFocusUserId(null);
       }
-      onFocusChanged?.call();
+      onFocusIdentityChanged?.call();
       if (previousFocus != null &&
           !_testOnlyAccountIds.contains(previousFocus)) {
         try {

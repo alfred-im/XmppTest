@@ -4,17 +4,20 @@
 ' Command: FocusAccount
 ' Revision: 2026-07-19
 
-title seq-focus-switch — cambio focus account
+title seq-focus-switch — cambio focus account (sidebar)
 
 actor Utente
 participant "UI" as UI
 participant "MultiAccountMachine" as MA
+participant "NavigationMachine" as Nav
 participant "AccountManager" as AM
 
 Utente -> UI : tap account
-UI -> MA : FocusAccount(userId)
-MA -> AM : setFocus(userId)
-AM --> MA : AccountFocused
-MA --> UI : focus aggiornato
+UI -> MA : FocusAccount(userId, restoreScope=true)
+MA -> AM : executeFocus(userId)
+AM -> UI : onFocusIdentityChanged
+AM --> MA : sessione pronta
+MA -> Nav : restoreCommittedScopeAfterFocusSettled
+MA --> UI : AccountFocused
 
 @enduml

@@ -315,6 +315,10 @@ class _HomeScreenState extends State<HomeScreen> {
     final auth = context.watch<AuthController>();
 
     return Stack(
+      key: navigationShellKey(
+        focusUserId: auth.userId,
+        committedScope: auth.committedScope,
+      ),
       children: [
         _mainContent(context),
         if (auth.showAuthOverlay) const AuthOverlay(),

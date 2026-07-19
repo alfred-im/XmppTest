@@ -38,8 +38,15 @@ final class FocusActivationCompleted extends MultiAccountEvent {
 }
 
 final class FocusAccount extends MultiAccountEvent {
-  const FocusAccount(this.accountUserId);
+  const FocusAccount(
+    this.accountUserId, {
+    this.restoreScopeFromViewState = true,
+  });
+
   final String accountUserId;
+
+  /// `false` quando il focus è parte di [OpenConversation] — lo scope è commesso dalla transazione navigation.
+  final bool restoreScopeFromViewState;
 }
 
 final class AccountFocused extends MultiAccountEvent {
@@ -141,8 +148,14 @@ class MultiAccountMachine {
         );
       case FocusActivationCompleted(:final hasFocusedSession):
         _applyFocusActivationCompleted(hasFocusedSession: hasFocusedSession);
-      case FocusAccount(:final accountUserId):
-        await _handleFocusAccount(accountUserId);
+      case FocusAccount(
+        :final accountUserId,
+        :final restoreScopeFromViewState,
+      ):
+        await _handleFocusAccount(
+          accountUserId,
+          restoreScopeFromViewState: restoreScopeFromViewState,
+        );
       case AccountFocused():
         _applyAccountFocused();
       case SessionRestoreFailed():
@@ -180,7 +193,10 @@ class MultiAccountMachine {
     }
   }
 
-  Future<void> _handleFocusAccount(String accountUserId) async {
+  Future<void> _handleFocusAccount(
+    String accountUserId, {
+    required bool restoreScopeFromViewState,
+  }) async {
     if (focusState == MultiAccountFocusState.noOpenAccounts) return;
 
     focusUserId = accountUserId;
@@ -195,7 +211,9 @@ class MultiAccountMachine {
     try {
       await effects.executeFocus(accountUserId);
       if (effects.hasFocusedSession) {
-        effects.onFocusSettled();
+        effects.onFocusSettled(
+          restoreScopeFromViewState: restoreScopeFromViewState,
+        );
         _applyAccountFocused();
       } else {
         _applySessionRestoreFailed();
@@ -203,7 +221,9 @@ class MultiAccountMachine {
     } catch (_) {
       focusUserId = effects.focusUserId;
       if (effects.hasFocusedSession) {
-        effects.onFocusSettled();
+        effects.onFocusSettled(
+          restoreScopeFromViewState: restoreScopeFromViewState,
+        );
         _applyAccountFocused();
       } else {
         _applySessionRestoreFailed();

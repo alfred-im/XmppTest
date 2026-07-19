@@ -46,8 +46,9 @@ class AuthController extends ChangeNotifier {
           focusCommand: multiAccountAdapters,
         );
     multiAccountEffects.scopeHost = _navigation;
+    multiAccountEffects.onFocusIdentityChanged = notifyListeners;
+    _navigation.onStateChanged = notifyListeners;
     _manager.onFocusedProfileSynced = notifyListeners;
-    _manager.onFocusChanged = notifyListeners;
     final notificationEffects = AuthNotificationsEffects(this);
     notificationsMachine = NotificationsMachine(effects: notificationEffects);
     notificationsAdapters = NotificationsAdapters(notificationsMachine);
@@ -234,24 +235,20 @@ class AuthController extends ChangeNotifier {
     }
   }
 
-  void openConversation(ChatPeer peer) {
-    _navigation.openPeerOnFocusedAccount(peer);
-    notifyListeners();
+  Future<void> openConversation(ChatPeer peer) async {
+    await _navigation.openPeerOnFocusedAccount(peer);
   }
 
-  void backToInboxOnMobile() {
-    unawaited(_navigation.closeConversation());
-    notifyListeners();
+  Future<void> backToInboxOnMobile() async {
+    await _navigation.closeConversation();
   }
 
-  void openGroupChat() {
-    unawaited(_navigation.openGroupChat());
-    notifyListeners();
+  Future<void> openGroupChat() async {
+    await _navigation.openGroupChat();
   }
 
-  void backToGroupHome() {
-    unawaited(_navigation.backToGroupHome());
-    notifyListeners();
+  Future<void> backToGroupHome() async {
+    await _navigation.backToGroupHome();
   }
 
   void mergeActivePeerFromInbox(ChatPeer inboxRow) {

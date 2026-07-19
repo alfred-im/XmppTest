@@ -8,7 +8,10 @@ import '../../services/account_manager.dart';
 
 /// Effetti navigation → account manager + commit scope su [NavigationMachine].
 abstract class NavigationEffects {
-  Future<void> focusAccount(String accountUserId);
+  Future<void> focusAccount(
+    String accountUserId, {
+    bool restoreScopeFromViewState = true,
+  });
 
   /// Transazione unica OpenConversation — policy per [OpenConversationSource].
   Future<bool> openConversation({

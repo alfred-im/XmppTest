@@ -7,6 +7,21 @@ import 'package:flutter/material.dart';
 import '../models/conversation_scope.dart';
 import '../services/account_session.dart';
 
+Key navigationShellKey({
+  required String? focusUserId,
+  required ConversationScope? committedScope,
+}) {
+  return ValueKey(
+    Object.hash(
+      'navigation-shell',
+      focusUserId,
+      committedScope?.ownerUserId,
+      committedScope?.peerProfileId,
+      committedScope?.sessionEpoch,
+    ),
+  );
+}
+
 /// Chiave Provider/chat legata a [ConversationScope].
 Key conversationScopeKey(ConversationScope scope) => scope.providerKey;
 

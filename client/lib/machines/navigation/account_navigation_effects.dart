@@ -24,10 +24,6 @@ class AccountNavigationEffects implements NavigationEffects {
   final AccountFocusCommand _focusCommand;
   final AccountViewStateStore _viewState;
 
-  int _openConversationInFlight = 0;
-
-  bool get isOpenConversationInFlight => _openConversationInFlight > 0;
-
   /// Impostato da [NavigationCoordinator] dopo creazione macchina.
   NavigationMachine? navigationMachine;
 
@@ -36,8 +32,14 @@ class AccountNavigationEffects implements NavigationEffects {
   static const _inboxRetryDelay = Duration(milliseconds: 100);
 
   @override
-  Future<void> focusAccount(String accountUserId) async {
-    await _focusCommand.focusAccount(accountUserId);
+  Future<void> focusAccount(
+    String accountUserId, {
+    bool restoreScopeFromViewState = true,
+  }) async {
+    await _focusCommand.focusAccount(
+      accountUserId,
+      restoreScopeFromViewState: restoreScopeFromViewState,
+    );
   }
 
   @override
@@ -117,18 +119,13 @@ class AccountNavigationEffects implements NavigationEffects {
     required String peerProfileId,
     required OpenConversationSource source,
     bool allowProfileFallback = true,
-  }) async {
-    _openConversationInFlight++;
-    try {
-      return await _openConversationImpl(
-        accountUserId: accountUserId,
-        peerProfileId: peerProfileId,
-        source: source,
-        allowProfileFallback: allowProfileFallback,
-      );
-    } finally {
-      _openConversationInFlight--;
-    }
+  }) {
+    return _openConversationImpl(
+      accountUserId: accountUserId,
+      peerProfileId: peerProfileId,
+      source: source,
+      allowProfileFallback: allowProfileFallback,
+    );
   }
 
   Future<bool> _openConversationImpl({
@@ -254,7 +251,10 @@ class AccountNavigationEffects implements NavigationEffects {
       return false;
     }
 
-    await _focusCommand.focusAccount(accountUserId);
+    await _focusCommand.focusAccount(
+      accountUserId,
+      restoreScopeFromViewState: false,
+    );
 
     final session = _manager.focusedSession;
     final ok = _manager.focusUserId == accountUserId &&

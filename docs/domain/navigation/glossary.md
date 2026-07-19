@@ -28,7 +28,7 @@
 
 | Contesto | Relazione |
 |----------|-----------|
-| **multi-account** | `FocusAccount` prima di aprire chat su altro account; `onFocusSettled` → restore scope. |
+| **multi-account** | `FocusAccount` prima di aprire chat su altro account; `onFocusSettled(restoreScopeFromViewState)` → restore scope solo su switch/bootstrap, non durante `OpenConversation`. |
 | **notifications** | `OpenConversation(source=push)` — stessa transazione, policy push. |
 | **shareable-link** | `OpenConversation(source=shareableLink)` — clear stale se peer diverso. |
 

@@ -17,8 +17,8 @@ class NavigationAdapters {
     return _machine.send(SwitchToAccount(accountUserId));
   }
 
-  void openPeerOnFocusedAccount(ChatPeer peer) {
-    unawaited(_machine.send(OpenPeerOnFocusedAccount(peer)));
+  Future<void> openPeerOnFocusedAccount(ChatPeer peer) {
+    return _machine.send(OpenPeerOnFocusedAccount(peer));
   }
 
   Future<bool> openConversationOnAccount({

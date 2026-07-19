@@ -2,6 +2,8 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+import 'package:flutter/foundation.dart';
+
 import '../../models/profile_summary.dart';
 import '../../services/account_manager.dart';
 import '../navigation/navigation_scope_host.dart';
@@ -15,6 +17,9 @@ class AccountMultiAccountEffects implements MultiAccountEffects {
 
   /// Impostato da [AuthController] dopo creazione [NavigationCoordinator].
   NavigationScopeHost? scopeHost;
+
+  /// Notifica UI quando l'identità focus cambia prima che la sessione GoTrue sia pronta.
+  VoidCallback? onFocusIdentityChanged;
 
   @override
   bool get hasFocusedSession => _manager.focusedSession != null;
@@ -35,7 +40,10 @@ class AccountMultiAccountEffects implements MultiAccountEffects {
     if (_manager.focusUserId != userId) {
       scopeHost?.invalidateCommittedScope();
     }
-    await _manager.executeFocus(userId);
+    await _manager.executeFocus(
+      userId,
+      onFocusIdentityChanged: onFocusIdentityChanged,
+    );
   }
 
   @override
@@ -44,8 +52,8 @@ class AccountMultiAccountEffects implements MultiAccountEffects {
   }
 
   @override
-  void onFocusSettled() {
-    if (scopeHost?.isOpenConversationInFlight ?? false) return;
+  void onFocusSettled({bool restoreScopeFromViewState = true}) {
+    if (!restoreScopeFromViewState) return;
     scopeHost?.restoreCommittedScopeAfterFocusSettled();
   }
 

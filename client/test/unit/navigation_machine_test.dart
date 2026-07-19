@@ -33,7 +33,10 @@ class _RecordingNavigationEffects implements NavigationEffects {
   bool get focusedAccountIsGroup => focusedIsGroup;
 
   @override
-  Future<void> focusAccount(String accountUserId) async {
+  Future<void> focusAccount(
+    String accountUserId, {
+    bool restoreScopeFromViewState = true,
+  }) async {
     lastFocusAccountId = accountUserId;
   }
 

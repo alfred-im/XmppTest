@@ -8,7 +8,10 @@ import 'multi_account_machine.dart';
 
 /// Comando focus account — implementato da [MultiAccountAdapters] per navigation.
 abstract class AccountFocusCommand {
-  Future<void> focusAccount(String accountUserId);
+  Future<void> focusAccount(
+    String accountUserId, {
+    bool restoreScopeFromViewState = true,
+  });
 }
 
 /// Mappa ingressi attuali → eventi macchina multi-account.
@@ -42,8 +45,16 @@ class MultiAccountAdapters implements AccountFocusCommand {
   }
 
   @override
-  Future<void> focusAccount(String accountUserId) {
-    return _machine.send(FocusAccount(accountUserId));
+  Future<void> focusAccount(
+    String accountUserId, {
+    bool restoreScopeFromViewState = true,
+  }) {
+    return _machine.send(
+      FocusAccount(
+        accountUserId,
+        restoreScopeFromViewState: restoreScopeFromViewState,
+      ),
+    );
   }
 
   Future<void> reconnectFocusedSession() {
