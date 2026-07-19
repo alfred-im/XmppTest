@@ -1,11 +1,9 @@
 @startuml seq-notification-click
-' Context: notifications → navigation (adapter)
+' Context: notifications → navigation
 ' Profile: client
-' Command: OpenFromPushTap
-' SDD: PROM-PUSH-NOTIFY-030, SURF-NOTIFICATIONS-006–007
 ' Revision: 2026-07-19
 
-title seq-notification-click — tap notifica → chat
+title Tap notifica → apertura chat
 
 actor Utente
 participant "ServiceWorker" as SW
@@ -13,35 +11,17 @@ participant "NotificationsMachine" as NM
 participant "NavigationMachine" as Nav
 participant "MultiAccountMachine" as MAM
 
-Utente -> SW : tap Notification
-SW -> SW : parse PushConversationKey
-
-alt finestra app già aperta
-  SW -> NM : OpenChatIntentReceived
-else cold start
-  SW -> SW : openWindow(fragment push-chat)
-  NM -> NM : DrainPendingOpenChat
-end
-
-activate NM
-NM -> NM : EnqueueOpenChat
+Utente -> SW : tap notifica
+SW -> NM : OpenChatFromNotification
 
 alt sessione non pronta
-  NM --> NM : OpenChatDeferred
-else account non nel manifest
-  NM --> NM : OpenChatRejected
+  NM --> NM : ChatOpenFromNotificationDeferred
+else account non disponibile
+  NM --> NM : ChatOpenFromNotificationFailed
 else ok
-  NM -> Nav : OpenFromPushTap
+  NM -> Nav : OpenConversation
   Nav -> MAM : FocusAccount (se necessario)
-  Nav -> Nav : clear stale + open conversation
-  Nav --> NM : ConversationOpened
-  NM --> NM : OpenChatForwarded
+  Nav --> NM : ChatOpenFromNotificationSucceeded
 end
-deactivate NM
-
-note over Nav
-  Un solo ingresso navigation:
-  OpenFromPushTap
-end note
 
 @enduml

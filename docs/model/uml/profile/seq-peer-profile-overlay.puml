@@ -1,53 +1,32 @@
 @startuml seq-peer-profile-overlay
 ' Context: profile
 ' Profile: client
-' SDD: PROM-PEER-PROFILE
 ' Revision: 2026-07-19
 
-title Profile — overlay peer (apertura e azioni)
+title Scheda peer — azioni
 
 actor Utente
-participant "UI" as UI
 participant "ProfileMachine" as PM
 participant "ReceptionMachine" as RM
 participant "ContactsMachine" as CM
 participant "NavigationMachine" as Nav
-participant "Supabase" as DB
 
-Utente -> UI : tap avatar peer
-UI -> PM : OpenPeerProfile(profile)
+Utente -> PM : ViewPeerProfile
+PM --> Utente : PeerProfileDisplayed
 
-alt profilo proprio
-  PM --> UI : ignorato
-else peer Alfred
-  PM --> UI : PeerProfileOpened
-  PM -> DB : FindById
-  DB --> PM : PeerProfileHydrated
+opt consenso recapito
+  Utente -> PM : TogglePeerConsent
+  PM -> RM : AllowSender / DisallowSender
+end
 
-  opt consente messaggi ON
-    Utente -> UI : ToggleAllowMessages(true)
-    UI -> RM : AddAllowedProfile
-    RM --> UI : AllowToggled
-  end
+opt rubrica
+  Utente -> PM : TogglePeerInContacts
+  PM -> CM : AddContact / RemoveContact
+end
 
-  opt consente messaggi OFF
-    Utente -> UI : ToggleAllowMessages(false)
-    UI -> RM : RemoveAllowedPerson
-    RM --> UI : AllowToggled
-  end
-
-  opt rubrica
-    Utente -> UI : ToggleRubrica
-    UI -> CM : AddInternalContact / RemoveInternalContact
-    CM --> UI : RubricaToggled
-  end
-
-  opt inizia a chattare
-    Utente -> UI : StartChatFromProfile
-    UI -> PM : ConversationOpenRequested
-    PM -> Nav : OpenFromCompose(peer)
-    PM --> UI : overlay chiuso
-  end
+opt chat
+  Utente -> PM : StartChatFromPeerProfile
+  PM -> Nav : OpenConversation
 end
 
 @enduml

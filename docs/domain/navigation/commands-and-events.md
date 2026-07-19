@@ -5,19 +5,16 @@
 
 ---
 
-## Comandi (intento)
+## Comandi
 
 | Comando | Emesso da | Descrizione |
 |---------|-----------|-------------|
-| `SwitchToAccount` | Utente | Cambia account in focus (solo inbox, senza aprire chat). |
-| `OpenPeerOnFocusedAccount` | Utente | Apre chat con peer su account già in focus. |
-| `OpenConversationOnAccount` | Utente | Focus account + risolve peer + apre chat. |
-| `OpenFromPushTap` | Policy (tap notifica) | Apre chat da push: clear stale, focus, retry inbox, fallback profilo. |
-| `OpenFromShareableLink` | Policy (link condiviso) | Apre chat da fragment URL con clear stale e fallback profilo. |
-| `OpenFromCompose` | Utente | Apre chat da compose (contatti, ricerca). |
-| `CloseConversation` | Utente | Chiude chat aperta; torna a inbox o home gruppo. |
-| `OpenGroupChat` | Utente | Apre conversazione gruppo (resta in shell gruppo). |
-| `BackToGroupHome` | Utente | Torna al pannello home gruppo da chat gruppo. |
+| `ShowInbox` | Utente | Mostra inbox dell'account in focus. |
+| `OpenConversation` | Utente / Policy | Apre chat con un peer (inbox, compose, push, link). |
+| `CloseConversation` | Utente | Chiude chat; torna a inbox o home gruppo. |
+| `EnterGroupShell` | Utente / Policy | Focus su account gruppo — home gruppo. |
+| `OpenGroupConversation` | Utente | Apre chat del gruppo. |
+| `LeaveGroupConversation` | Utente | Torna alla home gruppo da chat gruppo. |
 
 ---
 
@@ -25,36 +22,19 @@
 
 | Evento | Descrizione |
 |--------|-------------|
-| `NavigationIdle` | Inbox visibile, nessuna chat aperta. |
-| `ConversationOpened` | Chat 1:1 aperta con peer risolto. |
-| `GroupShellEntered` | Account gruppo in focus — home gruppo visibile. |
-| `GroupChatOpened` | Chat gruppo aperta dentro shell gruppo. |
-| `NavigationRejected` | Peer non trovato, self-peer, account non aperto. |
-| `AccountFocusRequired` | Delega `FocusAccount` a multi-account. |
+| `InboxVisible` | Inbox dell'account in focus visibile. |
+| `ConversationVisible` | Chat 1:1 aperta con peer risolto. |
+| `GroupHomeVisible` | Home gruppo visibile. |
+| `GroupConversationVisible` | Chat gruppo visibile. |
+| `NavigationFailed` | Peer irrisolvibile o account non disponibile. |
 
 ---
 
 ## Policy
 
-| Policy | Trigger | Azione |
-|--------|---------|--------|
-| **Un solo orchestratore** | Qualsiasi ingresso navigazione | Tutti i percorsi passano da `NavigationMachine`. |
-| **Push/link non bypassano multi-account** | `OpenFromPushTap` / `OpenFromShareableLink` | `FocusAccount` se account destinatario ≠ focus. |
-| **Clear stale chat** | Push/link con peer diverso da chat aperta | Chiude chat stale prima di aprire target. |
-| **Fallback profilo** | Peer assente da inbox | Lookup profilo + apertura conversazione. |
-| **Tap inbox su focus corrente** | `OpenPeerOnFocusedAccount` | Nessun switch account. |
-| **Account gruppo** | `SwitchToAccount` su gruppo | Entra in `GroupShell` senza inbox classica. |
-
-Transizioni shell: [navigation-shell-state.puml](../../model/uml/navigation/navigation-shell-state.puml).
-
----
-
-## Tracciabilità SDD
-
-| Elemento | Promessa |
-|----------|----------|
-| Shell sempre visibile | PROM-MULTI-ACCOUNT-001 |
-| `OpenFromPushTap` | PROM-PUSH-NOTIFY-030/036 |
-| `OpenFromShareableLink` | PROM-SHAREABLE-LINK-004 |
-| `CloseConversation` | PROM-MULTI-ACCOUNT-010 (AccountViewState) |
-| `GroupShell` | SURF-GROUP-SHELL |
+| Policy | Descrizione |
+|--------|-------------|
+| **Un solo orchestratore** | Ogni ingresso UI passa da qui. |
+| **Focus prima della chat** | Push e link cambiano account se necessario. |
+| **Nessuna chat stale** | Aprendo un peer diverso, la chat precedente si chiude. |
+| **Account gruppo** | Nessuna inbox classica — shell gruppo dedicata. |

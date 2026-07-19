@@ -1,40 +1,17 @@
 @startuml seq-broadcast
 ' Context: groups
 ' Profile: client
-' Command: BroadcastRequested
-' SDD: SYS-GROUP-023–024, SYS-DELIVERY-004
 ' Revision: 2026-07-19
 
-title seq-broadcast — gruppo invia a allow list
+title Broadcast gruppo → partecipanti
 
 actor Utente
-participant "UI" as UI
 participant "GroupMessagesMachine" as GMM
-participant "Supabase" as SB
 participant "DeliveryWorker" as W
 
-Utente -> UI : invia messaggio / media
-UI -> GMM : BroadcastRequested
-GMM --> UI : broadcast in corso
-
-alt media
-  GMM -> SB : UploadMedia
-  SB --> GMM : MediaUploaded
-end
-
-GMM -> SB : BroadcastRequested
-SB -> W : ProcessOutbox / GroupErogate
-W -> W : ErogateGroupMessage\n(gate per partecipante)
-W --> SB : participant copies (or silent skip)
-SB --> GMM : BroadcastAcknowledged
-
-GMM -> GMM : LoadGroupMessages
-GMM --> UI : RefreshGroupHome
-
-note over GMM
-  AttachOwnerRealtime on init —
-  OwnerRealtimeReceived merges
-  updates on group archive
-end note
+Utente -> GMM : BroadcastToGroup
+GMM -> W : QueueGroupFanOut
+W --> GMM : GroupBroadcastSent
+GMM --> Utente : GroupConversationUpdated
 
 @enduml

@@ -5,18 +5,15 @@
 
 ---
 
-## Comandi (intento)
+## Comandi
 
 | Comando | Emesso da | Descrizione |
 |---------|-----------|-------------|
-| `BootstrapStarted` | Policy (avvio app) | Inizia caricamento manifest e ripristino focus. |
-| `BootstrapCompleted` | Policy (fine bootstrap) | Determina se esiste almeno un account aperto. |
-| `OverlayOpenRequested` | Utente / Policy | Mostra overlay credenziali (aggiungi account o primo accesso). |
-| `OverlayCloseRequested` | Utente | Chiude overlay quando consentito. |
-| `SignInRequested` | Utente | Accesso con email e password. |
-| `SignUpRequested` | Utente | Registrazione nuovo account. |
-| `ResetPasswordRequested` | Utente | Richiesta recupero password. |
-| `LastAccountRemoved` | Policy (ultimo account chiuso) | Nessun account aperto — overlay obbligatorio. |
+| `SignIn` | Utente | Accede con credenziali esistenti. |
+| `SignUp` | Utente | Registra un nuovo account. |
+| `RequestPasswordReset` | Utente | Richiede recupero password. |
+| `ShowCredentialOverlay` | Policy / Utente | Mostra overlay login o registrazione. |
+| `DismissCredentialOverlay` | Utente | Chiude overlay quando consentito. |
 
 ---
 
@@ -24,39 +21,18 @@
 
 | Evento | Descrizione |
 |--------|-------------|
-| `BootstrapReady` | App pronta; sessione utilizzabile o overlay impostato. |
-| `OverlayMandatoryShown` | Zero account — overlay non dismissibile. |
-| `OverlayDismissibleShown` | Aggiunta account — overlay chiudibile. |
-| `OverlayClosed` | Overlay nascosto; shell invariata. |
-| `OverlayCloseBlocked` | Tentativo chiusura con zero account — ignorato. |
-| `AuthOperationStarted` | Operazione credenziali in corso. |
-| `AuthOperationCompleted` | Operazione riuscita. |
-| `AuthOperationFailed` | Operazione fallita; errore user-friendly. |
-| `SessionEstablished` | Account nel manifest con focus; overlay chiuso dopo login/sign-up. |
-| `ValidationRejected` | Dati non validi — nessuna chiamata rete. |
+| `SessionEstablished` | Account autenticato e utilizzabile. |
+| `AuthenticationFailed` | Credenziali o rete non valide. |
+| `ValidationFailed` | Dati inseriti non validi. |
+| `CredentialOverlayRequired` | Nessun account aperto — overlay obbligatorio. |
+| `CredentialOverlayDismissed` | Overlay chiuso; shell invariata. |
 
 ---
 
 ## Policy
 
-| Policy | Trigger | Azione |
-|--------|---------|--------|
-| **Overlay obbligatorio** | Zero account | Overlay non dismissibile ([SURF-AUTH-002]). |
-| **Overlay dismissibile** | ≥1 account, aggiunta account | Overlay chiudibile ([SURF-AUTH-003]). |
-| **Shell sempre visibile** | Qualsiasi stato auth | Nessuna route full-screen auth ([SURF-AUTH-001]). |
-| **Validazione pre-rete** | `SignIn*` / `SignUp*` | `ValidationRejected` se dati invalidi. |
-| **Chiusura post successo** | Login/sign-up ok | Overlay chiuso ([SURF-AUTH-007]). |
-
----
-
-## Tracciabilità SDD
-
-| Elemento | Promessa |
-|----------|----------|
-| Overlay obbligatorio 0 account | SURF-AUTH-002 |
-| Overlay dismissibile add-account | SURF-AUTH-003 |
-| Card login + registrazione | SURF-AUTH-004 |
-| Chiusura post login/sign-up | SURF-AUTH-007 |
-| Redirect email/reset | SURF-AUTH-008 |
-| Ultimo account rimosso | SURF-AUTH-005 |
-| Tipo account user/group | SURF-AUTH-006 |
+| Policy | Descrizione |
+|--------|-------------|
+| **Shell sempre visibile** | Auth in overlay, mai schermata piena dedicata. |
+| **Overlay obbligatorio senza account** | Zero account → overlay non chiudibile. |
+| **Validazione prima della rete** | Dati invalidi non partono verso il server. |

@@ -1,24 +1,15 @@
 # Contesto: notifications
 
-**Stato modellazione:** `verified` (client open chat + sync; SW documentato in UML + test)
+**Stato modellazione:** `verified`
 
-Vedi [bounded-contexts.md](../bounded-contexts.md) e [metodo dominio](../README.md).
+## Mapping dominio → implementazione
 
-## Artefatti
+| Dominio | Statechart / SW | Codice |
+|---------|-----------------|--------|
+| `RegisterDeviceForPush` | `SyncSubscriptions` | `PushSubscriptionService` |
+| `UnregisterDeviceFromPush` | `UnregisterSubscription` | cleanup account |
+| `UpdateInChatSuppression` | `UpdateSuppressionState` | `PushSuppressionBinder` → SW |
+| `PresentPushNotification` | `HandlePushPayload` | service worker |
+| `OpenChatFromNotification` | `OpenFromPushTap` → navigation | `NotificationsMachine` |
 
-| File | Stato |
-|------|-------|
-| [glossary.md](./glossary.md) | compilato |
-| [commands-and-events.md](./commands-and-events.md) | compilato |
-| [UML client state](../../model/uml/notifications/notifications-client-state.puml) | compilato |
-| [UML SW state](../../model/uml/notifications/notifications-sw-state.puml) | compilato |
-| Sequenze `seq-*.puml` | compilate |
-| [statechart](../../../client/lib/machines/notifications/) | **implementato** (open chat + sync subscription) |
-
-## Adapter verso navigation
-
-Tap notifica → comando `OpenFromPushTap` → contesto `navigation` (`seq-notification-click.puml`).
-
-## SDD (confine prodotto, non duplicazione)
-
-[PROM-PUSH-NOTIFY](../../specs/promises/product/PROM-PUSH-NOTIFY.md) · [SURF-NOTIFICATIONS](../../specs/surfaces/SURF-NOTIFICATIONS.md) · [SYS-PUSH](../../specs/promises/system/SYS-PUSH.md)
+Statechart: `client/lib/machines/notifications/`

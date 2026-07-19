@@ -1,0 +1,20 @@
+@startuml media-state
+' Context: media
+' Profile: client
+' Revision: 2026-07-19
+
+title Media — preparazione allegato
+
+state Idle
+state Preparing
+state Ready
+state Rejected
+
+[*] --> Idle
+Idle --> Preparing : PrepareVoiceMessage\nPrepareImage\nPrepareVideo\nPrepareGif\nPrepareLocation
+Preparing --> Ready : AttachmentReady
+Preparing --> Rejected : AttachmentRejected
+Preparing --> Idle : AttachmentCancelled
+Ready --> Idle : SendContent\n(messaging)
+
+@enduml

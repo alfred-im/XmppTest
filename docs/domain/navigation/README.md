@@ -1,7 +1,16 @@
 # Contesto: navigation
 
-**Stato modellazione:** `verified` (dominio + UML + macchina cablata + test)
+**Stato modellazione:** `verified`
 
-Vedi [glossary.md](./glossary.md) · [commands-and-events.md](./commands-and-events.md) · [UML](../../model/uml/navigation/)
+## Mapping dominio → implementazione
 
-Statechart: `client/lib/machines/navigation/` — `NavigationCoordinator` delega a `NavigationMachine`.
+| Dominio | Statechart | Codice |
+|---------|------------|--------|
+| `ShowInbox` | `SwitchToAccount` / `InboxVisible` | `NavigationMachine` |
+| `OpenConversation` | `OpenPeerOnFocusedAccount`, `OpenConversationOnAccount`, `OpenFromPushTap`, `OpenFromShareableLink`, `OpenFromCompose` | adapter per ingresso |
+| `CloseConversation` | `CloseConversation` | `NavigationMachine` |
+| `EnterGroupShell` | `SwitchToAccount` [gruppo] | `GroupShell` |
+| `OpenGroupConversation` | `OpenGroupChat` | shell gruppo |
+| `LeaveGroupConversation` | `BackToGroupHome` | shell gruppo |
+
+Statechart: `client/lib/machines/navigation/` · `NavigationCoordinator`

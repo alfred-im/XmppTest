@@ -1,7 +1,15 @@
 # Contesto: multi-account
 
-**Stato modellazione:** `verified` (dominio + UML + statechart + test transizioni)
+**Stato modellazione:** `verified`
 
-Vedi [glossary.md](./glossary.md) · [commands-and-events.md](./commands-and-events.md) · [UML](../../model/uml/multi-account/)
+## Mapping dominio → implementazione
 
-Statechart: `client/lib/machines/multi-account/` — `MultiAccountMachine` + effetti/adapters, sincronizzato da `AuthController`.
+| Dominio | Statechart | Codice |
+|---------|------------|--------|
+| `FocusAccount` | `FocusAccount` | `MultiAccountMachine` |
+| `OpenAccount` | `OpenAccountWithPassword` / `OpenAccountWithSignUp` | `AccountManager` |
+| `CloseAccount` | `CloseAccount` | manifest |
+| `AccountFocused` | `AccountFocused` | sessione attiva |
+| `SessionUnavailable` | `SessionRestoreFailed` / `FocusedAwaitingSession` | reconnect |
+
+Statechart: `client/lib/machines/multi-account/` · sync `AuthController`
