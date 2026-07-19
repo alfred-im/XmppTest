@@ -40,6 +40,62 @@ class FakeMessageService extends MessageService {
   final Map<String, void Function(ChatMessage message)> _realtimeHandlers = {};
   final Map<String, void Function(ChatMessage message)> _ownerRealtimeHandlers = {};
 
+  final List<String> sentBodies = [];
+  final List<String> broadcastBodies = [];
+  bool sendShouldFail = false;
+
+  @override
+  Future<ChatMessage> broadcastToAllowlist({
+    required String body,
+    required String currentUserId,
+    required String clientMessageId,
+  }) async {
+    broadcastBodies.add(body);
+    final message = ChatMessage(
+      id: 'broadcast-$clientMessageId',
+      body: body,
+      timeLabel: '12:00',
+      isMine: true,
+      status: MessageStatus.sent,
+      createdAt: DateTime.utc(2026, 7, 14, 12),
+      clientMessageId: clientMessageId,
+      senderId: currentUserId,
+    );
+    ownerMessagesByUserId
+        .putIfAbsent(currentUserId, () => [])
+        .add(message);
+    return message;
+  }
+
+  @override
+  Future<ChatMessage> sendToProfile({
+    required String recipientProfileId,
+    required String body,
+    required String currentUserId,
+    required String clientMessageId,
+  }) async {
+    if (sendShouldFail) {
+      throw StateError('fake send failed');
+    }
+    sentBodies.add(body);
+    final message = ChatMessage(
+      id: 'server-$clientMessageId',
+      body: body,
+      timeLabel: '12:00',
+      isMine: true,
+      status: MessageStatus.sent,
+      createdAt: DateTime.utc(2026, 7, 14, 12),
+      clientMessageId: clientMessageId,
+      senderId: currentUserId,
+    );
+    final key = conversationKey(
+      userId: currentUserId,
+      peerProfileId: recipientProfileId,
+    );
+    messagesByConversation.putIfAbsent(key, () => []).add(message);
+    return message;
+  }
+
   @override
   Future<List<ChatMessage>> fetchPeerMessages({
     required String peerProfileId,

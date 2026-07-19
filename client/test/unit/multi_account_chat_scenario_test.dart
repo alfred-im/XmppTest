@@ -8,15 +8,28 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:alfred_client/models/chat_peer.dart';
 import 'package:alfred_client/models/message.dart';
 import 'package:alfred_client/models/profile_summary.dart';
+import 'package:alfred_client/providers/auth_controller.dart';
 import 'package:alfred_client/providers/messages_controller.dart';
 import 'package:alfred_client/services/account_manager.dart';
+import 'package:alfred_client/services/account_session.dart';
+import 'package:alfred_client/services/account_storage_service.dart';
 import 'package:alfred_client/services/message_media_service.dart';
-import 'package:alfred_client/services/navigation_coordinator.dart';
+import 'package:alfred_client/services/profile_service.dart';
 
 import '../support/fake_messaging_services.dart';
+import '../support/wiring_test_fixtures.dart';
 
 const _agent1 = 'efd885fe-b36e-48fc-a796-0e3f153e40d6';
 const _agent2 = '0a81f785-173c-4f1c-b5df-3937086a2482';
+
+class _FakeProfileService extends ProfileService {
+  _FakeProfileService(this._peers) : super(createTestSupabaseClient());
+
+  final Map<String, ProfileSummary> _peers;
+
+  @override
+  Future<ProfileSummary?> findById(String id) async => _peers[id];
+}
 
 ChatPeer _peer(ProfileSummary profile) => ChatPeer.fromProfile(profile: profile);
 
@@ -41,14 +54,12 @@ void main() {
   // spec: PROM-MULTI-ACCOUNT-010, PROM-MULTI-ACCOUNT-020
   group('Multi-account mutual chat scenario', () {
     late AccountManager manager;
-    late NavigationCoordinator nav;
     late FakeMessageService messageService;
     late FakeInboxService inboxService;
 
-    setUp(() {
+    setUp(() async {
       SharedPreferences.setMockInitialValues({});
       manager = AccountManager();
-      nav = NavigationCoordinator(manager);
       final client = createTestSupabaseClient();
       messageService = FakeMessageService(client);
       inboxService = FakeInboxService();
@@ -67,22 +78,53 @@ void main() {
         _msg('1', 'ciao da agent1', _agent1),
         _msg('2', 'risposta agent2', _agent2),
       ];
+
+      manager.restoreSessionForTest = (account) async {
+        final profile = account.profile;
+        return AccountSession.createForTest(
+          profile: profile,
+          client: client,
+          inboxService: inboxService,
+          messageService: messageService,
+          profileService: _FakeProfileService({
+            _agent1: _profile(_agent1, 'alfredagent1'),
+            _agent2: _profile(_agent2, 'alfredagent2'),
+          }),
+        );
+      };
     });
 
+    Future<AuthController> wiredAuth() async {
+      final storage = AccountStorageService();
+      await seedAccountsInStorage(
+        storage: storage,
+        accounts: [
+          openAccount(userId: _agent1, username: 'alfredagent1'),
+          openAccount(userId: _agent2, username: 'alfredagent2'),
+        ],
+        focusUserId: _agent1,
+      );
+      final wiredManager = AccountManager(storage: storage)
+        ..restoreSessionForTest = manager.restoreSessionForTest;
+      final auth = await createWiredAuthController(manager: wiredManager);
+      await auth.initialize();
+      return auth;
+    }
+
     test('focus switch keeps per-account chat and loads correct history', () async {
-      manager.seedTestAccount(_agent1);
-      manager.seedTestAccount(_agent2);
+      final auth = await wiredAuth();
+      final nav = auth.navigation;
 
       final peer1 = _peer(_profile(_agent2, 'alfredagent2'));
       final peer2 = _peer(_profile(_agent1, 'alfredagent1'));
 
-      await manager.setFocus(_agent1);
+      await auth.setFocus(_agent1);
       nav.openPeerOnFocusedAccount(peer1);
-      expect(manager.viewState.activePeer?.profileId, _agent2);
+      expect(auth.viewState.activePeer?.profileId, _agent2);
 
       final chatAsAgent1 = MessagesController(
         userId: _agent1,
-        peerProfileId: manager.viewState.activePeer!.profileId,
+        peerProfileId: auth.viewState.activePeer!.profileId,
         messageService: messageService,
         messageMediaService: MessageMediaService(createTestSupabaseClient()),
         inboxService: inboxService,
@@ -90,13 +132,13 @@ void main() {
       await waitForMessagesController(chatAsAgent1);
       expect(chatAsAgent1.messages.length, 2);
 
-      await manager.setFocus(_agent2);
+      await auth.setFocus(_agent2);
       nav.openPeerOnFocusedAccount(peer2);
-      expect(manager.viewState.activePeer?.profileId, _agent1);
+      expect(auth.viewState.activePeer?.profileId, _agent1);
 
       final chatAsAgent2 = MessagesController(
         userId: _agent2,
-        peerProfileId: manager.viewState.activePeer!.profileId,
+        peerProfileId: auth.viewState.activePeer!.profileId,
         messageService: messageService,
         messageMediaService: MessageMediaService(createTestSupabaseClient()),
         inboxService: inboxService,
@@ -104,12 +146,12 @@ void main() {
       await waitForMessagesController(chatAsAgent2);
       expect(chatAsAgent2.messages.length, 2);
 
-      await manager.setFocus(_agent1);
-      expect(manager.viewState.activePeer?.profileId, _agent2);
+      await auth.setFocus(_agent1);
+      expect(auth.viewState.activePeer?.profileId, _agent2);
 
       final chatAgainAgent1 = MessagesController(
         userId: _agent1,
-        peerProfileId: manager.viewState.activePeer!.profileId,
+        peerProfileId: auth.viewState.activePeer!.profileId,
         messageService: messageService,
         messageMediaService: MessageMediaService(createTestSupabaseClient()),
         inboxService: inboxService,
@@ -123,13 +165,24 @@ void main() {
     });
 
     test('stale peer equal to focused account is not used for chat', () async {
-      manager.seedTestAccount(_agent2);
-      await manager.setFocus(_agent2);
+      final storage = AccountStorageService();
+      await seedAccountsInStorage(
+        storage: storage,
+        accounts: [
+          openAccount(userId: _agent2, username: 'alfredagent2'),
+        ],
+        focusUserId: _agent2,
+      );
+      final wiredManager = AccountManager(storage: storage)
+        ..restoreSessionForTest = manager.restoreSessionForTest;
+      final auth = await createWiredAuthController(manager: wiredManager);
+      await auth.initialize();
 
-      // Simula stato corrotto: peer = sé stessi (bug dopo switch da altro account).
-      nav.openPeerOnFocusedAccount(_peer(_profile(_agent2, 'alfredagent2')));
+      auth.navigation.openPeerOnFocusedAccount(
+        _peer(_profile(_agent2, 'alfredagent2')),
+      );
 
-      expect(manager.viewState.activePeer, isNull);
+      expect(auth.viewState.activePeer, isNull);
     });
   });
 }

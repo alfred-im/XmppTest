@@ -14,6 +14,7 @@ DOMAIN_DIR="docs/domain"
 UML_DIR="docs/model/uml"
 MACHINES_DIR="client/lib/machines"
 TEST_DIR="client/test/unit"
+WIRING_TEST_DIR="client/test/wiring"
 ERR=0
 
 echo "==> Model: stato modellazione per contesto"
@@ -71,8 +72,13 @@ for readme in "$DOMAIN_DIR"/*/README.md; do
   if [[ "$stato" == "verified" ]]; then
     ctx_test="$(echo "$ctx" | tr '-' '_')"
     machine_test="$TEST_DIR/${ctx_test}_machine_test.dart"
+    wiring_test="$WIRING_TEST_DIR/${ctx_test}_wiring_test.dart"
     if [[ ! -f "$machine_test" ]]; then
       echo "ERROR: contesto $ctx (verified) manca $machine_test" >&2
+      ERR=1
+    fi
+    if [[ ! -f "$wiring_test" ]]; then
+      echo "ERROR: contesto $ctx (verified) manca $wiring_test" >&2
       ERR=1
     fi
   fi
