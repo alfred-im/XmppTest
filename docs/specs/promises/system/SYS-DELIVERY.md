@@ -5,7 +5,7 @@
 | **Promessa ID** | `SYS-DELIVERY` |
 | **Classe** | SYSTEM |
 | **Status** | `implemented` |
-| **Ultima revisione** | 2026-07-14 |
+| **Ultima revisione** | 2026-07-19 |
 | **ADR** | [bridge-stateless.md](../../../decisions/bridge-stateless.md), [server-as-reception.md](../../../decisions/server-as-reception.md) |
 | **PR origine** | #179 |
 
@@ -36,7 +36,7 @@ Gli account accettano invio/lettura solo nel proprio archivio e accodano eventi 
 | **SYS-DELIVERY-005** | Payload `deliver` include λ, `sender_id`, `recipient_profile_id`, snapshot contenuto |
 | **SYS-DELIVERY-006** | Payload `read_receipt` include λ, `reader_id`, `sender_profile_id` |
 | **SYS-DELIVERY-007** | RLS `outbox`: deny `authenticated` (solo worker/service) |
-| **SYS-DELIVERY-008** | `event_kind = push_notify` — invio notifica Web Push post-recapito ([SYS-PUSH](./SYS-PUSH.md), `draft`) |
+| **SYS-DELIVERY-008** | `event_kind = push_notify` — invio notifica Web Push post-recapito ([SYS-PUSH](./SYS-PUSH.md), `implemented`) |
 | **SYS-DELIVERY-009** | Payload `push_notify` include `recipient_user_id`, `peer_profile_id`, `peer_display_name`, `preview_text`, `logical_message_id`, `content_type` |
 
 ### WORKER — `alfred_delivery`
@@ -98,7 +98,7 @@ mark_peer_read (account lettore)
 | Schema + worker | `supabase/migrations/*account_boundary_delivery*` |
 | RPC account | `send_message_to_profile`, `mark_peer_read`, `broadcast_message_to_allowlist` |
 | Helper gate | `is_sender_allowed_for_reception`, `is_bidirectional_allowed` (solo worker) |
-| Push (bozza) | `supabase/functions/send-push/`, migrazione `push_subscriptions` — [SYS-PUSH](./SYS-PUSH.md) |
+| Push | `supabase/functions/send-push/`, migrazione `push_subscriptions` — [SYS-PUSH](./SYS-PUSH.md) (`implemented`) |
 
 ---
 
@@ -122,4 +122,4 @@ mark_peer_read (account lettore)
 | [SYS-ACCOUNT-BOUNDARY](./SYS-ACCOUNT-BOUNDARY.md) | Legge madre confine |
 | [SYS-MAILBOX](./SYS-MAILBOX.md) | Semantica archivio e date spunta |
 | [SYS-RECEPTION](./SYS-RECEPTION.md) | Gate allow list nel worker |
-| [SYS-PUSH](./SYS-PUSH.md) | Web Push post-recapito (`draft`) |
+| [SYS-PUSH](./SYS-PUSH.md) | Web Push post-recapito (`implemented`) |

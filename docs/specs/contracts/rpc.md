@@ -1,8 +1,8 @@
 # Contratto RPC — messaggistica
 
-**Ultima revisione**: 2026-07-14  
-**Status**: `implemented` su `main` (migrazioni fino a `20260711190000`, incl. account boundary delivery); `push_subscriptions` bozza [SYS-PUSH](../promises/system/SYS-PUSH.md)  
-**Spec**: [SYS-MAILBOX](../promises/system/SYS-MAILBOX.md), [SYS-GROUP](../promises/system/SYS-GROUP.md), [SYS-CONTACTS](../promises/system/SYS-CONTACTS.md), [SYS-PROFILE](../promises/system/SYS-PROFILE.md), [SYS-RECEPTION](../promises/system/SYS-RECEPTION.md), [SYS-ACCOUNT-BOUNDARY](../promises/system/SYS-ACCOUNT-BOUNDARY.md), [SYS-DELIVERY](../promises/system/SYS-DELIVERY.md), [SYS-PUSH](../promises/system/SYS-PUSH.md) (`draft`)
+**Ultima revisione**: 2026-07-19  
+**Status**: `implemented` su `main` (migrazioni fino a `20260715230000`, 38 totali in `supabase/migrations/`)  
+**Spec**: [SYS-MAILBOX](../promises/system/SYS-MAILBOX.md), [SYS-GROUP](../promises/system/SYS-GROUP.md), [SYS-CONTACTS](../promises/system/SYS-CONTACTS.md), [SYS-PROFILE](../promises/system/SYS-PROFILE.md), [SYS-RECEPTION](../promises/system/SYS-RECEPTION.md), [SYS-ACCOUNT-BOUNDARY](../promises/system/SYS-ACCOUNT-BOUNDARY.md), [SYS-DELIVERY](../promises/system/SYS-DELIVERY.md), [SYS-PUSH](../promises/system/SYS-PUSH.md) (`implemented`)
 
 Fonte di verità: `supabase/migrations/`. PostgREST espone solo overload **espliciti** — niente ambiguità di firma.
 
@@ -255,7 +255,7 @@ Spec: SYS-RECEPTION-028, SYS-GROUP-028, SYS-GROUP-027.
 
 ## Enum `message_content_type`
 
-Valori su `main`: `text`, `gif`, `voice`, `location`.
+Valori su `main`: `text`, `gif`, `voice`, `location`, `image`, `video`.
 
 Aggiunta enum in migrazioni separate (commit enum prima dell’uso in RPC).
 
@@ -298,11 +298,11 @@ Gate client: `verify.sh` + `bash scripts/test.sh integration` + `bash scripts/te
 | `is_username_available` | Registrazione / validazione username |
 | `search_profiles` | `ContactService.searchProfiles` |
 | `reception_allowlist` (PostgREST) | `ReceptionAllowlistService` |
-| `push_subscriptions` (PostgREST) | `PushSubscriptionService` — bozza [SYS-PUSH](../promises/system/SYS-PUSH.md) |
+| `push_subscriptions` (PostgREST) | `PushSubscriptionService` — [SYS-PUSH](../promises/system/SYS-PUSH.md) |
 
 ---
 
-## `push_subscriptions` (PostgREST — bozza SYS-PUSH)
+## `push_subscriptions` (PostgREST — SYS-PUSH)
 
 Client autenticato: UPSERT via PostgREST su `push_subscriptions` (RLS `user_id = auth.uid()`).
 
@@ -317,7 +317,7 @@ Client autenticato: UPSERT via PostgREST su `push_subscriptions` (RLS `user_id =
 
 ---
 
-## Edge Function `send-push` (bozza SYS-PUSH)
+## Edge Function `send-push` (SYS-PUSH)
 
 Invocata solo da infrastruttura server (hook delivery / `push_notify` outbox). Non esposta al client.
 

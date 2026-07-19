@@ -1,6 +1,6 @@
 # Wishlist Funzionalità
 
-**Ultimo aggiornamento**: 2026-07-12
+**Ultimo aggiornamento**: 2026-07-19
 
 Funzionalità **future** desiderate per Alfred (client Flutter + piattaforma + bridge).
 
@@ -12,6 +12,8 @@ Funzionalità **future** desiderate per Alfred (client Flutter + piattaforma + b
 |------|-------|----------------|
 | Spunte cloud (inviato / consegnato server / lettura) | ✅ interni via worker `alfred_delivery` | [server-as-reception.md](./decisions/server-as-reception.md), [PROM-MESSAGE-STATUS](./specs/promises/product/PROM-MESSAGE-STATUS.md), [SYS-DELIVERY](./specs/promises/system/SYS-DELIVERY.md) |
 | Chat testo, GIF, voice, location | ✅ | [media.md](./guides/media.md) |
+| Foto e video in chat | ✅ | [PROM-CHAT-MEDIA.md](./specs/promises/product/PROM-CHAT-MEDIA.md), [media.md](./guides/media.md) |
+| Web Push (VAPID) | ✅ | [SYS-PUSH.md](./specs/promises/system/SYS-PUSH.md), [PROM-PUSH-NOTIFY.md](./specs/promises/product/PROM-PUSH-NOTIFY.md) |
 | Inbox mailbox (archivio owner) | ✅ | [SYS-MAILBOX.md](./specs/promises/system/SYS-MAILBOX.md), [SURF-INBOX.md](./specs/surfaces/SURF-INBOX.md), [address-based-messaging.md](./decisions/address-based-messaging.md) |
 | Allow list ricezione | ✅ sempre attiva; rifiuto silenzioso | [SYS-RECEPTION.md](./specs/promises/system/SYS-RECEPTION.md), [SURF-ALLOWLIST.md](./specs/surfaces/SURF-ALLOWLIST.md) |
 | Account gruppo + erogazione | ✅ | [SYS-GROUP.md](./specs/promises/system/SYS-GROUP.md), [groups.md](./guides/groups.md) |
@@ -69,6 +71,7 @@ Spunte federate (XEP-0184 / XEP-0333 via bridge): da implementare con i bridge P
 - Richiede supporto server con storage
 - Gestione thumbnail immagini
 - Limite dimensioni file (configurabile server)
+- **Alfred interno**: foto/video in chat già coperti da [PROM-CHAT-MEDIA](./specs/promises/product/PROM-CHAT-MEDIA.md) (bucket `chat-media`, client Flutter). XEP-0363 resta rilevante per **upload HTTP federato** via bridge XMPP verso homeserver esterni — percorso distinto dall'upload Supabase in-app.
 
 ---
 
@@ -158,7 +161,3 @@ Ogni nuova XEP deve includere test bridge, integrazione piattaforma e documentaz
 1. Implementare XEP-0280 (Carbons) per sync multi-device
 2. Aggiungere XEP-0308 (Message Correction) per edit messaggi
 3. Valutare XEP-0363 (File Upload) dopo testing server
-
----
-
-**Ultimo aggiornamento**: 2026-07-12

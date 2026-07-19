@@ -50,7 +50,8 @@ The client talks to a Supabase platform layer (Postgres, Auth, Realtime, Storage
 |------|--------|
 | Email + password auth with public **username** | ✅ |
 | **Multi-account** support | ✅ |
-| Inbox + realtime chat (text, GIF, voice, location) | ✅ |
+| Inbox + realtime chat (text, GIF, voice, location, photo, video) | ✅ |
+| **Web Push** notifications | ✅ |
 | Personal contacts (optional) | ✅ |
 | **Allow list** — consent-based delivery | ✅ |
 | Peer profiles and shareable `#username` links | ✅ |

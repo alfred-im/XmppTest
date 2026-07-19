@@ -4,6 +4,19 @@ Modifiche rilevanti al progetto per tracciare evoluzione tecnica e decisioni imp
 
 ---
 
+## [Unreleased] - 2026-07-19
+
+### Documentazione
+
+- Sync guide e architettura: composer [SURF-CHAT-014](./docs/specs/surfaces/SURF-CHAT.md) (graffetta + pannello icone scrollabile, microfono a destra) in [guides/media.md](./docs/guides/media.md), [guides/chat-scroll.md](./docs/guides/chat-scroll.md) (pulsante ↓ + badge pending)
+- [full-stack.md](./docs/architecture/full-stack.md): chat include image/video; push Web `implemented` (non più solo spec approved)
+- [PROM-CHAT-MEDIA](./docs/specs/promises/product/PROM-CHAT-MEDIA.md): superfici `implemented`; gate **377** test; **38** migrazioni Supabase
+- [WISHLIST.md](./docs/WISHLIST.md), [INDICE.md](./docs/INDICE.md): date e righe foto/video + SYS-PUSH
+
+> I conteggi gate nelle sezioni storiche sotto sono **point-in-time** al merge indicato.
+
+---
+
 ## [Unreleased] - 2026-07-18
 
 ### Aggiunto
@@ -338,4 +351,4 @@ Modifiche rilevanti al progetto per tracciare evoluzione tecnica e decisioni imp
 
 ---
 
-**Ultimo aggiornamento**: 2026-07-09
+**Ultimo aggiornamento**: 2026-07-19

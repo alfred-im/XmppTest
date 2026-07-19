@@ -85,4 +85,4 @@ Navigazione per AI. **Modello**: [domain/README.md](./domain/README.md) · **Pro
 - [WISHLIST.md](./WISHLIST.md) — backlog futuro
 - [specs/contracts/schema.md](./specs/contracts/schema.md) · [rpc.md](./specs/contracts/rpc.md)
 
-**Ultimo aggiornamento**: 2026-07-18
+**Ultimo aggiornamento**: 2026-07-19

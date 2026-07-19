@@ -1,7 +1,7 @@
 # Contratto schema — dominio mailbox (mailbox)
 
-**Ultima revisione**: 2026-07-14  
-**Status**: `implemented` su `main` (migrazioni fino a `20260714100000`, incl. push_subscriptions SYS-PUSH)  
+**Ultima revisione**: 2026-07-19  
+**Status**: `implemented` su `main` (migrazioni fino a `20260715230000`, 38 totali in `supabase/migrations/`)  
 **Fonte di verità**: `supabase/migrations/`
 
 Contratto **tabelle ed enum** usati dalle promesse SYSTEM. Per RPC: [rpc.md](./rpc.md). Per indice promesse: [registry.md](../registry.md).
@@ -18,7 +18,7 @@ profiles 1──* messages (owner_id = archivio; author_id = autore contenuto)
 messages *── peer profiles (peer_profile_id denormalizzato)
 messages 1──* outbox (ogni invio/lettura può accodare eventi)
 profiles 1──* sync_cursors (profile_id, peer_profile_id, protocol, cursor_key)
-profiles 1──* push_subscriptions (user_id, device_id) — bozza SYS-PUSH
+profiles 1──* push_subscriptions (user_id, device_id)
 bridge_jobs (coda bridge)
 storage: chat-media, avatars
 ```
@@ -147,7 +147,7 @@ Coda eventi — popolata per **ogni** invio (internal + federato) e per ogni `re
 | `deliver`, `group_erogate` | Copia **mittente** (o archivio gruppo per broadcast) |
 | `read_receipt` | Copia **lettore** (riga in entrata con `read_at` aggiornato) |
 
-Payload include `event_kind`: `deliver`, `read_receipt`, `group_erogate`, `push_notify` (bozza [SYS-PUSH](../promises/system/SYS-PUSH.md)). Stato colonna `status`: tipo `queue_status`.
+Payload include `event_kind`: `deliver`, `read_receipt`, `group_erogate`, `push_notify`. Stato colonna `status`: tipo `queue_status`.
 
 Consumer internal: worker `alfred_delivery.process_outbox` (sincrono in transazione RPC account); federato: fase B bridge (stub).
 

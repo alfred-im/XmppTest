@@ -5,7 +5,7 @@
 | **Promessa ID** | `SYS-MAILBOX` |
 | **Classe** | SYSTEM |
 | **Status** | `implemented` |
-| **Ultima revisione** | 2026-07-11 |
+| **Ultima revisione** | 2026-07-19 |
 | **ADR** | [mailbox-inbox-outbox-spec.md](../../../architecture/mailbox-inbox-outbox-spec.md), [server-as-reception.md](../../../decisions/server-as-reception.md), [no-internal-external-chat-distinction.md](../../../decisions/no-internal-external-chat-distinction.md), [bridge-stateless.md](../../../decisions/bridge-stateless.md) |
 | **PR origine** | #159, #179 |
 
@@ -112,7 +112,7 @@ Requisiti **client/UI** (coda outbound, realtime subscribe, checkmark rendering,
 
 | ID | Promessa |
 |----|----------|
-| **SYS-MAILBOX-039** | Preview per tipo: testo troncato, `[GIF]`, `🎤`, `📍 Posizione` |
+| **SYS-MAILBOX-039** | Preview per tipo: testo troncato, `[GIF]`, `🎤`, `📍 Posizione`, `📷 Foto`, `🎬 Video` (con didascalia se presente) — allineato a [SURF-CHAT-008](../../surfaces/SURF-CHAT.md) |
 | **SYS-MAILBOX-040** | `last_message_at` = `created_at` dell'ultima riga nel mio archivio per quel peer |
 
 #### MUST NOT
