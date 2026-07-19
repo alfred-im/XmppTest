@@ -1,5 +1,6 @@
 @startuml seq-add-allowed-profile
 ' Context: reception
+' Profile: client
 ' SDD: PROM-RECEPTION-FILTER, SYS-RECEPTION-004
 ' Revision: 2026-07-19
 
@@ -8,7 +9,6 @@ title Reception — aggiunta profilo consentito
 actor Utente
 participant "UI" as UI
 participant "ReceptionMachine" as RM
-participant "ReceptionService" as Svc
 participant "Supabase" as DB
 
 Utente -> UI : consente profilo
@@ -17,16 +17,12 @@ UI -> RM : AddAllowedProfile(profile)
 alt self o duplicato
   RM --> UI : AddSkipped
 else
-  RM -> Svc : addAllowedProfile(owner, profile)
-  Svc -> DB : INSERT reception_allowlist
-  DB --> Svc : row
-  Svc --> RM : ProfileAllowed
+  RM -> DB : AddAllowedProfile
+  DB --> RM : ProfileAllowed
 
   RM -> RM : LoadAllowlist
-  RM -> Svc : fetchAllowedPeople(owner)
-  Svc -> DB : SELECT + join profiles
-  DB --> Svc : rows
-  Svc --> RM : AllowlistLoaded
+  RM -> DB : LoadAllowlist
+  DB --> RM : AllowlistLoaded
   RM --> UI : lista aggiornata
 end
 

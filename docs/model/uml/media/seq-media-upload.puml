@@ -1,5 +1,6 @@
 @startuml seq-media-upload
 ' Context: media
+' Profile: client
 ' Commands: SendImage, SendVideo, UploadMedia (retry)
 ' SDD: PROM-CHAT-MEDIA-001–007
 ' Revision: 2026-07-19
@@ -8,45 +9,44 @@ title seq-media-upload — foto / video con preview optimistic
 
 actor Utente
 participant "UI" as UI
-participant "MessagingCoordinator" as Coord
+participant "OutboundSendMachine" as OSM
 participant "OutboundMediaCache" as Cache
 participant "OutboundQueue" as Q
-participant "MessageMediaService" as MMS
-participant "MessageService" as MS
+participant "Supabase" as SB
 
 == Image ==
 
 Utente -> UI : seleziona immagine
-UI -> Coord : SendImage
-Coord -> Cache : MediaCached
-Coord --> UI : optimistic preview (pending)
+UI -> OSM : SendImage
+OSM -> Cache : MediaCached
+OSM --> UI : optimistic preview (pending)
 
-Coord -> Q : MediaPersisted + enqueue
+OSM -> Q : MediaPersisted + enqueue
 opt HEIC / normalize
-  Coord --> Coord : ImageNormalized
+  OSM --> OSM : ImageNormalized
 end
-Coord -> MMS : UploadMedia
-MMS --> Coord : MediaUploaded
-Coord -> MS : send image to profile
-MS --> Coord : SendAcknowledged
-Coord -> Q : dequeue
+OSM -> SB : UploadMedia
+SB --> OSM : MediaUploaded
+OSM -> SB : SendImage
+SB --> OSM : SendAcknowledged
+OSM -> Q : dequeue
 
 == Video ==
 
 Utente -> UI : seleziona video
-UI -> Coord : SendVideo
-Coord --> UI : optimistic preview
-Coord -> Cache : MediaCached
-Coord -> Q : MediaPersisted + enqueue
-Coord -> MMS : UploadMedia
-MMS --> Coord : MediaUploaded
-Coord -> MS : send video to profile
-MS --> Coord : SendAcknowledged
-Coord -> Q : dequeue
+UI -> OSM : SendVideo
+OSM --> UI : optimistic preview
+OSM -> Cache : MediaCached
+OSM -> Q : MediaPersisted + enqueue
+OSM -> SB : UploadMedia
+SB --> OSM : MediaUploaded
+OSM -> SB : SendVideo
+SB --> OSM : SendAcknowledged
+OSM -> Q : dequeue
 
 alt failure
-  Coord --> UI : MediaUploadFailed
-  Coord -> Q : update failed item
+  OSM --> UI : MediaUploadFailed
+  OSM -> Q : update failed item
 end
 
 @enduml

@@ -29,7 +29,7 @@ notifications ──OpenFromPushTap──► navigation
 shareable-link ──OpenFromShareableLink──► navigation
 navigation ──FocusAccount──► multi-account
 multi-account ──sessione──► auth
-messaging ──RPC──► reception, delivery
+messaging ──outbox──► reception, delivery
 groups ──broadcast/owner──► delivery, reception
 federation ──outbox queued──► delivery (consumer bridge stub)
 ```

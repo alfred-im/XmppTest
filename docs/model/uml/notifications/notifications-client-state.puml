@@ -1,7 +1,7 @@
 @startuml notifications-client-state
 ' Context: notifications (client Flutter)
 ' SDD: PROM-PUSH-NOTIFY, SURF-NOTIFICATIONS
-' Revision: 2026-07-18
+' Revision: 2026-07-19
 
 title Notifications — client state machine (subscription + open chat)
 

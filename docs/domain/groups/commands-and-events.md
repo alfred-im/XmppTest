@@ -67,7 +67,7 @@
 
 | Sistema | Ruolo |
 |---------|------|
-| **Supabase** | RPC broadcast, storico owner, Realtime archivio gruppo. |
+| **Supabase** | Broadcast allow list, storico owner, Realtime archivio gruppo. |
 | **delivery** | Fan-out erogazione verso partecipanti allow list. |
 
 Dettaglio sequenze worker: contesto **delivery** e [SYS-GROUP](../../specs/promises/system/SYS-GROUP.md).

@@ -32,10 +32,10 @@
 |----------|-----------|
 | **messaging** | Chat umano→gruppo usa stessa pipeline invio; UI autore in bolla. |
 | **delivery** | Recapito archivio gruppo, spunte mittente umano, erogazione fan-out. |
-| **reception** | Gate bidirezionale allow list prima di INSERT storico o copia erogata. |
+| **reception** | Gate bidirezionale allow list prima di materializzare storico o copia erogata. |
 | **navigation** | `OpenGroupChat` / `BackToGroupHome` in shell gruppo. |
 | **multi-account** | Account gruppo nel manifest; focus come qualsiasi sessione. |
-| **media** | Broadcast media: upload prima di RPC broadcast con content type e URL. |
+| **media** | Broadcast media: upload prima di broadcast con content type e URL. |
 
 ---
 

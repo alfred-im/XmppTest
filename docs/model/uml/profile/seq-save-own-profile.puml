@@ -1,5 +1,6 @@
 @startuml seq-save-own-profile
 ' Context: profile
+' Profile: client
 ' SDD: PROM-PROFILE-IDENTITY-003
 ' Revision: 2026-07-19
 
@@ -8,16 +9,13 @@ title Profile — salvataggio profilo proprio
 actor Utente
 participant "UI" as UI
 participant "ProfileMachine" as PM
-participant "ProfileService" as Svc
 participant "MultiAccountMachine" as MAM
 participant "Supabase" as DB
 
 Utente -> UI : Salva
 UI -> PM : SaveProfile
-PM -> Svc : updateProfile(userId, fields)
-Svc -> DB : UPDATE profiles
-DB --> Svc : row
-Svc --> PM : ProfileSaved
+PM -> DB : SaveProfile
+DB --> PM : ProfileSaved
 PM --> UI : profilo aggiornato
 
 PM -> MAM : RefreshAuthProfile

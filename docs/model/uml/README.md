@@ -26,20 +26,55 @@ Metodo completo: [docs/domain/README.md](../../domain/README.md).
 
 ---
 
+## Due profili di astrazione (sequence)
+
+Ogni sequence usa **uno** dei profili sotto. Il profilo è dichiarato nel commento `' Profile: client | platform` del file.
+
+### Profilo **Client** (contesti con statechart Flutter)
+
+Contesti: auth, multi-account, navigation, notifications, shareable-link, messaging, contacts, profile, reception, groups, media.
+
+| Consentito | Vietato |
+|------------|---------|
+| `Utente`, `UI`, `<Context>Machine`, altre macchine del modello | `*Service`, `*Coordinator`, `*Controller`, `*Listener` |
+| `AccountManager` come unico confine effetti sessione/account | Nomi RPC/SQL (`send_message_to_profile`, `INSERT`, …) |
+| Sistemi esterni rosa: `Supabase`, `ServiceWorker`, `Browser` | Classi Dart, file `.dart`, widget screen |
+| Concetti dominio: `OutboundQueue`, `OutboundMediaCache` | `PostgresChange`, nomi tabella |
+
+**Frecce:** solo comandi ed eventi da `commands-and-events.md`. L’implementazione (`MessageService`, coordinator) resta in `docs/domain/<context>/README.md`.
+
+**Esempio:** [notifications/seq-notification-click.puml](./notifications/seq-notification-click.puml).
+
+### Profilo **Platform** (worker, bridge, gate server)
+
+Contesti: delivery, federation, gate recapito in reception (sequence cross-boundary).
+
+| Consentito | Vietato |
+|------------|---------|
+| Attori dominio platform: `AccountBoundary`, `DeliveryWorker`, `ReceptionGate`, `Outbox`, `MailboxArchive` | Nomi funzione SQL grezzi come unico partecipante (`alfred_delivery.process_outbox`) |
+| `BridgeWorker`, `FederatedServer` | Dettaglio schema (`ON CONFLICT DO NOTHING`) sulle frecce |
+| Comandi worker da dominio: `ProcessOutbox`, `DeliverInternal` | |
+
+**Esempio target:** partecipante `DeliveryWorker`, freccia `DeliverInternal` — non `DI -> MSG : INSERT …`.
+
+---
+
 ## Convenzioni
 
 ### Nomi
 
 - **Stati:** `PascalCase` — es. `InboxVisible`, `ReconnectingFocus`
 - **Eventi / comandi sulle transizioni:** stesso nome del dominio — es. `FocusAccount`, `OpenFromPushTap`
-- **Attori tipici:** `Utente`, `UI`, `<Context>Machine`, `AccountManager`, `Supabase`, `ServiceWorker`
+- **Attori Client:** `Utente`, `UI`, `<Context>Machine`, `AccountManager`, `Supabase`, `ServiceWorker`
+- **Attori Platform:** `AccountBoundary`, `DeliveryWorker`, `ReceptionGate`, `Outbox`, `BridgeWorker`
 
 ### Intestazione file (commento PlantUML)
 
 ```plantuml
 ' Context: navigation
+' Profile: client
 ' SDD: PROM-MULTI-ACCOUNT, PROM-PUSH-NOTIFY (solo riferimento confine prodotto)
-' Revision: 2026-07-18
+' Revision: 2026-07-19
 ```
 
 ### Regole

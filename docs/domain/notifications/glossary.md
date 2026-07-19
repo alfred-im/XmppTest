@@ -1,7 +1,7 @@
 # Glossario — contesto notifications
 
 **Bounded context:** `notifications`  
-**Ultima revisione:** 2026-07-18  
+**Ultima revisione:** 2026-07-19  
 **Promesse SDD:** [PROM-PUSH-NOTIFY](../../specs/promises/product/PROM-PUSH-NOTIFY.md), [SURF-NOTIFICATIONS](../../specs/surfaces/SURF-NOTIFICATIONS.md), [SYS-PUSH](../../specs/promises/system/SYS-PUSH.md)
 
 ---
@@ -10,18 +10,18 @@
 
 | Termine | Definizione |
 |---------|-------------|
-| **Device** | Browser/dispositivo fisico identificato da `device_id` (`alfred_device_id` in `localStorage`). Condiviso tra tutti gli account sullo stesso browser. |
-| **Push subscription** | Coppia endpoint + chiavi VAPID (`p256dh`, `auth`) registrata nel service worker per un device. Una riga `push_subscriptions` per `(user_id, device_id)`. |
-| **PushConversationKey** | Identità canonica di una notifica: `(recipient_user_id, peer_profile_id)` — mai solo peer. Formato stringa: `owner\|peer`. |
-| **Recipient account** | Account Alfred destinatario del messaggio (`recipient_user_id` nel payload). Può essere non in focus. |
-| **Peer** | Controparte nella chat (`peer_profile_id`). |
+| **Device** | Browser/dispositivo fisico identificato in modo persistente sul client. Condiviso tra tutti gli account sullo stesso browser. |
+| **Push subscription** | Coppia endpoint + chiavi crittografiche registrata nel service worker per un device. Una subscription per coppia account-device. |
+| **PushConversationKey** | Identità canonica di una notifica: `(recipient_user_id, peer_profile_id)` — mai solo peer. |
+| **Recipient account** | Account Alfred destinatario del messaggio. Può essere non in focus. |
+| **Peer** | Controparte nella chat. |
 | **Logical message id** | Id messaggio logico per tag notifica e deduplica sul device. |
-| **Notification tag** | Tag browser: `recipient_user_id\|peer_profile_id\|logical_message_id`. |
+| **Notification tag** | Tag browser per deduplica: account destinatario + peer + id logico messaggio. |
 | **Soppressione** | Nessuna notifica visibile se app in foreground, account destinatario in focus e chat con quel peer aperta. |
-| **Suppression state** | Snapshot in RAM nel service worker: `focusUserId`, `activePeerProfileId`, `appVisible`. |
-| **Open chat intent** | Intent client `{ type: open_chat, recipientUserId, peerProfileId }` da tap notifica o pending. |
-| **Pending open chat** | Intent persistito in `localStorage` (`alfred_pending_open_chat`) finché `sessionReady`. |
-| **Push launch fragment** | URL `#push-chat/{owner}/{peer}` per cold start da tap notifica. |
+| **Suppression state** | Snapshot in RAM nel service worker: account in focus, peer attivo, visibilità app. |
+| **Open chat intent** | Intent client con account destinatario e peer da tap notifica o pending. |
+| **Pending open chat** | Intent persistito localmente finché sessione non pronta. |
+| **Push launch fragment** | URL fragment per cold start da tap notifica verso chat target. |
 
 ---
 
@@ -29,7 +29,7 @@
 
 | Contesto | Relazione |
 |----------|-----------|
-| **multi-account** | Manifest account aperti; sync subscription per ogni `user_id`. |
+| **multi-account** | Manifest account aperti; sync subscription per ogni account. |
 | **navigation** | Tap notifica → comando `OpenFromPushTap` (adapter verso `NavigationMachine`). |
 | **messaging** | Server invia push solo post-recapito; anteprima come inbox. |
 | **delivery** / **reception** | Push solo se messaggio recapitato e allow list superata (server). |
@@ -39,7 +39,7 @@
 ## Invarianti
 
 1. **Mai solo peer:** target, soppressione, tap e tag usano sempre `PushConversationKey` (account + peer).
-2. **Payload incompleto:** senza `recipient_user_id` e `peer_profile_id` → nessuna UI, nessun `open_chat`.
-3. **Permesso `denied`:** app funziona senza push; nessun retry invasivo.
-4. **Subscription per account:** UPSERT solo per `user_id` dell'account; DELETE alla chiusura account sul device.
-5. **Soppressione client→SW:** stato sincronizzato via `postMessage` (`alfred_push_suppression`).
+2. **Payload incompleto:** senza account destinatario e peer → nessuna UI, nessun open chat.
+3. **Permesso negato:** app funziona senza push; nessun retry invasivo.
+4. **Subscription per account:** registrazione solo per account del manifest; rimozione alla chiusura account sul device.
+5. **Soppressione client→SW:** stato sincronizzato via messaggio al service worker.

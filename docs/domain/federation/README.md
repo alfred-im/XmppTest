@@ -27,10 +27,10 @@ Vedi [bounded-contexts.md](../bounded-contexts.md) e [metodo dominio](../README.
 
 Stesso pipeline caselle di internal:
 
-1. Account RPC → copia mittente + outbox `queued`
+1. Confine account → copia mittente + outbox `queued`
 2. Bridge stateless claim job da piattaforma
 3. Traduzione protocollo ↔ archivio Alfred (λ, `external_id`)
-4. Ack esterni → UPDATE spunte copia mittente
+4. Ack esterni → aggiorna spunte copia mittente
 
 ADR vincolante: [bridge-stateless.md](../../decisions/bridge-stateless.md)
 

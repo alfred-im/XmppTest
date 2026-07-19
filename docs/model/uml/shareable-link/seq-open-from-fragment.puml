@@ -1,41 +1,43 @@
 @startuml seq-open-from-fragment
 ' Context: shareable-link → navigation
+' Profile: client
 ' SDD: PROM-SHAREABLE-LINK
-' Revision: 2026-07-18
+' Revision: 2026-07-19
 
 title seq-open-from-fragment — link #profilo o #chat
 
 participant "Browser" as Br
-participant "ShareableLinkListener" as L
+participant "UI" as UI
 participant "ShareableLinkMachine" as SL
 participant "NavigationMachine" as Nav
-participant "AccountManager" as AM
+participant "MultiAccountMachine" as MAM
 
-Br -> L : hashchange / load\n#username o #username/chat
-L -> SL : ParseFragment
+Br -> UI : hashchange / load\n#username o #username/chat
+UI -> SL : ParseFragment
 alt fragment invalido / push-chat
-  SL --> L : FragmentCleared
+  SL --> UI : FragmentCleared
 else fragment valido
-  SL --> L : FragmentParsed\n(targetQueued)
+  SL --> UI : FragmentParsed\n(targetQueued)
 end
 
-L -> SL : SessionBecameReady\n+ HandleTargetRequested
+UI -> SL : SessionBecameReady\n+ HandleTargetRequested
 alt !sessionReady || 0 account
-  SL --> L : TargetDeferred
+  SL --> UI : TargetDeferred
 else sessione pronta
   SL -> SL : resolveShareableAddress
   alt indirizzo non locale
-    SL --> L : ProfileNotFound
+    SL --> UI : ProfileNotFound
   else lookup username
     alt profilo assente
-      SL --> L : ProfileNotFound
+      SL --> UI : ProfileNotFound
     else self peer
-      SL --> L : SelfPeerIgnored
+      SL --> UI : SelfPeerIgnored
     else kind == profile
       SL -> SL : ShowProfileFromLink\n(overlay)
     else kind == chat
       SL -> Nav : OpenFromShareableLink\n(account focus, peerId)
-      Nav -> AM : clearStale + focus + resolve + open
+      Nav -> MAM : FocusAccount (se necessario)
+      Nav -> Nav : clear stale + open conversation
       Nav --> SL : ChatOpenedFromLink
     end
   end

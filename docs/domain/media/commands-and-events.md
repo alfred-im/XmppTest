@@ -50,8 +50,8 @@
 
 | Policy | Trigger | Azione |
 |--------|---------|--------|
-| **Upload prima di send** | Tipi con allegato | `UploadMedia` prima di RPC invio |
-| **Location senza upload** | `SendLocation` | Solo coordinate in RPC |
+| **Upload prima di send** | Tipi con allegato | `UploadMedia` prima di invio messaggio |
+| **Location senza upload** | `SendLocation` | Solo coordinate in invio posizione |
 | **Limiti dimensione** | Pre-upload | Rifiuto client se oltre soglia |
 | **Voice minima** | `RecordVoiceStop` < 1 s | `VoiceRecordingCancelled` |
 | **Web blob grande** | Persistenza locale | Solo cache RAM, non storage prefs |

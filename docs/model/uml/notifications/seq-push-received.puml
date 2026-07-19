@@ -1,34 +1,32 @@
 @startuml seq-push-received
 ' Context: notifications
+' Profile: client
 ' Command: HandlePushPayload
-' Contract: docs/specs/contracts/push-payload.md §2–3
 ' SDD: PROM-PUSH-NOTIFY-022, SURF-NOTIFICATIONS-005–008
-' Revision: 2026-07-18
+' Revision: 2026-07-19
 
 title seq-push-received — delivery server → notifica visibile o soppressa
 
-participant "Delivery worker" as Del
-participant "Edge send-push" as EF
-participant "Browser push" as BP
+participant "DeliveryWorker" as Del
+participant "PushPlatform" as PP
 participant "ServiceWorker" as SW
-participant "PushSuppressionBinder" as Sup
-participant "Flutter UI" as UI
+participant "NotificationsMachine" as NM
+participant "UI" as UI
 
-Del -> EF : push_notify\n(recipient_user_id, peer_profile_id, preview…)
-EF -> BP : Web Push payload
-BP -> SW : push event
+Del -> PP : PushNotifyEnqueued
+PP -> SW : push event
 
-UI -> Sup : focus + activePeer cambia
-Sup -> SW : postMessage alfred_push_suppression
+UI -> NM : UpdateSuppressionState
+NM -> SW : SuppressionStateApplied
 
-SW -> SW : tryParsePushConversation
+SW -> SW : HandlePushPayload
 SW -> SW : shouldSuppress?
 
 alt soppresso (chat attiva stessa coppia)
   SW -> SW : PushNotificationSuppressed\n(nessuna UI)
 else mostra
-  SW -> SW : showNotification(title, body, tag)
-  SW -> UI : postMessage alfred_push_received
+  SW -> SW : PushNotificationShown
+  SW -> UI : OpenChatIntentReceived
 end
 
 @enduml

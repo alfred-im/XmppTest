@@ -47,7 +47,7 @@
 
 ## Invarianti
 
-1. Upload sempre prima di invio RPC (tranne location).
+1. Upload sempre prima di invio messaggio (tranne location).
 2. Dimensione verificata client-side prima dell'upload.
 3. Web: blob grandi non in persistenza prefs — solo cache RAM.
 4. Voice: durata minima 1 s; registrazione più corta annullata.

@@ -1,27 +1,31 @@
 @startuml seq-realtime-merge
 ' Context: messaging
-' Events: RealtimeReceived, DeliveryTickReceived
-' SDD: PROM-REALTIME-OWNER-003–005, PROM-MESSAGE-STATUS
+' Profile: client
+' Event: RealtimeReceived, DeliveryTickReceived
+' SDD: PROM-REALTIME-OWNER, PROM-MESSAGE-STATUS
 ' Revision: 2026-07-19
 
-title seq-realtime-merge — INSERT/UPDATE peer messages
+title seq-realtime-merge — aggiornamento realtime conversazione
 
 participant "Supabase Realtime" as RT
-participant "MessageService" as MS
 participant "RealtimeAttachmentMachine" as RAM
-participant "MessagingCoordinator" as Coord
+participant "ConversationLoadMachine" as CLM
 participant "UI" as UI
 
-Coord -> RAM : AttachRealtime
-RAM -> MS : subscribe peer channel
-MS -> RT : channel owner + peer filter
+RT -> RAM : RealtimeReceived
+RAM -> CLM : merge message\n(Ready state)
 
-RT -> MS : PostgresChange INSERT|UPDATE
-MS -> MS : filter peer relevance
-MS -> MS : parse message\nrenderable or tick-only?
+alt tick-only (sole spunte)
+  CLM -> CLM : DeliveryTickReceived\npreserve content/media
+else nuovo contenuto
+  CLM -> CLM : merge by client_message_id
+end
 
-MS -> Coord : RealtimeReceived / DeliveryTickReceived
-Coord -> Coord : merge message\n(preserve media on tick-only)
-Coord --> UI : list updated
+CLM --> UI : list updated
+
+note over CLM
+  Una sola bolla per client_message_id.
+  Merge in place — no duplicate bubbles.
+end note
 
 @enduml

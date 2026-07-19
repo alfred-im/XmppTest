@@ -17,7 +17,7 @@
 | **Client message id** | Identificatore client per idempotenza; chiave di merge tra optimistic e riga server. |
 | **Outbound queue** | Coda persistente per retry dopo fallimento rete o upload media. |
 | **Queue scope** | Ambito coda per account e peer ([PROM-OUTBOUND-SEND-002]). |
-| **Message merge** | Unione riga realtime/RPC in bolla esistente senza perdere media né payload retry. |
+| **Message merge** | Unione aggiornamento realtime o conferma server in bolla esistente senza perdere media né payload retry. |
 | **Tick-only update** | Aggiornamento realtime con sole date spunte — merge preserva contenuto e media. |
 | **Sender message** | Messaggio scritto dall'utente corrente — abilita spunte mittente ([PROM-MESSAGE-STATUS-010]). |
 | **Message status** | `pending`/`failed` solo pre-ACK client; post-ACK derivato dall'archivio mailbox. |

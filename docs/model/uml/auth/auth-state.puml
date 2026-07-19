@@ -1,7 +1,7 @@
 @startuml auth-state
 ' Context: auth
 ' SDD: SURF-AUTH, PROM-MULTI-ACCOUNT
-' Revision: 2026-07-18
+' Revision: 2026-07-19
 
 title Auth — UI overlay & session state machine
 

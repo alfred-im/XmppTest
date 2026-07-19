@@ -1,4 +1,6 @@
 @startuml seq-close-conversation
+' Context: navigation
+' Profile: client
 ' Command: CloseConversation
 ' Revision: 2026-07-19
 

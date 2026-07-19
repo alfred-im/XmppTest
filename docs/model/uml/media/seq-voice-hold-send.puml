@@ -1,5 +1,6 @@
 @startuml seq-voice-hold-send
 ' Context: media
+' Profile: client
 ' Commands: RecordVoiceStart, RecordVoiceStop, SendVoice
 ' SDD: PROM-CHAT-MEDIA (voice), PROM-OUTBOUND-SEND
 ' Revision: 2026-07-19
@@ -8,38 +9,36 @@ title seq-voice-hold-send — registrazione hold-to-send
 
 actor Utente
 participant "UI" as UI
-participant "VoiceRecordingService" as VRS
-participant "MessagingCoordinator" as Coord
+participant "OutboundSendMachine" as OSM
 participant "OutboundQueue" as Q
-participant "MessageMediaService" as MMS
-participant "MessageService" as MS
+participant "Supabase" as SB
 
 Utente -> UI : long-press mic
-UI -> VRS : RecordVoiceStart
+UI -> OSM : RecordVoiceStart
 UI --> UI : VoiceRecordingStarted
 
 alt swipe up (lock)
   UI --> UI : VoiceRecordingLocked
   Utente -> UI : stop
-  UI -> VRS : RecordVoiceStop
+  UI -> OSM : RecordVoiceStop
   UI --> UI : VoicePreviewReady
   Utente -> UI : conferma invio
 else release (≥ min 1s)
   Utente -> UI : release
-  UI -> VRS : RecordVoiceStop
-  VRS --> UI : bytes, duration
+  UI -> OSM : RecordVoiceStop
+  OSM --> UI : bytes, duration
 else release (< 1s)
-  UI -> VRS : RecordVoiceCancel
+  UI -> OSM : RecordVoiceCancel
   UI --> UI : VoiceRecordingCancelled
 end
 
-UI -> Coord : SendVoice
-Coord -> Q : persist media
-Coord --> UI : optimistic voice bubble
-Coord -> MMS : UploadMedia
-MMS --> Coord : MediaUploaded
-Coord -> MS : send voice to profile
-MS --> Coord : SendAcknowledged
-Coord -> Q : dequeue
+UI -> OSM : SendVoice
+OSM -> Q : persist media
+OSM --> UI : optimistic voice bubble
+OSM -> SB : UploadMedia
+SB --> OSM : MediaUploaded
+OSM -> SB : SendVoice
+SB --> OSM : SendAcknowledged
+OSM -> Q : dequeue
 
 @enduml
