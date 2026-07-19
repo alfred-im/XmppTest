@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 import '../../models/chat_peer.dart';
+import '../../models/conversation_scope.dart';
 import '../../services/account_manager.dart';
 import '../../services/account_session.dart';
 import '../../utils/diagnostic_log.dart';
@@ -36,6 +37,7 @@ class AccountNavigationEffects implements NavigationEffects {
 
   @override
   void closeConversation() {
+    _manager.invalidateCommittedScope();
     if (focusedAccountIsGroup) {
       backToGroupHome();
       return;
@@ -71,6 +73,10 @@ class AccountNavigationEffects implements NavigationEffects {
       return;
     }
     _viewState.openConversationOnFocusedAccount(peer);
+    final session = _manager.focusedSession;
+    if (session != null) {
+      _manager.commitScope(ConversationScope.fromSession(session, peer));
+    }
     diagLog(
       'nav',
       'open_peer',
@@ -147,6 +153,7 @@ class AccountNavigationEffects implements NavigationEffects {
     }
 
     _viewState.openConversationOnFocusedAccount(peer);
+    _manager.commitScope(ConversationScope.fromSession(session, peer));
     diagLog(
       'nav',
       'open_on_account.ok',

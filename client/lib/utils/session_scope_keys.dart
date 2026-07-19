@@ -2,23 +2,31 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+import '../models/conversation_scope.dart';
 import '../services/account_session.dart';
 
-/// Chiave Provider/chat legata all'istanza [AccountSession] in RAM (non solo userId).
-Key messagesSessionKey(AccountSession session, String peerProfileId) {
-  return ValueKey(
-    Object.hash(
-      'peer-chat',
-      session.userId,
-      peerProfileId,
-      identityHashCode(session),
-    ),
+/// Chiave Provider/chat legata a [ConversationScope].
+Key conversationScopeKey(ConversationScope scope) => scope.providerKey;
+
+/// Costruisce scope da sessione viva + peer.
+ConversationScope conversationScopeFor(
+  AccountSession session,
+  String peerProfileId,
+) {
+  return ConversationScope(
+    ownerUserId: session.userId,
+    peerProfileId: peerProfileId,
+    sessionEpoch: session.epoch,
   );
 }
 
+/// Chiave Provider/chat — include epoch sessione (non solo userId).
+Key messagesSessionKey(AccountSession session, String peerProfileId) {
+  return conversationScopeFor(session, peerProfileId).providerKey;
+}
+
 Key groupSessionKey(AccountSession session, String scope) {
-  return ValueKey(Object.hash(scope, session.userId, identityHashCode(session)));
+  return ValueKey(Object.hash(scope, session.userId, session.epoch));
 }

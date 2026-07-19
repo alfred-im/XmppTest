@@ -63,6 +63,7 @@ void main() {
       final client = createTestSupabaseClient();
 
       final controller = MessagesController(
+        scope: testConversationScope(userId: userId, peerProfileId: peerId, sessionEpoch: 1),
         userId: userId,
         peerProfileId: peerId,
         messageService: FakeMessageService(client),
@@ -107,6 +108,7 @@ void main() {
       var sessionValid = true;
 
       final controller = MessagesController(
+        scope: testConversationScope(userId: userId, peerProfileId: peerId, sessionEpoch: 1),
         userId: userId,
         peerProfileId: peerId,
         messageService: FakeMessageService(client),
@@ -165,6 +167,7 @@ void main() {
       var sessionValid = true;
       final client = createTestSupabaseClient();
       final controller = MessagesController(
+        scope: testConversationScope(userId: userA, peerProfileId: peerId, sessionEpoch: 1),
         userId: userA,
         peerProfileId: peerId,
         messageService: FakeMessageService(client),
@@ -181,6 +184,7 @@ void main() {
       expect(liveSession, isNot(same(sessionAtOpen)));
 
       final reboundController = MessagesController(
+        scope: testConversationScope(userId: userA, peerProfileId: peerId, sessionEpoch: 1),
         userId: userA,
         peerProfileId: peerId,
         messageService: FakeMessageService(createTestSupabaseClient()),
@@ -234,6 +238,7 @@ void main() {
       var sessionValid = true;
       final client = createTestSupabaseClient();
       final controller = MessagesController(
+        scope: testConversationScope(userId: userA, peerProfileId: peerId, sessionEpoch: 1),
         userId: userA,
         peerProfileId: peerId,
         messageService: FakeMessageService(client),
@@ -266,6 +271,7 @@ void main() {
       final client = createTestSupabaseClient();
 
       final controller = MessagesController(
+        scope: testConversationScope(userId: userId, peerProfileId: peerId, sessionEpoch: 1),
         userId: userId,
         peerProfileId: peerId,
         messageService: FakeMessageService(client),

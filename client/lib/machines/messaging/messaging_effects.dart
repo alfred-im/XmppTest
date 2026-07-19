@@ -12,6 +12,7 @@ import 'package:uuid/uuid.dart';
 import '../../config/chat_media_config.dart';
 import '../../config/location_config.dart';
 import '../../config/voice_config.dart';
+import '../../models/conversation_scope.dart';
 import '../../models/message.dart';
 import '../../models/outbound_queue_item.dart';
 import '../../models/profile_summary.dart';
@@ -57,6 +58,7 @@ abstract class MessagingEffects {
 class MessagesControllerEffects implements MessagingEffects {
   MessagesControllerEffects({
     required this._state,
+    required this.scope,
     required this.userId,
     required this.peerProfileId,
     required this.messageService,
@@ -66,15 +68,18 @@ class MessagesControllerEffects implements MessagingEffects {
     this.peerIsGroup = false,
     this.onMessagesChanged,
     this.hasValidSession,
+    this.isScopeCommitted,
     OutboundMessageQueue? outboundQueue,
     required this._onChanged,
   }) : _outboundQueue = outboundQueue ?? OutboundMessageQueue();
   static const sessionExpiredMessage = 'Sessione scaduta — accedi di nuovo';
 
+  final ConversationScope scope;
   final String userId;
   final String peerProfileId;
   final Future<void> Function()? onMessagesChanged;
   final bool Function()? hasValidSession;
+  final bool Function()? isScopeCommitted;
   final MessageService messageService;
   final MessageMediaService messageMediaService;
   final InboxService inboxService;
@@ -87,11 +92,36 @@ class MessagesControllerEffects implements MessagingEffects {
   void Function()? onSendLifecycleStart;
   void Function(bool failed)? onSendLifecycleEnd;
   Timer? _retryTimer;
+  int _fetchGeneration = 0;
 
-  @override Future<void> fetchAndSetMessages() async { final loaded = await messageService.fetchPeerMessages(peerProfileId: peerProfileId, currentUserId: userId); _state.messages = dedupeMessages(await _enrichMessages(loaded.map(withTimeLabel).toList())); }
+  bool _scopeIsActive() => isScopeCommitted?.call() ?? true;
+
+  @override
+  Future<void> fetchAndSetMessages() async {
+    final gen = ++_fetchGeneration;
+    final loaded = await messageService.fetchPeerMessages(
+      peerProfileId: peerProfileId,
+      currentUserId: userId,
+    );
+    if (gen != _fetchGeneration || !_scopeIsActive()) return;
+    _state.messages = dedupeMessages(
+      await _enrichMessages(loaded.map(withTimeLabel).toList()),
+    );
+  }
+
   @override Future<void> enrichAuthorNamesIfNeeded() async { _state.messages = await _enrichMessages(_state.messages); _onChanged(); }
   @override Future<void> markRead() => inboxService.markRead(peerProfileId);
-  @override RealtimeChannel? attachRealtime(void Function(ChatMessage message) onMessage) => messageService.subscribeToPeerMessages(currentUserId: userId, peerProfileId: peerProfileId, onMessage: onMessage);
+  @override
+  RealtimeChannel? attachRealtime(void Function(ChatMessage message) onMessage) {
+    return messageService.subscribeToPeerMessages(
+      currentUserId: userId,
+      peerProfileId: peerProfileId,
+      onMessage: (message) {
+        if (!_scopeIsActive()) return;
+        onMessage(message);
+      },
+    );
+  }
   @override void disposeRealtime(RealtimeChannel? channel) => messageService.disposeChannel(channel);
   @override void startRetryTimer(void Function() onTick) { _retryTimer?.cancel(); _retryTimer = Timer.periodic(const Duration(seconds: 15), (_) => onTick()); }
   @override void stopRetryTimer() { _retryTimer?.cancel(); _retryTimer = null; }
@@ -101,6 +131,20 @@ class MessagesControllerEffects implements MessagingEffects {
 
   @override
   bool ensureValidSession() {
+    if (!_scopeIsActive()) {
+      diagLogFail(
+        'messaging',
+        'session.check',
+        'scope_inactive',
+        data: {
+          'userId': userId,
+          'peerProfileId': peerProfileId,
+        },
+      );
+      _state.error = sessionExpiredMessage;
+      _onChanged();
+      return false;
+    }
     if (hasValidSession != null && !hasValidSession!()) {
       diagLogFail(
         'messaging',

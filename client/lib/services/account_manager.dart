@@ -9,6 +9,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../machines/multi-account/multi_account_effects.dart';
 import '../models/account_view_state.dart';
+import '../models/conversation_scope.dart';
 import '../models/open_account.dart';
 import '../models/profile_summary.dart';
 import '../utils/auth_redirect_url.dart';
@@ -39,6 +40,51 @@ class AccountManager {
   List<OpenAccount> _manifestAccounts = [];
   String? _focusUserId;
   Future<void> _focusOperationChain = Future<void>.value();
+  ConversationScope? _committedScope;
+
+  /// Ambito conversazione attivo — unica fonte di verità per messaging UI.
+  ConversationScope? get committedScope => _committedScope;
+
+  bool isScopeCommitted(ConversationScope scope) =>
+      _committedScope == scope;
+
+  /// Invalida scope se appartiene all'account indicato.
+  void invalidateScopeForAccount(String accountUserId) {
+    if (_committedScope?.ownerUserId == accountUserId) {
+      invalidateCommittedScope();
+    }
+  }
+
+  /// Invalida l'ambito (focus switch, chiusura chat, sessione dispose).
+  void invalidateCommittedScope() {
+    _committedScope = null;
+  }
+
+  /// Registra ambito dopo apertura validata (account + peer + sessione viva).
+  void commitScope(ConversationScope scope) {
+    final session = _sessions[scope.ownerUserId];
+    if (session == null || !scope.matchesSession(session)) {
+      invalidateCommittedScope();
+      return;
+    }
+    _committedScope = scope;
+  }
+
+  /// Dopo restore focus: riallinea scope se c'è un peer ricordato in view-state.
+  void syncCommittedScopeFromViewState() {
+    final userId = _focusUserId;
+    final session = focusedSession;
+    final peer = _viewFor(userId).activePeer;
+    if (userId == null || session == null || peer == null) {
+      invalidateCommittedScope();
+      return;
+    }
+    if (peer.profileId == userId) {
+      invalidateCommittedScope();
+      return;
+    }
+    commitScope(ConversationScope.fromSession(session, peer));
+  }
 
   /// Tutti gli account aperti (manifest); il focus può avere profilo aggiornato
   /// dalla sessione viva.
@@ -359,10 +405,15 @@ class AccountManager {
         );
       }
       await _loadFocusedInboxIfNeeded();
+      syncCommittedScopeFromViewState();
       return;
     }
 
     final previousFocus = _focusUserId;
+
+    if (previousFocus != userId) {
+      invalidateCommittedScope();
+    }
 
     final keepTestSessions = _testOnlyAccountIds.isEmpty
         ? <String, AccountSession>{}
@@ -394,6 +445,7 @@ class AccountManager {
         );
       }
       await _loadFocusedInboxIfNeeded();
+      syncCommittedScopeFromViewState();
     } catch (e) {
       _focusUserId = previousFocus;
       if (previousFocus != null) {
