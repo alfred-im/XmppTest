@@ -56,6 +56,7 @@ L'utente opera Alfred con più account senza re-login al cambio focus. Le creden
 |----|----------|
 | **PROM-MULTI-ACCOUNT-020** | Switch focus senza loading auth visibile (restore in background) |
 | **PROM-MULTI-ACCOUNT-021** | `NoAccountPlaceholder` in area inbox quando nessun account/focus |
+| **PROM-MULTI-ACCOUNT-022** | Dopo round-trip focus (A→B→A), invio messaggio sulla chat già aperta usa la sessione **viva** — nessun «Sessione scaduta» spurio |
 
 ### MUST NOT
 
@@ -111,11 +112,12 @@ Layout overlay: `Stack` — `HomeScreen` sotto, `AuthOverlay` (45% nero) + `Auth
 | PROM-MULTI-ACCOUNT-012–015, 033 | `auth_controller_test.dart`; `auth_overlay_shell.md` |
 | PROM-MULTI-ACCOUNT-009 | `inbox_provider_lifecycle_test.dart` |
 | PROM-MULTI-ACCOUNT-010, 020 | `multi_account_chat_scenario_test.dart` |
+| PROM-MULTI-ACCOUNT-022 | `composition/messaging_session_scope_test.dart` (COMP-001, COMP-002) |
 | PROM-MULTI-ACCOUNT-011 | `auth_service_multi_account_test.dart` |
 | PROM-MULTI-ACCOUNT-030, 034 | `guides/multi-account.md` |
 
 
-Gate: `bash scripts/check-spec-sync.sh` + `cd client && bash scripts/verify.sh` · Integrazione: `bash scripts/test.sh integration` · E2E: `bash scripts/test.sh e2e-multi`
+Gate: `bash scripts/check-spec-sync.sh` + `cd client && bash scripts/verify.sh` (include `check-composition-sync`) · Integrazione: `bash scripts/test.sh integration` · E2E: `bash scripts/test.sh e2e-multi` · Strategia: [docs/testing/strategy.md](../../../testing/strategy.md)
 
 ---
 

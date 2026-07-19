@@ -29,6 +29,26 @@ void main() {
       inboxService = FakeInboxService();
     });
 
+    test('send fallisce se la sessione diventa invalida dopo il load', () async {
+      var sessionValid = true;
+      final controller = MessagesController(
+        userId: _userId,
+        peerProfileId: _peerId,
+        messageService: messageService,
+        messageMediaService: MessageMediaService(createTestSupabaseClient()),
+        inboxService: inboxService,
+        hasValidSession: () => sessionValid,
+      );
+      await waitForMessagesController(controller);
+      expect(controller.error, isNull);
+
+      sessionValid = false;
+      await controller.send('dopo invalidazione');
+
+      expect(controller.error, MessagesController.sessionExpiredMessage);
+      controller.dispose();
+    });
+
     test('sendText attraversa coordinator ed effects live', () async {
       final controller = MessagesController(
         userId: _userId,
@@ -36,7 +56,6 @@ void main() {
         messageService: messageService,
         messageMediaService: MessageMediaService(createTestSupabaseClient()),
         inboxService: inboxService,
-        hasValidSession: () => true,
       );
       await waitForMessagesController(controller);
 

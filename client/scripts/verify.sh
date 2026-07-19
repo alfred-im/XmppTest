@@ -18,6 +18,9 @@ bash "$ROOT/../scripts/check-spec-sync.sh"
 echo "==> check-model-sync (dominio / UML / statechart)"
 bash "$ROOT/../scripts/check-model-sync.sh"
 
+echo "==> check-composition-sync (Provider / session scope)"
+bash "$ROOT/../scripts/check-composition-sync.sh"
+
 RUN_BUILD=0
 for arg in "$@"; do
   case "$arg" in

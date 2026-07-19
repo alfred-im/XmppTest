@@ -2,14 +2,16 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+import 'dart:convert';
+
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:alfred_client/models/chat_peer.dart';
 import 'package:alfred_client/models/message.dart';
+import 'package:alfred_client/models/profile_summary.dart';
 import 'package:alfred_client/providers/messages_controller.dart';
 import 'package:alfred_client/services/inbox_service.dart';
 import 'package:alfred_client/services/message_service.dart';
-import 'package:alfred_client/models/profile_summary.dart';
 import 'package:alfred_client/services/profile_service.dart';
 
 SupabaseClient createTestSupabaseClient() {
@@ -21,6 +23,29 @@ SupabaseClient createTestSupabaseClient() {
       autoRefreshToken: false,
     ),
   );
+}
+
+/// JWT in-memory per test composition / wiring con [hasValidJwt].
+Future<void> installTestAuthSession(
+  SupabaseClient client, {
+  required String userId,
+  String accessToken = 'test-access-token',
+  String refreshToken = 'test-refresh-token',
+}) async {
+  final sessionJson = jsonEncode({
+    'access_token': accessToken,
+    'refresh_token': refreshToken,
+    'token_type': 'bearer',
+    'expires_in': 3600,
+    'user': {
+      'id': userId,
+      'aud': 'authenticated',
+      'app_metadata': <String, dynamic>{},
+      'user_metadata': <String, dynamic>{},
+      'created_at': DateTime.now().toUtc().toIso8601String(),
+    },
+  });
+  await client.auth.recoverSession(sessionJson);
 }
 
 /// Chiave conversazione come in MessagesController.outboundQueueKey.
