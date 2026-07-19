@@ -16,8 +16,9 @@ _e2e_flutter_base() {
 
 _e2e_flutter_http_ready() {
   local base="$(_e2e_flutter_base)"
+  # Debug web-server: bootstrap in HTML, main.dart.js caricato dinamicamente (non nel markup).
   curl -sf -m 3 "$base" | grep -q 'flutter_bootstrap.js' &&
-    curl -sf -m 3 "$base" | grep -q 'main.dart.js'
+    curl -sf -m 3 -o /dev/null "${base}main.dart.js"
 }
 
 _e2e_flutter_port_pids() {
