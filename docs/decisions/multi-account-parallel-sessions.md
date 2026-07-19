@@ -100,7 +100,7 @@ La sessione client in focus usa il JWT proprio → RLS e Realtime rispettano `au
 | `alfred_focus_user_id` | `userId` account in focus |
 | `alfred_auth_{userId}` | Sessione GoTrue per client dedicato — **non** usato per ricostruire il manifest |
 
-**Stato normale (D15)**: account in lista = aperto. Se restore fallisce (token revocato, caso raro), **rimuovere** l’entry e mostrare overlay login è accettabile.
+**Stato normale (D15)**: account in lista = aperto nel manifest. Se restore fallisce (token scaduto/revocato), l’entry **resta** nel manifest → `FocusedAwaitingSession` + `reconnectFocusedSession` (o re-auth); **solo** «Chiudi account» rimuove dal manifest.
 
 ### 2.6 Runtime connessione — una GoTrue attiva (PR #152)
 

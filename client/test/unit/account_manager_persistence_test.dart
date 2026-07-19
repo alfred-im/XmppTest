@@ -4,7 +4,9 @@
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:alfred_client/models/open_account.dart';
 import 'package:alfred_client/models/profile_summary.dart';
 import 'package:alfred_client/services/account_manager.dart';
 import 'package:alfred_client/services/account_session.dart';
@@ -148,22 +150,57 @@ void main() {
       expect(stored.single.refreshToken, 'refresh-agent-a-v2');
     });
 
-    test('initialize removes entries with empty refresh token', () async {
+    test('initialize keeps entries with empty refresh token in manifest', () async {
       await storage.upsertAccount(
-        (await sessionFor(
-          id: 'agent-broken',
-          username: 'broken',
-          refreshToken: 'ignored',
-        ))
-            .toOpenAccount()
-            .copyWith(refreshToken: ''),
+        OpenAccount(
+          profile: const ProfileSummary(
+            id: 'agent-broken',
+            username: 'broken',
+            displayName: 'broken',
+          ),
+          refreshToken: '',
+        ),
       );
 
       final manager = AccountManager(storage: storage);
       await manager.initialize(focusUserId: null);
 
       final stored = await storage.loadAccounts();
-      expect(stored, isEmpty);
+      expect(stored.length, 1);
+      expect(stored.single.userId, 'agent-broken');
+      expect(manager.openAccounts.length, 1);
     });
+
+    test(
+      'executeFocus keeps manifest entry on permanent auth failure',
+      () async {
+        await storage.upsertAccount(
+          OpenAccount(
+            profile: const ProfileSummary(
+              id: 'agent-a',
+              username: 'alfredagent1',
+              displayName: 'alfredagent1',
+            ),
+            refreshToken: 'stale-refresh',
+          ),
+        );
+
+        final manager = AccountManager(storage: storage)
+          ..restoreSessionForTest = (_) async {
+            throw const AuthException('Invalid Refresh Token: Refresh Token Not Found');
+          };
+        await manager.syncManifestFromStorageForTest();
+
+        await manager.executeFocus('agent-a');
+
+        expect(manager.openAccounts.length, 1);
+        expect(manager.openAccounts.single.userId, 'agent-a');
+        expect(manager.focusedSession, isNull);
+        expect(manager.focusUserId, 'agent-a');
+        final stored = await storage.loadAccounts();
+        expect(stored.length, 1);
+        expect(stored.single.userId, 'agent-a');
+      },
+    );
   });
 }

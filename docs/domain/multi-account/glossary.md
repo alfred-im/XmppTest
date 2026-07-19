@@ -12,7 +12,7 @@
 |---------|-------------|
 | **Manifest** | Lista persistita account **aperti**, non bookmark. |
 | **Focus** | Account attivo in UI — quale inbox/chat è visibile. |
-| **Account aperto** | Voce nel manifest con refresh token valido. |
+| **Account aperto** | Voce nel manifest — identità aperta sul dispositivo; token assente/scaduto ≠ account chiuso. |
 | **Account session** | Connessione auth + servizi in RAM; **al massimo una** attiva. |
 | **Switch focus** | Cambio account UI: dispose sessione corrente, restore nuova da manifest. |
 | **Account view state** | Stato UI per account (chat aperta, inbox mobile) — persiste al cambio focus. |

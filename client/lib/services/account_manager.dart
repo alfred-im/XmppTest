@@ -191,22 +191,11 @@ class AccountManager {
   }
 
   Future<void> _refreshManifestCache() async {
-    var stored = await _storage.loadAccounts();
-    final staleUserIds = stored
-        .where((account) => account.refreshToken.isEmpty)
-        .map((account) => account.userId)
-        .toList();
-    for (final userId in staleUserIds) {
-      await _storage.removeAccount(userId);
-    }
-    if (staleUserIds.isNotEmpty) {
-      stored = await _storage.loadAccounts();
-    }
-    _manifestAccounts =
-        stored.where((account) => account.refreshToken.isNotEmpty).toList();
+    _manifestAccounts = await _storage.loadAccounts();
   }
 
-  /// Ripristina GoTrue solo per [userId]; su auth permanente rimuove account invalido.
+  /// Ripristina GoTrue solo per [userId]; su auth permanente resta nel manifest
+  /// (stato [FocusedAwaitingSession] + [reconnectFocusedSession]).
   Future<AccountSession?> _activateSessionForFocus(
     String userId, {
     bool requireSession = false,
@@ -246,12 +235,7 @@ class AccountManager {
       return session;
     } catch (e) {
       if (_isPermanentAuthFailure(e)) {
-        await _storage.removeAccount(userId);
         await AccountSession.clearLocalAuthStorage(userId);
-        await _refreshManifestCache();
-        if (requireSession) {
-          throw const AuthException('Sessione account non disponibile.');
-        }
         return null;
       }
       if (requireSession) rethrow;

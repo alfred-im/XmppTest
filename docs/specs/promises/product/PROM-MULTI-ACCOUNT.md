@@ -49,6 +49,7 @@ L'utente opera Alfred con più account senza re-login al cambio focus. Le creden
 | **PROM-MULTI-ACCOUNT-013** | ≥1 account → overlay solo da «Aggiungi account», dismissibile |
 | **PROM-MULTI-ACCOUNT-014** | Login e registrazione sulla stessa card (`AuthScreen`); toggle Accedi/Registrati |
 | **PROM-MULTI-ACCOUNT-015** | «Chiudi account» (`removeAccount`): rimuove manifest + `alfred_auth_{userId}`; se ultimo account → overlay obbligatorio |
+| **PROM-MULTI-ACCOUNT-035** | Sessione assente o token non utilizzabile **non** rimuove l’account dal manifest — `FocusedAwaitingSession` + `reconnectFocusedSession` (UML `SessionRestoreFailed`) |
 
 ### SHOULD
 
@@ -67,6 +68,7 @@ L'utente opera Alfred con più account senza re-login al cambio focus. Le creden
 | **PROM-MULTI-ACCOUNT-032** | `switchAccount` legacy con `setSession` tra account già in RAM |
 | **PROM-MULTI-ACCOUNT-033** | Overlay dismissibile con 0 account |
 | **PROM-MULTI-ACCOUNT-034** | Rotella globale che nasconde shell durante switch |
+| **PROM-MULTI-ACCOUNT-036** | Rimozione automatica dal manifest su auth failure, `refreshToken` vuoto o purge «stale» |
 
 ### Fuori scope
 
@@ -111,6 +113,7 @@ L'utente opera Alfred con più account senza re-login al cambio focus. Le creden
 | PROM-MULTI-ACCOUNT-010, 020 | `multi_account_chat_scenario_test.dart` |
 | PROM-MULTI-ACCOUNT-022 | `composition/messaging_session_scope_test.dart` (COMP-001, COMP-002) |
 | PROM-MULTI-ACCOUNT-011 | `auth_service_multi_account_test.dart` |
+| PROM-MULTI-ACCOUNT-035, 036 | `account_manager_persistence_test.dart` |
 | PROM-MULTI-ACCOUNT-030, 034 | `guides/multi-account.md` |
 
 
