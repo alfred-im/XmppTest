@@ -4,7 +4,7 @@
 |-------|--------|
 | **Superficie ID** | `SURF-GROUP-CONVERSATION` |
 | **Status** | `implemented` |
-| **Ultima revisione** | 2026-07-08 |
+| **Ultima revisione** | 2026-07-19 |
 | **Promesse** | — |
 | **PR** | #162 |
 
@@ -38,6 +38,7 @@ Binding UX messaggistica gruppo: attribuzione autore contenuto, header avatar+no
 | **SURF-GROUP-CONVERSATION-006** | Gruppo in focus: compose broadcast (`sendGif` / `sendVoice` / `sendLocation` / `sendImage` / `sendVideo`) verso allow list — [PROM-CHAT-MEDIA](../promises/product/PROM-CHAT-MEDIA.md) |
 | **SURF-GROUP-CONVERSATION-009** | Apertura da [SURF-GROUP-HOME](./SURF-GROUP-HOME.md): non è schermata default al focus gruppo |
 | **SURF-GROUP-CONVERSATION-012** | Header chat allineato a [SURF-CHAT](./SURF-CHAT.md) `ChatPanel`: back su mobile, avatar + nome gruppo, bordo inferiore — **senza** entry allow list né sottotitolo «Account gruppo» |
+| **SURF-GROUP-CONVERSATION-013** | Composer gruppo: stesso `ChatInputBar` di [SURF-CHAT-014](./SURF-CHAT.md) (graffetta + pannello icone scrollabile; microfono a destra) |
 
 ### SHOULD
 
@@ -64,6 +65,7 @@ Binding UX messaggistica gruppo: attribuzione autore contenuto, header avatar+no
 | SURF-GROUP-CONVERSATION-005 | `mailbox_inbox_smoke.sql`; integration |
 | SURF-GROUP-CONVERSATION-006 | `group_messages_controller_media_test.dart`, `group_broadcast_smoke.sql` |
 | SURF-GROUP-CONVERSATION-009, 012 | `group_conversation_screen_test.dart`; `home_screen_group_test.dart` |
+| SURF-GROUP-CONVERSATION-013 | `chat_input_bar_test.dart`; `group_conversation_screen.dart` — `ChatInputBar` |
 | SURF-GROUP-CONVERSATION-007 | realtime subscribe `messages` owner filter |
 
 Gate: `check-spec-sync.sh` + `verify.sh` + smoke SQL + `integration`
