@@ -2,14 +2,16 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+import 'dart:convert';
+
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:alfred_client/models/chat_peer.dart';
 import 'package:alfred_client/models/message.dart';
+import 'package:alfred_client/models/profile_summary.dart';
 import 'package:alfred_client/providers/messages_controller.dart';
 import 'package:alfred_client/services/inbox_service.dart';
 import 'package:alfred_client/services/message_service.dart';
-import 'package:alfred_client/models/profile_summary.dart';
 import 'package:alfred_client/services/profile_service.dart';
 
 SupabaseClient createTestSupabaseClient() {
@@ -21,6 +23,29 @@ SupabaseClient createTestSupabaseClient() {
       autoRefreshToken: false,
     ),
   );
+}
+
+/// JWT in-memory per test composition / wiring con [hasValidJwt].
+Future<void> installTestAuthSession(
+  SupabaseClient client, {
+  required String userId,
+  String accessToken = 'test-access-token',
+  String refreshToken = 'test-refresh-token',
+}) async {
+  final sessionJson = jsonEncode({
+    'access_token': accessToken,
+    'refresh_token': refreshToken,
+    'token_type': 'bearer',
+    'expires_in': 3600,
+    'user': {
+      'id': userId,
+      'aud': 'authenticated',
+      'app_metadata': <String, dynamic>{},
+      'user_metadata': <String, dynamic>{},
+      'created_at': DateTime.now().toUtc().toIso8601String(),
+    },
+  });
+  await client.auth.recoverSession(sessionJson);
 }
 
 /// Chiave conversazione come in MessagesController.outboundQueueKey.
@@ -39,6 +64,62 @@ class FakeMessageService extends MessageService {
   final Map<String, List<ChatMessage>> ownerMessagesByUserId = {};
   final Map<String, void Function(ChatMessage message)> _realtimeHandlers = {};
   final Map<String, void Function(ChatMessage message)> _ownerRealtimeHandlers = {};
+
+  final List<String> sentBodies = [];
+  final List<String> broadcastBodies = [];
+  bool sendShouldFail = false;
+
+  @override
+  Future<ChatMessage> broadcastToAllowlist({
+    required String body,
+    required String currentUserId,
+    required String clientMessageId,
+  }) async {
+    broadcastBodies.add(body);
+    final message = ChatMessage(
+      id: 'broadcast-$clientMessageId',
+      body: body,
+      timeLabel: '12:00',
+      isMine: true,
+      status: MessageStatus.sent,
+      createdAt: DateTime.utc(2026, 7, 14, 12),
+      clientMessageId: clientMessageId,
+      senderId: currentUserId,
+    );
+    ownerMessagesByUserId
+        .putIfAbsent(currentUserId, () => [])
+        .add(message);
+    return message;
+  }
+
+  @override
+  Future<ChatMessage> sendToProfile({
+    required String recipientProfileId,
+    required String body,
+    required String currentUserId,
+    required String clientMessageId,
+  }) async {
+    if (sendShouldFail) {
+      throw StateError('fake send failed');
+    }
+    sentBodies.add(body);
+    final message = ChatMessage(
+      id: 'server-$clientMessageId',
+      body: body,
+      timeLabel: '12:00',
+      isMine: true,
+      status: MessageStatus.sent,
+      createdAt: DateTime.utc(2026, 7, 14, 12),
+      clientMessageId: clientMessageId,
+      senderId: currentUserId,
+    );
+    final key = conversationKey(
+      userId: currentUserId,
+      peerProfileId: recipientProfileId,
+    );
+    messagesByConversation.putIfAbsent(key, () => []).add(message);
+    return message;
+  }
 
   @override
   Future<List<ChatMessage>> fetchPeerMessages({

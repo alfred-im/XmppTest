@@ -1,0 +1,58 @@
+@startuml seq-media-upload
+' Context: media
+' Commands: SendImage, SendVideo, UploadMedia (retry)
+' SDD: PROM-CHAT-MEDIA-001–007
+' Revision: 2026-07-18
+
+title seq-media-upload — foto / video con preview optimistic
+
+actor Utente
+participant "ChatInputBar" as UI
+participant "MessagesController" as MC
+participant "OutboundMediaCache" as Cache
+participant "OutboundMessageQueue" as Q
+participant "prepareImageForUpload" as Prep
+participant "MessageMediaService" as MMS
+participant "MessageService" as MS
+
+== Image ==
+
+Utente -> UI : pick image + optional caption
+UI -> MC : sendImage(bytes, caption)
+MC -> Cache : put(clientId, bytes)
+MC -> MC : optimistic image\nmediaUrl=pending://clientId
+MC -> UI : notifyListeners (preview)
+
+MC -> Q : persistMediaBytes
+opt HEIC / resize
+  MC -> Prep : normalize
+  Prep --> MC : jpeg bytes, mime
+  MC -> Q : re-persist if changed
+end
+MC -> Q : enqueue(image item)
+MC -> MMS : uploadImage
+MMS --> MC : public mediaUrl
+MC -> MS : sendImageToProfile
+MS --> MC : ack
+MC -> Q : remove + deleteMediaFile
+
+== Video ==
+
+Utente -> UI : pick video file
+UI -> MC : sendVideoFromPicker
+MC -> MC : optimistic video bubble
+MC -> MC : read bytes, probe duration
+MC -> Cache : put(clientId, bytes)
+MC -> Q : persist + enqueue
+MC -> MMS : uploadVideo
+MMS --> MC : mediaUrl
+MC -> MS : sendVideoToProfile
+MS --> MC : ack
+MC -> Q : remove + deleteMediaFile
+
+alt failure
+  MC -> Q : update failed item
+  MC -> MC : status=failed, retryPayloadPath
+end
+
+@enduml

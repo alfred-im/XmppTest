@@ -1,20 +1,42 @@
 # Contesto: messaging
 
-**Stato modellazione:** `scheletro`
+**Stato modellazione:** `verified`
 
 Vedi [bounded-contexts.md](../bounded-contexts.md) e [metodo dominio](../README.md).
 
-## File da compilare
+## Artefatti
 
-| File | Contenuto |
-|------|-----------|
-| `glossary.md` | Linguaggio ubiquo |
-| `commands-and-events.md` | Comandi, eventi, invarianti (Event Storming) |
+| File | Stato |
+|------|-------|
+| [glossary.md](./glossary.md) | compilato |
+| [commands-and-events.md](./commands-and-events.md) | compilato |
+| [UML state](../../model/uml/messaging/messaging-state.puml) | compilato |
+| [seq-send-optimistic](../../model/uml/messaging/seq-send-optimistic.puml) | compilato |
+| [seq-realtime-merge](../../model/uml/messaging/seq-realtime-merge.puml) | compilato |
+| [statechart](../../../client/lib/machines/messaging/) | **verified** (3 macchine + coordinator) |
 
-## UML
+## Implementazione runtime
 
-`docs/model/uml/messaging/` — `messaging-state.puml`, `seq-*.puml`
+| Componente | Ruolo |
+|------------|-------|
+| `MessagesController` | Thin delegate — API widget invariata |
+| `MessagingCoordinator` | Compone load / outbound / realtime |
+| `MessagesControllerEffects` | RPC, coda, media, realtime |
+| `MessageService` | RPC + subscribe Realtime owner |
+| `OutboundMessageQueue` | Coda persistente e media retry |
 
-## Statechart (se UI)
+### Macchine (`client/lib/machines/messaging/`)
 
-`client/lib/machines/messaging/` — vedi [client/lib/machines/README.md](../../../client/lib/machines/README.md)
+| Macchina | Stati |
+|----------|-------|
+| `ConversationLoadMachine` | Loading, Ready, SessionBlocked |
+| `OutboundSendMachine` | Idle, Sending, FailedQueue |
+| `RealtimeAttachmentMachine` | Detached, Attached |
+
+## SDD (confine prodotto)
+
+[PROM-OUTBOUND-SEND](../../specs/promises/product/PROM-OUTBOUND-SEND.md) · [PROM-MESSAGE-STATUS](../../specs/promises/product/PROM-MESSAGE-STATUS.md) · [PROM-REALTIME-OWNER](../../specs/promises/product/PROM-REALTIME-OWNER.md) · [SYS-MAILBOX](../../specs/promises/system/SYS-MAILBOX.md)
+
+## Sotto-contesto media
+
+Voice, foto, video, location: [docs/domain/media/](../media/)

@@ -18,12 +18,25 @@ Eseguito da `verify.sh` e da GitHub Actions (`deploy-pages.yml`) su ogni PR/push
 
 | Suite | Comando | Cosa verifica |
 |-------|---------|---------------|
-| **gate** | `bash scripts/test.sh gate` | `flutter pub get` → `flutter analyze` (zero issue) → `flutter test` (esclusi tag `live`) |
+| **gate** | `bash scripts/test.sh gate` | `check-spec-sync` + `check-model-sync` + `check-composition-sync` + `flutter pub get` → `flutter analyze` (zero issue) → `flutter test` (esclusi tag `live`, `diagnostic`) |
 
 Equivalente diretto: `bash scripts/verify.sh`  
 Opzione build web: `bash scripts/verify.sh --build`
 
-**Dart:** `client/test/unit/`, `client/test/widget/` (**192** test gate, esclusi tag `live`)
+**Dart gate:** `client/test/unit/`, `client/test/widget/`, `client/test/wiring/`, `client/test/composition/`
+
+**Strategia completa:** [docs/testing/strategy.md](../../docs/testing/strategy.md) — piramide machine → wiring → composition → E2E, catalogo COMP, regole `hasValidSession`.
+
+### Tier 1c — Composition (gate)
+
+Provider + `AccountSession` dopo `setFocus`. Harness: `client/test/support/composition_harness.dart`.
+
+| ID | File | Invariante |
+|----|------|------------|
+| COMP-001, COMP-002 | `composition/messaging_session_scope_test.dart` | Messaggi legati a sessione viva (PROM-MULTI-ACCOUNT-022) |
+| COMP-003 | `widget/inbox_provider_lifecycle_test.dart` | Inbox non dispose al focus switch |
+
+Gate script: `scripts/check-composition-sync.sh`
 
 ---
 
@@ -113,6 +126,7 @@ Prima di test browser: `bash scripts/diagnose-test-env.sh` (o `test.sh diagnose`
 |------|-------|
 | `scripts/test.sh` | Hub comandi |
 | `scripts/verify.sh` | Implementazione gate (usata da CI) |
+| `scripts/check-composition-sync.sh` | Catalogo COMP + hygiene wiring JWT |
 | `scripts/integration-multi-account.sh` | Integrazione API |
 | `scripts/run-e2e-multi-account.sh` | Playwright multi-account |
 | `docs/AGENT_DEBUG_ACCOUNTS.md` | Credenziali account agente |

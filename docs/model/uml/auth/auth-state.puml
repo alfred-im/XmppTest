@@ -1,0 +1,41 @@
+@startuml auth-state
+' Context: auth
+' SDD: SURF-AUTH, PROM-MULTI-ACCOUNT
+' Revision: 2026-07-18
+
+title Auth — UI overlay & session state machine
+
+state Bootstrapping
+state NoSession : overlay obbligatorio\nnon dismissibile
+state SessionActive : ≥1 account,\noverlay nascosto
+state OverlayVisible : overlay dismissibile\n(aggiungi account)
+state AuthOperationInProgress : login / signup /\nreset password
+
+[*] --> Bootstrapping : BootstrapStarted
+
+Bootstrapping --> NoSession : BootstrapCompleted\n[manifest empty]\n/ OverlayMandatoryShown
+Bootstrapping --> SessionActive : BootstrapCompleted\n[has accounts]\n/ BootstrapReady
+
+NoSession --> AuthOperationInProgress : SignInRequested\n/ AuthOperationStarted
+NoSession --> AuthOperationInProgress : SignUpRequested\n/ AuthOperationStarted
+NoSession --> AuthOperationInProgress : ResetPasswordRequested\n/ AuthOperationStarted
+
+OverlayVisible --> SessionActive : OverlayCloseRequested\n/ OverlayClosed
+OverlayVisible --> AuthOperationInProgress : SignInRequested
+OverlayVisible --> AuthOperationInProgress : SignUpRequested
+
+SessionActive --> OverlayVisible : OverlayOpenRequested\n[dismissible]\n/ OverlayDismissibleShown
+SessionActive --> NoSession : LastAccountRemoved\n/ OverlayMandatoryShown
+
+AuthOperationInProgress --> SessionActive : AuthOperationCompleted\n[login/signup ok]\n/ SessionEstablished
+AuthOperationInProgress --> NoSession : AuthOperationFailed\n[from NoSession]
+AuthOperationInProgress --> OverlayVisible : AuthOperationFailed\n[from OverlayVisible]
+AuthOperationInProgress --> SessionActive : AuthOperationCompleted\n[reset ok]
+
+note right of NoSession
+  OverlayCloseRequested
+  → OverlayCloseBlocked
+  (guard: 0 account)
+end note
+
+@enduml

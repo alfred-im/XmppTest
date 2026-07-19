@@ -1,0 +1,70 @@
+// Copyright (C) 2026 im.alfred
+//
+// SPDX-License-Identifier: GPL-3.0-or-later
+
+import 'package:flutter_test/flutter_test.dart';
+
+import 'package:alfred_client/models/contact.dart';
+import 'package:alfred_client/models/profile_summary.dart';
+import 'package:alfred_client/providers/contacts_controller.dart';
+
+import '../support/fake_contact_service.dart';
+
+/// Wiring: ContactsController → ContactsCoordinator → _LiveContactsEffects.
+void main() {
+  group('contacts wiring', () {
+    const ownerId = 'owner-1';
+    final alice = ProfileSummary(
+      id: 'alice-id',
+      username: 'alice',
+      displayName: 'Alice',
+    );
+
+    test('load attraversa coordinator ed effects live', () async {
+      final service = FakeContactService()
+        ..contacts = [
+          Contact(
+            id: 'c1',
+            ownerId: ownerId,
+            protocol: ContactProtocol.internal,
+            linkedProfileId: alice.id,
+            displayName: alice.displayName,
+            createdAt: DateTime.utc(2026, 1, 1),
+          ),
+        ];
+      final controller = ContactsController(
+        ownerId: ownerId,
+        contactService: service,
+      );
+
+      for (var i = 0; i < 200 && controller.isLoading; i++) {
+        await Future<void>.delayed(const Duration(milliseconds: 5));
+      }
+
+      expect(controller.isLoading, isFalse);
+      expect(controller.contacts, hasLength(1));
+      expect(controller.contactForProfileId(alice.id)?.id, 'c1');
+    });
+
+    test('addInternal attraversa macchina e service', () async {
+      final service = FakeContactService();
+      final controller = ContactsController(
+        ownerId: ownerId,
+        contactService: service,
+      );
+
+      for (var i = 0; i < 200 && controller.isLoading; i++) {
+        await Future<void>.delayed(const Duration(milliseconds: 5));
+      }
+
+      final contact = await controller.addInternal(alice);
+
+      expect(contact.linkedProfileId, alice.id);
+      expect(service.contacts, hasLength(1));
+      expect(
+        controller.contacts.first.protocol,
+        ContactProtocol.internal,
+      );
+    });
+  });
+}

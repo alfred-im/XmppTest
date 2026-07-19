@@ -15,6 +15,12 @@ cd "$ROOT"
 echo "==> check-spec-sync (SDD)"
 bash "$ROOT/../scripts/check-spec-sync.sh"
 
+echo "==> check-model-sync (dominio / UML / statechart)"
+bash "$ROOT/../scripts/check-model-sync.sh"
+
+echo "==> check-composition-sync (Provider / session scope)"
+bash "$ROOT/../scripts/check-composition-sync.sh"
+
 RUN_BUILD=0
 for arg in "$@"; do
   case "$arg" in
@@ -41,7 +47,7 @@ echo "==> flutter analyze"
 flutter analyze
 
 echo "==> flutter test"
-flutter test --exclude-tags live
+flutter test --exclude-tags live --exclude-tags diagnostic
 
 if [[ "$RUN_BUILD" == 1 ]]; then
   echo "==> flutter build web"

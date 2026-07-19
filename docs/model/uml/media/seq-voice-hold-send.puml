@@ -1,0 +1,45 @@
+@startuml seq-voice-hold-send
+' Context: media
+' Commands: RecordVoiceStart, RecordVoiceStop, SendVoice
+' SDD: PROM-CHAT-MEDIA (voice), PROM-OUTBOUND-SEND
+' Revision: 2026-07-18
+
+title seq-voice-hold-send — registrazione hold-to-send
+
+actor Utente
+participant "ChatInputBar" as UI
+participant "VoiceRecordingService" as VRS
+participant "MessagesController" as MC
+participant "OutboundMessageQueue" as Q
+participant "MessageMediaService" as MMS
+participant "MessageService" as MS
+
+Utente -> UI : long-press mic
+UI -> VRS : start()
+UI -> UI : VoicePhase = recording
+
+alt swipe up (lock)
+  UI -> UI : VoicePhase = locked
+  Utente -> UI : tap stop
+  UI -> VRS : stop()
+  UI -> UI : VoicePhase = preview
+  Utente -> UI : conferma invio
+else release (≥ min 1s)
+  Utente -> UI : release
+  UI -> VRS : stop()
+  VRS --> UI : bytes, durationMs
+else release (< 1s)
+  UI -> VRS : cancel()
+  UI -> UI : VoicePhase = idle
+end
+
+UI -> MC : sendVoice(bytes, durationMs)
+MC -> Q : persistMediaBytes(.webm)
+MC -> MC : optimistic voice bubble\npending://clientId
+MC -> MMS : uploadVoice
+MMS --> MC : mediaUrl
+MC -> MS : sendVoiceToProfile
+MS --> MC : ack ChatMessage
+MC -> MC : merge + dequeue
+
+@enduml

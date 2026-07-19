@@ -16,7 +16,8 @@
 | **OpenConversationOnAccount** | Focus account + risolvi peer in inbox + apri chat. |
 | **allowProfileFallback** | Se peer non in inbox, lookup profilo — link/compose sempre; tap push solo dopo recapito (`peer_profile_id` server). |
 | **OpenFromPushTap** | Tap notifica: azzera chat stale sull'account destinatario, retry inbox, poi fallback profilo se necessario. |
-| **Adapter** | Ingresso esterno che traduce in comando navigation (`OpenFromPushTap`, `OpenFromShareableLink`). |
+| **CloseConversation** | Back mobile / chiudi chat | Torna a inbox o group home via navigation machine. |
+| **GroupShell** | Account gruppo in focus | Home gruppo al posto dell'inbox classica. |
 
 ---
 

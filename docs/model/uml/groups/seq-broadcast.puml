@@ -1,0 +1,58 @@
+@startuml seq-broadcast
+' Context: groups
+' Command: BroadcastMessage (and media variants)
+' SDD: SYS-GROUP-023–024, SYS-DELIVERY-004
+' Revision: 2026-07-18
+
+title seq-broadcast — gruppo invia a allow list
+
+actor "Operatore gruppo" as U
+participant "GroupConversationScreen" as UI
+participant "GroupMessagesController" as GMC
+participant "MessageMediaService" as MMS
+participant "MessageService" as MS
+participant "RPC broadcast_message_to_allowlist" as RPC
+participant "alfred_delivery.process_outbox" as W
+participant "alfred_delivery.group_erogate" as GE
+participant "alfred_delivery.erogate_group_message" as EG
+database "messages (archivio gruppo)" as GA
+database "messages (archivi partecipanti)" as PA
+
+U -> UI : invia messaggio / media
+UI -> GMC : Broadcast*
+
+GMC -> GMC : isSending = true
+
+alt media (gif, voice, image, video)
+  GMC -> MMS : upload*
+  MMS --> GMC : mediaUrl
+end
+
+GMC -> MS : broadcast*ToAllowlist(clientMessageId)
+MS -> RPC : broadcast_message_to_allowlist
+RPC -> GA : INSERT riga gruppo\nauthor=gruppo, original_author=gruppo
+RPC -> W : INSERT outbox event_kind=group_erogate
+W -> GE : group_erogate(outbox_id)
+GE -> EG : erogate_group_message(group_id, ...)
+loop ogni partecipante allow list
+  EG -> EG : gate is_sender_allowed_for_reception
+  alt gate ok
+    EG -> PA : INSERT copia\nauthor=gruppo, peer=gruppo, stesso λ
+  else gate fail
+    EG -> EG : skip silenzioso
+  end
+end
+GE --> W : outbox completed
+RPC --> MS : row gruppo
+MS --> GMC : ChatMessage ack
+
+GMC -> GMC : load() — ricarica storico
+GMC -> UI : RefreshGroupHome callback
+GMC -> GMC : isSending = false
+
+note over GA, PA
+  Realtime: subscribeToOwnerMessages
+  su owner_id = gruppo (INSERT/UPDATE)
+end note
+
+@enduml

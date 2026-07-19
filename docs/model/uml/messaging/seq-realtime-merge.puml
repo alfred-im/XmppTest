@@ -1,0 +1,34 @@
+@startuml seq-realtime-merge
+' Context: messaging
+' Event: RealtimeReceived, DeliveryTickReceived
+' SDD: PROM-REALTIME-OWNER-003–005, PROM-MESSAGE-STATUS
+' Revision: 2026-07-18
+
+title seq-realtime-merge — INSERT/UPDATE peer messages
+
+participant "Supabase Realtime" as RT
+participant "MessageService" as MS
+participant "MessagesController" as MC
+participant "mergeChatMessage" as Merge
+participant "Flutter UI" as UI
+
+MC -> MS : subscribeToPeerMessages\n(owner_id + peer filter)
+MS -> RT : channel messages-peer-{user}-{peer}
+
+RT -> MS : PostgresChange INSERT|UPDATE
+MS -> MS : isMailboxPeerMessageRelevant?
+MS -> MS : ChatMessage.fromJson
+MS -> MS : hasRenderableContent\nor delivery tick?
+
+MS -> MC : onMessage(message)
+MC -> MC : _indexForMessage\n(id, clientMessageId)
+MC -> Merge : mergeChatMessage(existing, incoming)
+note right of Merge
+  Tick-only: preserve media_url,
+  content_type, retryPayloadPath
+end note
+Merge --> MC : merged ChatMessage
+MC -> MC : _replaceOrInsertMessage
+MC -> UI : notifyListeners
+
+@enduml

@@ -1,0 +1,48 @@
+@startuml seq-send-optimistic
+' Context: messaging
+' Command: SendMessage (text, gif, voice, location via _sendOptimistic)
+' SDD: PROM-OUTBOUND-SEND-001–004
+' Revision: 2026-07-18
+
+title seq-send-optimistic — testo / GIF / voice / location
+
+actor Utente
+participant "ChatInputBar" as UI
+participant "MessagesController" as MC
+participant "OutboundMessageQueue" as Q
+participant "MessageMediaService" as MMS
+participant "MessageService" as MS
+participant "Supabase RPC" as RPC
+
+Utente -> UI : invia contenuto
+UI -> MC : send* / _sendOptimistic
+
+MC -> MC : isSending = true
+MC -> Q : enqueue(OutboundQueueItem)
+MC -> MC : append optimistic bubble\nstatus=pending, id=clientId
+MC -> UI : notifyListeners
+
+alt media (gif, voice)
+  MC -> MMS : upload*
+  MMS -> MMS : storage chat-media
+  MMS --> MC : mediaUrl
+end
+
+MC -> MS : send*ToProfile(clientMessageId)
+MS -> RPC : send_message_to_profile
+RPC --> MS : row (server id)
+MS --> MC : ChatMessage ack
+
+MC -> MC : mergeChatMessage(optimistic, ack)
+MC -> Q : remove(clientId)
+MC -> Q : deleteMediaFile (if any)
+MC -> MC : isSending = false
+MC -> UI : notifyListeners
+
+alt errore rete/RPC
+  MC -> Q : update(attempts+1, lastError)
+  MC -> MC : bubble status=failed
+  MC -> MC : isSending = false
+end
+
+@enduml

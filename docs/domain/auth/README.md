@@ -1,20 +1,9 @@
 # Contesto: auth
 
-**Stato modellazione:** `scheletro`
+**Stato modellazione:** `verified`
 
-Vedi [bounded-contexts.md](../bounded-contexts.md) e [metodo dominio](../README.md).
+Vedi [glossary.md](./glossary.md) · [commands-and-events.md](./commands-and-events.md) · [UML](../../model/uml/auth/)
 
-## File da compilare
+Statechart: `client/lib/machines/auth/` — `AuthController` delega overlay/sessione a `AuthMachine`.
 
-| File | Contenuto |
-|------|-----------|
-| `glossary.md` | Linguaggio ubiquo |
-| `commands-and-events.md` | Comandi, eventi, invarianti (Event Storming) |
-
-## UML
-
-`docs/model/uml/auth/` — `auth-state.puml`, `seq-*.puml`
-
-## Statechart (se UI)
-
-`client/lib/machines/auth/` — vedi [client/lib/machines/README.md](../../../client/lib/machines/README.md)
+Promessa: [SURF-AUTH](../../specs/surfaces/SURF-AUTH.md)

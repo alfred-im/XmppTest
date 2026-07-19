@@ -44,4 +44,16 @@ client/lib/machines/<context>/
 
 ## Stato attuale
 
-Cartelle per contesto da creare man mano che il modello UML viene approvato per ogni area. Nessuna macchina obbligatoria finché il contesto non esce da `scheletro` in [bounded-contexts.md](../../../docs/domain/bounded-contexts.md).
+| Contesto | Cartella | Stato |
+|----------|----------|-------|
+| auth | `auth/` | implementato |
+| navigation | `navigation/` | implementato |
+| shareable-link | `shareable-link/` | implementato (adapter → navigation) |
+| notifications | `notifications/` | implementato (adapter → navigation) |
+| multi-account | `multi-account/` | implementato |
+| messaging | `messaging/` | verified (3 macchine + coordinator) |
+| contacts | `contacts/` | documentato (produzione = `ContactsController`) |
+| profile | `profile/` | documentato (produzione = `ProfileController`) |
+| reception | `reception/` | documentato (produzione = `ReceptionAllowlistController`) |
+
+Altri contesti: vedi [bounded-contexts.md](../../../docs/domain/bounded-contexts.md).

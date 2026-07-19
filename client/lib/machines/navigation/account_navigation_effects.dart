@@ -6,13 +6,20 @@ import '../../models/chat_peer.dart';
 import '../../services/account_manager.dart';
 import '../../services/account_session.dart';
 import '../../utils/diagnostic_log.dart';
+import '../multi-account/multi_account_adapters.dart';
+import 'account_view_state_store.dart';
 import 'navigation_effects.dart';
 
 /// Implementazione effetti navigation — logica ex-[NavigationCoordinator].
 class AccountNavigationEffects implements NavigationEffects {
-  AccountNavigationEffects(this._manager);
+  AccountNavigationEffects(
+    this._manager, {
+    required this._focusCommand,
+  }) : _viewState = AccountViewStateStore(_manager);
 
   final AccountManager _manager;
+  final AccountFocusCommand _focusCommand;
+  final AccountViewStateStore _viewState;
 
   static const _defaultInboxRetryAttempts = 10;
   static const _pushInboxRetryAttempts = 12;
@@ -20,7 +27,35 @@ class AccountNavigationEffects implements NavigationEffects {
 
   @override
   Future<void> focusAccount(String accountUserId) async {
-    await _manager.setFocus(accountUserId);
+    await _focusCommand.focusAccount(accountUserId);
+  }
+
+  @override
+  bool get focusedAccountIsGroup =>
+      _manager.focusedSession?.profile.isGroup ?? false;
+
+  @override
+  void closeConversation() {
+    if (focusedAccountIsGroup) {
+      backToGroupHome();
+      return;
+    }
+    _viewState.showInboxOnMobile();
+  }
+
+  @override
+  void openGroupChat() {
+    _viewState.openGroupChat();
+  }
+
+  @override
+  void backToGroupHome() {
+    _viewState.backToGroupHome();
+  }
+
+  @override
+  void mergeActivePeerFromInbox(ChatPeer inboxRow) {
+    _viewState.mergeActivePeerFromInbox(inboxRow);
   }
 
   @override
@@ -35,7 +70,7 @@ class AccountNavigationEffects implements NavigationEffects {
       );
       return;
     }
-    _manager.openConversation(peer);
+    _viewState.openConversationOnFocusedAccount(peer);
     diagLog(
       'nav',
       'open_peer',
@@ -72,7 +107,7 @@ class AccountNavigationEffects implements NavigationEffects {
     }
 
     if (!skipStaleClear) {
-      _manager.clearStaleConversationUnlessPeer(accountUserId, peerProfileId);
+      _viewState.clearStaleConversationUnlessPeer(accountUserId, peerProfileId);
     }
 
     if (!await _ensureAccountFocused(accountUserId)) {
@@ -111,7 +146,7 @@ class AccountNavigationEffects implements NavigationEffects {
       return false;
     }
 
-    _manager.openConversation(peer);
+    _viewState.openConversationOnFocusedAccount(peer);
     diagLog(
       'nav',
       'open_on_account.ok',
@@ -125,7 +160,7 @@ class AccountNavigationEffects implements NavigationEffects {
     required String accountUserId,
     required String peerProfileId,
   }) {
-    _manager.clearConversationForAccount(accountUserId);
+    _viewState.clearConversationForAccount(accountUserId);
     return openConversationOnAccount(
       accountUserId: accountUserId,
       peerProfileId: peerProfileId,
@@ -155,7 +190,7 @@ class AccountNavigationEffects implements NavigationEffects {
       return false;
     }
 
-    await _manager.setFocus(accountUserId);
+    await _focusCommand.focusAccount(accountUserId);
 
     final session = _manager.focusedSession;
     final ok = _manager.focusUserId == accountUserId &&

@@ -18,6 +18,10 @@
 | **AccountViewState** | Stato UI per `userId` (chat aperta, inbox mobile) — persiste al cambio focus. |
 | **Auth overlay** | Login/registrazione sopra `HomeScreen`, non full-screen. |
 | **Sessione mancante** | Manifest + focus impostati ma `focusedSession == null` (ripristino in corso o fallito). |
+| **HasOpenAccounts** | Stato client: manifest non vuoto, sessione focus non ancora attiva (es. dopo `AccountOpened` senza restore). |
+| **FocusSwitching** | Stato transitorio: dispose sessione precedente + restore nuovo focus. |
+| **FocusedWithSession** | Focus persistito + `AccountSession` GoTrue in RAM. |
+| **FocusedAwaitingSession** | Focus persistito ma restore sessione non riuscito (ritentabile con `ReconnectFocusedSession`). |
 
 ---
 

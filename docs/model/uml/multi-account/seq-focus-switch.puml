@@ -1,0 +1,35 @@
+@startuml seq-focus-switch
+' Command: FocusAccount
+' Revision: 2026-07-18
+
+title seq-focus-switch — cambio focus account
+
+actor Utente
+participant "MultiAccountAdapters" as Adapters
+participant "MultiAccountMachine" as MA
+participant "AccountMultiAccountEffects" as FX
+participant "AccountManager" as AM
+
+Utente -> Adapters : focusAccount(userId)
+Adapters -> MA : FocusAccount(userId)
+MA -> MA : focusUserId = userId\nFocusSwitching
+MA -> FX : executeFocus(userId)
+FX -> AM : executeFocus(userId)
+note right of AM
+  dispose sessione precedente
+  saveFocusUserId
+  _activateFocusedSession
+  load inbox se utente
+end note
+alt sessione ripristinata
+  AM --> FX : ok + session
+  FX --> MA : AccountFocused
+  MA -> MA : FocusedWithSession
+else restore fallito
+  AM --> FX : focus senza session
+  FX --> MA : SessionRestoreFailed
+  MA -> MA : FocusedAwaitingSession
+end
+MA --> Adapters : done
+
+@enduml

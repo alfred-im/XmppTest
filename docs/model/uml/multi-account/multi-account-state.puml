@@ -3,7 +3,7 @@
 ' SDD: PROM-MULTI-ACCOUNT
 ' Revision: 2026-07-18
 
-title Multi-account — client state machine
+title Multi-account — client state machine\nfocusUserId owned by MultiAccountMachine
 
 state NoOpenAccounts
 state HasOpenAccounts
@@ -15,13 +15,26 @@ state FocusedAwaitingSession : focus impostato,\nsessione in ripristino
 [*] --> FocusedWithSession : InitializeManifest\n[session ok]
 [*] --> FocusedAwaitingSession : InitializeManifest\n[focus but no session]
 
-NoOpenAccounts --> HasOpenAccounts : AccountOpened
+NoOpenAccounts --> HasOpenAccounts : AccountOpened\n[no session yet]
+NoOpenAccounts --> FocusedWithSession : AccountOpened\n[session ok]
+NoOpenAccounts --> FocusedWithSession : OpenAccountWithPassword\n/ OpenAccountWithSignUp
+
 HasOpenAccounts --> FocusSwitching : FocusAccount
-FocusSwitching --> FocusedWithSession : AccountFocused
-FocusSwitching --> FocusedAwaitingSession : SessionRestoreFailed
+HasOpenAccounts --> FocusedWithSession : AccountFocused
+HasOpenAccounts --> NoOpenAccounts : AccountClosed\n[ultimo account]
+
+HasOpenAccounts --> FocusedAwaitingSession : SessionRestoreFailed
 
 FocusedWithSession --> FocusSwitching : FocusAccount\n[altro account]
-FocusedAwaitingSession --> FocusedWithSession : ReconnectFocusedSession\n/ AccountFocused
 FocusedWithSession --> NoOpenAccounts : AccountClosed\n[ultimo account]
+FocusedWithSession --> FocusedWithSession : AccountClosed\n[non ultimo, session ok]
+FocusedWithSession --> FocusedAwaitingSession : AccountClosed\n[non ultimo, no session]
+
+FocusedAwaitingSession --> FocusSwitching : FocusAccount
+FocusedAwaitingSession --> FocusedWithSession : ReconnectFocusedSession\n/ AccountFocused
+FocusedAwaitingSession --> NoOpenAccounts : AccountClosed\n[ultimo account]
+
+FocusSwitching --> FocusedWithSession : AccountFocused
+FocusSwitching --> FocusedAwaitingSession : SessionRestoreFailed
 
 @enduml

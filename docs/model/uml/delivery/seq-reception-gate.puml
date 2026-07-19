@@ -1,0 +1,51 @@
+@startuml seq-reception-gate
+' Context: delivery (+ reception policy)
+' Policy: Gate before deliver
+' SDD: SYS-DELIVERY-012, SYS-RECEPTION
+' Revision: 2026-07-18
+
+title seq-reception-gate — deliver_internal con allow list
+
+participant "alfred_delivery.deliver_internal" as DI
+participant "is_sender_allowed_for_reception" as GATE
+database "reception_allowlist" as AL
+database "messages (mittente)" as SM
+database "messages (destinatario)" as DM
+database "outbox" as OB
+
+DI -> OB : FOR UPDATE outbox row
+DI -> SM : SELECT copia mittente
+
+alt destinatario è gruppo
+  DI -> GATE : mittente ∈ allow list gruppo?
+  GATE -> AL : owner_id = gruppo
+  GATE --> DI : v_allowed_1
+  DI -> GATE : gruppo ∈ allow list mittente?
+  GATE -> AL : owner_id = mittente
+  GATE --> DI : v_allowed_2
+  note right of GATE
+    Gate bidirezionale
+    (SYS-GROUP-017)
+  end note
+else destinatario user 1:1
+  DI -> GATE : mittente ∈ allow list destinatario?
+  GATE -> AL : owner_id = destinatario
+  GATE --> DI : v_allowed
+end
+
+alt gate passed
+  DI -> DM : INSERT copia destinatario\nON CONFLICT DO NOTHING
+  DI -> SM : UPDATE delivered_at = now()
+  opt destinatario era gruppo
+    DI -> DI : erogate_group_message
+  end
+  DI -> OB : completed
+else gate rejected
+  DI -> OB : completed +\nreception_rejected: true
+  note over SM
+    delivered_at resta NULL
+    UI mittente: solo ✓
+  end note
+end
+
+@enduml
