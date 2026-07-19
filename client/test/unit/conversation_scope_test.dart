@@ -94,6 +94,40 @@ void main() {
       expect(manager.committedScope?.sessionEpoch, sessionA.epoch);
     });
 
+    test('epoch drift riallinea scope commesso', () async {
+      final sessionA2 = await AccountSession.createForTest(
+        profile: const ProfileSummary(
+          id: 'account-a',
+          username: 'alice',
+          displayName: 'Alice',
+        ),
+        client: createTestSupabaseClient(),
+      );
+      const peer = ProfileSummary(
+        id: 'peer-z',
+        username: 'peer_z',
+        displayName: 'Peer Z',
+      );
+      manager.commitScope(
+        ConversationScope.fromSession(sessionA, ChatPeer(profile: peer)),
+      );
+      manager.injectTestSession(sessionA2);
+      manager.focusTestSession(sessionA2);
+      manager.applyAccountViewState(
+        'account-a',
+        (view) => view.openChat(ChatPeer(profile: peer)),
+      );
+
+      expect(
+        manager.isConversationReady(
+          session: sessionA2,
+          peer: ChatPeer(profile: peer),
+        ),
+        isTrue,
+      );
+      expect(manager.committedScope?.sessionEpoch, sessionA2.epoch);
+    });
+
     test('epoch distingue sessioni restore', () async {
       final sessionA2 = await AccountSession.createForTest(
         profile: const ProfileSummary(

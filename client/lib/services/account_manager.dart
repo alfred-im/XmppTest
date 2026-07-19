@@ -9,6 +9,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../machines/multi-account/multi_account_effects.dart';
 import '../models/account_view_state.dart';
+import '../models/chat_peer.dart';
 import '../models/conversation_scope.dart';
 import '../models/open_account.dart';
 import '../models/profile_summary.dart';
@@ -46,7 +47,52 @@ class AccountManager {
   ConversationScope? get committedScope => _committedScope;
 
   bool isScopeCommitted(ConversationScope scope) =>
-      _committedScope == scope;
+      isConversationReadyFor(
+        ownerUserId: scope.ownerUserId,
+        peerProfileId: scope.peerProfileId,
+        session: _sessions[scope.ownerUserId],
+      );
+
+  /// True se l'ambito commesso coincide con account+peer in UI e sessione viva.
+  bool isConversationReady({
+    required AccountSession session,
+    required ChatPeer peer,
+  }) {
+    return isConversationReadyFor(
+      ownerUserId: session.userId,
+      peerProfileId: peer.profileId,
+      session: session,
+    );
+  }
+
+  bool isConversationReadyFor({
+    required String ownerUserId,
+    required String peerProfileId,
+    AccountSession? session,
+  }) {
+    final committed = _committedScope;
+    if (committed == null) return false;
+    if (_focusUserId != ownerUserId) return false;
+    if (committed.ownerUserId != ownerUserId ||
+        committed.peerProfileId != peerProfileId) {
+      return false;
+    }
+    final live = session ?? _sessions[ownerUserId];
+    if (live == null || live.userId != ownerUserId) return false;
+    if (committed.matchesSession(live)) return true;
+    // Stessa conversazione, sessione ricreata (epoch nuovo) — riallinea.
+    _committedScope = ConversationScope(
+      ownerUserId: ownerUserId,
+      peerProfileId: peerProfileId,
+      sessionEpoch: live.epoch,
+    );
+    return true;
+  }
+
+  /// Dopo bootstrap / reconnect: riallinea scope da view-state (peer ricordato).
+  void onFocusSettled() {
+    syncCommittedScopeFromViewState();
+  }
 
   /// Invalida scope se appartiene all'account indicato.
   void invalidateScopeForAccount(String accountUserId) {
@@ -405,7 +451,6 @@ class AccountManager {
         );
       }
       await _loadFocusedInboxIfNeeded();
-      syncCommittedScopeFromViewState();
       return;
     }
 
@@ -445,7 +490,6 @@ class AccountManager {
         );
       }
       await _loadFocusedInboxIfNeeded();
-      syncCommittedScopeFromViewState();
     } catch (e) {
       _focusUserId = previousFocus;
       if (previousFocus != null) {

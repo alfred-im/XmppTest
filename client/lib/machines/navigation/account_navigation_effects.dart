@@ -166,15 +166,34 @@ class AccountNavigationEffects implements NavigationEffects {
   Future<bool> openConversationFromPushTap({
     required String accountUserId,
     required String peerProfileId,
-  }) {
+  }) async {
+    _manager.invalidateCommittedScope();
     _viewState.clearConversationForAccount(accountUserId);
-    return openConversationOnAccount(
-      accountUserId: accountUserId,
+
+    if (!await _ensureAccountFocused(accountUserId)) {
+      return false;
+    }
+
+    final session = _manager.focusedSession;
+    if (session == null || session.userId != accountUserId) {
+      return false;
+    }
+
+    final peer = await _resolvePeer(
+      session: session,
       peerProfileId: peerProfileId,
       allowProfileFallback: true,
       inboxRetryAttempts: _pushInboxRetryAttempts,
-      skipStaleClear: true,
+      logSource: 'resolve_peer_push',
     );
+
+    if (peer == null) {
+      return false;
+    }
+
+    _viewState.openConversationOnFocusedAccount(peer);
+    _manager.commitScope(ConversationScope.fromSession(session, peer));
+    return true;
   }
 
   Future<bool> _ensureAccountFocused(String accountUserId) async {

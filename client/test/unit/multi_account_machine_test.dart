@@ -80,6 +80,9 @@ class _RecordingEffects implements MultiAccountEffects {
       remainingUserIds: [],
     );
   }
+
+  @override
+  void onFocusSettled() {}
 }
 
 void main() {

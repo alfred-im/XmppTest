@@ -33,6 +33,7 @@ class MultiAccountAdapters implements AccountFocusCommand {
     final focus = _machine.focusUserId;
     if (focus != null) {
       await effects.executeFocus(focus);
+      effects.onFocusSettled();
     }
 
     await _machine.send(

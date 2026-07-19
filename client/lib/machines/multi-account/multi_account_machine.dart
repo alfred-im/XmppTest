@@ -221,6 +221,7 @@ class MultiAccountMachine {
 
     await effects.reconnectFocusedSession(focus);
     if (effects.hasFocusedSession) {
+      effects.onFocusSettled();
       _applyAccountFocused();
     }
   }

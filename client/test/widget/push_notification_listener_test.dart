@@ -5,6 +5,7 @@
 import 'dart:async';
 
 import 'package:alfred_client/models/chat_peer.dart';
+import 'package:alfred_client/models/message.dart';
 import 'package:alfred_client/models/profile_summary.dart';
 import 'package:alfred_client/providers/auth_controller.dart';
 import 'package:alfred_client/screens/home_screen.dart';
@@ -229,4 +230,173 @@ void main() {
 
     await intents.close();
   });
+
+  testWidgets(
+    'tap push con A in chat con B passa a B in chat con A',
+    (tester) async {
+      const accountA = ProfileSummary(
+        id: 'account-a',
+        username: 'agent_a',
+        displayName: 'Agent A',
+      );
+      const accountB = ProfileSummary(
+        id: 'account-b',
+        username: 'agent_b',
+        displayName: 'Agent B',
+      );
+
+      final clientA = createTestSupabaseClient();
+      final clientB = createTestSupabaseClient();
+      final messageServiceA = FakeMessageService(clientA);
+      final messageServiceB = FakeMessageService(clientB);
+
+      messageServiceA.messagesByConversation[conversationKey(
+        userId: 'account-a',
+        peerProfileId: 'account-b',
+      )] = [
+        ChatMessage(
+          id: 'm-a1',
+          body: 'ciao da A',
+          timeLabel: '12:00',
+          isMine: true,
+          senderId: 'account-a',
+          createdAt: DateTime.utc(2026, 7, 19, 12),
+        ),
+      ];
+      messageServiceB.messagesByConversation[conversationKey(
+        userId: 'account-b',
+        peerProfileId: 'account-a',
+      )] = [
+        ChatMessage(
+          id: 'm-b1',
+          body: 'ciao da A',
+          timeLabel: '12:01',
+          isMine: false,
+          senderId: 'account-a',
+          createdAt: DateTime.utc(2026, 7, 19, 12, 1),
+        ),
+        ChatMessage(
+          id: 'm-b0',
+          body: 'risposta precedente B',
+          timeLabel: '11:00',
+          isMine: true,
+          senderId: 'account-b',
+          createdAt: DateTime.utc(2026, 7, 19, 11),
+        ),
+      ];
+
+      final storage = AccountStorageService();
+      final sessionA = await AccountSession.createForTest(
+        profile: accountA,
+        client: clientA,
+        inboxService: FakeInboxService(
+          peers: [ChatPeer(profile: accountB)],
+        ),
+        profileService: _FakeProfileService({'account-b': accountB}),
+        messageService: messageServiceA,
+      );
+      final sessionB = await AccountSession.createForTest(
+        profile: accountB,
+        client: clientB,
+        inboxService: FakeInboxService(
+          peers: [ChatPeer(profile: accountA)],
+        ),
+        profileService: _FakeProfileService({'account-a': accountA}),
+        messageService: messageServiceB,
+      );
+
+      sessionA.wireStorage(storage);
+      sessionB.wireStorage(storage);
+      await sessionA.persistOpenAccount(refreshToken: 'refresh-a');
+      await sessionB.persistOpenAccount(refreshToken: 'refresh-b');
+      await storage.saveFocusUserId('account-a');
+
+      final manager = AccountManager(storage: storage);
+      manager.restoreSessionForTest = (account) async {
+        return account.userId == 'account-a' ? sessionA : sessionB;
+      };
+
+      final auth = AuthController(accountManager: manager);
+      await auth.multiAccountAdapters.bootstrapManifest();
+      auth
+        ..isLoading = false
+        ..sessionReady = true;
+
+      auth.openConversation(ChatPeer(profile: accountB));
+      expect(auth.userId, 'account-a');
+      expect(auth.activePeer?.profile.id, 'account-b');
+
+      final intents = StreamController<PushOpenChatIntent>.broadcast();
+
+      await tester.binding.setSurfaceSize(const Size(1200, 800));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AlfredTheme.light,
+          home: MultiProvider(
+            providers: [
+              ChangeNotifierProvider<AuthController>.value(value: auth),
+            ],
+            child: PushNotificationListener(
+              debugOpenChatIntents: intents.stream,
+              child: const HomeScreen(),
+            ),
+          ),
+        ),
+      );
+      for (var i = 0; i < 200; i++) {
+        await tester.pump(const Duration(milliseconds: 5));
+        if (find.text('ciao da A').evaluate().isNotEmpty) break;
+      }
+      await tester.pump();
+
+      final listenerState = tester.state<PushNotificationListenerState>(
+        find.byType(PushNotificationListener),
+      );
+      await tester.runAsync(
+        () => listenerState.processOpenChatForTest(
+          PushOpenChatIntent.fromParts(
+            recipientUserId: 'account-b',
+            peerProfileId: 'account-a',
+          ),
+        ),
+      );
+      for (var i = 0; i < 500; i++) {
+        await tester.pump(const Duration(milliseconds: 10));
+        if (auth.userId == 'account-b' &&
+            auth.activePeer?.profile.id == 'account-a' &&
+            auth.accountManager.isConversationReady(
+              session: auth.focusedSession!,
+              peer: auth.activePeer!,
+            )) {
+          break;
+        }
+      }
+      await tester.pump();
+
+      expect(auth.userId, 'account-b');
+      expect(auth.activePeer?.profile.id, 'account-a');
+      expect(
+        auth.accountManager.committedScope?.ownerUserId,
+        'account-b',
+      );
+      expect(
+        auth.accountManager.committedScope?.peerProfileId,
+        'account-a',
+      );
+      expect(
+        auth.accountManager.isConversationReady(
+          session: auth.focusedSession!,
+          peer: auth.activePeer!,
+        ),
+        isTrue,
+      );
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+
+      await tester.pump(const Duration(seconds: 2));
+
+      await intents.close();
+    },
+  );
 }

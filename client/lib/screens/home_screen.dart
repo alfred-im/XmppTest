@@ -167,7 +167,10 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     final scope = ConversationScope.fromSession(session, peer);
-    if (!auth.accountManager.isScopeCommitted(scope)) {
+    if (!auth.accountManager.isConversationReady(
+      session: session,
+      peer: peer,
+    )) {
       return const ColoredBox(
         color: AlfredColors.surface,
         child: Center(child: CircularProgressIndicator()),
@@ -492,7 +495,10 @@ class _ChatWithMessages extends StatelessWidget {
     if (liveSession == null ||
         liveSession.userId != session.userId ||
         !scope.matches(liveSession, peer) ||
-        !auth.accountManager.isScopeCommitted(scope)) {
+        !auth.accountManager.isConversationReady(
+          session: liveSession,
+          peer: peer,
+        )) {
       return const ColoredBox(
         color: AlfredColors.surface,
         child: Center(child: CircularProgressIndicator()),
@@ -511,7 +517,15 @@ class _ChatWithMessages extends StatelessWidget {
         peerIsGroup: peer.isGroup,
         onMessagesChanged: onMessagesChanged,
         hasValidSession: _focusedSessionValid,
-        isScopeCommitted: () => auth.accountManager.isScopeCommitted(scope),
+        isScopeCommitted: () {
+          final live = auth.focusedSession;
+          final active = auth.activePeer;
+          if (live == null || active == null) return false;
+          return auth.accountManager.isConversationReady(
+            session: live,
+            peer: active,
+          );
+        },
       ),
       child: ChatPanel(
         peer: peer,

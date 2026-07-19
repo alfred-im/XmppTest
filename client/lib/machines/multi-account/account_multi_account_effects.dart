@@ -37,6 +37,11 @@ class AccountMultiAccountEffects implements MultiAccountEffects {
   }
 
   @override
+  void onFocusSettled() {
+    _manager.onFocusSettled();
+  }
+
+  @override
   Future<String> openAccountWithPassword({
     required String email,
     required String password,
