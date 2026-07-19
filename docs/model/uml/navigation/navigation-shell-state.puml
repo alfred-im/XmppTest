@@ -1,34 +1,23 @@
 @startuml navigation-shell-state
 ' Context: navigation
-' SDD: PROM-MULTI-ACCOUNT, PROM-SHAREABLE-LINK
+' Profile: client
 ' Revision: 2026-07-19
 
-title Navigation — shell state machine (per account in focus)
+title Navigation — shell
 
 state InboxVisible
-state ChatOpen
-state GroupShell
+state ConversationVisible
+state GroupHomeVisible
+state GroupConversationVisible
 
 [*] --> InboxVisible
 
-InboxVisible --> ChatOpen : OpenPeerOnFocusedAccount\n/ ConversationOpened
-InboxVisible --> ChatOpen : OpenConversationOnAccount\n/ ConversationOpened
-InboxVisible --> ChatOpen : OpenFromPushTap\n/ ConversationOpened
-InboxVisible --> ChatOpen : OpenFromShareableLink\n/ ConversationOpened
-InboxVisible --> ChatOpen : OpenFromCompose\n/ ConversationOpened
-InboxVisible --> GroupShell : SwitchToAccount\n[account gruppo]
+InboxVisible --> ConversationVisible : OpenConversation
+InboxVisible --> GroupHomeVisible : EnterGroupShell
 
-ChatOpen --> InboxVisible : CloseConversation\n/ NavigationIdle
+ConversationVisible --> InboxVisible : CloseConversation
 
-GroupShell --> GroupShell : OpenGroupChat\n/ GroupChatOpened
-GroupShell --> GroupShell : BackToGroupHome\n/ GroupShellEntered
-GroupShell --> GroupShell : CloseConversation\n[chat gruppo aperta]
-
-note right of ChatOpen
-  External intents (push, link, compose)
-  converge on NavigationMachine
-  via adapters — never bypass
-  multi-account focus rules
-end note
+GroupHomeVisible --> GroupConversationVisible : OpenGroupConversation
+GroupConversationVisible --> GroupHomeVisible : LeaveGroupConversation
 
 @enduml

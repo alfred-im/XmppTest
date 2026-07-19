@@ -1,46 +1,27 @@
 @startuml seq-open-from-fragment
 ' Context: shareable-link → navigation
 ' Profile: client
-' SDD: PROM-SHAREABLE-LINK
 ' Revision: 2026-07-19
 
-title seq-open-from-fragment — link #profilo o #chat
+title Link condiviso → profilo o chat
 
 participant "Browser" as Br
-participant "UI" as UI
 participant "ShareableLinkMachine" as SL
 participant "NavigationMachine" as Nav
-participant "MultiAccountMachine" as MAM
+participant "ProfileMachine" as PM
 
-Br -> UI : hashchange / load\n#username o #username/chat
-UI -> SL : ParseFragment
-alt fragment invalido / push-chat
-  SL --> UI : FragmentCleared
-else fragment valido
-  SL --> UI : FragmentParsed\n(targetQueued)
-end
+Br -> SL : ResolveSharedLink
 
-UI -> SL : SessionBecameReady\n+ HandleTargetRequested
-alt !sessionReady || 0 account
-  SL --> UI : TargetDeferred
-else sessione pronta
-  SL -> SL : resolveShareableAddress
-  alt indirizzo non locale
-    SL --> UI : ProfileNotFound
-  else lookup username
-    alt profilo assente
-      SL --> UI : ProfileNotFound
-    else self peer
-      SL --> UI : SelfPeerIgnored
-    else kind == profile
-      SL -> SL : ShowProfileFromLink\n(overlay)
-    else kind == chat
-      SL -> Nav : OpenFromShareableLink\n(account focus, peerId)
-      Nav -> MAM : FocusAccount (se necessario)
-      Nav -> Nav : clear stale + open conversation
-      Nav --> SL : ChatOpenedFromLink
-    end
-  end
+alt link non valido
+  SL --> Br : SharedLinkInvalid
+else sessione non pronta
+  SL --> Br : SharedLinkPending
+else target chat
+  SL -> Nav : OpenSharedChat
+  Nav --> Br : SharedChatOpened
+else target profilo
+  SL -> PM : OpenSharedProfile
+  PM --> Br : SharedProfileShown
 end
 
 @enduml

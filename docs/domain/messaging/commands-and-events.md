@@ -5,24 +5,14 @@
 
 ---
 
-## Comandi (intento)
+## Comandi
 
 | Comando | Emesso da | Descrizione |
 |---------|-----------|-------------|
-| `LoadMessages` | Policy (apertura conversazione) | Carica storico messaggi del peer aperto. |
-| `ReloadMessages` | Utente | Aggiorna la lista messaggi. |
-| `MarkRead` | Policy (apertura conversazione) | Segna come letti i messaggi del peer aperto. |
-| `AttachRealtime` | Policy (post-load) | Attiva aggiornamenti realtime sulla conversazione. |
-| `DetachRealtime` | Policy (chiusura conversazione) | Disattiva sottoscrizione realtime. |
-| `SendMessage` | Utente | Invia contenuto testuale. |
-| `SendGif` | Utente | Invia GIF. |
-| `SendVoice` | Utente | Invia messaggio vocale — vedi contesto **media**. |
-| `SendLocation` | Utente | Invia posizione — vedi contesto **media**. |
-| `SendImage` | Utente | Invia immagine — vedi contesto **media**. |
-| `SendVideo` | Utente | Invia video — vedi contesto **media**. |
-| `RetryMessage` | Utente | Ritenta invio di un messaggio fallito. |
-| `ProcessOutboundRetries` | Policy (timer) | Riprocessa la coda outbound con backoff. |
-| `RestoreFailedOutbound` | Policy (post-load) | Reidrata messaggi falliti dalla coda persistente. |
+| `OpenConversation` | Policy (navigazione apre chat) | Carica e sincronizza la conversazione con il peer. |
+| `SendContent` | Utente | Invia testo, media o posizione al peer. |
+| `RetryFailedSend` | Utente | Ritenta un invio fallito. |
+| `RefreshConversation` | Utente | Aggiorna lo storico messaggi. |
 
 ---
 
@@ -30,45 +20,31 @@
 
 | Evento | Descrizione |
 |--------|-------------|
-| `MessagesLoaded` | Storico conversazione disponibile. |
-| `LoadFailed` | Caricamento fallito; errore esposto all'utente. |
-| `SessionExpired` | Sessione non valida — nessun load né invio. |
-| `OptimisticInserted` | Messaggio pending inserito in lista prima dell'ACK. |
-| `SendAcknowledged` | Invio confermato dal server; merge con riga archivio. |
-| `SendFailed` | Invio fallito; messaggio marcato failed in coda. |
-| `RealtimeReceived` | Nuovo messaggio o aggiornamento contenuto da realtime. |
-| `DeliveryTickReceived` | Aggiornamento sole spunte su messaggio mittente. |
-| `RetryDispatched` | Tentativo retry outbound completato o fallito. |
-| `InboxRefreshRequested` | Richiesta aggiornamento anteprima inbox dopo invio riuscito. |
+| `ConversationReady` | Storico disponibile; conversazione utilizzabile. |
+| `ConversationUnavailable` | Sessione non valida o caricamento fallito. |
+| `ContentSent` | Invio accettato dal server. |
+| `ContentSendFailed` | Invio non riuscito; resta in coda retry. |
+| `ConversationUpdated` | Nuovi messaggi o aggiornamento spunte in conversazione. |
 
 ---
 
 ## Policy
 
-| Policy | Trigger | Azione |
-|--------|---------|--------|
-| **Init conversazione** | Apertura chat | `LoadMessages` → `RestoreFailedOutbound` → `MarkRead` → `AttachRealtime` → avvio timer retry. |
-| **Invio serializzato** | `Send*` in corso | Blocca invii paralleli e retry automatici nella stessa conversazione. |
-| **Merge senza duplicati** | `RealtimeReceived` o ACK | Una sola bolla per `client_message_id`; preserva media su tick-only. |
-| **Sessione scaduta** | `SessionExpired` | Nessun load né send; errore sessione all'utente. |
-| **Realtime per focus** | Cambio account in focus | Solo conversazione dell'account attivo resta sottoscritta. |
+| Policy | Descrizione |
+|--------|-------------|
+| **Un messaggio, una bolla** | Stesso messaggio logico non duplica in UI. |
+| **Invio serializzato** | Un invio alla volta per conversazione. |
+| **Segna letto all'apertura** | Aprendo la chat, i messaggi del peer sono letti. |
+| **Sincronizzazione realtime** | Mentre la chat è aperta, gli aggiornamenti arrivano in tempo reale. |
+| **Retry automatico** | Invii falliti riprovati con backoff finché in coda. |
 
 ---
 
-## Sistemi esterni
+## Confini
 
-| Sistema | Ruolo |
-|---------|------|
-| **Supabase** | Operazioni mailbox, storage media, canale Realtime owner. |
-| **Coda outbound persistente** | Retry messaggi e media dopo fallimento rete/upload. |
-
----
-
-## Tracciabilità SDD
-
-| Elemento | Promessa |
-|----------|----------|
-| Coda + optimistic | PROM-OUTBOUND-SEND |
-| Spunte post-ACK | PROM-MESSAGE-STATUS |
-| Realtime owner + peer | PROM-REALTIME-OWNER |
-| Media upload | PROM-CHAT-MEDIA (sotto-contesto media) |
+| Contesto | Relazione |
+|----------|-----------|
+| **navigation** | Apre/chiude la conversazione (`OpenConversation`). |
+| **media** | Preparazione allegati prima di `SendContent`. |
+| **delivery** | Recapito e spunte lato server. |
+| **reception** | Gate allow list sul recapito (non blocca invio al mittente). |

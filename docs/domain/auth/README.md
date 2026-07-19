@@ -2,8 +2,15 @@
 
 **Stato modellazione:** `verified`
 
-Vedi [glossary.md](./glossary.md) · [commands-and-events.md](./commands-and-events.md) · [UML](../../model/uml/auth/)
+## Mapping dominio → implementazione
 
-Statechart: `client/lib/machines/auth/` — `AuthController` delega overlay/sessione a `AuthMachine`.
+| Dominio | Statechart | Codice |
+|---------|------------|--------|
+| `SignIn` | `SignInRequested` | `AuthMachine` + `OpenAccountWithPassword` |
+| `SignUp` | `SignUpRequested` | `AuthMachine` + `OpenAccountWithSignUp` |
+| `RequestPasswordReset` | `ResetPasswordRequested` | GoTrue reset |
+| `ShowCredentialOverlay` | `OverlayOpenRequested` | overlay auth |
+| `DismissCredentialOverlay` | `OverlayCloseRequested` | chiusura se ≥1 account |
+| `SessionEstablished` | `SessionEstablished` | focus + overlay chiuso |
 
-Promessa: [SURF-AUTH](../../specs/surfaces/SURF-AUTH.md)
+Statechart: `client/lib/machines/auth/` · Facade: `AuthController`

@@ -1,33 +1,20 @@
 @startuml seq-open-conversation-on-account
 ' Context: navigation
 ' Profile: client
-' Command: OpenConversationOnAccount / OpenFromPushTap
 ' Revision: 2026-07-19
 
-title seq-open-conversation-on-account — link / compose / push
+title OpenConversation — ingressi multipli
 
-participant "UI" as UI
+participant "Ingresso" as In
 participant "NavigationMachine" as Nav
 participant "MultiAccountMachine" as MAM
-participant "Supabase" as DB
 
-alt OpenFromPushTap
-  UI -> Nav : OpenFromPushTap
-  Nav -> MAM : clear stale chat on dest account
-else OpenConversationOnAccount
-  UI -> Nav : OpenConversationOnAccount
-end
-
-Nav -> MAM : FocusAccount
-MAM --> Nav : AccountFocused
-Nav -> DB : resolve peer in inbox
-alt peer in inbox
-  Nav --> UI : ConversationOpened
-else no peer && !profile fallback
-  Nav --> UI : NavigationRejected
-else profile fallback
-  Nav -> Nav : lookup profile + open
-  Nav --> UI : ConversationOpened
+In -> Nav : OpenConversation
+Nav -> MAM : FocusAccount (se necessario)
+alt peer risolto
+  Nav --> In : ConversationVisible
+else fallito
+  Nav --> In : NavigationFailed
 end
 
 @enduml

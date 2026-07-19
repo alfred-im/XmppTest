@@ -5,51 +5,32 @@
 
 ---
 
-## Comandi (intento)
+## Comandi
 
 | Comando | Emesso da | Descrizione |
 |---------|-----------|-------------|
-| `ParseFragment` | Policy (hashchange / bootstrap) | Normalizza fragment URL; aggiorna target o torna idle. |
-| `HandleTargetRequested` | Policy | Tenta risoluzione se sessione pronta e target in coda. |
-| `SessionBecameReady` | Policy (auth pronta) | Sblocca consumo target in coda. |
-| `OpenFromShareableLink` | Policy (target chat risolto) | Delega a navigation: focus + apertura chat. |
-| `ShowProfileFromLink` | Policy (target profilo) | Mostra overlay identità peer. |
-| `DismissNotFound` | Utente | Azzera stato not-found e fragment. |
+| `ResolveSharedLink` | Policy (URL / fragment) | Interpreta link condiviso e determina target. |
+| `OpenSharedChat` | Policy | Apre chat da link condiviso. |
+| `OpenSharedProfile` | Policy | Mostra profilo da link condiviso. |
 
 ---
 
-## Eventi di dominio
+## Eventi
 
-| Evento | Dopo | Descrizione |
-|--------|------|-------------|
-| `FragmentParsed` | `ParseFragment` ok | Target in coda. |
-| `FragmentCleared` | fragment assente o invalido | Torna idle. |
-| `TargetDeferred` | sessione non pronta o zero account | Target conservato in coda. |
-| `ProfileResolved` | lookup username ok | Profilo trovato. |
-| `ProfileNotFound` | lookup fallito | Indirizzo non risolvibile — UI not found. |
-| `SelfPeerIgnored` | peer == account in focus | Target scartato senza errore. |
-| `ChatOpenedFromLink` | `OpenFromShareableLink` ok | Navigation ha aperto chat corretta. |
-| `ProfileOverlayShown` | `ShowProfileFromLink` | Scheda profilo peer visibile. |
+| Evento | Descrizione |
+|--------|-------------|
+| `SharedLinkResolved` | Target identificato (profilo o chat). |
+| `SharedLinkPending` | Target in attesa di sessione o account. |
+| `SharedLinkInvalid` | Indirizzo non riconosciuto o profilo assente. |
+| `SharedChatOpened` | Chat aperta da link. |
+| `SharedProfileShown` | Profilo mostrato da link. |
 
 ---
 
 ## Policy
 
-| Policy | Trigger | Azione |
-|--------|---------|--------|
-| **Attendi sessione** | target + sessione non pronta | `TargetDeferred` |
-| **No guest** | zero account aperti | Overlay auth; target resta in coda |
-| **Clear stale chat** | `#peer/chat` con chat su altro peer | Navigation chiude chat stale |
-| **Fallback profilo** | peer assente da inbox | Lookup profilo + apertura conversazione |
-
----
-
-## Tracciabilità SDD
-
-| Elemento modello | Promessa |
-|------------------|----------|
-| Formato fragment | PROM-SHAREABLE-LINK-001–007 |
-| Multi-account / auth | PROM-SHAREABLE-LINK-010–012 |
-| `#…/chat` senza stale | PROM-SHAREABLE-LINK-004, 024 |
-| Not found | PROM-SHAREABLE-LINK-006 |
-| Condivisione profilo | PROM-SHAREABLE-LINK-003 |
+| Policy | Descrizione |
+|--------|-------------|
+| **Attendi autenticazione** | Senza account, target resta in coda. |
+| **Nessuna chat stale** | Link chat chiude conversazione su altro peer. |
+| **Self ignorato** | Link al proprio profilo non apre chat con sé stessi. |

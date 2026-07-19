@@ -1,63 +1,45 @@
 @startuml messaging-state
 ' Context: messaging
-' SDD: PROM-OUTBOUND-SEND, PROM-MESSAGE-STATUS, PROM-REALTIME-OWNER
+' Profile: client
 ' Revision: 2026-07-19
-' Composite: ConversationLoadMachine + OutboundSendMachine + RealtimeAttachmentMachine
 
-title Messaging — composite state machines (per conversation)
+title Messaging — stato conversazione (composite)
 
-state "ConversationLoadMachine" as CL {
+state "Caricamento" as CL {
   state Loading
   state Ready
   state SessionBlocked
 
-  [*] --> Loading : LoadMessages
-  Loading --> Ready : MessagesLoaded
-  Loading --> SessionBlocked : SessionExpired
-  Loading --> Ready : LoadFailed
-  Ready --> Loading : ReloadMessages
-  SessionBlocked --> Loading : ReloadMessages\n[session restored]
+  [*] --> Loading
+  Loading --> Ready : ConversationReady
+  Loading --> SessionBlocked : ConversationUnavailable
+  Ready --> Loading : RefreshConversation
+  SessionBlocked --> Loading : RefreshConversation
 }
 
-state "OutboundSendMachine" as OS {
+state "Invio" as OS {
   state Idle
   state Sending
   state FailedQueue
 
   [*] --> Idle
-  Idle --> Sending : SendStarted\nRetryStarted
-  Sending --> Idle : SendAcknowledged
-  Sending --> FailedQueue : SendFailed
-  FailedQueue --> Sending : RetryStarted
-  FailedQueue --> Idle : QueueEmptied
-  Idle --> FailedQueue : FailedQueueRestored
+  Idle --> Sending : SendContent
+  Sending --> Idle : ContentSent
+  Sending --> FailedQueue : ContentSendFailed
+  FailedQueue --> Sending : RetryFailedSend
 }
 
-state "RealtimeAttachmentMachine" as RT {
+state "Realtime" as RT {
   state Detached
   state Attached
 
   [*] --> Detached
-  Detached --> Attached : AttachRealtime
-  Attached --> Detached : DetachRealtime
+  Detached --> Attached : OpenConversation
+  Attached --> Detached : CloseConversation
 }
 
 note right of Ready
-  Policy init (once):
-  RestoreFailedOutbound,
-  MarkRead, AttachRealtime,
-  ProcessOutboundRetries timer
-end note
-
-note right of Sending
-  User commands SendMessage SendGif
-  SendVoice SendLocation SendImage SendVideo
-  map to SendStarted via effects
-end note
-
-note bottom of Attached
-  RealtimeReceived DeliveryTickReceived
-  handled in Ready (merge, no state change)
+  ConversationUpdated mentre Attached
 end note
 
 @enduml
