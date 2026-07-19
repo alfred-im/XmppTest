@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 import 'dart:async';
-import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
@@ -98,10 +97,11 @@ class _ChatInputBarState extends State<ChatInputBar> {
 
   bool get _hasText => _controller.text.trim().isNotEmpty;
 
-  bool get _showGif => widget.onSendGif != null;
-  bool get _showAttachments =>
-      widget.onSendImage != null || widget.onSendVideo != null;
-  bool get _showLocation => widget.onSendLocation != null;
+  bool get _showRichContentMenu =>
+      widget.onSendImage != null ||
+      widget.onSendVideo != null ||
+      widget.onSendGif != null ||
+      widget.onSendLocation != null;
   bool get _showVoice => widget.onSendVoice != null;
 
   String? _takeCaption() {
@@ -112,44 +112,65 @@ class _ChatInputBarState extends State<ChatInputBar> {
     return caption;
   }
 
-  Future<void> _showAttachmentMenu() async {
+  Future<void> _showRichContentPanel() async {
     if (!widget.enabled || _isComposerLocked) return;
 
     await showModalBottomSheet<void>(
       context: context,
       builder: (sheetContext) {
         return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (widget.onSendImage != null) ...[
-                ListTile(
-                  leading: const Icon(Icons.photo_library_outlined),
-                  title: const Text('Galleria foto'),
-                  onTap: () {
-                    Navigator.pop(sheetContext);
-                    unawaited(_pickImage(ImageSource.gallery));
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.camera_alt_outlined),
-                  title: const Text('Fotocamera'),
-                  onTap: () {
-                    Navigator.pop(sheetContext);
-                    unawaited(_pickImage(ImageSource.camera));
-                  },
-                ),
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            child: Row(
+              children: [
+                if (widget.onSendImage != null) ...[
+                  _RichContentIconButton(
+                    icon: Icons.photo_library_outlined,
+                    tooltip: 'Galleria foto',
+                    onPressed: () {
+                      Navigator.pop(sheetContext);
+                      unawaited(_pickImage(ImageSource.gallery));
+                    },
+                  ),
+                  _RichContentIconButton(
+                    icon: Icons.camera_alt_outlined,
+                    tooltip: 'Fotocamera',
+                    onPressed: () {
+                      Navigator.pop(sheetContext);
+                      unawaited(_pickImage(ImageSource.camera));
+                    },
+                  ),
+                ],
+                if (widget.onSendVideo != null)
+                  _RichContentIconButton(
+                    icon: Icons.videocam_outlined,
+                    tooltip: 'Video',
+                    onPressed: () {
+                      Navigator.pop(sheetContext);
+                      unawaited(_pickVideo());
+                    },
+                  ),
+                if (widget.onSendGif != null)
+                  _RichContentIconButton(
+                    icon: Icons.gif_box_outlined,
+                    tooltip: 'Invia GIF',
+                    onPressed: () {
+                      Navigator.pop(sheetContext);
+                      unawaited(_pickGif());
+                    },
+                  ),
+                if (widget.onSendLocation != null)
+                  _RichContentIconButton(
+                    icon: Icons.location_on_outlined,
+                    tooltip: 'Condividi posizione',
+                    onPressed: () {
+                      Navigator.pop(sheetContext);
+                      unawaited(_beginLocationShare());
+                    },
+                  ),
               ],
-              if (widget.onSendVideo != null)
-                ListTile(
-                  leading: const Icon(Icons.videocam_outlined),
-                  title: const Text('Video'),
-                  onTap: () {
-                    Navigator.pop(sheetContext);
-                    unawaited(_pickVideo());
-                  },
-                ),
-            ],
+            ),
           ),
         );
       },
@@ -802,38 +823,14 @@ class _ChatInputBarState extends State<ChatInputBar> {
                 padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
                 child: Row(
                 children: [
-                  if (_showAttachments)
+                  if (_showRichContentMenu)
                     IconButton(
                       onPressed: widget.enabled && !_isComposerLocked
-                          ? () => unawaited(_showAttachmentMenu())
+                          ? () => unawaited(_showRichContentPanel())
                           : null,
                       tooltip: 'Allega',
                       icon: Icon(
                         Icons.attach_file_outlined,
-                        color: widget.enabled
-                            ? AlfredColors.textPrimary
-                            : AlfredColors.textSecondary,
-                      ),
-                    ),
-                  if (_showGif)
-                    IconButton(
-                      onPressed: widget.enabled ? _pickGif : null,
-                      tooltip: 'Invia GIF',
-                      icon: Icon(
-                        Icons.gif_box_outlined,
-                        color: widget.enabled
-                            ? AlfredColors.textPrimary
-                            : AlfredColors.textSecondary,
-                      ),
-                    ),
-                  if (_showLocation)
-                    IconButton(
-                      onPressed: widget.enabled && !_isComposerLocked
-                          ? () => unawaited(_beginLocationShare())
-                          : null,
-                      tooltip: 'Condividi posizione',
-                      icon: Icon(
-                        Icons.location_on_outlined,
                         color: widget.enabled
                             ? AlfredColors.textPrimary
                             : AlfredColors.textSecondary,
@@ -861,6 +858,34 @@ class _ChatInputBarState extends State<ChatInputBar> {
             ),
             if (_voicePhase != _VoicePhase.idle) _buildVoiceOverlay(),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _RichContentIconButton extends StatelessWidget {
+  const _RichContentIconButton({
+    required this.icon,
+    required this.tooltip,
+    required this.onPressed,
+  });
+
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: IconButton(
+        onPressed: onPressed,
+        tooltip: tooltip,
+        icon: Icon(icon, color: AlfredColors.textPrimary),
+        style: IconButton.styleFrom(
+          backgroundColor: AlfredColors.border.withValues(alpha: 0.35),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
       ),
     );

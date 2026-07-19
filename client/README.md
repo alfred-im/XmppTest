@@ -16,14 +16,15 @@ Client web collegato a Supabase (contatti, inbox, chat realtime, profilo, **mult
 | **Layout** | Lista inbox + chat (stile WhatsApp Web) |
 | **Inbox** | RPC `list_inbox()` — aggregazione on-read su `messages` |
 | **Chat** | Identificata da `peer_profile_id` (`ChatPeer`) |
-| **Media** | Testo, GIF, voice (WebM/Opus), location (mappa OSM) |
+| **Media** | Testo, GIF, voice (WebM/Opus), foto, video, location (mappa OSM) |
+| **Web Push** | Notifiche browser (VAPID) — `SYS-PUSH` |
 | **Nuovo messaggio** | FAB → username → stessa chat (vuota o con storico) |
 | **Ricezione** | Allow list personale (`reception_allowlist`) — UI «Persone consentite» + toggle in scheda profilo peer (tap avatar) |
 | **Profilo peer** | Overlay fullscreen al tap avatar — Allow + rubrica + CTA «Inizia a chattare» + Condividi — `PROM-PEER-PROFILE`, `SURF-PEER-PROFILE` |
 | **Link condivisibili** | Fragment `#username` / `#username/chat`; share di sistema — `PROM-SHAREABLE-LINK` |
 | **Gruppi** | Account `profile_kind = group`; `GroupHomePanel` + chat; partecipazione allow list bidirezionale — `SYS-GROUP` |
 | **Invio** | `send_message_to_profile` |
-| **Gate test** | `verify.sh` — **192** test unit/widget (zero issue analyze) |
+| **Gate test** | `verify.sh` — **377** test unit/widget (zero issue analyze) |
 
 Build native mobile/desktop non è focus del progetto oggi; la superficie supportata è il web client.
 
@@ -47,11 +48,14 @@ Gate CI (equivale a `test.sh gate`): `bash scripts/verify.sh`
 
 ```
 lib/
-├── models/      # ChatPeer, ChatMessage, OpenAccount, …
-├── services/    # AccountManager, AccountSession, InboxService, …
-├── screens/     # HomeScreen (shell), GroupConversationScreen, AppShell, …
-├── providers/   # AuthController, InboxController, GroupMessagesController, MessagesController, …
-└── widgets/     # AuthOverlay, InboxPanel, ChatPanel, PeerProfileOverlay, …
+├── models/        # ChatPeer, ChatMessage, OpenAccount, …
+├── machines/      # Statechart per bounded context (multi-account, messaging, navigation, …)
+├── coordinators/  # Facade UI → macchina + effetti (auth, push, contacts, messaging, …)
+├── adapters/      # Ingresso intent esterni (push tap, link #, compose)
+├── services/      # AccountManager, AccountSession, InboxService, …
+├── screens/       # HomeScreen (shell), GroupConversationScreen, AppShell, …
+├── providers/     # AuthController, InboxController, GroupMessagesController, MessagesController, …
+└── widgets/       # AuthOverlay, InboxPanel, ChatPanel, PeerProfileOverlay, …
 ```
 
 Vedi `docs/guides/multi-account.md`, `docs/guides/groups.md`, `docs/guides/peer-profile.md`, `docs/decisions/multi-account-parallel-sessions.md`, `PROJECT_MAP.md`.

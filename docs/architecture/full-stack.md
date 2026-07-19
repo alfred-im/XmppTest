@@ -1,6 +1,6 @@
 # Alfred — Architettura (panoramica)
 
-**Data**: 2026-07-12  
+**Data**: 2026-07-19  
 **Scope**: App completa **senza bridge** (XMPP/Matrix restano stub Fly.io)  
 **Stato**: prodotto stabile su `main`
 
@@ -46,13 +46,15 @@
 
 ```
 client/lib/
-├── config/      # Supabase URL, chiavi
-├── models/      # DTO UI ↔ JSON
-├── services/    # Thin API layer
-├── providers/   # ChangeNotifier (stato UI)
-├── screens/     # Shell, auth, home, contatti, profilo
-├── widgets/     # Componenti presentazionali
-└── utils/       # Formattazione, scroll anchor, filtri, shareable link
+├── config/       # Supabase URL, chiavi
+├── models/       # DTO UI ↔ JSON
+├── services/     # Thin API layer
+├── providers/    # ChangeNotifier (stato UI)
+├── machines/     # Statechart per contesto (auth, messaging, push, …)
+├── coordinators/ # Wiring macchine ↔ UI / servizi
+├── screens/      # Shell, auth, home, contatti, profilo
+├── widgets/      # Componenti presentazionali
+└── utils/        # Formattazione, scroll anchor, filtri, shareable link
 ```
 
 ### 2.2 Provider
@@ -156,14 +158,14 @@ Dettaglio deploy: `PROJECT_MAP.md` § Build, workflow `.github/workflows/deploy-
 
 | Funzionalità | Stato |
 |--------------|-------|
-| Chat Alfred stessa istanza | ✅ testo, GIF, voice, location (recapito solo se mittente ∈ allow list destinatario) |
+| Chat Alfred stessa istanza | ✅ testo, GIF, voice, location, image, video (recapito solo se mittente ∈ allow list destinatario) |
 | Chat gruppo Alfred | ✅ account gruppo, erogazione automatica, broadcast, UI autore (PR #162) |
 | Allow list ricezione | ✅ sempre attiva; lista vuota = nessun recapito; UI «Persone consentite» + toggle in scheda profilo peer |
 | Link condivisibili | ✅ `#username` / `#username/chat`; share da profilo peer e sidebar (#178) |
 | Rubrica XMPP/Matrix | ✅ salvataggio |
 | Invio federato | ⏸ outbox `pending` |
 | Ricezione federata | ❌ bridge |
-| Push Web (VAPID) | ✅ spec `approved` — migrazione + client + Edge Function `send-push` |
+| Push Web (VAPID) | ✅ `implemented` — migrazione + client + Edge Function `send-push` |
 | E2EE | ❌ fuori scope |
 
 ---

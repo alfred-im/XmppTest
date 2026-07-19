@@ -4,6 +4,21 @@
 
 ---
 
+## Composer UX
+
+**Superficie**: [SURF-CHAT-014](../specs/surfaces/SURF-CHAT.md) — `ChatInputBar`
+
+| Elemento | Comportamento |
+|----------|---------------|
+| Graffetta | Un solo pulsante `attach_file` a sinistra apre un bottom sheet |
+| Pannello media | Riga orizzontale scrollabile di pulsanti solo-icona (tooltip per a11y): galleria, fotocamera, video, GIF, posizione |
+| Destra | Microfono (hold-to-record invariato) e invio testo restano a destra |
+| Barra | GIF e posizione **non** sono più pulsanti separati nella barra — solo nel pannello graffetta |
+
+File: `chat_input_bar.dart`
+
+---
+
 ## Foto (`image`)
 
 | Campo | Valore |
@@ -17,7 +32,7 @@ Max **10 MB**. Path: `{userId}/{uuid}.{ext}`.
 
 **HEIC/HEIF** (iPhone): accettato dal picker; conversione JPEG lato client prima dell’upload (`prepareImageForUpload`).
 
-**UX** (`ChatInputBar`): allegato → galleria o fotocamera (`image_picker`); didascalia nel campo testo prima dell'invio. Bolla ottimistica con preview da `OutboundMediaCache` (`pending://`) **prima** della conversione/upload.
+**UX** (`ChatInputBar`, [SURF-CHAT-014](../specs/surfaces/SURF-CHAT.md)): graffetta → icona galleria o fotocamera nel pannello (`image_picker`); didascalia nel campo testo prima dell'invio. Bolla ottimistica con preview da `OutboundMediaCache` (`pending://`) **prima** della conversione/upload.
 
 File: `message_media_service.dart` (`uploadImage`), `MessagesController.sendImage`, `prepare_image_for_upload_*.dart`
 
@@ -35,9 +50,22 @@ File: `message_media_service.dart` (`uploadImage`), `MessagesController.sendImag
 
 Max **50 MB**. Solo picker file (no registrazione).
 
-**UX**: bolla video subito dopo la selezione file; byte letti in background; su web blob > 4 MB non persistiti in SharedPreferences (`ChatMediaConfig.webOutboundPersistMaxBytes`). Probe durata con timeout 6 s (`media_probe_timeout.dart`).
+**UX** ([SURF-CHAT-014](../specs/surfaces/SURF-CHAT.md)): graffetta → icona video nel pannello; bolla video subito dopo la selezione file; byte letti in background; su web blob > 4 MB non persistiti in SharedPreferences (`ChatMediaConfig.webOutboundPersistMaxBytes`). Probe durata con timeout 6 s (`media_probe_timeout.dart`).
 
 File: `video_message_content.dart`, `video_duration.dart`, `MessagesController.sendVideo` / `sendVideoFromPicker`
+
+---
+
+## GIF (`gif`)
+
+| Campo | Valore |
+|-------|--------|
+| `content_type` | `gif` |
+| `media_url` | bucket `chat-media` |
+
+**UX** ([SURF-CHAT-014](../specs/surfaces/SURF-CHAT.md)): graffetta → icona GIF nel pannello; file picker `.gif` (`FilePicker`, `withData: true`); invio immediato senza didascalia separata.
+
+File: `ChatInputBar._pickGif`, `MessagesController.sendGif`
 
 ---
 
@@ -67,10 +95,10 @@ File: `voice_recording_service.dart`, `voice_encoding_*.dart`, `MessageMediaServ
 
 Nessun bucket — solo coordinate in Postgres.
 
-**UX invio**: tap pin → anteprima mappa OSM a schermo intero; affinamento GPS; conferma invio.  
+**UX invio** ([SURF-CHAT-014](../specs/surfaces/SURF-CHAT.md)): graffetta → icona posizione nel pannello → overlay mappa OSM a schermo intero; affinamento GPS; conferma invio.  
 **UX ricezione**: tile OSM in bolla (`flutter_map`); tap apre OSM in browser.
 
-File: `location_service.dart`, `LocationMessageContent`, `ChatInputBar` pin flow
+File: `location_service.dart`, `LocationMessageContent`, `ChatInputBar._beginLocationShare`
 
 ---
 

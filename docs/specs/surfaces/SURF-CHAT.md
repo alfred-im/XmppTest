@@ -4,7 +4,7 @@
 |-------|--------|
 | **Superficie ID** | `SURF-CHAT` |
 | **Status** | `implemented` |
-| **Ultima revisione** | 2026-07-09 |
+| **Ultima revisione** | 2026-07-19 |
 | **Promesse** | [PROM-CHAT-PEER-KEY](../promises/product/PROM-CHAT-PEER-KEY.md), [PROM-MESSAGE-STATUS](../promises/product/PROM-MESSAGE-STATUS.md), [PROM-OUTBOUND-SEND](../promises/product/PROM-OUTBOUND-SEND.md), [PROM-CHAT-MEDIA](../promises/product/PROM-CHAT-MEDIA.md), [PROM-SHAREABLE-LINK](../promises/product/PROM-SHAREABLE-LINK.md), [SYS-RECEPTION](../promises/system/SYS-RECEPTION.md) (semantica spunte) |
 | **PR** | #159, #178 |
 
@@ -39,6 +39,7 @@ Binding UX conversazione peer-to-peer: stessa schermata con storico vuoto o pien
 | **SURF-CHAT-007** | Stati client `pending`/`failed` solo lato mittente pre-ACK server — non persistiti come enum DB |
 | **SURF-CHAT-008** | Preview inbox per tipo: testo troncato, `[GIF]`, `🎤`, `📍 Posizione`, `📷 Foto`, `🎬 Video` (con didascalia se presente) |
 | **SURF-CHAT-013** | Allegato: galleria foto, fotocamera, video (picker); didascalia opzionale nel composer — [PROM-CHAT-MEDIA](../promises/product/PROM-CHAT-MEDIA.md) |
+| **SURF-CHAT-014** | Composer: un solo pulsante graffetta (`attach_file`) apre pannello contenuti ricchi; icone affiancate in riga orizzontale scrollabile (solo icone, tooltip per accessibilità); GIF e posizione nel pannello, non nella barra; microfono/invio restano a destra — `ChatInputBar` |
 | **SURF-CHAT-012** | Apertura conversazione da fragment `#indirizzo/chat` — [PROM-SHAREABLE-LINK](../promises/product/PROM-SHAREABLE-LINK.md) via `ShareableLinkController`; azzera chat stale se peer diverso; fallback profilo consentito |
 
 ### SHOULD
@@ -70,6 +71,7 @@ Binding UX conversazione peer-to-peer: stessa schermata con storico vuoto o pien
 | SURF-CHAT-012 | `shareable_link_controller.dart`; `shareable_link_stale_chat_verification_test.dart` |
 | SURF-CHAT-011 | `client/test/unit/models_and_utils_test.dart` |
 | SURF-CHAT-013 | `messages_controller_media_test.dart`, `message_bubble_test.dart`, `chat_media_support_test.dart` |
+| SURF-CHAT-014 | `chat_input_bar_test.dart`; `chat_input_bar.dart` |
 
 Gate: `verify.sh` + `integration` + `e2e-multi`
 

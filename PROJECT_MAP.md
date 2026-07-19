@@ -171,8 +171,8 @@ Avvio container: `scripts/start-bridges.sh` (`CMD ["/bin/sh", "/start.sh"]`). De
 
 | Storage | Uso |
 |---------|-----|
-| Postgres | `profiles`, `contacts`, `reception_allowlist`, `messages`, `outbox`, `sync_cursors`, `bridge_jobs`; schema worker `alfred_delivery` |
-| Storage `chat-media` | GIF + voice WebM (`{userId}/{uuid}.…`) |
+| Postgres | `profiles`, `contacts`, `reception_allowlist`, `messages`, `outbox`, `sync_cursors`, `bridge_jobs`, `push_subscriptions`; schema worker `alfred_delivery` |
+| Storage `chat-media` | GIF, voice WebM, image, video (`{userId}/{uuid}.…`) |
 | Storage `avatars` | Foto profilo (`{userId}/avatar.{jpg|png|webp}`, max 2 MB) |
 | Client `SharedPreferences` | Account aperti (`OpenAccount` + refresh token) e `focusUserId` |
 
@@ -205,7 +205,7 @@ bash scripts/verify.sh --build   # + build web
 | Area | Stato |
 |------|-------|
 | Auth, profilo, multi-account, scheda profilo peer, link condivisibili | ✅ |
-| Contatti, inbox, chat testo/GIF/voice/location | ✅ |
+| Contatti, inbox, chat testo/GIF/voice/location/foto/video, Web Push | ✅ |
 | Modello caselle + delivery plane | ✅ |
 | Account gruppo (shell, erogazione, UI autore) | ✅ |
 | Ricerca inbox on-demand, aggancio al fondo | ✅ |
@@ -243,7 +243,7 @@ Test: `bash scripts/test.sh integration-ticks`
 
 ### Gate test
 
-`verify.sh` — `check-spec-sync.sh` + `check-model-sync.sh` (stati contesto `documented`|`wired`|`verified`, no `implemented`) + **192** test Dart. Smoke SQL: `delivery_ticks_smoke.sql`, `mailbox_*.sql`, `group_*.sql`, `reception_allowlist_*.sql`.
+`verify.sh` — `check-spec-sync.sh` + `check-model-sync.sh` (stati contesto `documented`|`wired`|`verified`, no `implemented`) + **377** test Dart. Smoke SQL: `delivery_ticks_smoke.sql`, `mailbox_*.sql`, `group_*.sql`, `reception_allowlist_*.sql`.
 
 ### File chiave client
 
@@ -260,7 +260,7 @@ Test: `bash scripts/test.sh integration-ticks`
 
 ### Limiti noti
 
-Badge / realtime account in background — push Web VAPID ([SYS-PUSH](docs/specs/promises/system/SYS-PUSH.md)). Multi-tab stesso browser: last-write-wins.
+Badge non letti su icona app; realtime account non in focus; multi-tab stesso browser: last-write-wins.
 
 ---
 
