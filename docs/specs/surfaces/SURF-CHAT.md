@@ -6,7 +6,7 @@
 | **Status** | `implemented` |
 | **Ultima revisione** | 2026-07-19 |
 | **Promesse** | [PROM-CHAT-PEER-KEY](../promises/product/PROM-CHAT-PEER-KEY.md), [PROM-MESSAGE-STATUS](../promises/product/PROM-MESSAGE-STATUS.md), [PROM-OUTBOUND-SEND](../promises/product/PROM-OUTBOUND-SEND.md), [PROM-CHAT-MEDIA](../promises/product/PROM-CHAT-MEDIA.md), [PROM-SHAREABLE-LINK](../promises/product/PROM-SHAREABLE-LINK.md), [SYS-RECEPTION](../promises/system/SYS-RECEPTION.md) (semantica spunte) |
-| **PR** | #159, #178 |
+| **PR** | #159, #178, #210 |
 
 Binding UX conversazione peer-to-peer: stessa schermata con storico vuoto o pieno, spunte, invio optimistic, preview inbox.
 
@@ -17,7 +17,7 @@ Binding UX conversazione peer-to-peer: stessa schermata con storico vuoto o pien
 | Elemento | Valore |
 |----------|--------|
 | Widget | `client/lib/widgets/chat_panel.dart`, `message_bubble.dart` |
-| Controller | `MessagesController` — `peerProfileId`, `load()`, invio optimistic |
+| Controller | `MessagesController` — `peerProfileId`, `load()`, `loadOlderMessages()`, `hasMoreOlder`; invio optimistic |
 | Servizi | `MessageService`, `OutboundMessageQueue` |
 | Parent | `HomeScreen` — `_activePeer`; `ValueKey(peer.profileId)` |
 | Modello | `ChatPeer`, `ChatMessage` — `isMine` da `author_id == currentUserId` |

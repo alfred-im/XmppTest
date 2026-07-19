@@ -7,7 +7,7 @@
 | **Status** | `implemented` |
 | **Ultima revisione** | 2026-07-19 |
 | **ADR** | [mailbox-inbox-outbox-spec.md](../../../architecture/mailbox-inbox-outbox-spec.md), [server-as-reception.md](../../../decisions/server-as-reception.md), [no-internal-external-chat-distinction.md](../../../decisions/no-internal-external-chat-distinction.md), [bridge-stateless.md](../../../decisions/bridge-stateless.md) |
-| **PR origine** | #159, #179 |
+| **PR origine** | #159, #179, #210 |
 
 Promessa SYSTEM — modello **mailbox** (archivio per owner), pipeline invio/outbox, aggregazione inbox on-read, date consegna/lettura. Il dettaglio canonico di schema e RPC resta nei contratti; questo file è indice promessa + tracciabilità v2.
 
@@ -206,6 +206,18 @@ mark_peer_read(p_peer_profile_id uuid) → void
 
 1. UPDATE `messages` SET `read_at = now()` WHERE `owner_id = auth.uid()` AND `peer_profile_id = p_peer` AND `author_id = p_peer` AND `read_at IS NULL` AND contenuto leggibile
 2. Per ogni λ: outbox `read_receipt` → worker aggiorna copia mittente (vedi [SYS-DELIVERY](./SYS-DELIVERY.md))
+
+### RPC `list_peer_messages`
+
+```sql
+list_peer_messages(p_peer_profile_id uuid, p_limit default 100, p_before_created_at default null) → setof messages
+```
+
+- Senza cursore: ultimi `p_limit` messaggi nel mio archivio con quel peer, ordine cronologico ASC.
+- Con `p_before_created_at`: pagina precedente (`created_at < cursore`).
+- L'anteprima `list_inbox` per un peer è sempre inclusa nella prima finestra (SYS-MAILBOX-057).
+
+Dettaglio: [contracts/rpc.md](../../contracts/rpc.md) § `list_peer_messages`.
 
 ---
 

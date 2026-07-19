@@ -174,6 +174,8 @@ Righe WHERE `owner_id = auth.uid()` AND `peer_profile_id = p_peer_profile_id` AN
 
 L'anteprima `list_inbox` per un peer deve cadere nella finestra senza cursore quando esiste storico.
 
+**Migrazioni**: `20260704120000`, `20260719220000_list_peer_messages_recent_window.sql` (SYS-MAILBOX-036/057, SURF-CHAT-015).
+
 ---
 
 ## `mark_peer_read`
