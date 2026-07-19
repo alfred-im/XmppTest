@@ -327,6 +327,30 @@ class FakeMessageService extends MessageService {
   }
 }
 
+/// [FakeMessageService] con ritardo artificiale sul fetch (race scope in test).
+class DelayedFakeMessageService extends FakeMessageService {
+  DelayedFakeMessageService(
+    super.client, {
+    this.fetchDelay = const Duration(milliseconds: 50),
+  });
+
+  final Duration fetchDelay;
+
+  @override
+  Future<List<ChatMessage>> fetchPeerMessages({
+    required String peerProfileId,
+    required String currentUserId,
+    int limit = 100,
+  }) async {
+    await Future<void>.delayed(fetchDelay);
+    return super.fetchPeerMessages(
+      peerProfileId: peerProfileId,
+      currentUserId: currentUserId,
+      limit: limit,
+    );
+  }
+}
+
 class FakeProfileService extends ProfileService {
   FakeProfileService(super.client);
 

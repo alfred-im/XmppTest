@@ -82,6 +82,7 @@ class MessagesController extends ChangeNotifier {
   late final MessagesControllerEffects _effects;
   late final MessagingCoordinator _coordinator;
   late final MessagingAdapters _adapters;
+  bool _notifierDisposed = false;
 
   List<ChatMessage> get messages => _coordinator.messages;
   set messages(List<ChatMessage> value) => _state.messages = value;
@@ -154,7 +155,16 @@ class MessagesController extends ChangeNotifier {
       _adapters.retryMessage(clientId);
 
   @override
+  void notifyListeners() {
+    if (_notifierDisposed) return;
+    super.notifyListeners();
+  }
+
+  @override
   void dispose() {
+    if (_notifierDisposed) return;
+    _notifierDisposed = true;
+    _effects.markDisposed();
     _adapters.dispose();
     super.dispose();
   }

@@ -43,14 +43,18 @@ class MessagingCoordinator {
 
   Future<void> init() async {
     await load();
+    if (effects.isDisposed) return;
     await effects.restoreFailedFromQueue();
+    if (effects.isDisposed) return;
     if (state.messages.any(
       (m) => m.isMine && m.status == MessageStatus.failed,
     )) {
       sendMachine.send(const FailedQueueRestored());
     }
     await effects.markRead();
+    if (effects.isDisposed) return;
     attachRealtime();
+    if (effects.isDisposed) return;
     effects.startRetryTimer(() => unawaited(_processRetries()));
     _notify();
   }
@@ -72,6 +76,7 @@ class MessagingCoordinator {
     _notify();
     try {
       await effects.fetchAndSetMessages();
+      if (effects.isDisposed) return;
       state.error = null;
       loadMachine.send(const ConversationReady());
     } catch (e) {
@@ -207,5 +212,8 @@ class MessagingCoordinator {
     effects.disposeQueue();
   }
 
-  void _notify() => onChanged();
+  void _notify() {
+    if (effects.isDisposed) return;
+    onChanged();
+  }
 }

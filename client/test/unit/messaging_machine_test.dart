@@ -21,6 +21,9 @@ class _RecordingEffects implements MessagingEffects {
   int attachCount = 0;
 
   @override
+  bool get isDisposed => false;
+
+  @override
   bool ensureValidSession() => true;
 
   @override

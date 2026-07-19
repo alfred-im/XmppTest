@@ -15,6 +15,7 @@ import '../providers/inbox_controller.dart';
 import '../providers/messages_controller.dart';
 import '../services/account_session.dart';
 import '../theme/alfred_colors.dart';
+import '../utils/conversation_scope_guard.dart';
 import '../widgets/account_sidebar.dart';
 import '../widgets/auth_overlay.dart';
 import '../widgets/chat_panel.dart';
@@ -517,15 +518,13 @@ class _ChatWithMessages extends StatelessWidget {
         peerIsGroup: peer.isGroup,
         onMessagesChanged: onMessagesChanged,
         hasValidSession: _focusedSessionValid,
-        isScopeCommitted: () {
-          final live = auth.focusedSession;
-          final active = auth.activePeer;
-          if (live == null || active == null) return false;
-          return auth.isConversationReady(
-            session: live,
-            peer: active,
-          );
-        },
+        isScopeCommitted: () => isMessagesScopeActive(
+          scope: scope,
+          peer: peer,
+          liveSession: auth.focusedSession,
+          isConversationReady: (session, activePeer) =>
+              auth.isConversationReady(session: session, peer: activePeer),
+        ),
       ),
       child: ChatPanel(
         peer: peer,

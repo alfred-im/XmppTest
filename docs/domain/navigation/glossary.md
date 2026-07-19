@@ -28,9 +28,9 @@
 
 | Contesto | Relazione |
 |----------|-----------|
-| **multi-account** | `FocusAccount` prima di aprire chat su altro account. |
-| **notifications** | `OpenFromPushTap` — percorso dedicato con clear stale + retry + fallback profilo. |
-| **shareable-link** | `OpenFromShareableLink` — clear stale se peer diverso, fallback profilo. |
+| **multi-account** | `FocusAccount` prima di aprire chat su altro account; `onFocusSettled` → restore scope. |
+| **notifications** | `OpenConversation(source=push)` — stessa transazione, policy push. |
+| **shareable-link** | `OpenConversation(source=shareableLink)` — clear stale se peer diverso. |
 
 ---
 

@@ -34,6 +34,7 @@ import 'messaging_conversation_state.dart';
 import 'messaging_message_list.dart';
 
 abstract class MessagingEffects {
+  bool get isDisposed;
   bool ensureValidSession();
   Future<void> fetchAndSetMessages();
   Future<void> enrichAuthorNamesIfNeeded();
@@ -93,8 +94,21 @@ class MessagesControllerEffects implements MessagingEffects {
   void Function(bool failed)? onSendLifecycleEnd;
   Timer? _retryTimer;
   int _fetchGeneration = 0;
+  bool _disposed = false;
 
-  bool _scopeIsActive() => isScopeCommitted?.call() ?? true;
+  @override
+  bool get isDisposed => _disposed;
+
+  void markDisposed() {
+    _disposed = true;
+    _fetchGeneration++;
+    stopRetryTimer();
+  }
+
+  bool _scopeIsActive() {
+    if (_disposed) return false;
+    return isScopeCommitted?.call() ?? true;
+  }
 
   @override
   Future<void> fetchAndSetMessages() async {
@@ -123,7 +137,14 @@ class MessagesControllerEffects implements MessagingEffects {
     );
   }
   @override void disposeRealtime(RealtimeChannel? channel) => messageService.disposeChannel(channel);
-  @override void startRetryTimer(void Function() onTick) { _retryTimer?.cancel(); _retryTimer = Timer.periodic(const Duration(seconds: 15), (_) => onTick()); }
+  @override void startRetryTimer(void Function() onTick) {
+    if (_disposed) return;
+    _retryTimer?.cancel();
+    _retryTimer = Timer.periodic(const Duration(seconds: 15), (_) {
+      if (_disposed) return;
+      onTick();
+    });
+  }
   @override void stopRetryTimer() { _retryTimer?.cancel(); _retryTimer = null; }
   @override void disposeQueue() { stopRetryTimer(); _outboundQueue.dispose(); }
 
