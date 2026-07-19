@@ -1,5 +1,6 @@
 @startuml seq-signup
 ' Context: auth
+' Profile: client
 ' SDD: SURF-AUTH-004, SURF-AUTH-006, SURF-AUTH-008
 ' Revision: 2026-07-19
 
@@ -20,13 +21,13 @@ AM -> AM : validate email, username, displayName
 alt validazione fallita
   AM --> UI : ValidationRejected
 else validazione ok
-  UI -> Mgr : isUsernameAvailable
+  AM -> GT : check username availability
   alt username occupato
     AM --> UI : AuthOperationFailed
   else username libero
     UI -> MAM : OpenAccountWithSignUp
     MAM -> Mgr : sign up + open account
-    Mgr -> GT : signUp
+    Mgr -> GT : authenticate (sign up)
     alt email non confermata
       GT --> Mgr : no session
       AM --> UI : AuthOperationFailed\n(conferma email)

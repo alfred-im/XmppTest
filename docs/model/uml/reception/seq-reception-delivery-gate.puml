@@ -1,35 +1,32 @@
 @startuml seq-reception-delivery-gate
 ' Context: reception
+' Profile: platform
 ' SDD: SYS-RECEPTION-005–010, PROM-RECEPTION-FILTER-005
-' Revision: 2026-07-18
+' Revision: 2026-07-19
 
 title Reception — gate recapito nel worker delivery
 
-participant "send_message_to_profile" as RPC
-database "messages\n(sender copy)" as Msg
-participant "alfred_delivery\nprocess_outbox" as Worker
-participant "is_sender_allowed_for_reception" as Gate
-database "reception_allowlist" as Allow
-database "messages\n(recipient copy)" as Recv
+participant "AccountBoundary" as AB
+database "MailboxArchive\n(sender copy)" as Msg
+participant "DeliveryWorker" as Worker
+participant "ReceptionGate" as Gate
+database "MailboxArchive\n(recipient copy)" as Recv
 
-RPC -> Msg : INSERT copia mittente (✓)
-RPC -> Worker : outbox deliver
+AB -> Msg : sender copy accepted (✓)
+AB -> Worker : EnqueueDeliver
 
-Worker -> Gate : check(owner=dest, sender=mittente)
-Gate -> Allow : EXISTS allowed row?
+Worker -> Gate : CheckSenderAllowed
 
 alt sender allowed
-  Allow --> Gate : true
-  Gate --> Worker : allowed
-  Worker -> Recv : INSERT copia destinatario
-  Worker -> Msg : UPDATE delivered_at\n(✓✓ mittente)
+  Gate --> Worker : DeliveryGatePassed
+  Worker -> Recv : RecipientCopyMaterialized
+  Worker -> Msg : SenderDeliveredAtSet\n(✓✓ mittente)
 else sender not allowed
-  Allow --> Gate : false
-  Gate --> Worker : rejected
+  Gate --> Worker : DeliveryGateRejected
   note right of Worker
     Nessuna copia destinatario.
-    delivered_at resta null.
-    RPC già ritornata ok al mittente.
+    Spunta doppia non valorizzata.
+    Confine account già ritornato ok al mittente.
   end note
 end
 

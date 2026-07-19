@@ -1,7 +1,7 @@
 # Statechart — client Flutter
 
 **Audience**: AI / implementazione  
-**Ultima revisione**: 2026-07-18
+**Ultima revisione**: 2026-07-19
 
 Implementazione **eseguibile** del modello UML per il client web (Flutter).
 
@@ -39,21 +39,23 @@ client/lib/machines/<context>/
 - Nuovo ingresso (push, URL, tap) = nuovo **adapter** + sequence UML — non chiamata diretta ai servizi
 - Nomi identici a dominio e PlantUML (`FocusAccount`, `InboxVisible`, …)
 - Design opzionale in Stately / XState; runtime sempre interprete Dart allineato al `.puml`
+- Sequence UML profilo **Client**: solo `*Machine` + sistemi esterni — vedi [uml/README.md](../../../docs/model/uml/README.md)
 
 ---
 
 ## Stato attuale
 
-| Contesto | Cartella | Stato |
-|----------|----------|-------|
-| auth | `auth/` | implementato |
-| navigation | `navigation/` | implementato |
-| shareable-link | `shareable-link/` | implementato (adapter → navigation) |
-| notifications | `notifications/` | implementato (adapter → navigation) |
-| multi-account | `multi-account/` | implementato |
-| messaging | `messaging/` | verified (3 macchine + coordinator) |
-| contacts | `contacts/` | documentato (produzione = `ContactsController`) |
-| profile | `profile/` | documentato (produzione = `ProfileController`) |
-| reception | `reception/` | documentato (produzione = `ReceptionAllowlistController`) |
+| Contesto | Cartella | Stato modellazione |
+|----------|----------|-------------------|
+| auth | `auth/` | `verified` |
+| multi-account | `multi-account/` | `verified` |
+| navigation | `navigation/` | `verified` |
+| shareable-link | `shareable-link/` | `verified` |
+| notifications | `notifications/` | `verified` |
+| messaging | `messaging/` | `verified` (3 macchine + coordinator) |
+| contacts | `contacts/` | `verified` |
+| profile | `profile/` | `verified` |
+| reception | `reception/` | `verified` |
+| groups | `groups/` | `verified` |
 
 Altri contesti: vedi [bounded-contexts.md](../../../docs/domain/bounded-contexts.md).

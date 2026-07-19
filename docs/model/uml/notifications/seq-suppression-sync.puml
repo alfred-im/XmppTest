@@ -1,5 +1,6 @@
 @startuml seq-suppression-sync
 ' Context: notifications
+' Profile: client
 ' Command: UpdateSuppressionState
 ' SDD: PROM-PUSH-NOTIFY-022–024, SURF-NOTIFICATIONS-008
 ' Revision: 2026-07-19

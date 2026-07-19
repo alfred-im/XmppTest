@@ -61,6 +61,18 @@ Ogni area dell'app ha una cartella in `docs/domain/<context>/` con:
 
 Non mescolare comandi di contesti diversi in un unico diagramma stati.
 
+### Livelli di astrazione per file
+
+| File | Contenuto | Vietato |
+|------|-----------|---------|
+| `glossary.md` | Linguaggio ubiquo, invarianti, confini tra contesti | RPC, SQL, classi Dart, chiavi storage |
+| `commands-and-events.md` | Comandi per intento, eventi, policy, sistemi esterni | Widget, controller, nomi funzione piattaforma |
+| `README.md` (contesto) | Mapping runtime verso codice (`*Controller`, `*Coordinator`, servizi) | Duplicare comandi già in `commands-and-events.md` |
+
+**Contesti platform-only** (`delivery`, `federation`, gate server in `reception`): glossario e comandi possono usare termini infrastrutturali **rinominati in dominio** (es. «confine account», «worker recapito») — non nomi SQL grezzi.
+
+**UML sequence:** due profili documentati in [docs/model/uml/README.md](../model/uml/README.md) — Client (macchine) vs Platform (worker/bridge).
+
 ### Stato modellazione per contesto
 
 Ogni `docs/domain/<context>/README.md` dichiara **un solo** stato tra:

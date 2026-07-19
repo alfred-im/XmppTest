@@ -1,5 +1,6 @@
 @startuml seq-send-optimistic
 ' Context: messaging
+' Profile: client
 ' Command: SendMessage (text, gif, voice, location)
 ' SDD: PROM-OUTBOUND-SEND-001–004
 ' Revision: 2026-07-19
@@ -8,38 +9,31 @@ title seq-send-optimistic — testo / GIF / voice / location
 
 actor Utente
 participant "UI" as UI
-participant "MessagingCoordinator" as Coord
 participant "OutboundSendMachine" as OSM
 participant "ConversationLoadMachine" as CLM
 participant "OutboundQueue" as Q
-participant "MessageService" as MS
 participant "Supabase" as SB
 
 Utente -> UI : invia contenuto
-UI -> Coord : SendMessage / SendGif / SendVoice / SendLocation
-Coord -> OSM : SendStarted
-Coord -> Q : enqueue pending item
-Coord -> CLM : OptimisticInserted\n(Ready, merge in list)
+UI -> OSM : SendStarted
+OSM -> Q : enqueue pending item
+OSM -> CLM : OptimisticInserted\n(Ready, merge in list)
 
 alt media (gif, voice)
-  Coord -> MS : upload media
-  MS -> SB : storage chat-media
-  SB --> MS : public URL
+  OSM -> SB : UploadMedia
+  SB --> OSM : MediaUploaded
 end
 
-Coord -> MS : send to profile (clientMessageId)
-MS -> SB : RPC send_message_to_profile
-SB --> MS : server row
-MS --> Coord : ack message
+OSM -> SB : SendMessage / SendGif / SendVoice / SendLocation
+SB --> OSM : SendAcknowledged
 
-Coord -> OSM : SendAcknowledged
-Coord -> Q : remove item
-Coord --> UI : list updated
+OSM -> Q : remove item
+OSM --> UI : list updated
 
-alt errore rete/RPC
-  Coord -> OSM : SendFailed
-  Coord -> Q : update retry metadata
-  Coord --> UI : message failed
+alt errore rete o piattaforma
+  OSM -> OSM : SendFailed
+  OSM -> Q : update retry metadata
+  OSM --> UI : message failed
 end
 
 @enduml

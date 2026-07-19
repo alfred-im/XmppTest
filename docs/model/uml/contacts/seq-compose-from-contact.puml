@@ -1,5 +1,6 @@
 @startuml seq-compose-from-contact
 ' Context: contacts
+' Profile: client
 ' SDD: PROM-PERSONAL-CONTACTS-006
 ' Revision: 2026-07-19
 

@@ -1,48 +1,27 @@
 @startuml seq-federation-stub
 ' Context: federation
-' SDD: SYS-DELIVERY (outbox), bridge-stateless ADR
-' Revision: 2026-07-18
-' Runtime: stub — dashed = non implementato
+' Profile: platform
+' SDD: SYS-DELIVERY (outbox federato)
+' Revision: 2026-07-19
 
-title seq-federation-stub — outbox queued → bridge (futuro)
+title Federation — stub outbound (target)
 
-actor Utente
-participant "Flutter client" as C
-participant "RPC account" as RPC
-database "outbox\nprotocol=xmpp|matrix" as OB
-participant "bridge-xmpp\n/ bridge-matrix" as B
-participant "Server federato" as EXT
-database "sync_cursors\nbridge_jobs" as SC
+participant "UI" as C
+participant "AccountBoundary" as AB
+database "Outbox" as OB
+participant "BridgeWorker" as B
+participant "FederatedServer" as EXT
 
-== Outbound (target) ==
+C -> AB : SendMessage (futuro branch federato)
+AB -> OB : EnqueueFederatedDeliver
+AB --> C : sender copy ✓
 
-Utente -> C : invia a user@server
-C -> RPC : send (futuro branch federato)
-RPC -> OB : INSERT status=queued\nprotocol=xmpp|matrix
-RPC --> C : copia mittente ✓
-
-... outbox resta queued ...
-
-B ..> OB : ClaimOutboxJob\n<<future>>
-B ..> EXT : TranslateToExternal\n<<future>>
-EXT ..> B : external_id\n<<future>>
-B ..> OB : completed + external_id su copia\n<<future>>
-
-== Inbound (target) ==
-
-B ..> SC : PollExternalSync\n<<future>>
-EXT ..> B : messaggio / ack\n<<future>>
-B ..> RPC : IngestExternalMessage\n+ gate reception\n<<future>>
-
-== Attuale (main) ==
-
-note over B
-  GET /health only
-  bridge-xmpp :8080
-  bridge-matrix :8081
-  Nessun claim outbox
+note over OB, B
+  Stato attuale: outbox queued,
+  nessun consumer bridge in produzione.
 end note
 
-C -> C : «Indirizzo esterno\nnon ancora supportato»\n(compose guard)
+B ..> AB : IngestExternalMessage\n+ ApplyReceptionGate\n<<future>>
+B ..> EXT : TranslateToExternal\n<<future>>
 
 @enduml

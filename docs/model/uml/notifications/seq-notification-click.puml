@@ -1,5 +1,6 @@
 @startuml seq-notification-click
 ' Context: notifications → navigation (adapter)
+' Profile: client
 ' Command: OpenFromPushTap
 ' SDD: PROM-PUSH-NOTIFY-030, SURF-NOTIFICATIONS-006–007
 ' Revision: 2026-07-19

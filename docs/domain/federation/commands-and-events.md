@@ -1,8 +1,8 @@
 # Comandi ed eventi — contesto federation
 
-**Ultima revisione:** 2026-07-18  
+**Ultima revisione:** 2026-07-19  
 **UML:** [docs/model/uml/federation/](../../model/uml/federation/)  
-**Runtime:** stub — eventi documentati per implementazione bridge.
+**Runtime:** stub — eventi documentati per implementazione bridge (profilo Platform).
 
 ---
 
@@ -10,11 +10,11 @@
 
 | Comando | Emesso da | Descrizione |
 |---------|-----------|-------------|
-| `EnqueueFederatedDeliver` | RPC account (futuro branch `protocol != internal`) | INSERT outbox `protocol = xmpp|matrix`, `status = queued`. |
-| `ClaimOutboxJob` | Bridge worker | SELECT … FOR UPDATE SKIP LOCKED su outbox/bridge_jobs. |
-| `TranslateToExternal` | Bridge | Payload Alfred → stanza XMPP / event Matrix. |
-| `PersistExternalId` | Bridge post-invio | UPDATE copia mittente `external_id`; outbox `completed`. |
-| `EnqueueFederatedReadReceipt` | (futuro) | Outbox read verso bridge per XEP-0333 / m.receipt. |
+| `EnqueueFederatedDeliver` | Policy (confine account, protocollo esterno) | Accoda outbox con protocollo xmpp/matrix in attesa bridge. |
+| `ClaimOutboxJob` | Bridge worker | Claim atomico su job outbox disponibile. |
+| `TranslateToExternal` | Bridge | Traduce payload Alfred in messaggio protocollo esterno. |
+| `PersistExternalId` | Bridge post-invio | Persiste id esterno sulla copia mittente; completa outbox. |
+| `EnqueueFederatedReadReceipt` | (futuro) | Accoda read receipt verso bridge per protocollo esterno. |
 
 ---
 
@@ -22,11 +22,11 @@
 
 | Comando | Emesso da | Descrizione |
 |---------|-----------|-------------|
-| `PollExternalSync` | Bridge scheduler | Legge `sync_cursors`; fetch MAM/Matrix sync. |
-| `IngestExternalMessage` | Bridge | Normalizza evento esterno → INSERT copia destinatario Alfred. |
-| `ApplyReceptionGate` | Piattaforma fase B | `is_sender_allowed_for_reception` prima di materializzare. |
-| `MapExternalAck` | Bridge | Ack esterno → UPDATE `delivered_at`/`read_at` via λ o `external_id`. |
-| `AdvanceSyncCursor` | Bridge | UPDATE `sync_cursors` dopo batch processato. |
+| `PollExternalSync` | Bridge scheduler | Legge watermark sync e recupera batch dal server federato. |
+| `IngestExternalMessage` | Bridge | Normalizza evento esterno in copia destinatario Alfred. |
+| `ApplyReceptionGate` | Policy (materializzazione inbound) | Valuta allow list prima di creare copia destinatario. |
+| `MapExternalAck` | Bridge | Ack esterno → aggiorna spunte copia mittente via id logico o id esterno. |
+| `AdvanceSyncCursor` | Bridge | Aggiorna watermark sync dopo batch processato. |
 
 ---
 
@@ -34,14 +34,14 @@
 
 | Evento | Descrizione |
 |--------|-------------|
-| `FederatedOutboxQueued` | Outbox con `protocol != internal`; attende bridge. |
-| `BridgeJobClaimed` | Worker ha lock su job/outbox row. |
-| `ExternalSendSucceeded` | Server federato ha accettato messaggio; `external_id` noto. |
-| `ExternalSendFailed` | Outbox `failed` o retry con backoff. |
+| `FederatedOutboxQueued` | Outbox con protocollo esterno; attende bridge. |
+| `BridgeJobClaimed` | Worker ha lock su job outbox. |
+| `ExternalSendSucceeded` | Server federato ha accettato messaggio; id esterno noto. |
+| `ExternalSendFailed` | Outbox failed o retry con backoff. |
 | `InboundMessageMaterialized` | Copia destinatario Alfred creata da bridge. |
 | `InboundRejected` | Gate reception nega materializzazione inbound. |
-| `ExternalDeliveryAck` | XEP-0184 / equivalente → tick `delivered_at` mittente. |
-| `ExternalReadAck` | XEP-0333 / m.receipt → tick `read_at` mittente. |
+| `ExternalDeliveryAck` | Ack recapito esterno → spunta doppia mittente. |
+| `ExternalReadAck` | Ack lettura esterno → spunta lettura mittente. |
 | `SyncCursorAdvanced` | Watermark aggiornato — bridge può riavviare senza perdita. |
 
 ---
@@ -57,33 +57,20 @@
 
 ---
 
-## Sistemi esterni (rosa Event Storming)
+## Sistemi esterni
 
 | Sistema | Ruolo |
 |---------|-------|
-| `bridge-xmpp` | Facciata XMPP (slixmpp futuro). |
-| `bridge-matrix` | Facciata Matrix (matrix-nio futuro). |
-| Server XMPP/Matrix peer | Fonte di verità lato controparte federata. |
+| **Bridge XMPP** | Facciata verso server XMPP (implementazione futura). |
+| **Bridge Matrix** | Facciata verso server Matrix (implementazione futura). |
+| **Server federato peer** | Fonte di verità lato controparte esterna. |
 
 ---
 
-## Implementazione attuale
-
-Solo `HealthCheck` su entrambi i bridge:
-
-```
-GET /health → {"status": "ok", "service": "alfred-bridge-xmpp|matrix"}
-```
-
-Nessun consumer outbox federato in produzione. Vedi [seq-federation-stub.puml](../../model/uml/federation/seq-federation-stub.puml).
-
----
-
-## Riferimenti
+## Tracciabilità
 
 | Documento | Ruolo |
-|-----------|--------|
-| [bridge-stateless.md](../../decisions/bridge-stateless.md) | Regola vincolante stato su piattaforma |
-| [full-stack.md](../../architecture/full-stack.md) § integrazione bridge |
+|-----------|----------|
+| [bridge-stateless.md](../../decisions/bridge-stateless.md) | Stato autorevole su piattaforma |
 | [SYS-DELIVERY](../../specs/promises/system/SYS-DELIVERY.md) | Outbox condiviso internal/federato |
 | [mailbox-inbox-outbox-spec.md](../../architecture/mailbox-inbox-outbox-spec.md) | Identificatori λ / external_id |

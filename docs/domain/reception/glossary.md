@@ -27,7 +27,7 @@
 
 | Contesto | Relazione |
 |----------|-----------|
-| **delivery** | Worker applica gate prima di INSERT copia destinatario. |
+| **delivery** | Worker applica gate prima di materializzare copia destinatario. |
 | **messaging** | Mittente vede ✓ permanente, mai ✓✓ se rifiutato; destinatario non vede messaggio. |
 | **contacts** | Rubrica **non** proxy allow list ([SYS-RECEPTION-022](../../specs/promises/system/SYS-RECEPTION.md)). |
 | **profile** | Identità pubblica nelle voci lista; ricerca profili per aggiunta. |
@@ -38,7 +38,7 @@
 ## Invarianti
 
 1. Gate server **prima** della materializzazione copia destinatario.
-2. Rifiuto: nessun errore RPC, nessun messaggio «bloccato» al mittente.
+2. Rifiuto: nessun errore verso mittente, nessun messaggio «bloccato» al mittente.
 3. Non consentire profilo proprio nell'allow list.
 4. Unicità coppia (owner, profilo consentito).
 5. Toggle allow in overlay: immediato, senza dialog ([PROM-PEER-PROFILE-008](../../specs/promises/product/PROM-PEER-PROFILE.md)); rimozione da screen lista richiede conferma.

@@ -1,5 +1,6 @@
 @startuml seq-add-internal-contact
 ' Context: contacts
+' Profile: client
 ' SDD: PROM-PERSONAL-CONTACTS-011
 ' Revision: 2026-07-19
 
@@ -8,29 +9,22 @@ title Contacts — aggiunta contatto internal (Alfred)
 actor Utente
 participant "UI" as UI
 participant "ContactsMachine" as CM
-participant "ContactService" as Svc
 participant "Supabase" as DB
 
 Utente -> UI : cerca utente
 UI -> CM : SearchProfiles(query)
-CM -> Svc : searchProfiles(query)
-Svc -> DB : search_profiles
-DB --> Svc : profile summaries
-Svc --> CM : results
-CM --> UI : ProfileSearchResults
+CM -> DB : SearchProfiles
+DB --> CM : ProfileSearchResults
+CM --> UI : results
 
 Utente -> UI : seleziona profilo
 UI -> CM : AddInternalContact(profile)
-CM -> Svc : addInternalContact(owner, profile)
-Svc -> DB : INSERT contact (internal)
-DB --> Svc : row
-Svc --> CM : ContactAdded
+CM -> DB : AddInternalContact
+DB --> CM : ContactAdded
 
 CM -> CM : LoadContacts
-CM -> Svc : fetchContacts(owner)
-Svc -> DB : SELECT contacts
-DB --> Svc : rows
-Svc --> CM : ContactsLoaded
+CM -> DB : LoadContacts
+DB --> CM : ContactsLoaded
 CM --> UI : rubrica aggiornata
 
 @enduml

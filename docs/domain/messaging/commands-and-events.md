@@ -59,7 +59,7 @@
 
 | Sistema | Ruolo |
 |---------|------|
-| **Supabase** | RPC mailbox, storage media, canale Realtime owner. |
+| **Supabase** | Operazioni mailbox, storage media, canale Realtime owner. |
 | **Coda outbound persistente** | Retry messaggi e media dopo fallimento rete/upload. |
 
 ---

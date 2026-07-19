@@ -1,5 +1,6 @@
 @startuml seq-broadcast
 ' Context: groups
+' Profile: client
 ' Command: BroadcastRequested
 ' SDD: SYS-GROUP-023–024, SYS-DELIVERY-004
 ' Revision: 2026-07-19
@@ -9,27 +10,23 @@ title seq-broadcast — gruppo invia a allow list
 actor Utente
 participant "UI" as UI
 participant "GroupMessagesMachine" as GMM
-participant "MessageService" as MS
 participant "Supabase" as SB
-participant "Delivery worker" as W
+participant "DeliveryWorker" as W
 
 Utente -> UI : invia messaggio / media
 UI -> GMM : BroadcastRequested
 GMM --> UI : broadcast in corso
 
 alt media
-  GMM -> MS : upload media
-  MS -> SB : storage
-  SB --> MS : public URL
+  GMM -> SB : UploadMedia
+  SB --> GMM : MediaUploaded
 end
 
-GMM -> MS : broadcast to allowlist
-MS -> SB : RPC broadcast + outbox group_erogate
-SB -> W : ProcessOutbox
+GMM -> SB : BroadcastRequested
+SB -> W : ProcessOutbox / GroupErogate
 W -> W : ErogateGroupMessage\n(gate per partecipante)
 W --> SB : participant copies (or silent skip)
-SB --> MS : group archive row
-MS --> GMM : BroadcastAcknowledged
+SB --> GMM : BroadcastAcknowledged
 
 GMM -> GMM : LoadGroupMessages
 GMM --> UI : RefreshGroupHome
@@ -37,7 +34,7 @@ GMM --> UI : RefreshGroupHome
 note over GMM
   AttachOwnerRealtime on init —
   OwnerRealtimeReceived merges
-  INSERT/UPDATE on group archive
+  updates on group archive
 end note
 
 @enduml

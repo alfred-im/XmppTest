@@ -29,8 +29,8 @@ Vedi [bounded-contexts.md](../bounded-contexts.md) e [metodo dominio](../README.
 
 ## Flussi backend
 
-- Umano → gruppo: `send_message_to_profile` → worker `deliver_internal` → storico gruppo + erogazione
-- Gruppo broadcast: `broadcast_message_to_allowlist` → `group_erogate` → `erogate_group_message`
+- Umano → gruppo: invio a profilo gruppo → worker deliver internal → storico gruppo + erogazione
+- Gruppo broadcast: broadcast allow list → group erogate → erogate group message
 
 ## SDD (confine prodotto)
 

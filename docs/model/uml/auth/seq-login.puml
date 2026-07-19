@@ -1,5 +1,6 @@
 @startuml seq-login
 ' Context: auth
+' Profile: client
 ' SDD: SURF-AUTH-004, SURF-AUTH-007
 ' Revision: 2026-07-19
 
@@ -22,7 +23,7 @@ alt email non valida
 else email ok
   UI -> MAM : OpenAccountWithPassword
   MAM -> Mgr : sign in + open account
-  Mgr -> GT : signInWithPassword
+  Mgr -> GT : authenticate
   GT --> Mgr : session
   Mgr -> Mgr : adopt session per account
   Mgr --> MAM : AccountOpened

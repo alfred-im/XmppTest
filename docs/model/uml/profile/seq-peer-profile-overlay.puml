@@ -1,5 +1,6 @@
 @startuml seq-peer-profile-overlay
 ' Context: profile
+' Profile: client
 ' SDD: PROM-PEER-PROFILE
 ' Revision: 2026-07-19
 
@@ -8,10 +9,10 @@ title Profile — overlay peer (apertura e azioni)
 actor Utente
 participant "UI" as UI
 participant "ProfileMachine" as PM
-participant "ProfileService" as ProfSvc
 participant "ReceptionMachine" as RM
 participant "ContactsMachine" as CM
 participant "NavigationMachine" as Nav
+participant "Supabase" as DB
 
 Utente -> UI : tap avatar peer
 UI -> PM : OpenPeerProfile(profile)
@@ -20,8 +21,8 @@ alt profilo proprio
   PM --> UI : ignorato
 else peer Alfred
   PM --> UI : PeerProfileOpened
-  PM -> ProfSvc : FindById
-  ProfSvc --> PM : PeerProfileHydrated
+  PM -> DB : FindById
+  DB --> PM : PeerProfileHydrated
 
   opt consente messaggi ON
     Utente -> UI : ToggleAllowMessages(true)

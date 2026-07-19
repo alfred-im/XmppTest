@@ -1,35 +1,36 @@
 @startuml seq-sync-subscriptions
 ' Context: notifications
+' Profile: client
 ' Command: SyncSubscriptions
 ' SDD: SURF-NOTIFICATIONS-001–004
-' Revision: 2026-07-18
+' Revision: 2026-07-19
 
 title seq-sync-subscriptions — registrazione manifest multi-account
 
 actor Utente
-participant "AppShell" as App
-participant "PushSubscriptionService" as Svc
+participant "UI" as UI
+participant "NotificationsMachine" as NM
 participant "PushPlatform" as Plat
 participant "ServiceWorker" as SW
-database "Supabase\npush_subscriptions" as DB
+participant "Supabase" as DB
 
-Utente -> App : login / sessionReady / resume
-App -> Svc : SyncSubscriptions(manifest)
-activate Svc
+Utente -> UI : login / sessionReady / resume
+UI -> NM : SyncSubscriptions(manifest)
+activate NM
 
-Svc -> Plat : shouldAttemptPushSubscription?
+NM -> Plat : shouldAttemptPushSubscription?
 alt permission denied o unsupported
-  Svc --> App : skip
+  NM --> UI : skip
 else ok
-  Svc -> Plat : ensureSubscription(VAPID)
-  Plat -> SW : register push_sw.js
+  NM -> Plat : ensureSubscription(VAPID)
+  Plat -> SW : register push worker
   Plat -> SW : pushManager.subscribe
   SW --> Plat : PushSubscriptionKeys
   loop ogni account nel manifest
-    Svc -> DB : UPSERT (user_id, device_id, keys)
+    NM -> DB : SubscriptionRegistered
   end
-  Svc --> App : SubscriptionRegistered
+  NM --> UI : SubscriptionRegistered
 end
-deactivate Svc
+deactivate NM
 
 @enduml

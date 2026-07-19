@@ -38,7 +38,7 @@ Internal: worker **sincrono** nella stessa transazione RPC account. Federato: st
 
 ## Contesti correlati
 
-- **messaging** — RPC che accodano outbox
+- **messaging** — operazioni account che accodano outbox
 - **reception** — policy gate nel worker
 - **groups** — branch gruppo e `group_erogate`
 - **federation** — outbox `protocol != internal`
