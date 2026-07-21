@@ -64,13 +64,12 @@ void main() {
     );
 
     final client = createTestSupabaseClient();
-    final inboxService = FakeInboxService(
-      peers: [ChatPeer(profile: peer)],
-    );
     final session = await AccountSession.createForTest(
       profile: owner,
       client: client,
-      inboxService: inboxService,
+      inboxService: FakeInboxService(
+        peers: [ChatPeer(profile: peer)],
+      ),
       profileService: _FakeProfileService({'peer-uuid': peer}),
       messageService: FakeMessageService(client),
     );
@@ -128,7 +127,6 @@ void main() {
     expect(find.text('E2E Peer'), findsWidgets);
     expect(auth.activePeer, isA<ChatPeer>());
     expect(auth.activePeer?.profile.id, 'peer-uuid');
-    expect(inboxService.markReadCalls, contains('peer-uuid'));
 
     await intents.close();
   });

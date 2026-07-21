@@ -45,7 +45,6 @@ void main() {
   late NavigationCoordinator nav;
   late AccountSession sessionA;
   late AccountSession sessionB;
-  late FakeInboxService inboxServiceB;
 
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
@@ -58,13 +57,12 @@ void main() {
       inboxService: FakeInboxService(),
       profileService: _FakeProfileService({}),
     );
-    inboxServiceB = FakeInboxService(
-      peers: [_peer(_profile(pushSenderId, 'sender_z'))],
-    );
     sessionB = await AccountSession.createForTest(
       profile: _profile(accountB, 'agent_b'),
       client: createTestSupabaseClient(),
-      inboxService: inboxServiceB,
+      inboxService: FakeInboxService(
+        peers: [_peer(_profile(pushSenderId, 'sender_z'))],
+      ),
       profileService: _FakeProfileService({
         pushSenderId: _profile(pushSenderId, 'sender_z'),
       }),
@@ -96,7 +94,6 @@ void main() {
     expect(ok, isTrue);
     expect(manager.focusUserId, accountB);
     expect(manager.viewState.activePeer?.profileId, pushSenderId);
-    expect(inboxServiceB.markReadCalls, contains(pushSenderId));
   });
 
   test('tap push 1:1: peer assente da inbox → fallback profilo, non chat stale', () async {

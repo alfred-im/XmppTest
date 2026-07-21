@@ -46,9 +46,6 @@ class MessagingCoordinator {
   Future<void> init() async {
     await load();
     if (effects.isDisposed) return;
-    // SURF-CHAT-004: subito dopo load — prima di restore coda / dispose da chiusura rapida.
-    await effects.markRead();
-    if (effects.isDisposed) return;
     await effects.restoreFailedFromQueue();
     if (effects.isDisposed) return;
     if (state.messages.any(
@@ -56,6 +53,7 @@ class MessagingCoordinator {
     )) {
       sendMachine.send(const FailedQueueRestored());
     }
+    await effects.markRead();
     if (effects.isDisposed) return;
     attachRealtime();
     if (effects.isDisposed) return;

@@ -2,8 +2,6 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-import 'dart:async';
-
 import '../../models/chat_peer.dart';
 import '../../models/conversation_scope.dart';
 import '../../models/open_conversation_source.dart';
@@ -91,7 +89,6 @@ class AccountNavigationEffects implements NavigationEffects {
     final session = _manager.focusedSession;
     if (session != null) {
       _commitScope(ConversationScope.fromSession(session, peer));
-      unawaited(_markPeerReadAfterOpen(session, peer.profileId));
     }
     diagLog(
       'nav',
@@ -197,7 +194,6 @@ class AccountNavigationEffects implements NavigationEffects {
 
     _viewState.openConversationOnFocusedAccount(peer);
     _commitScope(ConversationScope.fromSession(session, peer));
-    await _markPeerReadAfterOpen(session, peer.profileId);
     diagLog(
       'nav',
       'open_conversation.ok',
@@ -208,35 +204,6 @@ class AccountNavigationEffects implements NavigationEffects {
       },
     );
     return true;
-  }
-
-  /// Segna letti i messaggi in entrata — sessione già quella del destinatario.
-  Future<void> _markPeerReadAfterOpen(
-    AccountSession session,
-    String peerProfileId,
-  ) async {
-    try {
-      await session.inboxService.markRead(peerProfileId);
-      diagLog(
-        'nav',
-        'mark_peer_read.ok',
-        data: {
-          'accountUserId': session.userId,
-          'peerProfileId': peerProfileId,
-        },
-      );
-    } catch (e) {
-      diagLogFail(
-        'nav',
-        'mark_peer_read',
-        'rpc_failed',
-        data: {
-          'accountUserId': session.userId,
-          'peerProfileId': peerProfileId,
-          'error': e.runtimeType.toString(),
-        },
-      );
-    }
   }
 
   void _commitScope(ConversationScope scope) {
