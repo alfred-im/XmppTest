@@ -351,4 +351,95 @@ export async function simulateNotificationTap(
   await waitForFocusedUserId(page, payload.recipientUserId, E2E_TIMEOUT.ui);
 }
 
+export type NotificationClickResult =
+  | {
+      ok: true;
+      path: 'notificationclick_event';
+      conversation: { owner: string; peer: string };
+      notificationCount: number;
+    }
+  | {
+      ok: false;
+      reason: string;
+      error?: string;
+      conversation?: { owner: string; peer: string };
+      notificationCount?: number;
+    };
+
+export type ServiceWorkerDiagnostics = {
+  clientCount: number;
+  clientUrls: string[];
+  notificationCount: number;
+};
+
+/** Stato SW prima/dopo tap (clienti + notifiche pendenti). */
+export async function readServiceWorkerDiagnostics(
+  page: Page,
+): Promise<ServiceWorkerDiagnostics> {
+  const sw =
+    page.context().serviceWorkers()[0] ??
+    (await page.context().waitForEvent('serviceworker', { timeout: 15_000 }));
+
+  return sw.evaluate(async () => {
+    const clients = await self.clients.matchAll({
+      type: 'window',
+      includeUncontrolled: true,
+    });
+    const notifications = await self.registration.getNotifications();
+    return {
+      clientCount: clients.length,
+      clientUrls: clients.map((c) => c.url),
+      notificationCount: notifications.length,
+    };
+  });
+}
+
+/**
+ * Tap notifica reale: `NotificationEvent('notificationclick')` in push_sw.js.
+ * Non usare `simulateNotificationTap` (postMessage diretto) per questo scenario.
+ */
+export async function clickNotificationInServiceWorker(
+  page: Page,
+): Promise<NotificationClickResult> {
+  const sw =
+    page.context().serviceWorkers()[0] ??
+    (await page.context().waitForEvent('serviceworker', { timeout: 15_000 }));
+
+  return sw.evaluate(async () => {
+    const notifications = await self.registration.getNotifications();
+    if (notifications.length === 0) {
+      return {
+        ok: false as const,
+        reason: 'no_notification',
+        notificationCount: 0,
+      };
+    }
+    const notification = notifications[0]!;
+    const data = notification.data ?? {};
+    const conversation = {
+      owner: String(data.recipientUserId || data.recipient_user_id || ''),
+      peer: String(data.peerProfileId || data.peer_profile_id || ''),
+    };
+    try {
+      self.dispatchEvent(
+        new NotificationEvent('notificationclick', { notification }),
+      );
+      return {
+        ok: true as const,
+        path: 'notificationclick_event' as const,
+        conversation,
+        notificationCount: notifications.length,
+      };
+    } catch (e) {
+      return {
+        ok: false as const,
+        reason: 'dispatch_failed',
+        error: String(e),
+        conversation,
+        notificationCount: notifications.length,
+      };
+    }
+  });
+}
+
 export { expectFocusedUserId } from './focus';

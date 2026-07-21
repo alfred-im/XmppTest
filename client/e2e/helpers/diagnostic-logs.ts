@@ -25,6 +25,22 @@ export function formatDiagnosticLogsFooter(logs: string[]): string {
   return `log diagnostici:\n${logs.join('\n')}`;
 }
 
+/** Fasi push attese (filtra rumore pending.drain). */
+export function summarizePushDiagPhases(logs: string[]): string[] {
+  const interesting = [
+    'sw.message',
+    'open_chat.emit',
+    'handler.enqueue',
+    'focus.ok',
+    'handler.chat_opened',
+    'FAIL',
+    'pending.clear',
+  ];
+  return logs.filter((line) =>
+    interesting.some((token) => line.includes(token)),
+  );
+}
+
 /** Stampa il dump in stdout se il test non è passato. */
 export function dumpDiagnosticLogsOnFailure(
   logs: string[],
