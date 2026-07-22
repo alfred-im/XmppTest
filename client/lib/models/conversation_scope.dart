@@ -8,7 +8,7 @@ import 'package:flutter/material.dart';
 import '../services/account_session.dart';
 import 'chat_peer.dart';
 
-/// Ambito atomico di una conversazione aperta: account + peer + generazione sessione.
+/// Ambito atomico di una conversazione aperta: account + peer + generazione sessione + caricamento.
 ///
 /// Unico contratto per load, realtime, invio e render messaggi — vedi PROM-CONVERSATION-SCOPE.
 class ConversationScope {
@@ -16,6 +16,7 @@ class ConversationScope {
     required this.ownerUserId,
     required this.peerProfileId,
     required this.sessionEpoch,
+    this.loadSeq = 0,
   }) : assert(ownerUserId != peerProfileId);
 
   final String ownerUserId;
@@ -24,14 +25,31 @@ class ConversationScope {
   /// Incrementato a ogni restore/dispose sessione GoTrue per questo account.
   final int sessionEpoch;
 
+  /// Incrementato su invalidazione forte (switch account, cambio peer, chiusura, epoch).
+  final int loadSeq;
+
   factory ConversationScope.fromSession(
     AccountSession session,
-    ChatPeer peer,
-  ) {
+    ChatPeer peer, {
+    int loadSeq = 0,
+  }) {
     return ConversationScope(
       ownerUserId: session.userId,
       peerProfileId: peer.profileId,
       sessionEpoch: session.epoch,
+      loadSeq: loadSeq,
+    );
+  }
+
+  ConversationScope copyWith({
+    int? sessionEpoch,
+    int? loadSeq,
+  }) {
+    return ConversationScope(
+      ownerUserId: ownerUserId,
+      peerProfileId: peerProfileId,
+      sessionEpoch: sessionEpoch ?? this.sessionEpoch,
+      loadSeq: loadSeq ?? this.loadSeq,
     );
   }
 
@@ -49,6 +67,7 @@ class ConversationScope {
           ownerUserId,
           peerProfileId,
           sessionEpoch,
+          loadSeq,
         ),
       );
 
@@ -58,8 +77,10 @@ class ConversationScope {
       other is ConversationScope &&
           ownerUserId == other.ownerUserId &&
           peerProfileId == other.peerProfileId &&
-          sessionEpoch == other.sessionEpoch;
+          sessionEpoch == other.sessionEpoch &&
+          loadSeq == other.loadSeq;
 
   @override
-  int get hashCode => Object.hash(ownerUserId, peerProfileId, sessionEpoch);
+  int get hashCode =>
+      Object.hash(ownerUserId, peerProfileId, sessionEpoch, loadSeq);
 }

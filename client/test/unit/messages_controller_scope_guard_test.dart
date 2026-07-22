@@ -65,6 +65,7 @@ void main() {
 
       final controller = MessagesController(
         scope: scopeAtoB,
+        messageStore: testMessageStoreFor(scopeAtoB),
         userId: _accountA,
         peerProfileId: _accountB,
         messageService: service,
@@ -72,6 +73,7 @@ void main() {
         inboxService: FakeInboxService(),
         isScopeCommitted: () => isMessagesScopeActive(
           scope: scopeAtoB,
+          committedScope: scopeAtoB,
           peer: peerB,
           liveSession: null,
           isConversationReady: (_, _) => true,
@@ -111,6 +113,7 @@ void main() {
 
       final controller = MessagesController(
         scope: scopeAtoB,
+        messageStore: testMessageStoreFor(scopeAtoB),
         userId: _accountA,
         peerProfileId: _accountB,
         messageService: service,
@@ -158,6 +161,7 @@ void main() {
 
       final controller = MessagesController(
         scope: staleScope,
+        messageStore: testMessageStoreFor(staleScope),
         userId: _accountA,
         peerProfileId: _accountB,
         messageService: service,
@@ -165,6 +169,7 @@ void main() {
         inboxService: FakeInboxService(),
         isScopeCommitted: () => isMessagesScopeActive(
           scope: staleScope,
+          committedScope: staleScope,
           peer: peerB,
           liveSession: liveSession,
           isConversationReady: (_, _) => true,

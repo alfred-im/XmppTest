@@ -31,14 +31,21 @@ void main() {
 
     test('send fallisce se la sessione diventa invalida dopo il load', () async {
       var sessionValid = true;
+      final scope = testConversationScope(
+        userId: _userId,
+        peerProfileId: _peerId,
+        sessionEpoch: 1,
+      );
       final controller = MessagesController(
-        scope: testConversationScope(userId: _userId, peerProfileId: _peerId, sessionEpoch: 1),
+        scope: scope,
+        messageStore: testMessageStoreFor(scope),
         userId: _userId,
         peerProfileId: _peerId,
         messageService: messageService,
         messageMediaService: MessageMediaService(createTestSupabaseClient()),
         inboxService: inboxService,
         hasValidSession: () => sessionValid,
+        isScopeCommitted: () => true,
       );
       await waitForMessagesController(controller);
       expect(controller.error, isNull);
@@ -51,13 +58,20 @@ void main() {
     });
 
     test('sendText attraversa coordinator ed effects live', () async {
+      final scope = testConversationScope(
+        userId: _userId,
+        peerProfileId: _peerId,
+        sessionEpoch: 1,
+      );
       final controller = MessagesController(
-        scope: testConversationScope(userId: _userId, peerProfileId: _peerId, sessionEpoch: 1),
+        scope: scope,
+        messageStore: testMessageStoreFor(scope),
         userId: _userId,
         peerProfileId: _peerId,
         messageService: messageService,
         messageMediaService: MessageMediaService(createTestSupabaseClient()),
         inboxService: inboxService,
+        isScopeCommitted: () => true,
       );
       await waitForMessagesController(controller);
 

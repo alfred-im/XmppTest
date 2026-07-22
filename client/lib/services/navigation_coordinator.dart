@@ -9,6 +9,7 @@ import '../machines/multi-account/multi_account_adapters.dart';
 import '../machines/navigation/account_navigation_effects.dart';
 import '../machines/navigation/navigation_adapters.dart';
 import '../machines/navigation/navigation_machine.dart';
+import '../machines/messaging/conversation_message_store.dart';
 import '../models/chat_peer.dart';
 import '../models/conversation_scope.dart';
 import '../services/account_manager.dart';
@@ -33,18 +34,23 @@ class NavigationCoordinator {
   NavigationCoordinator(
     this._manager, {
     AccountFocusCommand? focusCommand,
+    ConversationMessageStore? messageStore,
   }) {
     final command = focusCommand ?? _ManagerFocusCommand(_manager);
+    _messageStore = messageStore ?? ConversationMessageStore();
     _effects = AccountNavigationEffects(_manager, focusCommand: command);
-    _machine = NavigationMachine(_effects);
+    _machine = NavigationMachine(_effects, messageStore: _messageStore);
     _effects.navigationMachine = _machine;
     adapters = NavigationAdapters(_machine);
     externalIntents = ExternalIntentAdapter(adapters);
   }
 
   final AccountManager _manager;
+  late final ConversationMessageStore _messageStore;
   late final AccountNavigationEffects _effects;
   late final NavigationMachine _machine;
+
+  ConversationMessageStore get messageStore => _messageStore;
 
   late final NavigationAdapters adapters;
   late final ExternalIntentAdapter externalIntents;
@@ -63,6 +69,7 @@ class NavigationCoordinator {
     required AccountSession session,
     required ChatPeer peer,
   }) {
+    _machine.reconcileSessionEpoch(session);
     return _machine.isConversationReady(session: session, peer: peer);
   }
 

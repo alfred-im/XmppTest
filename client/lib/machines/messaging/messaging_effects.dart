@@ -30,10 +30,13 @@ import '../../utils/prepare_image_for_upload.dart';
 import '../../utils/diagnostic_log.dart';
 import '../../utils/video_duration.dart';
 import '../../utils/video_file_extension.dart';
+import 'conversation_message_store.dart';
 import 'messaging_conversation_state.dart';
 import 'messaging_message_list.dart';
 
 abstract class MessagingEffects {
+  ConversationScope get scope;
+  ConversationMessageStore get messageStore;
   bool get isDisposed;
   bool ensureValidSession();
   /// Carica messaggi; `false` se scope non più attivo (il coordinator può ritentare).
@@ -63,6 +66,7 @@ class MessagesControllerEffects implements MessagingEffects {
   MessagesControllerEffects({
     required this._state,
     required this.scope,
+    required this.messageStore,
     required this.userId,
     required this.peerProfileId,
     required this.messageService,
@@ -79,7 +83,10 @@ class MessagesControllerEffects implements MessagingEffects {
   static const sessionExpiredMessage = 'Sessione scaduta — accedi di nuovo';
   static const _peerMessagesPageSize = 100;
 
+  @override
   final ConversationScope scope;
+  @override
+  final ConversationMessageStore messageStore;
   final String userId;
   final String peerProfileId;
   final Future<void> Function()? onMessagesChanged;
@@ -111,12 +118,22 @@ class MessagesControllerEffects implements MessagingEffects {
 
   bool _scopeIsActive() {
     if (_disposed) return false;
-    return isScopeCommitted?.call() ?? true;
+    if (isScopeCommitted == null) return false;
+    return isScopeCommitted!();
   }
+
+  List<ChatMessage> get _activeMessages =>
+      messageStore.messagesIfActive(scope);
+
+  bool _mutateMessages(List<ChatMessage> Function(List<ChatMessage>) update) =>
+      messageStore.mutateMessages(scope, update);
 
   @override
   Future<bool> fetchAndSetMessages() async {
     final gen = ++_fetchGeneration;
+    if (!_scopeIsActive()) return false;
+    messageStore.beginLoad(scope);
+    _onChanged();
     final loaded = await messageService.fetchPeerMessages(
       peerProfileId: peerProfileId,
       currentUserId: userId,
@@ -132,31 +149,39 @@ class MessagesControllerEffects implements MessagingEffects {
       );
       return false;
     }
-    _state.messages = dedupeMessages(
+    final enriched = dedupeMessages(
       await _enrichMessages(loaded.map(withTimeLabel).toList()),
     );
-    _state.hasMoreOlder = loaded.length >= _peerMessagesPageSize;
-    _state.isLoadingOlder = false;
-    return true;
+    return messageStore.applyLoadedMessages(
+      scope,
+      enriched,
+      hasMoreOlder: loaded.length >= _peerMessagesPageSize,
+    );
   }
 
   @override
   Future<bool> fetchAndPrependOlderMessages() async {
-    if (!_state.hasMoreOlder || _state.isLoadingOlder || _state.messages.isEmpty) {
+    final snapshot = messageStore.snapshotFor(scope);
+    if (!snapshot.hasMoreOlder ||
+        snapshot.isLoadingOlder ||
+        snapshot.messages.isEmpty) {
       return true;
     }
-    final oldest = _state.messages.firstWhere(
+    final oldest = snapshot.messages.firstWhere(
       (m) => m.createdAt != null,
-      orElse: () => _state.messages.first,
+      orElse: () => snapshot.messages.first,
     );
     final before = oldest.createdAt;
     if (before == null) {
-      _state.hasMoreOlder = false;
+      messageStore.mutateMessages(
+        scope,
+        (messages) => messages,
+      );
       return true;
     }
 
     final gen = _fetchGeneration;
-    _state.isLoadingOlder = true;
+    messageStore.setLoadingOlder(scope, true);
     _onChanged();
 
     final loaded = await messageService.fetchPeerMessages(
@@ -170,16 +195,27 @@ class MessagesControllerEffects implements MessagingEffects {
     if (!_scopeIsActive()) return false;
 
     final enriched = await _enrichMessages(loaded.map(withTimeLabel).toList());
-    _state.messages = prependOlderMessages(
-      existing: _state.messages,
+    final merged = prependOlderMessages(
+      existing: snapshot.messages,
       older: enriched,
     );
-    _state.hasMoreOlder = loaded.length >= _peerMessagesPageSize;
-    _state.isLoadingOlder = false;
-    return true;
+    return messageStore.applyLoadedMessages(
+      scope,
+      merged,
+      hasMoreOlder: loaded.length >= _peerMessagesPageSize,
+    );
   }
 
-  @override Future<void> enrichAuthorNamesIfNeeded() async { _state.messages = await _enrichMessages(_state.messages); _onChanged(); }
+  @override Future<void> enrichAuthorNamesIfNeeded() async {
+    final snapshot = messageStore.snapshotFor(scope);
+    final enriched = await _enrichMessages(snapshot.messages);
+    messageStore.applyLoadedMessages(
+      scope,
+      enriched,
+      hasMoreOlder: snapshot.hasMoreOlder,
+    );
+    _onChanged();
+  }
   @override Future<void> markRead() => inboxService.markRead(peerProfileId);
   @override
   RealtimeChannel? attachRealtime(void Function(ChatMessage message) onMessage) {
@@ -393,7 +429,7 @@ class MessagesControllerEffects implements MessagingEffects {
       mediaSizeBytes: bytes.length,
     );
 
-    _state.messages = [..._state.messages, optimistic];
+    _mutateMessages((messages) => [...messages, optimistic]);
     _onChanged();
     onSendLifecycleStart?.call();
     var sendFailed = false;
@@ -404,13 +440,13 @@ class MessagesControllerEffects implements MessagingEffects {
         bytes: bytes,
         extension: rawExtension,
       );
-      _state.messages = _state.messages
+      _mutateMessages((messages) => messages
           .map(
             (m) => m.id == clientId
                 ? m.copyWith(retryPayloadPath: mediaPath)
                 : m,
           )
-          .toList();
+          .toList());
       _onChanged();
 
       final normalized = await prepareImageForUpload(bytes);
@@ -448,7 +484,7 @@ class MessagesControllerEffects implements MessagingEffects {
         mime: normalized.mime,
         body: body,
       );
-      _state.messages = replaceOrInsertMessage(_state.messages, withTimeLabel(saved));
+      _mutateMessages((messages) => replaceOrInsertMessage(messages, withTimeLabel(saved)));
       await _outboundQueue.remove(clientId);
       await _outboundQueue.deleteMediaFile(
         uploadPath,
@@ -470,7 +506,7 @@ class MessagesControllerEffects implements MessagingEffects {
         lastError: e.toString(),
       );
       await _outboundQueue.enqueue(failedItem);
-      _state.messages = _state.messages
+      _mutateMessages((messages) => messages
           .map(
             (m) => m.id == clientId
                 ? m.copyWith(
@@ -480,7 +516,7 @@ class MessagesControllerEffects implements MessagingEffects {
                   )
                 : m,
           )
-          .toList();
+          .toList());
       _state.error = e is UnsupportedImageFormatException ? e.userMessage : e.toString();
       sendFailed = true;
     } finally {
@@ -578,7 +614,7 @@ class MessagesControllerEffects implements MessagingEffects {
       mediaMime: mime,
     );
 
-    _state.messages = [..._state.messages, optimistic];
+    _mutateMessages((messages) => [...messages, optimistic]);
     _onChanged();
     onSendLifecycleStart?.call();
     var sendFailed = false;
@@ -590,13 +626,13 @@ class MessagesControllerEffects implements MessagingEffects {
       }
 
       OutboundMediaCache.instance.put(clientId, bytes);
-      _state.messages = _state.messages
+      _mutateMessages((messages) => messages
           .map(
             (m) => m.id == clientId
                 ? m.copyWith(mediaSizeBytes: bytes.length)
                 : m,
           )
-          .toList();
+          .toList());
       _onChanged();
 
       final probed = await readVideoDurationSeconds(
@@ -604,13 +640,13 @@ class MessagesControllerEffects implements MessagingEffects {
         extension: extension,
       );
       resolvedDuration = probed.clamp(1, ChatMediaConfig.maxVideoDurationSeconds);
-      _state.messages = _state.messages
+      _mutateMessages((messages) => messages
           .map(
             (m) => m.id == clientId
                 ? m.copyWith(durationSeconds: resolvedDuration)
                 : m,
           )
-          .toList();
+          .toList());
       _onChanged();
 
       mediaPath = await _outboundQueue.persistMediaBytes(
@@ -618,13 +654,13 @@ class MessagesControllerEffects implements MessagingEffects {
         bytes: bytes,
         extension: extension,
       );
-      _state.messages = _state.messages
+      _mutateMessages((messages) => messages
           .map(
             (m) => m.id == clientId
                 ? m.copyWith(retryPayloadPath: mediaPath)
                 : m,
           )
-          .toList();
+          .toList());
       _onChanged();
 
       final queueItem = OutboundQueueItem(
@@ -658,7 +694,7 @@ class MessagesControllerEffects implements MessagingEffects {
         clientMessageId: clientId,
         body: body,
       );
-      _state.messages = replaceOrInsertMessage(_state.messages, withTimeLabel(saved));
+      _mutateMessages((messages) => replaceOrInsertMessage(messages, withTimeLabel(saved)));
       await _outboundQueue.remove(clientId);
       await _outboundQueue.deleteMediaFile(
         mediaPath,
@@ -683,7 +719,7 @@ class MessagesControllerEffects implements MessagingEffects {
         lastError: e.toString(),
       );
       await _outboundQueue.enqueue(failedItem);
-      _state.messages = _state.messages
+      _mutateMessages((messages) => messages
           .map(
             (m) => m.id == clientId
                 ? m.copyWith(
@@ -693,7 +729,7 @@ class MessagesControllerEffects implements MessagingEffects {
                   )
                 : m,
           )
-          .toList();
+          .toList());
       _state.error = e.toString();
       sendFailed = true;
     } finally {
@@ -814,13 +850,13 @@ class MessagesControllerEffects implements MessagingEffects {
         .firstOrNull;
     if (item == null) return;
 
-    _state.messages = _state.messages
+    _mutateMessages((messages) => messages
         .map(
           (message) => message.id == clientId
               ? message.copyWith(status: MessageStatus.pending)
               : message,
         )
-        .toList();
+        .toList());
     _onChanged();
 
     await _dispatchQueueItem(item);
@@ -835,14 +871,14 @@ class MessagesControllerEffects implements MessagingEffects {
     _onChanged();
 
     final clientId = optimistic.id;
-    _state.messages = [..._state.messages, optimistic];
+    _mutateMessages((messages) => [...messages, optimistic]);
     _onChanged();
 
     onSendLifecycleStart?.call();
     var sendFailed = false;
     try {
       final saved = await send(clientId);
-      _state.messages = replaceOrInsertMessage(_state.messages, withTimeLabel(saved));
+      _mutateMessages((messages) => replaceOrInsertMessage(messages, withTimeLabel(saved)));
       await _outboundQueue.remove(clientId);
       await _outboundQueue.deleteMediaFile(
         queueItem.localMediaPath,
@@ -859,7 +895,7 @@ class MessagesControllerEffects implements MessagingEffects {
         lastError: e.toString(),
       );
       await _outboundQueue.update(failedItem);
-      _state.messages = _state.messages
+      _mutateMessages((messages) => messages
           .map(
             (m) => m.id == clientId
                 ? m.copyWith(
@@ -869,7 +905,7 @@ class MessagesControllerEffects implements MessagingEffects {
                   )
                 : m,
           )
-          .toList();
+          .toList());
       _state.error = e.toString();
     } finally {
       onSendLifecycleEnd?.call(sendFailed);
@@ -883,15 +919,15 @@ class MessagesControllerEffects implements MessagingEffects {
     if (queued.isEmpty) return;
 
     for (final item in queued) {
-      final alreadyVisible = _state.messages.any(
+      final alreadyVisible = _activeMessages.any(
         (message) =>
             message.id == item.clientId ||
             message.clientMessageId == item.clientId,
       );
       if (alreadyVisible) continue;
 
-      _state.messages = [
-        ..._state.messages,
+      _mutateMessages((messages) => [
+        ...messages,
         withTimeLabel(
           ChatMessage(
             id: item.clientId,
@@ -913,7 +949,7 @@ class MessagesControllerEffects implements MessagingEffects {
             retryPayloadPath: item.localMediaPath,
           ),
         ),
-      ];
+      ]);
     }
     _onChanged();
   }
@@ -1077,7 +1113,7 @@ class MessagesControllerEffects implements MessagingEffects {
           );
       }
 
-      _state.messages = replaceOrInsertMessage(_state.messages, withTimeLabel(saved));
+      _mutateMessages((messages) => replaceOrInsertMessage(messages, withTimeLabel(saved)));
       await _outboundQueue.remove(item.clientId);
       await _outboundQueue.deleteMediaFile(
         item.localMediaPath,
@@ -1091,13 +1127,13 @@ class MessagesControllerEffects implements MessagingEffects {
       await _outboundQueue.update(
         item.copyWith(attempts: item.attempts + 1, lastError: e.toString()),
       );
-      _state.messages = _state.messages
+      _mutateMessages((messages) => messages
           .map(
             (message) => message.id == item.clientId
                 ? message.copyWith(status: MessageStatus.failed)
                 : message,
           )
-          .toList();
+          .toList());
       _state.error = e.toString();
     } finally {
       _onChanged();

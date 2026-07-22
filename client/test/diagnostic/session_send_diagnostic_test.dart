@@ -62,14 +62,21 @@ void main() {
       const peerId = 'peer-b';
       final client = createTestSupabaseClient();
 
+      final scope = testConversationScope(
+        userId: userId,
+        peerProfileId: peerId,
+        sessionEpoch: 1,
+      );
       final controller = MessagesController(
-        scope: testConversationScope(userId: userId, peerProfileId: peerId, sessionEpoch: 1),
+        scope: scope,
+        messageStore: testMessageStoreFor(scope),
         userId: userId,
         peerProfileId: peerId,
         messageService: FakeMessageService(client),
         messageMediaService: MessageMediaService(client),
         inboxService: FakeInboxService(),
         hasValidSession: () => false,
+        isScopeCommitted: () => true,
       );
       await waitForMessagesController(controller);
 
@@ -107,14 +114,21 @@ void main() {
       final client = createTestSupabaseClient();
       var sessionValid = true;
 
+      final scope = testConversationScope(
+        userId: userId,
+        peerProfileId: peerId,
+        sessionEpoch: 1,
+      );
       final controller = MessagesController(
-        scope: testConversationScope(userId: userId, peerProfileId: peerId, sessionEpoch: 1),
+        scope: scope,
+        messageStore: testMessageStoreFor(scope),
         userId: userId,
         peerProfileId: peerId,
         messageService: FakeMessageService(client),
         messageMediaService: MessageMediaService(client),
         inboxService: FakeInboxService(),
         hasValidSession: () => sessionValid,
+        isScopeCommitted: () => true,
       );
       await waitForMessagesController(controller);
       expect(controller.error, isNull);
@@ -166,14 +180,21 @@ void main() {
       final sessionAtOpen = auth.focusedSession!;
       var sessionValid = true;
       final client = createTestSupabaseClient();
+      final scope = testConversationScope(
+        userId: userA,
+        peerProfileId: peerId,
+        sessionEpoch: 1,
+      );
       final controller = MessagesController(
-        scope: testConversationScope(userId: userA, peerProfileId: peerId, sessionEpoch: 1),
+        scope: scope,
+        messageStore: testMessageStoreFor(scope),
         userId: userA,
         peerProfileId: peerId,
         messageService: FakeMessageService(client),
         messageMediaService: MessageMediaService(client),
         inboxService: FakeInboxService(),
         hasValidSession: () => sessionValid,
+        isScopeCommitted: () => true,
       );
       await waitForMessagesController(controller);
       expect(controller.error, isNull);
@@ -183,14 +204,21 @@ void main() {
       final liveSession = auth.focusedSession!;
       expect(liveSession, isNot(same(sessionAtOpen)));
 
+      final reboundScope = testConversationScope(
+        userId: userA,
+        peerProfileId: peerId,
+        sessionEpoch: 1,
+      );
       final reboundController = MessagesController(
-        scope: testConversationScope(userId: userA, peerProfileId: peerId, sessionEpoch: 1),
+        scope: reboundScope,
+        messageStore: testMessageStoreFor(reboundScope),
         userId: userA,
         peerProfileId: peerId,
         messageService: FakeMessageService(createTestSupabaseClient()),
         messageMediaService: MessageMediaService(createTestSupabaseClient()),
         inboxService: FakeInboxService(),
         hasValidSession: () => true,
+        isScopeCommitted: () => true,
       );
       await waitForMessagesController(reboundController);
       expect(messagesSessionKey(liveSession, peerId), isNotNull);
@@ -237,14 +265,21 @@ void main() {
 
       var sessionValid = true;
       final client = createTestSupabaseClient();
+      final scope = testConversationScope(
+        userId: userA,
+        peerProfileId: peerId,
+        sessionEpoch: 1,
+      );
       final controller = MessagesController(
-        scope: testConversationScope(userId: userA, peerProfileId: peerId, sessionEpoch: 1),
+        scope: scope,
+        messageStore: testMessageStoreFor(scope),
         userId: userA,
         peerProfileId: peerId,
         messageService: FakeMessageService(client),
         messageMediaService: MessageMediaService(client),
         inboxService: FakeInboxService(),
         hasValidSession: () => sessionValid,
+        isScopeCommitted: () => true,
       );
       await waitForMessagesController(controller);
 
@@ -270,14 +305,21 @@ void main() {
       const peerId = 'peer-b';
       final client = createTestSupabaseClient();
 
+      final scope = testConversationScope(
+        userId: userId,
+        peerProfileId: peerId,
+        sessionEpoch: 1,
+      );
       final controller = MessagesController(
-        scope: testConversationScope(userId: userId, peerProfileId: peerId, sessionEpoch: 1),
+        scope: scope,
+        messageStore: testMessageStoreFor(scope),
         userId: userId,
         peerProfileId: peerId,
         messageService: FakeMessageService(client),
         messageMediaService: MessageMediaService(client),
         inboxService: FakeInboxService(),
         hasValidSession: () => true,
+        isScopeCommitted: () => true,
       );
       await waitForMessagesController(controller);
 

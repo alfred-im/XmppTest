@@ -122,13 +122,20 @@ void main() {
       nav.openPeerOnFocusedAccount(peer1);
       expect(auth.viewState.activePeer?.profileId, _agent2);
 
+      final scopeAgent1 = testConversationScope(
+        userId: _agent1,
+        peerProfileId: auth.viewState.activePeer!.profileId,
+        sessionEpoch: 1,
+      );
       final chatAsAgent1 = MessagesController(
-        scope: testConversationScope(userId: _agent1, peerProfileId: auth.viewState.activePeer!.profileId, sessionEpoch: 1),
+        scope: scopeAgent1,
+        messageStore: testMessageStoreFor(scopeAgent1),
         userId: _agent1,
         peerProfileId: auth.viewState.activePeer!.profileId,
         messageService: messageService,
         messageMediaService: MessageMediaService(createTestSupabaseClient()),
         inboxService: inboxService,
+        isScopeCommitted: () => true,
       );
       await waitForMessagesController(chatAsAgent1);
       expect(chatAsAgent1.messages.length, 2);
@@ -137,13 +144,20 @@ void main() {
       nav.openPeerOnFocusedAccount(peer2);
       expect(auth.viewState.activePeer?.profileId, _agent1);
 
+      final scopeAgent2 = testConversationScope(
+        userId: _agent2,
+        peerProfileId: auth.viewState.activePeer!.profileId,
+        sessionEpoch: 1,
+      );
       final chatAsAgent2 = MessagesController(
-        scope: testConversationScope(userId: _agent2, peerProfileId: auth.viewState.activePeer!.profileId, sessionEpoch: 1),
+        scope: scopeAgent2,
+        messageStore: testMessageStoreFor(scopeAgent2),
         userId: _agent2,
         peerProfileId: auth.viewState.activePeer!.profileId,
         messageService: messageService,
         messageMediaService: MessageMediaService(createTestSupabaseClient()),
         inboxService: inboxService,
+        isScopeCommitted: () => true,
       );
       await waitForMessagesController(chatAsAgent2);
       expect(chatAsAgent2.messages.length, 2);
@@ -151,13 +165,20 @@ void main() {
       await auth.setFocus(_agent1);
       expect(auth.viewState.activePeer?.profileId, _agent2);
 
+      final scopeAgainAgent1 = testConversationScope(
+        userId: _agent1,
+        peerProfileId: auth.viewState.activePeer!.profileId,
+        sessionEpoch: 1,
+      );
       final chatAgainAgent1 = MessagesController(
-        scope: testConversationScope(userId: _agent1, peerProfileId: auth.viewState.activePeer!.profileId, sessionEpoch: 1),
+        scope: scopeAgainAgent1,
+        messageStore: testMessageStoreFor(scopeAgainAgent1),
         userId: _agent1,
         peerProfileId: auth.viewState.activePeer!.profileId,
         messageService: messageService,
         messageMediaService: MessageMediaService(createTestSupabaseClient()),
         inboxService: inboxService,
+        isScopeCommitted: () => true,
       );
       await waitForMessagesController(chatAgainAgent1);
       expect(chatAgainAgent1.messages.length, 2);

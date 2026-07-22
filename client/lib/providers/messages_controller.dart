@@ -7,6 +7,7 @@ import 'dart:async';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 
+import '../machines/messaging/conversation_message_store.dart';
 import '../machines/messaging/messaging_adapters.dart';
 import '../machines/messaging/messaging_conversation_state.dart';
 import '../machines/messaging/messaging_coordinator.dart';
@@ -22,6 +23,7 @@ import '../services/profile_service.dart';
 class MessagesController extends ChangeNotifier {
   MessagesController({
     required this.scope,
+    required this.messageStore,
     required this.userId,
     required this.peerProfileId,
     required this.messageService,
@@ -38,6 +40,7 @@ class MessagesController extends ChangeNotifier {
     _effects = MessagesControllerEffects(
       state: _state,
       scope: scope,
+      messageStore: messageStore,
       userId: userId,
       peerProfileId: peerProfileId,
       messageService: messageService,
@@ -60,13 +63,17 @@ class MessagesController extends ChangeNotifier {
     _effects.onSendLifecycleStart = _coordinator.notifySendStarted;
     _effects.onSendLifecycleEnd = _coordinator.notifySendEnded;
     _adapters = MessagingAdapters(_coordinator);
+    messageStore.addListener(_onMessageStoreChanged);
     unawaited(_adapters.init());
   }
+
+  void _onMessageStoreChanged() => notifyListeners();
 
   static const sessionExpiredMessage =
       MessagesControllerEffects.sessionExpiredMessage;
 
   final ConversationScope scope;
+  final ConversationMessageStore messageStore;
   final String userId;
   final String peerProfileId;
   final Future<void> Function()? onMessagesChanged;
@@ -85,7 +92,14 @@ class MessagesController extends ChangeNotifier {
   bool _notifierDisposed = false;
 
   List<ChatMessage> get messages => _coordinator.messages;
-  set messages(List<ChatMessage> value) => _state.messages = value;
+  @visibleForTesting
+  set messages(List<ChatMessage> value) {
+    messageStore.applyLoadedMessages(
+      scope,
+      value,
+      hasMoreOlder: _coordinator.hasMoreOlder,
+    );
+  }
   bool get isLoading => _coordinator.isLoading;
   bool get isSending => _coordinator.isSending;
   bool get hasMoreOlder => _coordinator.hasMoreOlder;
@@ -168,6 +182,7 @@ class MessagesController extends ChangeNotifier {
   void dispose() {
     if (_notifierDisposed) return;
     _notifierDisposed = true;
+    messageStore.removeListener(_onMessageStoreChanged);
     _effects.markDisposed();
     _adapters.dispose();
     super.dispose();

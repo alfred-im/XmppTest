@@ -164,14 +164,21 @@ class _SessionScopedMessagesBody extends StatelessWidget {
 
     return ChangeNotifierProvider(
       create: (_) {
+        final scope = testConversationScope(
+          userId: liveSession.userId,
+          peerProfileId: peer.profileId,
+          sessionEpoch: 1,
+        );
         final controller = MessagesController(
-          scope: testConversationScope(userId: liveSession.userId, peerProfileId: peer.profileId, sessionEpoch: 1),
+          scope: scope,
+          messageStore: testMessageStoreFor(scope),
           userId: liveSession.userId,
           peerProfileId: peer.profileId,
           messageService: liveSession.messageService,
           messageMediaService: liveSession.messageMediaService,
           inboxService: liveSession.inboxService,
           hasValidSession: _focusedSessionValid,
+          isScopeCommitted: () => true,
         );
         onControllerCreated?.call(controller);
         return controller;

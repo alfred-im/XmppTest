@@ -187,7 +187,13 @@ class _HomeScreenState extends State<HomeScreen> {
       );
     }
 
-    final scope = ConversationScope.fromSession(session, peer);
+    final scope = auth.committedScope;
+    if (scope == null || !scope.matches(session, peer)) {
+      return const ColoredBox(
+        color: AlfredColors.surface,
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
 
     return _ChatWithMessages(
       key: conversationScopeKey(scope),
@@ -536,11 +542,13 @@ class _ChatWithMessages extends StatelessWidget {
         hasValidSession: _focusedSessionValid,
         isScopeCommitted: () => isMessagesScopeActive(
           scope: scope,
+          committedScope: auth.committedScope,
           peer: peer,
           liveSession: auth.focusedSession,
           isConversationReady: (session, activePeer) =>
               auth.isConversationReady(session: session, peer: activePeer),
         ),
+        messageStore: auth.messageStore,
       ),
       child: ChatPanel(
         peer: peer,

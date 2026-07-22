@@ -63,25 +63,39 @@ void main() {
         _msg(id: 'm2', body: 'da agent2', senderId: _agent2),
       ];
 
+      final scopeAgent1 = testConversationScope(
+        userId: _agent1,
+        peerProfileId: _agent2,
+        sessionEpoch: 1,
+      );
       final asAgent1 = MessagesController(
-        scope: testConversationScope(userId: _agent1, peerProfileId: _agent2, sessionEpoch: 1),
+        scope: scopeAgent1,
+        messageStore: testMessageStoreFor(scopeAgent1),
         userId: _agent1,
         peerProfileId: _agent2,
         messageService: messageService,
         messageMediaService: mediaService,
         inboxService: inboxService,
         outboundQueue: outboundQueue,
+        isScopeCommitted: () => true,
       );
       await waitForMessagesController(asAgent1);
 
+      final scopeAgent2 = testConversationScope(
+        userId: _agent2,
+        peerProfileId: _agent1,
+        sessionEpoch: 1,
+      );
       final asAgent2 = MessagesController(
-        scope: testConversationScope(userId: _agent2, peerProfileId: _agent1, sessionEpoch: 1),
+        scope: scopeAgent2,
+        messageStore: testMessageStoreFor(scopeAgent2),
         userId: _agent2,
         peerProfileId: _agent1,
         messageService: messageService,
         messageMediaService: mediaService,
         inboxService: inboxService,
         outboundQueue: OutboundMessageQueue(),
+        isScopeCommitted: () => true,
       );
       await waitForMessagesController(asAgent2);
 
@@ -107,14 +121,21 @@ void main() {
 
     test('load surfaces service errors instead of silent empty chat', () async {
       final broken = _BrokenMessageService();
+      final brokenScope = testConversationScope(
+        userId: _agent1,
+        peerProfileId: _agent2,
+        sessionEpoch: 1,
+      );
       final controller = MessagesController(
-        scope: testConversationScope(userId: _agent1, peerProfileId: _agent2, sessionEpoch: 1),
+        scope: brokenScope,
+        messageStore: testMessageStoreFor(brokenScope),
         userId: _agent1,
         peerProfileId: _agent2,
         messageService: broken,
         messageMediaService: mediaService,
         inboxService: inboxService,
         outboundQueue: OutboundMessageQueue(),
+        isScopeCommitted: () => true,
       );
       await waitForMessagesController(controller);
 
@@ -125,8 +146,14 @@ void main() {
     });
 
     test('load reports expired session instead of silent empty chat', () async {
+      final expiredScope = testConversationScope(
+        userId: _agent1,
+        peerProfileId: _agent2,
+        sessionEpoch: 1,
+      );
       final controller = MessagesController(
-        scope: testConversationScope(userId: _agent1, peerProfileId: _agent2, sessionEpoch: 1),
+        scope: expiredScope,
+        messageStore: testMessageStoreFor(expiredScope),
         userId: _agent1,
         peerProfileId: _agent2,
         messageService: messageService,
@@ -134,6 +161,7 @@ void main() {
         inboxService: inboxService,
         outboundQueue: OutboundMessageQueue(),
         hasValidSession: () => false,
+        isScopeCommitted: () => true,
       );
       await waitForMessagesController(controller);
 
@@ -147,14 +175,21 @@ void main() {
       const clientId = 'client-uuid-optimistic';
       const serverId = 'server-uuid-confirmed';
 
+      final realtimeScope = testConversationScope(
+        userId: _agent1,
+        peerProfileId: _agent2,
+        sessionEpoch: 1,
+      );
       final controller = MessagesController(
-        scope: testConversationScope(userId: _agent1, peerProfileId: _agent2, sessionEpoch: 1),
+        scope: realtimeScope,
+        messageStore: testMessageStoreFor(realtimeScope),
         userId: _agent1,
         peerProfileId: _agent2,
         messageService: messageService,
         messageMediaService: mediaService,
         inboxService: inboxService,
         outboundQueue: OutboundMessageQueue(),
+        isScopeCommitted: () => true,
       );
       await waitForMessagesController(controller);
 

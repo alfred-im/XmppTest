@@ -6,7 +6,7 @@
 
 | Livello | File |
 |---------|------|
-| Dominio | [glossary.md](./glossary.md), [commands-and-events.md](./commands-and-events.md), [conversation-data-plane.md](./conversation-data-plane.md) (draft CDP) |
+| Dominio | [glossary.md](./glossary.md), [commands-and-events.md](./commands-and-events.md), [conversation-data-plane.md](./conversation-data-plane.md) |
 | UML | [messaging-state.puml](../../model/uml/messaging/messaging-state.puml) |
 | Statechart | [client/lib/machines/messaging/](../../../client/lib/machines/messaging/) |
 
