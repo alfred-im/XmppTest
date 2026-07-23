@@ -38,14 +38,21 @@ void main() {
       messageService = FakeMessageService(createTestSupabaseClient());
       mediaService = FakeMessageMediaService();
       outboundQueue = OutboundMessageQueue();
+      final scope = testConversationScope(
+        userId: _agent1,
+        peerProfileId: _agent2,
+        sessionEpoch: 1,
+      );
       controller = MessagesController(
-        scope: testConversationScope(userId: _agent1, peerProfileId: _agent2, sessionEpoch: 1),
+        scope: scope,
+        messageStore: testMessageStoreFor(scope),
         userId: _agent1,
         peerProfileId: _agent2,
         messageService: messageService,
         messageMediaService: mediaService,
         inboxService: FakeInboxService(),
         outboundQueue: outboundQueue,
+        isScopeCommitted: () => true,
       );
       await waitForMessagesController(controller);
     });

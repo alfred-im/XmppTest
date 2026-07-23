@@ -133,9 +133,12 @@ void main() {
       navigation.machine.commitScope(
         ConversationScope.fromSession(sessionA, ChatPeer(profile: peer)),
       );
+      expect(navigation.committedScope?.loadSeq, 0);
 
       manager.clearSessionsInRamForTest();
       manager.focusTestSession(sessionA2);
+
+      navigation.machine.reconcileSessionEpoch(sessionA2);
 
       expect(
         navigation.isConversationReady(
@@ -145,6 +148,10 @@ void main() {
         isTrue,
       );
       expect(navigation.committedScope?.sessionEpoch, sessionA2.epoch);
+      expect(
+        navigation.committedScope?.loadSeq,
+        navigation.machine.committedScope?.loadSeq,
+      );
     });
 
     test('openConversation via effects committa scope su macchina', () async {

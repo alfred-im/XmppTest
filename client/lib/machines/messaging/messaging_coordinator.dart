@@ -36,19 +36,22 @@ class MessagingCoordinator {
 
   RealtimeChannel? _channel;
 
-  List<ChatMessage> get messages => state.messages;
+  List<ChatMessage> get messages =>
+      effects.messageStore.snapshotFor(effects.scope).messages;
   String? get error => state.error;
   bool get isLoading => loadMachine.state == ConversationLoadState.loading;
   bool get isSending => sendMachine.state == OutboundSendState.sending;
-  bool get hasMoreOlder => state.hasMoreOlder;
-  bool get isLoadingOlder => state.isLoadingOlder;
+  bool get hasMoreOlder =>
+      effects.messageStore.snapshotFor(effects.scope).hasMoreOlder;
+  bool get isLoadingOlder =>
+      effects.messageStore.snapshotFor(effects.scope).isLoadingOlder;
 
   Future<void> init() async {
     await load();
     if (effects.isDisposed) return;
     await effects.restoreFailedFromQueue();
     if (effects.isDisposed) return;
-    if (state.messages.any(
+    if (effects.messageStore.snapshotFor(effects.scope).messages.any(
       (m) => m.isMine && m.status == MessageStatus.failed,
     )) {
       sendMachine.send(const FailedQueueRestored());
@@ -64,8 +67,7 @@ class MessagingCoordinator {
   Future<void> reload() async {
     loadMachine.send(const RefreshConversation());
     state.error = null;
-    state.hasMoreOlder = false;
-    state.isLoadingOlder = false;
+    effects.messageStore.beginLoad(effects.scope);
     _notify();
     await load();
   }
@@ -136,9 +138,12 @@ class MessagingCoordinator {
 
   void _handleRealtimeMessage(ChatMessage message) {
     realtimeMachine.send(RealtimeReceived(message));
-    state.messages = replaceOrInsertMessage(
-      state.messages,
-      withTimeLabel(message),
+    effects.messageStore.mutateMessages(
+      effects.scope,
+      (messages) => replaceOrInsertMessage(
+        messages,
+        withTimeLabel(message),
+      ),
     );
     if (peerIsGroup) {
       unawaited(effects.enrichAuthorNamesIfNeeded());

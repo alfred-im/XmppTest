@@ -6,6 +6,7 @@ import '../../models/chat_peer.dart';
 import '../../models/conversation_scope.dart';
 import '../../models/open_conversation_source.dart';
 import '../../services/account_session.dart';
+import '../messaging/conversation_message_store.dart';
 import 'navigation_effects.dart';
 
 /// Stato shell navigation — `docs/model/uml/navigation/navigation-shell-state.puml`.
@@ -99,19 +100,44 @@ final class MergeActivePeerFromInbox extends NavigationEvent {
 
 /// Macchina navigation — unico ingresso shell inbox/chat e proprietario di [ConversationScope].
 class NavigationMachine {
-  NavigationMachine(this._effects);
+  NavigationMachine(
+    this._effects, {
+    ConversationMessageStore? messageStore,
+  }) : _messageStore = messageStore ?? ConversationMessageStore();
 
   final NavigationEffects _effects;
+  final ConversationMessageStore _messageStore;
+
+  ConversationMessageStore get messageStore => _messageStore;
 
   NavigationShellState shellState = NavigationShellState.inboxVisible;
   ConversationScope? committedScope;
+  int _loadSeq = 0;
 
   void invalidateCommittedScope() {
+    _loadSeq++;
     committedScope = null;
+    _messageStore.bindCommittedScope(null);
   }
 
   void commitScope(ConversationScope scope) {
-    committedScope = scope;
+    committedScope = scope.copyWith(loadSeq: _loadSeq);
+    _messageStore.bindCommittedScope(committedScope);
+  }
+
+  /// Sessione ricreata (stesso account + peer): aggiorna epoch e invalida lista.
+  bool reconcileSessionEpoch(AccountSession session) {
+    final committed = committedScope;
+    if (committed == null) return false;
+    if (committed.ownerUserId != session.userId) return false;
+    if (committed.sessionEpoch == session.epoch) return true;
+    _loadSeq++;
+    committedScope = committed.copyWith(
+      sessionEpoch: session.epoch,
+      loadSeq: _loadSeq,
+    );
+    _messageStore.bindCommittedScope(committedScope);
+    return true;
   }
 
   bool isScopeCommitted(ConversationScope scope) =>
@@ -143,11 +169,7 @@ class NavigationMachine {
       return false;
     }
     if (sessionEpoch != null && committed.sessionEpoch != sessionEpoch) {
-      committedScope = ConversationScope(
-        ownerUserId: ownerUserId,
-        peerProfileId: peerProfileId,
-        sessionEpoch: sessionEpoch,
-      );
+      return false;
     }
     return true;
   }

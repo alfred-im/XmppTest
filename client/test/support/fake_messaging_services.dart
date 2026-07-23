@@ -6,6 +6,7 @@ import 'dart:convert';
 
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:alfred_client/machines/messaging/conversation_message_store.dart';
 import 'package:alfred_client/models/chat_peer.dart';
 import 'package:alfred_client/models/conversation_scope.dart';
 import 'package:alfred_client/models/message.dart';
@@ -405,17 +406,25 @@ class FakeInboxService extends InboxService {
   }
 }
 
-/// Scope di test — [isScopeCommitted] nei test può restare `() => true`.
+/// Scope di test — collegare [ConversationMessageStore.bindCommittedScope] prima del load.
 ConversationScope testConversationScope({
   required String userId,
   required String peerProfileId,
   int sessionEpoch = 1,
+  int loadSeq = 0,
 }) {
   return ConversationScope(
     ownerUserId: userId,
     peerProfileId: peerProfileId,
     sessionEpoch: sessionEpoch,
+    loadSeq: loadSeq,
   );
+}
+
+ConversationMessageStore testMessageStoreFor(ConversationScope scope) {
+  final store = ConversationMessageStore();
+  store.bindCommittedScope(scope);
+  return store;
 }
 
 Future<void> waitForMessagesController(MessagesController controller) async {

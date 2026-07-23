@@ -39,6 +39,10 @@ void main() {
       expect(auth.multiAccountMachine.focusUserId, 'account-a');
       expect(auth.accountManager.focusUserId, 'account-a');
       expect(auth.focusedSession?.userId, 'account-a');
+      expect(
+        auth.multiAccountMachine.focusState,
+        MultiAccountFocusState.focusedWithSession,
+      );
     });
 
     test('focusAccount via adapters aggiorna macchina e manager', () async {

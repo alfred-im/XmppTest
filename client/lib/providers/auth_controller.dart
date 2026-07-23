@@ -17,6 +17,7 @@ import '../machines/notifications/notifications_machine.dart';
 import '../machines/multi-account/account_multi_account_effects.dart';
 import '../machines/multi-account/multi_account_adapters.dart';
 import '../machines/multi-account/multi_account_machine.dart';
+import '../machines/messaging/conversation_message_store.dart';
 import '../models/open_account.dart';
 import '../models/profile_summary.dart';
 import '../models/account_view_state.dart';
@@ -106,6 +107,8 @@ class AuthController extends ChangeNotifier {
 
   ConversationScope? get committedScope => _navigation.committedScope;
 
+  ConversationMessageStore get messageStore => _navigation.messageStore;
+
   bool get isChatShellOpen => _navigation.isChatShellOpen;
 
   bool isConversationReady({
@@ -134,7 +137,16 @@ class AuthController extends ChangeNotifier {
 
   Future<void> initialize() async {
     await _sessionCoordinator.initialize();
-    _navigation.syncShellAfterFocusSettled();
+    final focus = multiAccountMachine.focusUserId;
+    if (focus != null) {
+      try {
+        await _navigation.switchToAccount(focus);
+        error = null;
+      } catch (e) {
+        error = friendlyAuthError(e);
+      }
+    }
+    notifyListeners();
   }
 
   void openAuthOverlay({required bool dismissible}) =>

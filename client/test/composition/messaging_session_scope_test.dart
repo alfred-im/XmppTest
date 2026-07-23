@@ -102,14 +102,21 @@ void main() {
       final sessionBefore = setup.auth.focusedSession!;
       final staleService = setup.servicesBySession[sessionBefore]!;
 
+      final scope = testConversationScope(
+        userId: _userA,
+        peerProfileId: _peerId,
+        sessionEpoch: 1,
+      );
       final controller = MessagesController(
-        scope: testConversationScope(userId: _userA, peerProfileId: _peerId, sessionEpoch: 1),
+        scope: scope,
+        messageStore: testMessageStoreFor(scope),
         userId: _userA,
         peerProfileId: _peerId,
         messageService: staleService,
         messageMediaService: MessageMediaService(createTestSupabaseClient()),
         inboxService: FakeInboxService(),
         hasValidSession: () => _focusedSessionValid(setup.auth, _userA),
+        isScopeCommitted: () => true,
       );
       await waitForMessagesController(controller);
 
@@ -151,14 +158,21 @@ void main() {
       final liveSession = setup.auth.focusedSession!;
       expect(liveSession, isNot(same(sessionBefore)));
 
+      final scope = testConversationScope(
+        userId: _userA,
+        peerProfileId: _peerId,
+        sessionEpoch: 1,
+      );
       final controller = MessagesController(
-        scope: testConversationScope(userId: _userA, peerProfileId: _peerId, sessionEpoch: 1),
+        scope: scope,
+        messageStore: testMessageStoreFor(scope),
         userId: _userA,
         peerProfileId: _peerId,
         messageService: liveSession.messageService,
         messageMediaService: liveSession.messageMediaService,
         inboxService: liveSession.inboxService,
         hasValidSession: () => _focusedSessionValid(setup.auth, _userA),
+        isScopeCommitted: () => true,
       );
       await waitForMessagesController(controller);
 

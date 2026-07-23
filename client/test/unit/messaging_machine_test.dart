@@ -4,7 +4,9 @@
 
 import 'dart:typed_data';
 
+import 'package:alfred_client/machines/messaging/conversation_message_store.dart';
 import 'package:alfred_client/machines/messaging/conversation_load_machine.dart';
+import 'package:alfred_client/models/conversation_scope.dart';
 import 'package:alfred_client/machines/messaging/messaging_conversation_state.dart';
 import 'package:alfred_client/machines/messaging/messaging_coordinator.dart';
 import 'package:alfred_client/machines/messaging/messaging_effects.dart';
@@ -15,7 +17,20 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../support/fake_messaging_services.dart';
+
 class _RecordingEffects implements MessagingEffects {
+  _RecordingEffects()
+      : scope = testConversationScope(userId: 'user-a', peerProfileId: 'peer-b'),
+        messageStore = ConversationMessageStore() {
+    messageStore.bindCommittedScope(scope);
+  }
+
+  @override
+  final ConversationScope scope;
+  @override
+  final ConversationMessageStore messageStore;
+
   int fetchCount = 0;
   int prependCount = 0;
   int markReadCount = 0;
@@ -181,9 +196,22 @@ void main() {
 
     test('loadOlderMessages delegates to effects when more history exists', () async {
       final effects = _RecordingEffects();
-      final state = MessagingConversationState()..hasMoreOlder = true;
+      effects.messageStore.applyLoadedMessages(
+        effects.scope,
+        [
+          ChatMessage(
+            id: '1',
+            body: 'x',
+            timeLabel: '12:00',
+            isMine: true,
+            senderId: 'user-a',
+            createdAt: DateTime.utc(2026, 7, 1),
+          ),
+        ],
+        hasMoreOlder: true,
+      );
       final coordinator = MessagingCoordinator(
-        state: state,
+        state: MessagingConversationState(),
         effects: effects,
         onChanged: () {},
       );

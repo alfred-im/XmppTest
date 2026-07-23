@@ -104,10 +104,7 @@ void main() {
       };
 
       auth = AuthController(accountManager: manager);
-      await auth.multiAccountAdapters.bootstrapManifest();
-      auth
-        ..isLoading = false
-        ..sessionReady = true;
+      await auth.initialize();
     });
 
     test('reactivates session when focus id already matches recipient', () async {

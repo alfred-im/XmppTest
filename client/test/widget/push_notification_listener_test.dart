@@ -176,10 +176,7 @@ void main() {
     };
 
     final auth = AuthController(accountManager: manager);
-    await auth.multiAccountAdapters.bootstrapManifest();
-    auth
-      ..isLoading = false
-      ..sessionReady = true;
+    await auth.initialize();
 
     final intents = StreamController<PushOpenChatIntent>.broadcast();
 
@@ -317,10 +314,7 @@ void main() {
       };
 
       final auth = AuthController(accountManager: manager);
-      await auth.multiAccountAdapters.bootstrapManifest();
-      auth
-        ..isLoading = false
-        ..sessionReady = true;
+      await auth.initialize();
 
       auth.openConversation(ChatPeer(profile: accountB));
       expect(auth.userId, 'account-a');

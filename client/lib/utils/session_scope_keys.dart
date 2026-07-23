@@ -18,6 +18,7 @@ Key navigationShellKey({
       committedScope?.ownerUserId,
       committedScope?.peerProfileId,
       committedScope?.sessionEpoch,
+      committedScope?.loadSeq,
     ),
   );
 }
@@ -34,6 +35,7 @@ ConversationScope conversationScopeFor(
     ownerUserId: session.userId,
     peerProfileId: peerProfileId,
     sessionEpoch: session.epoch,
+    loadSeq: 0,
   );
 }
 
