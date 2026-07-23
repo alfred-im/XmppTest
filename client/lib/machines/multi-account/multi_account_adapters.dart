@@ -20,8 +20,10 @@ class MultiAccountAdapters implements AccountFocusCommand {
   final MultiAccountMachine _machine;
   final MultiAccountEffects effects;
 
-  /// F5 / avvio: carica manifest, macchina decide focus, effetti attivano sessione.
-  /// Ripristino scope conversazione: [NavigationCoordinator] dopo bootstrap.
+  /// F5 / avvio: carica manifest e risolve focus persistito.
+  ///
+  /// Attivazione sessione + shell: stesso percorso dello switch
+  /// ([NavigationCoordinator.switchToAccount] dopo bootstrap).
   Future<void> bootstrapManifest() async {
     final bootstrap = await effects.loadManifestBootstrap();
     await _machine.send(
@@ -29,15 +31,6 @@ class MultiAccountAdapters implements AccountFocusCommand {
         openAccountUserIds: bootstrap.openAccountUserIds,
         persistedFocusUserId: bootstrap.persistedFocusUserId,
       ),
-    );
-
-    final focus = _machine.focusUserId;
-    if (focus != null) {
-      await effects.executeFocus(focus);
-    }
-
-    await _machine.send(
-      FocusActivationCompleted(hasFocusedSession: effects.hasFocusedSession),
     );
   }
 

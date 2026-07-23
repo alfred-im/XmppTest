@@ -137,7 +137,16 @@ class AuthController extends ChangeNotifier {
 
   Future<void> initialize() async {
     await _sessionCoordinator.initialize();
-    _navigation.syncShellAfterFocusSettled();
+    final focus = multiAccountMachine.focusUserId;
+    if (focus != null) {
+      try {
+        await _navigation.switchToAccount(focus);
+        error = null;
+      } catch (e) {
+        error = friendlyAuthError(e);
+      }
+    }
+    notifyListeners();
   }
 
   void openAuthOverlay({required bool dismissible}) =>

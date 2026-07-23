@@ -410,8 +410,8 @@ void main() {
       await adapters.bootstrapManifest();
 
       expect(machine.focusUserId, 'user-a');
-      expect(machine.focusState, MultiAccountFocusState.focusedAwaitingSession);
-      expect(effects.focusCalls, 1);
+      expect(machine.focusState, MultiAccountFocusState.hasOpenAccounts);
+      expect(effects.focusCalls, 0);
     });
   });
 }
